@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+
+<head>
+  <meta charset="utf-8">
+  <title>Crittors</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap">
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link rel="manifest" href="manifest.json">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+ 
+  <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Crittors">
+<link rel="apple-touch-icon" href="https://i.imgur.com/BVQ9vFj.png">
+
+  <link rel="stylesheet" type="text/css" href="style.css">
+  
+</head>
+
+<body>
+  <div id="rotateDevice">
+    <p id="chooseScreenSize">Choose screen size + rotation </p>
+    <button id="proceedAnyway">
+        <img id="playButton" src="https://i.imgur.com/5zdfKQG.png" alt="Play Button">
+    </button>
+  </div>
+  <div id="game-container">
+    <div id="snail"> </div>
+    <div id="progress"><div id="progress-filled"></div></div>
+    
+
+    <div id="wipe-text">YOU WIPED!!</div>
+    <div id="pause-text">paused</div>
+    <div id="spawn-text">Choose Your Crittor!</div>
+    <div id="round-text">Round 1</div>
+    <div id="pause-button" id="coffee-coins"></div>
+    <div id="coffee-button"><span id="coffee-amount"></span>
+    </div>
+    <div id="ui-overlay">
+
+      <div id="infoboxes">
+        <div class="infobox">
+          <div class="infobox-icon">
+            ⚡️
+          </div>
+          <div class="infobox-level" id="lightning-level"></div>
+        </div>
+
+        <div class="infobox">
+          <div class="infobox-icon">
+            ❤️
+          </div>
+          <div class="infobox-level" id="heart-level"></div>
+        </div>
+
+        <div class="infobox">
+          <div class="infobox-icon">
+            ⚔️
+          </div>
+          <div class="infobox-level" id="swords-level"></div>
+        </div>
+
+        <div id="character-info" style="display: none;">
+
+
+        </div>
+      </div>
+
+
+      <div id="character-level">Lvl. 1
+
+      </div>
+
+      <div id="character-portrait">
+        <div id="cooldown-overlay" class="cooldown-overlay"></div>
+      </div>
+      <div id="enemy-portrait"></div>
+      <div id="health-bar">
+        <div id="health-bar-fill"></div>
+        <div class="bar-text" id="hp-text">hp</div>
+      </div>
+      <div id="exp-bar">
+        <div id="exp-bar-fill"></div>
+        <div class="bar-text" id="exp-text">exp</div>
+      </div>
+      <div class="upgrade-box spd-upgrade">
+        <div class="upgrade-icon">⚡</div>
+      </div>
+      <div class="upgrade-box hp-upgrade">
+        <div class="upgrade-icon">❤️</div>
+      </div>
+      <div class="upgrade-box attack-upgrade">
+        <div class="upgrade-icon">⚔️</div>
+      </div>
+      <div class="upgrade-box character-snail">
+        <div class="hp-indicator"></div>
+        <div class="character-icon">🐌</div>
+        <div class="exp-indicator"><span class="level">1</span></div>
+
+
+      </div>
+
+      <div class="upgrade-box character-bird">
+        <div class="hp-indicator"></div>
+        <div class="character-icon">🦚</div>
+        <div class="exp-indicator"><span class="level">1</span></div>
+
+
+      </div>
+
+      <div class="upgrade-box character-bee">
+        <div class="hp-indicator"></div>
+        <div class="character-icon">🐝</div>
+        <div class="exp-indicator"><span class="level">1</span></div>
+
+
+      </div>
+
+      <div class="upgrade-box character-frog">
+        <div class="hp-indicator"></div>
+        <div class="exp-indicator"><span class="level">1</span></div>
+        <div class="character-icon">🐸</div>
+
+      </div>
+
+    </div>
+  </div>
+  </div>
+</body>
+
+
+<script src="main.js"></script>
+<script src="https://pixijs.download/v7.2.4/pixi.js"></script>
+
+
+
+</body>
+
+</html>

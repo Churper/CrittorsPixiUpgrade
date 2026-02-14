@@ -14,10 +14,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
   });
 
-  function mainAppFunction() {
+  async function mainAppFunction() {
     let leveling = false;
     let timer = null;
-  const app = new PIXI.Application({
+  const app = new PIXI.Application();
+  await app.init({
     width: window.innerWidth,
     height: Math.max(window.innerHeight),
     antialias: true,
@@ -30,7 +31,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let flashing = false;
   let reviveDialogContainer;
   let gameData;
-  document.body.appendChild(app.view);
+  document.body.appendChild(app.canvas);
   let critter;
   let enemyTypes = [];
   let frogGhostPlayer;
@@ -119,7 +120,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   hitSound.src = "./hurt.wav";
   let isCombat = false;
   let isPointerDown = false;
-  const menuTexture = PIXI.Texture.from('https://churper.github.io/CrittorsPixiMobile/assets/mainmenu.png');
+  const menuTexture = await PIXI.Assets.load('./assets/mainmenu.png');
   const menuSprite = new PIXI.Sprite(menuTexture);
   let characterPositions = {
     "character-snail": { top: "-50px", left: "calc(45% - 70px)" },
@@ -137,14 +138,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   };
 
   const enemyPortraits = [
-    { name: 'ele_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/eleportrait.png' },
-    { name: 'octo_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/octoportrait.png' },
-    { name: 'pig_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/pigportrait.png' },
-    { name: 'scorp_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/scorpportrait.png' },
-    { name: 'toofer_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/tooferportrait.png' },
-    { name: 'imp_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/impportrait.png' },
-    { name: 'puffer_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/pufferportrait.png' },
-    { name: 'shark_portrait', url: 'https://churper.github.io/CrittorsPixiMobile/assets/sharkportrait.png' }
+    { name: 'ele_portrait', url: './assets/eleportrait.png' },
+    { name: 'octo_portrait', url: './assets/octoportrait.png' },
+    { name: 'pig_portrait', url: './assets/pigportrait.png' },
+    { name: 'scorp_portrait', url: './assets/scorpportrait.png' },
+    { name: 'toofer_portrait', url: './assets/tooferportrait.png' },
+    { name: 'imp_portrait', url: './assets/impportrait.png' },
+    { name: 'puffer_portrait', url: './assets/pufferportrait.png' },
+    { name: 'shark_portrait', url: './assets/sharkportrait.png' }
   ];
 
   const portraitNames = {
@@ -720,8 +721,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   function createBorder(backgroundSprite) {
     const border = new PIXI.Graphics();
-    border.lineStyle(4, 0x8B4513); // Brown outline color
-    border.drawRect(0, 0, backgroundSprite.width, backgroundSprite.height);
+    border.rect(0, 0, backgroundSprite.width, backgroundSprite.height).stroke({ width: 4, color: 0x8B4513 });
     return border;
   }
 
@@ -766,9 +766,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const volumeSlider = new PIXI.Container();
     volumeSlider.position.set(backgroundSprite.width / 2.75, backgroundSprite.height / 2);
     const sliderBackground = new PIXI.Graphics();
-    sliderBackground.beginFill(0x000000); // Black color for the rectangle background
-    sliderBackground.drawRect(0, -10, backgroundSprite.width/3.5, 20); // Set the same bounds as the sliding ball
-    sliderBackground.endFill();
+    sliderBackground.rect(0, -10, backgroundSprite.width/3.5, 20).fill(0x000000);
     volumeSlider.addChild(sliderBackground);
      // New function to adjust the volume based on the slider ball's position
   
@@ -784,8 +782,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     let isDragging = false;
     let offsetX = 0;
 
-    sliderBall.interactive = true;
-    sliderBall.buttonMode = true;
+    sliderBall.eventMode = 'static';
+    sliderBall.cursor = 'pointer';
 
     sliderBall.on('pointerdown', (event) => {
       isDragging = true;
@@ -824,8 +822,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     volumeButton.anchor.set(0.5);
     volumeButton.position.set(backgroundSprite.width / 20, backgroundSprite.height / 2);
 
-    volumeButton.interactive = true;
-    volumeButton.buttonMode = true;
+    volumeButton.eventMode = 'static';
+    volumeButton.cursor = 'pointer';
     let isMuted = false;
 
     volumeButton.on('click', () => {
@@ -842,8 +840,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     garbageButton.anchor.set(0.4);
     garbageButton.position.set((backgroundSprite.width / 4) * 2, backgroundSprite.height -200 );
 
-    garbageButton.interactive = true;
-    garbageButton.buttonMode = true;
+    garbageButton.eventMode = 'static';
+    garbageButton.cursor = 'pointer';
 
     garbageButton.on('pointerdown', () => {
       // Handle delete game save functionality here
@@ -923,12 +921,12 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   var pauseButton = document.getElementById("pause-button");
 
   pauseButton.addEventListener("mousedown", function () {
-    pauseButton.style.backgroundImage = 'url("https://churper.github.io/CrittorsPixiMobile/assets/pausedown.png")';
+    pauseButton.style.backgroundImage = 'url("./assets/pausedown.png")';
     console.log("Button Pressed");
   });
 
   pauseButton.addEventListener("mouseup", function () {
-    pauseButton.style.backgroundImage = 'url("https://churper.github.io/CrittorsPixiMobile/assets/pauseup.png")';
+    pauseButton.style.backgroundImage = 'url("./assets/pauseup.png")';
     console.log("Button Released");
   });
 
@@ -1144,8 +1142,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   
     // Create a brown border around the background
     const border = new PIXI.Graphics();
-    border.lineStyle(4, 0x8B4513); // Brown color with 4px thickness
-    border.drawRect(0, 0, backgroundSprite.width, backgroundSprite.height);
+    border.rect(0, 0, backgroundSprite.width, backgroundSprite.height).stroke({ width: 4, color: 0x8B4513 });
     reviveDialogContainer.addChild(border);
   
     // Create the text for the dialog box
@@ -1162,7 +1159,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   
   
     // Add coffee bean image
-    let beanSprite = PIXI.Sprite.from('bean')
+    let beanSprite = new PIXI.Sprite(PIXI.Assets.get('bean'))
     beanSprite.anchor.set(0.5);
     beanSprite.scale.set(0.85);
     beanSprite.position.set(text.position.x - text.width / 5.5, text.position.y);
@@ -1225,10 +1222,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     setisPaused(true);
   
     // Listen for click events on the 'Yes' button
-    yesButton.interactive = true;
-    yesButton.buttonMode = true;
-    noButton.interactive = true;
-    noButton.buttonMode = true;
+    yesButton.eventMode = 'static';
+    yesButton.cursor = 'pointer';
+    noButton.eventMode = 'static';
+    noButton.cursor = 'pointer';
   
     yesButton.on('pointerdown', () => {
       // Check if the player has enough coins to revive the character
@@ -1346,22 +1343,22 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   function getCharacterPortraitUrl(characterType) {
     switch (characterType) {
-      case 'character-snail': return 'https://churper.github.io/CrittorsPixiMobile/assets/snailportrait.png';
-      case 'character-bird': return 'https://churper.github.io/CrittorsPixiMobile/assets/birdportrait.png';
-      case 'character-frog': return 'https://churper.github.io/CrittorsPixiMobile/assets/frogportrait.png';
-      case 'character-bee': return 'https://churper.github.io/CrittorsPixiMobile/assets/beeportrait.png';
+      case 'character-snail': return './assets/snailportrait.png';
+      case 'character-bird': return './assets/birdportrait.png';
+      case 'character-frog': return './assets/frogportrait.png';
+      case 'character-bee': return './assets/beeportrait.png';
       default: return '';
     }
   }
 
 
-  document.body.appendChild(app.view);
+  document.body.appendChild(app.canvas);
  
   const hoverScale = 1.2;
   const hoverAlpha = 0.8;
  
 
-  function startGame() {
+  async function startGame() {
 
     window.addEventListener('blur', () => {
       if (getPlayerCurrentHealth() > 0) {
@@ -1370,7 +1367,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     });
     
 
-    const loadingTexture = PIXI.Texture.from('https://churper.github.io/CrittorsPixiMobile/assets/loading.png');
+    const loadingTexture = await PIXI.Assets.load('./assets/loading.png');
     const loadingSprite = new PIXI.Sprite(loadingTexture);
     loadingSprite.anchor.set(0.5);
     loadingSprite.width = app.screen.width;
@@ -1454,50 +1451,50 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
 
 // Add the assets to load
-PIXI.Assets.add('shark_emerge', 'https://churper.github.io/CrittorsPixiMobile/assets/shark_emerge.png');
-PIXI.Assets.add('shark_submerge', 'https://churper.github.io/CrittorsPixiMobile/assets/shark_submerge.png');
-PIXI.Assets.add('shark_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/shark_walk.png');
-PIXI.Assets.add('shark_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/shark_attack.png');
-PIXI.Assets.add('pig_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/pig_walk.png');
-PIXI.Assets.add('pig_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/pig_attack.png');
-PIXI.Assets.add('ele_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/ele_walk.png');
-PIXI.Assets.add('ele_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/ele_attack.png');
-PIXI.Assets.add('scorp_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/scorp_walk.png');
-PIXI.Assets.add('scorp_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/scorp_attack.png');
-PIXI.Assets.add('octo_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/octo_walk.png');
-PIXI.Assets.add('octo_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/octo_attack.png');
-PIXI.Assets.add('toofer_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/toofer_walk.png');
-PIXI.Assets.add('toofer_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/toofer_attack.png');
-PIXI.Assets.add('bird_egg', 'https://churper.github.io/CrittorsPixiMobile/assets/bird_egg.png');
-PIXI.Assets.add('bird_ghost', 'https://churper.github.io/CrittorsPixiMobile/assets/bird_ghost.png');
-PIXI.Assets.add('bird_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/bird_walk.png');
-PIXI.Assets.add('bird_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/bird_attack.png');
-PIXI.Assets.add('snail_ghost', 'https://churper.github.io/CrittorsPixiMobile/assets/snail_ghost.png');
-PIXI.Assets.add('bee_ghost', 'https://churper.github.io/CrittorsPixiMobile/assets/bee_ghost.png');
-PIXI.Assets.add('bee_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/bee_walk.png');
-PIXI.Assets.add('bee_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/bee_attack.png');
-PIXI.Assets.add('puffer_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/puffer_walk.png');
-PIXI.Assets.add('puffer_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/puffer_attack.png');
-PIXI.Assets.add('bean', 'https://churper.github.io/CrittorsPixiMobile/assets/bean.png');
-PIXI.Assets.add('background', 'https://churper.github.io/CrittorsPixiMobile/assets/background.png');
-PIXI.Assets.add('frog_ghost', 'https://churper.github.io/CrittorsPixiMobile/assets/frog_ghost.png');
-PIXI.Assets.add('foreground', 'https://churper.github.io/CrittorsPixiMobile/assets/foreground.png');
-PIXI.Assets.add('critter', 'https://churper.github.io/CrittorsPixiMobile/assets/critter.png');
-PIXI.Assets.add('critter_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/critter_walk.png');
-PIXI.Assets.add('critter_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/critter_attack.png');
-PIXI.Assets.add('snail_idle', 'https://churper.github.io/CrittorsPixiMobile/assets/snail_idle.png');
-PIXI.Assets.add('snail_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/snail_walk.png');
-PIXI.Assets.add('snail_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/snail_attack.png');
-PIXI.Assets.add('frog', 'https://churper.github.io/CrittorsPixiMobile/assets/frog.png');
-PIXI.Assets.add('frog_walk', 'https://churper.github.io/CrittorsPixiMobile/assets/frog_walk.png');
-PIXI.Assets.add('frog_attack', 'https://churper.github.io/CrittorsPixiMobile/assets/frog_attack.png');
-PIXI.Assets.add('enemy_death', 'https://churper.github.io/CrittorsPixiMobile/assets/enemy_death.png');
-PIXI.Assets.add('mountain1', 'https://churper.github.io/CrittorsPixiMobile/assets/mountain1.png');
-PIXI.Assets.add('mountain2', 'https://churper.github.io/CrittorsPixiMobile/assets/mountain2.png');
-PIXI.Assets.add('castle', 'https://churper.github.io/CrittorsPixiMobile/assets/castle.png');
-PIXI.Assets.add('clouds', 'https://churper.github.io/CrittorsPixiMobile/assets/clouds.png');
-PIXI.Assets.add('clouds2', 'https://churper.github.io/CrittorsPixiMobile/assets/clouds2.png');
-PIXI.Assets.add('clouds3', 'https://churper.github.io/CrittorsPixiMobile/assets/clouds3.png');
+PIXI.Assets.add({ alias: 'shark_emerge', src: './assets/shark_emerge.png' });
+PIXI.Assets.add({ alias: 'shark_submerge', src: './assets/shark_submerge.png' });
+PIXI.Assets.add({ alias: 'shark_walk', src: './assets/shark_walk.png' });
+PIXI.Assets.add({ alias: 'shark_attack', src: './assets/shark_attack.png' });
+PIXI.Assets.add({ alias: 'pig_walk', src: './assets/pig_walk.png' });
+PIXI.Assets.add({ alias: 'pig_attack', src: './assets/pig_attack.png' });
+PIXI.Assets.add({ alias: 'ele_walk', src: './assets/ele_walk.png' });
+PIXI.Assets.add({ alias: 'ele_attack', src: './assets/ele_attack.png' });
+PIXI.Assets.add({ alias: 'scorp_walk', src: './assets/scorp_walk.png' });
+PIXI.Assets.add({ alias: 'scorp_attack', src: './assets/scorp_attack.png' });
+PIXI.Assets.add({ alias: 'octo_walk', src: './assets/octo_walk.png' });
+PIXI.Assets.add({ alias: 'octo_attack', src: './assets/octo_attack.png' });
+PIXI.Assets.add({ alias: 'toofer_walk', src: './assets/toofer_walk.png' });
+PIXI.Assets.add({ alias: 'toofer_attack', src: './assets/toofer_attack.png' });
+PIXI.Assets.add({ alias: 'bird_egg', src: './assets/bird_egg.png' });
+PIXI.Assets.add({ alias: 'bird_ghost', src: './assets/bird_ghost.png' });
+PIXI.Assets.add({ alias: 'bird_walk', src: './assets/bird_walk.png' });
+PIXI.Assets.add({ alias: 'bird_attack', src: './assets/bird_attack.png' });
+PIXI.Assets.add({ alias: 'snail_ghost', src: './assets/snail_ghost.png' });
+PIXI.Assets.add({ alias: 'bee_ghost', src: './assets/bee_ghost.png' });
+PIXI.Assets.add({ alias: 'bee_walk', src: './assets/bee_walk.png' });
+PIXI.Assets.add({ alias: 'bee_attack', src: './assets/bee_attack.png' });
+PIXI.Assets.add({ alias: 'puffer_walk', src: './assets/puffer_walk.png' });
+PIXI.Assets.add({ alias: 'puffer_attack', src: './assets/puffer_attack.png' });
+PIXI.Assets.add({ alias: 'bean', src: './assets/bean.png' });
+PIXI.Assets.add({ alias: 'background', src: './assets/background.png' });
+PIXI.Assets.add({ alias: 'frog_ghost', src: './assets/frog_ghost.png' });
+PIXI.Assets.add({ alias: 'foreground', src: './assets/foreground.png' });
+PIXI.Assets.add({ alias: 'critter', src: './assets/critter.png' });
+PIXI.Assets.add({ alias: 'critter_walk', src: './assets/critter_walk.png' });
+PIXI.Assets.add({ alias: 'critter_attack', src: './assets/critter_attack.png' });
+PIXI.Assets.add({ alias: 'snail_idle', src: './assets/snail_idle.png' });
+PIXI.Assets.add({ alias: 'snail_walk', src: './assets/snail_walk.png' });
+PIXI.Assets.add({ alias: 'snail_attack', src: './assets/snail_attack.png' });
+PIXI.Assets.add({ alias: 'frog', src: './assets/frog.png' });
+PIXI.Assets.add({ alias: 'frog_walk', src: './assets/frog_walk.png' });
+PIXI.Assets.add({ alias: 'frog_attack', src: './assets/frog_attack.png' });
+PIXI.Assets.add({ alias: 'enemy_death', src: './assets/enemy_death.png' });
+PIXI.Assets.add({ alias: 'mountain1', src: './assets/mountain1.png' });
+PIXI.Assets.add({ alias: 'mountain2', src: './assets/mountain2.png' });
+PIXI.Assets.add({ alias: 'castle', src: './assets/castle.png' });
+PIXI.Assets.add({ alias: 'clouds', src: './assets/clouds.png' });
+PIXI.Assets.add({ alias: 'clouds2', src: './assets/clouds2.png' });
+PIXI.Assets.add({ alias: 'clouds3', src: './assets/clouds3.png' });
 
 // Load the assets and get a resolved promise once all are loaded
 const texturesPromise = PIXI.Assets.load([
@@ -1630,7 +1627,7 @@ backgroundTexture = textures.background;
       console.log(mountain3);
       foreground.x = 0;
       // mountain3.scale.x = 100;
-      const castleTexture = PIXI.Texture.from('castle');
+      const castleTexture = PIXI.Assets.get('castle');
       const castle = new PIXI.Sprite(castleTexture);
       const castlePlayer = new PIXI.Sprite(castleTexture);
       castlePlayer.anchor.set(1, 1);
@@ -1646,19 +1643,12 @@ backgroundTexture = textures.background;
       const hpBarY = app.screen.height - 40 - hpBarHeight - 210; // Adjusted position
       const hpBarBackgroundColor = 0x000000;
       const hpBar = new PIXI.Graphics();
-      hpBar.beginFill(hpBarColor, 1); // Set the alpha value for transparency
-      hpBar.drawRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
-      hpBar.endFill();
+      hpBar.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight).fill({ color: hpBarColor, alpha: 1 });
       const hpBarBackground = new PIXI.Graphics();
       const hpBarBorderColor = 0x000000; // Black color
       const hpBarBorderThickness = 4;
-      hpBarBackground.lineStyle(hpBarBorderThickness, hpBarBorderColor);
-      hpBarBackground.beginFill(hpBarBackgroundColor, 0.5);
-      hpBarBackground.drawRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
-      hpBarBackground.endFill();
-      hpBarBackground.beginFill(hpBarBackgroundColor, 1);
-      hpBarBackground.drawRect(hpBarX + hpBarBorderThickness, hpBarY + hpBarBorderThickness, hpBarWidth - hpBarBorderThickness * 2, hpBarHeight - hpBarBorderThickness * 2);
-      hpBarBackground.endFill();
+      hpBarBackground.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight).fill({ color: hpBarBackgroundColor, alpha: 0.5 }).stroke({ width: hpBarBorderThickness, color: hpBarBorderColor });
+      hpBarBackground.rect(hpBarX + hpBarBorderThickness, hpBarY + hpBarBorderThickness, hpBarWidth - hpBarBorderThickness * 2, hpBarHeight - hpBarBorderThickness * 2).fill({ color: hpBarBackgroundColor, alpha: 1 });
     
 
  
@@ -1695,7 +1685,7 @@ backgroundTexture = textures.background;
       const sharkWalkTextures = createAnimationTextures2('shark_walk', 10, 398, 1398, 1990);
       const sharkAttackTextures = createAnimationTextures2('shark_attack', 21, 398, 3495, 1990);
       sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
-      const backgroundImage = PIXI.Sprite.from('background');
+      const backgroundImage = new PIXI.Sprite(PIXI.Assets.get('background'));
       const clouds = createTilingSprite(cloudsTexture, backgroundImage.width * 30, 200);
       const clouds2 = createTilingSprite(clouds2Texture, backgroundImage.width * 30, 200);
       clouds2.position.y += 100;
@@ -1713,7 +1703,7 @@ backgroundTexture = textures.background;
 
       characterTextures = frogWalkTextures;
       critter = createAnimatedSprite(characterTextures);
-      critter.interactive = true;
+      critter.eventMode = 'static';
 
       critter.textures = frogWalkTextures;
       critter.loop = true;
@@ -1744,7 +1734,7 @@ backgroundTexture = textures.background;
 
         for (let i = 0; i < frameCount; i++) {
           const rect = new PIXI.Rectangle(i * textureWidth, 0, textureWidth, frameHeight);
-          const texture1 = new PIXI.Texture(textures[resourceName], rect);
+          const texture1 = new PIXI.Texture({ source: textures[resourceName].source, frame: rect });
           textures1.push(texture1);
         }
 
@@ -1759,7 +1749,7 @@ backgroundTexture = textures.background;
           const row = Math.floor(i / (sheetWidth / frameWidth));
           const col = i % (sheetWidth / frameWidth);
           const rect = new PIXI.Rectangle(col * frameWidth, row * frameHeight, frameWidth, frameHeight);
-          const texture1 = new PIXI.Texture(textures[resourceName], rect);
+          const texture1 = new PIXI.Texture({ source: textures[resourceName].source, frame: rect });
           textures1.push(texture1);
         }
 
@@ -1790,7 +1780,7 @@ backgroundTexture = textures.background;
       let pointerHoldInterval;
       let activeTouches = 0;
 
-      app.stage.interactive = true;
+      app.stage.eventMode = 'static';
       app.stage.on("pointerdown", handleTouchStart);
       app.stage.on("pointerup", handleTouchEnd);
       app.stage.on("touchendoutside", handleTouchEnd);
@@ -1859,7 +1849,7 @@ backgroundTexture = textures.background;
 
                 if (critter.position.x > castle.position.x - castle.width / 1.1) {
                   console.log("takingDamage");
-                  const greyscaleFilter = new PIXI.filters.ColorMatrixFilter();
+                  const greyscaleFilter = new PIXI.ColorMatrixFilter();
                   const remainingHealthPercentage = castleHealth / castleMaxHealth;
                   const greyscaleFactor = 1 - remainingHealthPercentage;
 
@@ -2011,9 +2001,7 @@ backgroundTexture = textures.background;
         const hpRatio = health / maxHealth;
         const newHpWidth = Math.max(0, hpBarWidth * hpRatio);
         hpBar.clear();
-        hpBar.beginFill(hpBarColor);
-        hpBar.drawRect(hpBarX, hpBarY, newHpWidth, hpBarHeight);
-        hpBar.endFill();
+        hpBar.rect(hpBarX, hpBarY, newHpWidth, hpBarHeight).fill(hpBarColor);
       }
 
 let hasExploded = false;
@@ -2352,7 +2340,7 @@ demiSpawned = 0;
           console.log("getcurrentchat", getCurrentCharacter());
           if (getCurrentCharacter() === "character-bird") {
             playerSpawn.tint = 0x0000ff; // Blue
-            playerSpawn.blendMode = PIXI.BLEND_MODES.ADD;
+            playerSpawn.blendMode = 'add';
             playSpawnAnimation(critter, playerSpawn);
             frogWalkTextures = birdWalkTextures;
             frogIdleTextures = birdWalkTextures;
@@ -2361,7 +2349,7 @@ demiSpawned = 0;
           }
           else if (getCurrentCharacter() === "character-frog") {
             console.log("SWAP TO SNELL");
-            playerSpawn.blendMode = PIXI.BLEND_MODES.ADD;
+            playerSpawn.blendMode = 'add';
             playerSpawn.tint = 0x00ff80; // Light green
             playSpawnAnimation(critter, playerSpawn);
             frogWalkTextures = frogWalkTextures1;
@@ -2371,7 +2359,7 @@ demiSpawned = 0;
 
           }
           else if (getCurrentCharacter() === "character-snail") {
-            playerSpawn.blendMode = PIXI.BLEND_MODES.ADD;
+            playerSpawn.blendMode = 'add';
             playerSpawn.tint = 0x800080; // Dark purple
 
             playSpawnAnimation(critter, playerSpawn);
@@ -2385,7 +2373,7 @@ demiSpawned = 0;
           else if (getCurrentCharacter() === "character-bee") {
             playerSpawn.tint = 0xffff00; // Yellow
 
-            playerSpawn.blendMode = PIXI.BLEND_MODES.ADD;
+            playerSpawn.blendMode = 'add';
             playSpawnAnimation(critter, playerSpawn);
             frogWalkTextures = beeWalkTextures;
             frogIdleTextures = beeWalkTextures;
@@ -3004,18 +2992,18 @@ enemy.isAlive = false;
 
     switch (currentCharacter) {
       case "character-snail":
-        frogGhostPlayer.texture = PIXI.Texture.from("snail_ghost");
+        frogGhostPlayer.texture = PIXI.Assets.get("snail_ghost");
         break;
       case "character-bee":
-        frogGhostPlayer.texture = PIXI.Texture.from("bee_ghost");
+        frogGhostPlayer.texture = PIXI.Assets.get("bee_ghost");
         break;
       case "character-bird":
-        frogGhostPlayer.texture = PIXI.Texture.from("bird_ghost");
+        frogGhostPlayer.texture = PIXI.Assets.get("bird_ghost");
         break;
 
       default:
         // Use a default texture if the character is not recognized
-        frogGhostPlayer.texture = PIXI.Texture.from("frog_ghost");
+        frogGhostPlayer.texture = PIXI.Assets.get("frog_ghost");
         break;
     }
 
@@ -3316,8 +3304,8 @@ enemy.isAlive = false;
     const startY = damageText.position.y; // Adjust the starting Y position as needed
     const duration = 100; // Animation duration in milliseconds
     let elapsed = 0; // Elapsed time
-    const update = (delta) => {
-      elapsed += delta;
+    const update = (ticker) => {
+      elapsed += ticker.deltaTime;
 
       if (elapsed >= duration) {
         app.ticker.remove(update); // Stop the ticker update
@@ -3410,9 +3398,9 @@ enemy.isAlive = false;
     const startY = damageText.position.y; // Adjust the starting Y position as needed
     const duration = 100; // Animation duration in milliseconds
     let elapsed = 0; // Elapsed time
-    const update = (delta) => {
-      elapsed += delta;
-  
+    const update = (ticker) => {
+      elapsed += ticker.deltaTime;
+
       if (elapsed >= duration) {
         app.ticker.remove(update); // Stop the ticker update
         app.stage.removeChild(damageText); // Remove hitsplat after animation
@@ -3422,7 +3410,7 @@ enemy.isAlive = false;
         damageText.alpha = 1 - progress; // Update the alpha (opacity) based on progress
       }
     };
-  
+
     app.ticker.add(update); // Start the ticker update for hitsplat animation
   }
 
@@ -3472,7 +3460,7 @@ enemy.isAlive = false;
     const coffeeContainer = new PIXI.Container();
 
     // Get the bean texture from the loaded resources
-    const beanTexture = PIXI.Texture.from('bean');
+    const beanTexture = PIXI.Assets.get('bean');
 
     // Generate a random number between 1 and 10 for the number of coffee beans
     const numBeans = Math.floor(Math.random() * 15 + currentRound * 2) + 1;
@@ -3671,15 +3659,11 @@ enemy.isAlive = false;
       console.log("HELLO");
 
       enemy.hpBarBackground = new PIXI.Graphics();
-      enemy.hpBarBackground.beginFill(0x000000, 0.5);
-      enemy.hpBarBackground.drawRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
-      enemy.hpBarBackground.endFill();
+      enemy.hpBarBackground.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight).fill({ color: 0x000000, alpha: 0.5 });
       enemy.hpBarContainer.addChild(enemy.hpBarBackground);
 
       enemy.hpBar = new PIXI.Graphics();
-      enemy.hpBar.beginFill(0xff0000, 0.75);
-      enemy.hpBar.drawRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
-      enemy.hpBar.endFill();
+      enemy.hpBar.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight).fill({ color: 0xff0000, alpha: 0.75 });
       enemy.hpBarContainer.addChild(enemy.hpBar);
       enemy.hpBarBackground.position.set(hpBarX, hpBarY);
       enemy.hpBar.position.set(hpBarX, hpBarY);
@@ -3695,9 +3679,7 @@ enemy.isAlive = false;
     console.log("HPY", hpBarY);
 
     enemy.hpBar.clear();
-    enemy.hpBar.beginFill(0xff0000, 0.75);
-    enemy.hpBar.drawRect(hpBarX + hpBarWidth - hpBarWidthActual, hpBarY, hpBarWidthActual, hpBarHeight);
-    enemy.hpBar.endFill();
+    enemy.hpBar.rect(hpBarX + hpBarWidth - hpBarWidthActual, hpBarY, hpBarWidthActual, hpBarHeight).fill({ color: 0xff0000, alpha: 0.75 });
   }
 
   function handlePlayClick() {

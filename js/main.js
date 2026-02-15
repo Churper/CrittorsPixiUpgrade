@@ -1399,14 +1399,21 @@ let cantGainEXP = false;
                 critter.position.y = state.stored;
               }
             } else {
-              // Celebration! Both characters bounce together
+              // Celebration! Slow bouncy hops + flip direction back and forth
               const elapsed = Date.now() - unlockAnimSprite.celebrateStart;
-              const bounce = Math.sin(elapsed * 0.012) * 10;
-              unlockAnimSprite.position.y = state.stored + bounce;
-              critter.position.y = state.stored - bounce; // Opposite phase
+              const bounce = Math.sin(elapsed * 0.006) * 18;
+              unlockAnimSprite.position.y = state.stored - Math.abs(bounce);
+              critter.position.y = state.stored - Math.abs(Math.sin((elapsed * 0.006) + Math.PI)) * 18;
 
-              // After 2 seconds, fade out and clean up
-              if (elapsed > 2000) {
+              // Flip facing direction each bounce cycle
+              const flipCycle = Math.sin(elapsed * 0.006);
+              unlockAnimSprite.scale.x = flipCycle > 0 ? -Math.abs(unlockAnimSprite.scale.x) : Math.abs(unlockAnimSprite.scale.x);
+              critter.scale.x = flipCycle > 0 ? -Math.abs(critter.scale.x) : Math.abs(critter.scale.x);
+
+              // After 3 seconds, fade out and clean up
+              if (elapsed > 3000) {
+                // Reset critter facing direction
+                critter.scale.x = Math.abs(critter.scale.x);
                 unlockAnimSprite.alpha -= 0.04;
                 critter.position.y = state.stored; // Reset player position
                 if (unlockAnimSprite.alpha <= 0) {

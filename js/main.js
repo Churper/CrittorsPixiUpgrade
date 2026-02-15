@@ -1106,6 +1106,7 @@ backgroundTexture = textures.background;
       }
 
 let hasExploded = false;
+let unlockAnimSprite = null;
       // Damage function
       function castleExpDrop(damage){
         expToGive = Math.round(damage * 0.75);
@@ -1201,7 +1202,28 @@ let cantGainEXP = false;
         const newChar = unlocks[state.currentRound];
         if (newChar && !state.unlockedCharacters.includes(newChar)) {
           state.unlockedCharacters.push(newChar);
-          showUnlockText(newChar);
+
+          // Prepare unlock walk-out sprite (added to stage after explosions)
+          const unlockTexMap = {
+            'character-snail': snailWalkTextures,
+            'character-bird': birdWalkTextures,
+            'character-bee': beeWalkTextures,
+          };
+          const texs = unlockTexMap[newChar];
+          if (texs) {
+            unlockAnimSprite = new PIXI.AnimatedSprite(texs);
+            unlockAnimSprite.scale.set(0.05);
+            unlockAnimSprite.anchor.set(0.5, 0.5);
+            unlockAnimSprite.position.set(
+              castle.position.x - castle.width / 2,
+              state.stored
+            );
+            unlockAnimSprite.animationSpeed = 0.2;
+            unlockAnimSprite.loop = true;
+            unlockAnimSprite.scale.x *= -1; // Face left toward base
+            unlockAnimSprite.zIndex = 10000;
+            unlockAnimSprite.unlockChar = newChar;
+          }
         }
 
         // Rebuild enemy types for the new round
@@ -1218,10 +1240,10 @@ let cantGainEXP = false;
         for (let i = 0; i < 7; i++) {
             // Create a new explosion sprite for each explosion
             const explosion = createAnimatedSprite(castleDeathTextures);
-    
+
             // Customize the position, size, speed, and tint of each explosion
             explosion.position.set(
-                castle.position.x + Math.random() * 70 - 25 - 140, 
+                castle.position.x + Math.random() * 70 - 25 - 140,
                 castle.position.y - 100 + Math.random() * 70 - 25
             );
             if (i === 6) { // Conditions for the last explosion
@@ -1237,18 +1259,23 @@ let cantGainEXP = false;
           explosion.loop=false;
             // Add the explosion sprite to the stage
             app.stage.addChild(explosion);
-    
+
             // Play the explosion animation
             explosion.gotoAndPlay(0);
-    
+
             // Remove the explosion animation after it completes
             explosion.onComplete = () => {
                 app.stage.removeChild(explosion);
                 completedExplosions++; // Increment the counter when an explosion completes
 
                 if (completedExplosions === 7) { // All explosions completed
+                  // Spawn unlock character walking out of the rubble
+                  if (unlockAnimSprite) {
+                    app.stage.addChild(unlockAnimSprite);
+                    unlockAnimSprite.play();
+                    showUnlockText(unlockAnimSprite.unlockChar);
+                  }
                   state.roundOver = true;
-                
               }
             };
         }
@@ -1332,6 +1359,23 @@ let cantGainEXP = false;
           mountain2.position.x += velocity.x * mountain2Speed;
           mountain3.position.x += velocity.x * mountain3Speed;
           mountain4.position.x += velocity.x * mountain4Speed;
+
+          // Animate unlock character walking out of castle toward base
+          if (unlockAnimSprite && app.stage.children.includes(unlockAnimSprite)) {
+            // Grow from tiny to full size (squirm out effect)
+            const targetScale = 0.35;
+            const currentScale = Math.abs(unlockAnimSprite.scale.x);
+            if (currentScale < targetScale) {
+              const growStep = 0.005;
+              const newScale = Math.min(currentScale + growStep, targetScale);
+              unlockAnimSprite.scale.set(newScale);
+              unlockAnimSprite.scale.x *= -1; // Keep facing left
+            }
+            // Walk left toward base with a slight bounce
+            unlockAnimSprite.position.x -= 4;
+            unlockAnimSprite.position.y = state.stored + Math.sin(Date.now() * 0.008) * 3;
+          }
+
           // Return if the camera has reached the target position
           if (app.stage.x === targetX && app.stage.y === targetY) {
 
@@ -1362,6 +1406,12 @@ let cantGainEXP = false;
                 // Remove the enemy from the enemies array
                 enemies.splice(i, 1);
                 i--; // Decrement i to adjust for the removed enemy
+              }
+              // Clean up unlock walk-out sprite
+              if (unlockAnimSprite) {
+                app.stage.removeChild(unlockAnimSprite);
+                unlockAnimSprite.destroy();
+                unlockAnimSprite = null;
               }
               state.exploded = false;
               buildEnemyTypes();

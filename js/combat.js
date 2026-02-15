@@ -712,7 +712,7 @@ export function drawHitSplat(enemy) {
   hitSound.play();
 
   // Color-coded damage text
-  let fillColor = "rgb(255, 255, 255)";      // normal: white
+  let fillColor = "rgb(255, 100, 80)";        // normal: warm red
   if (damage > baseDamage) fillColor = "rgb(255, 215, 0)";  // crit: gold
   if (damage < baseDamage) fillColor = "rgb(160, 160, 160)"; // dud: grey
 

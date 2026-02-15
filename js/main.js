@@ -2146,7 +2146,8 @@ state.demiSpawned = 0;
       document.getElementById("weather-icon").style.visibility = "visible";
       updateWeatherIcon();
       createWeatherEffects();
-      document.getElementById("potion-area").style.visibility = "visible";
+      document.getElementById("potion-button").style.visibility = "visible";
+      document.getElementById("potion-shop").style.visibility = "visible";
       updatePotionUI();
       critter.scale.set(getFrogSize());
 

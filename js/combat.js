@@ -900,24 +900,31 @@ export function createCoffeeDrop(x, y) {
     const stageTargetY = -state.app.stage.position.y + screenTargetY;
 
     beans.forEach((bean, i) => {
-      const delay = i * 30; // stagger each bean
+      const delay = i * 40; // stagger each bean
       const startX = bean.x;
       const startY = bean.y;
       const startScale = bean.scale.x;
+      // Control point for quadratic bezier — arcs up and to the right
+      const cpX = startX + (stageTargetX - startX) * 0.3;
+      const cpY = Math.min(startY, stageTargetY) - 200 - Math.random() * 100;
       const flyStart = Date.now() + delay;
 
       const flyUpdate = () => {
         const elapsed = Date.now() - flyStart;
         if (elapsed < 0) { requestAnimationFrame(flyUpdate); return; }
         const progress = Math.min(elapsed / flyDuration, 1);
-        // Ease-in curve for snappy arrival
-        const ease = progress * progress;
+        // Ease-in-out for smooth arc
+        const t = progress < 0.5
+          ? 2 * progress * progress
+          : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-        bean.x = startX + (stageTargetX - startX) * ease;
-        bean.y = startY + (stageTargetY - startY) * ease;
-        bean.scale.set(startScale * (1 - ease * 0.8));
-        bean.rotation += 0.15;
-        bean.alpha = 1 - ease * 0.5;
+        // Quadratic bezier: (1-t)^2*start + 2*(1-t)*t*cp + t^2*end
+        const oneMinusT = 1 - t;
+        bean.x = oneMinusT * oneMinusT * startX + 2 * oneMinusT * t * cpX + t * t * stageTargetX;
+        bean.y = oneMinusT * oneMinusT * startY + 2 * oneMinusT * t * cpY + t * t * stageTargetY;
+        bean.scale.set(startScale * (1 - t * 0.7));
+        bean.rotation += 0.2;
+        bean.alpha = t < 0.8 ? 1 : 1 - (t - 0.8) * 5;
 
         if (progress >= 1) {
           bean.visible = false;
@@ -933,7 +940,7 @@ export function createCoffeeDrop(x, y) {
       state.app.stage.removeChild(coffeeContainer);
       coffeeContainer.destroy({ children: true });
       createCoffeeDropText(x, y + 50, numBeans);
-    }, flyDuration + beans.length * 30 + 100);
+    }, flyDuration + beans.length * 40 + 100);
 
   }, fallDuration + 300);
 

@@ -1343,10 +1343,12 @@ let cantGainEXP = false;
             //document.getElementById("pause-text").style.visibility = "hidden";
           }
 
-          // Camera speed: fast during unlock walk so it reaches base first, freeze during celebration
+          // Camera: fast pan during unlock walk, keep panning to 0 during celebration
           const unlockActive = unlockAnimSprite && app.stage.children.includes(unlockAnimSprite);
           const celebrating = unlockActive && unlockAnimSprite.celebrating;
-          const cameraSpeed = celebrating ? 0 : (unlockActive ? 10 : 6);
+          // Keep panning during celebration until camera reaches 0, then freeze
+          const cameraAtTarget = Math.abs(app.stage.x) < 2 && Math.abs(app.stage.y) < 2;
+          const cameraSpeed = (celebrating && cameraAtTarget) ? 0 : (unlockActive ? 10 : 6);
 
           // Calculate the target position (start position)
           const targetX = 0;
@@ -1368,9 +1370,10 @@ let cantGainEXP = false;
           mountain3.position.x += velocity.x * mountain3Speed;
           mountain4.position.x += velocity.x * mountain4Speed;
 
-          // Animate unlock character walking out of castle toward base
+          // Animate unlock character walking out of castle toward player's base
           if (unlockActive) {
-            const baseX = app.screen.width / 5; // Walk to the base area
+            // Stop at the player's starting castle area (x=250), not past it
+            const celebrationX = 300;
 
             if (!unlockAnimSprite.celebrating) {
               // Grow from tiny to full size (squirm out effect)
@@ -1382,17 +1385,17 @@ let cantGainEXP = false;
                 unlockAnimSprite.scale.set(newScale);
                 unlockAnimSprite.scale.x *= -1; // Keep facing left
               }
-              // Walk left toward base (not critter — critter is still at castle)
+              // Walk left toward the player's castle
               unlockAnimSprite.position.x -= 6;
               unlockAnimSprite.position.y = state.stored + Math.sin(Date.now() * 0.008) * 3;
 
-              // Reached the base — start celebration!
-              if (unlockAnimSprite.position.x <= baseX) {
+              // Reached the player's castle — start celebration!
+              if (unlockAnimSprite.position.x <= celebrationX) {
                 unlockAnimSprite.celebrating = true;
                 unlockAnimSprite.celebrateStart = Date.now();
-                unlockAnimSprite.position.x = baseX;
-                // Snap critter to base to celebrate together
-                critter.position.x = baseX - 60;
+                unlockAnimSprite.position.x = celebrationX;
+                // Snap critter next to the unlock character
+                critter.position.x = celebrationX - 70;
                 critter.position.y = state.stored;
               }
             } else {

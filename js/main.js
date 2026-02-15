@@ -1397,6 +1397,38 @@ let cantGainEXP = false;
                 // Snap critter next to the unlock character
                 critter.position.x = celebrationX - 70;
                 critter.position.y = state.stored;
+
+                // Spawn 🥳 emoji above them
+                const partyEmoji = new PIXI.Text('\u{1F973}', { fontSize: 64 });
+                partyEmoji.anchor.set(0.5);
+                partyEmoji.position.set(celebrationX - 35, state.stored - 80);
+                partyEmoji.zIndex = 99999;
+                app.stage.addChild(partyEmoji);
+                unlockAnimSprite.partyEmoji = partyEmoji;
+
+                // Spawn confetti particles
+                const confettiContainer = new PIXI.Container();
+                confettiContainer.zIndex = 99998;
+                app.stage.addChild(confettiContainer);
+                unlockAnimSprite.confettiContainer = confettiContainer;
+                const confettiColors = [0xFF4444, 0x44BB44, 0x4488FF, 0xFFDD00, 0xFF88DD, 0xFF8800, 0xAA44FF];
+                for (let i = 0; i < 40; i++) {
+                  const particle = new PIXI.Graphics();
+                  const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+                  const w = 4 + Math.random() * 6;
+                  const h = 3 + Math.random() * 5;
+                  particle.rect(-w / 2, -h / 2, w, h).fill(color);
+                  particle.position.set(
+                    celebrationX - 100 + Math.random() * 200,
+                    state.stored - 120 - Math.random() * 80
+                  );
+                  particle.vx = (Math.random() - 0.5) * 3;
+                  particle.vy = -2 + Math.random() * 2;
+                  particle.gravity = 0.08 + Math.random() * 0.04;
+                  particle.spin = (Math.random() - 0.5) * 0.15;
+                  particle.drift = (Math.random() - 0.5) * 0.3;
+                  confettiContainer.addChild(particle);
+                }
               }
             } else {
               // Celebration! Slow bouncy hops + flip direction back and forth
@@ -1410,13 +1442,49 @@ let cantGainEXP = false;
               unlockAnimSprite.scale.x = flipCycle > 0 ? -Math.abs(unlockAnimSprite.scale.x) : Math.abs(unlockAnimSprite.scale.x);
               critter.scale.x = flipCycle > 0 ? -Math.abs(critter.scale.x) : Math.abs(critter.scale.x);
 
+              // Animate 🥳 emoji — float up and bob
+              if (unlockAnimSprite.partyEmoji) {
+                const pe = unlockAnimSprite.partyEmoji;
+                pe.position.y -= 0.3;
+                pe.rotation = Math.sin(elapsed * 0.005) * 0.2;
+                pe.scale.set(1 + Math.sin(elapsed * 0.008) * 0.1);
+              }
+
+              // Animate confetti — fall, tumble, drift
+              if (unlockAnimSprite.confettiContainer) {
+                for (const p of unlockAnimSprite.confettiContainer.children) {
+                  p.vy += p.gravity;
+                  p.vx += p.drift * 0.02;
+                  p.position.x += p.vx;
+                  p.position.y += p.vy;
+                  p.rotation += p.spin;
+                  // Slow down sideways drift for flutter effect
+                  p.vx *= 0.995;
+                }
+              }
+
               // After 3 seconds, fade out and clean up
               if (elapsed > 3000) {
                 // Reset critter facing direction
                 critter.scale.x = Math.abs(critter.scale.x);
                 unlockAnimSprite.alpha -= 0.04;
                 critter.position.y = state.stored; // Reset player position
+
+                // Fade confetti and emoji too
+                if (unlockAnimSprite.partyEmoji) unlockAnimSprite.partyEmoji.alpha -= 0.04;
+                if (unlockAnimSprite.confettiContainer) unlockAnimSprite.confettiContainer.alpha -= 0.04;
+
                 if (unlockAnimSprite.alpha <= 0) {
+                  // Clean up confetti
+                  if (unlockAnimSprite.confettiContainer) {
+                    app.stage.removeChild(unlockAnimSprite.confettiContainer);
+                    unlockAnimSprite.confettiContainer.destroy({ children: true });
+                  }
+                  // Clean up emoji
+                  if (unlockAnimSprite.partyEmoji) {
+                    app.stage.removeChild(unlockAnimSprite.partyEmoji);
+                    unlockAnimSprite.partyEmoji.destroy();
+                  }
                   app.stage.removeChild(unlockAnimSprite);
                   unlockAnimSprite.destroy();
                   unlockAnimSprite = null;

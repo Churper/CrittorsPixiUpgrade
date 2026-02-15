@@ -673,10 +673,10 @@ texturesPromise.then((texturesPromise) => {
       // Add the state.timer animation to the stage
 
 
-      backgroundTexture = textures.background;
+      let backgroundTexture = textures.background;
 
 // Create first background sprite
-background = new PIXI.Sprite(backgroundTexture);
+let background = new PIXI.Sprite(backgroundTexture);
 background.width = 2800;
 background.height = app.screen.height;
 background.anchor.set(0, 0);
@@ -684,7 +684,7 @@ background.position.set(0, 0);
 app.stage.addChild(background);
 
 
-foregroundTexture = textures.foreground;
+const foregroundTexture = textures.foreground;
 // Set up the foreground
 foreground = new PIXI.Sprite(foregroundTexture);
 foreground.width = foreground.texture.width * 1.3;

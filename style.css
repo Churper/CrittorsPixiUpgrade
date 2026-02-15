@@ -96,6 +96,22 @@ touch-action: manipulation;
 
 }
 
+#unlock-text {
+  position: fixed;
+  top: 40%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 2.5em;
+  color: gold;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.5s;
+  text-shadow: 2px 2px 4px black;
+  z-index: 9999;
+  pointer-events: none;
+}
+
 #pause-button {
   visibility: hidden;
   /* Initially hidden */

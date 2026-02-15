@@ -130,6 +130,7 @@ export function createGarbageButton(backgroundSprite) {
   garbageButton.on('pointerdown', () => {
     alert("DELETED");
     localStorage.removeItem('gameSave');
+    state.unlockedCharacters = ['character-frog'];
   });
 
   return garbageButton;
@@ -264,7 +265,10 @@ export function openCharacterMenu() {
     state.isCharacterMenuOpen = false;
   } else {
     characterBoxes.forEach((box) => {
-      if (state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
+      const charClass = box.classList[1];
+      if (!state.unlockedCharacters.includes(charClass)) {
+        box.style.visibility = 'hidden';
+      } else if (state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
         box.style.visibility = 'hidden';
       } else {
         box.style.visibility = 'visible';

@@ -60,6 +60,7 @@ export function saveGame() {
     birdEXPToLevel: state.birdEXPToLevel,
     musicVolume: state.musicVolume,
     effectsVolume: state.effectsVolume,
+    unlockedCharacters: state.unlockedCharacters,
   };
 
   const saveData = JSON.stringify(gameData);
@@ -162,6 +163,10 @@ export function loadGame() {
     }
     if (gameData.effectsVolume !== undefined) {
       state.effectsVolume = gameData.effectsVolume;
+    }
+
+    if (gameData.unlockedCharacters) {
+      state.unlockedCharacters = gameData.unlockedCharacters;
     }
 
     state.roundOver = false;

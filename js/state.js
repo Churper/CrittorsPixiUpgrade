@@ -69,6 +69,7 @@ const state = {
   isAttackingChar: false,
   isGameStarted: false,
   initialClouds: 0,
+  unlockedCharacters: ['character-frog'],
 
   // EXP
   frogEXP: 0,
@@ -350,3 +351,7 @@ export function getPlayerCurrentHealth() {
 export function getisPaused() {
   return state.isPaused;
 }
+
+// Unlocked Characters
+export function getUnlockedCharacters() { return state.unlockedCharacters; }
+export function setUnlockedCharacters(value) { state.unlockedCharacters = value; }

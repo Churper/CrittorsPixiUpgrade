@@ -93,7 +93,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
  function spawnDemi()
  {
-
+  if (state.currentRound < 3) return;
   console.log("running 1 DEMO HERE");
   if(state.demiSpawned === 0)
   {
@@ -1178,9 +1178,34 @@ let hasExploded = false;
         updateHPBar(castleHealth, castleMaxHealth);
       }
 let cantGainEXP = false;
+      function showUnlockText(characterType) {
+        const names = {
+          'character-snail': '\u{1F40C} Snail',
+          'character-bird': '\u{1F99A} Bird',
+          'character-bee': '\u{1F41D} Bee'
+        };
+        const el = document.getElementById('unlock-text');
+        el.textContent = names[characterType] + ' Unlocked!';
+        el.style.visibility = 'visible';
+        el.style.opacity = '1';
+        setTimeout(() => { el.style.opacity = '0'; }, 2000);
+        setTimeout(() => { el.style.visibility = 'hidden'; }, 2500);
+      }
+
       function castleExplode() {
         cantGainEXP = true;
         state.currentRound++;
+
+        // Check for character unlocks
+        const unlocks = { 2: 'character-snail', 5: 'character-bird', 10: 'character-bee' };
+        const newChar = unlocks[state.currentRound];
+        if (newChar && !state.unlockedCharacters.includes(newChar)) {
+          state.unlockedCharacters.push(newChar);
+          showUnlockText(newChar);
+        }
+
+        // Rebuild enemy types for the new round
+        buildEnemyTypes();
         setEnemiesInRange(0);
         console.log("enemies has been updated to", getEnemiesInRange())
         resetEnemiesState();
@@ -1339,6 +1364,7 @@ let cantGainEXP = false;
                 i--; // Decrement i to adjust for the removed enemy
               }
               state.exploded = false;
+              buildEnemyTypes();
               saveGame();
 
               cantGainEXP=false;
@@ -1606,7 +1632,10 @@ state.demiSpawned = 0;
           state.isCharacterMenuOpen = false;
         } else {
           characterBoxes.forEach((box) => {
-            if (state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
+            const charClass = box.classList[1];
+            if (!state.unlockedCharacters.includes(charClass)) {
+              box.style.visibility = 'hidden';
+            } else if (state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
               box.style.visibility = 'hidden';
             } else {
               box.style.visibility = 'visible';
@@ -1621,17 +1650,20 @@ state.demiSpawned = 0;
       }
       app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
 
-      state.enemyTypes = [
-        { attackTextures: pigAttackTextures, walkTextures: pigWalkTextures, name: "pig" },
-        { attackTextures: octoAttackTextures, walkTextures: octoWalkTextures, name: "octo" },
-        { attackTextures: eleAttackTextures, walkTextures: eleWalkTextures, name: "ele" },
-        { attackTextures: critterAttackTextures, walkTextures: critterWalkTextures, name: "imp" },
-        { attackTextures: pufferAttackTextures, walkTextures: pufferWalkTextures, name: "puffer" },
-        { attackTextures: scorpAttackTextures, walkTextures: scorpWalkTextures, name: "scorp" },
-        { attackTextures: tooferAttackTextures, walkTextures: tooferWalkTextures, name: "toofer" },
-        { attackTextures: sharkAttackTextures, walkTextures: sharkWalkTextures, name: "shark" }
-
-      ];
+      function buildEnemyTypes() {
+        const allEnemies = [
+          { attackTextures: critterAttackTextures, walkTextures: critterWalkTextures, name: "imp", minRound: 1 },
+          { attackTextures: scorpAttackTextures, walkTextures: scorpWalkTextures, name: "scorp", minRound: 1 },
+          { attackTextures: tooferAttackTextures, walkTextures: tooferWalkTextures, name: "toofer", minRound: 2 },
+          { attackTextures: pufferAttackTextures, walkTextures: pufferWalkTextures, name: "puffer", minRound: 4 },
+          { attackTextures: sharkAttackTextures, walkTextures: sharkWalkTextures, name: "shark", minRound: 5 },
+          { attackTextures: pigAttackTextures, walkTextures: pigWalkTextures, name: "pig", minRound: 6 },
+          { attackTextures: octoAttackTextures, walkTextures: octoWalkTextures, name: "octo", minRound: 7 },
+          { attackTextures: eleAttackTextures, walkTextures: eleWalkTextures, name: "ele", minRound: 8 },
+        ];
+        state.enemyTypes = allEnemies.filter(e => state.currentRound >= e.minRound);
+      }
+      buildEnemyTypes();
 
       // Resize handler — adapts to rotation and window changes
       function handleResize() {

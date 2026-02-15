@@ -407,7 +407,10 @@ export function playGhostFly() {
           // Hide the character info boxes
           const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
           characterBoxes.forEach((box) => {
-            if (box.classList.contains(state.selectedCharacter)) {
+            const charClass = box.classList[1];
+            if (!state.unlockedCharacters.includes(charClass)) {
+              box.style.visibility = 'hidden';
+            } else if (box.classList.contains(state.selectedCharacter)) {
               box.style.visibility = 'hidden';
             } else {
               box.style.visibility = 'visible';
@@ -608,26 +611,27 @@ export function drawCharHitSplat(critter, enemy) {
 
   damageText.anchor.set(0.5);
   damageText.position.set(critter.position.x - 40, critter.position.y - 60);
+  damageText.zIndex = 99999;
   state.app.stage.addChild(damageText);
 
   // Animate the hitsplat
-  const startY = damageText.position.y; // Adjust the starting Y position as needed
-  const duration = 100; // Animation duration in milliseconds
-  let elapsed = 0; // Elapsed time
+  const startY = damageText.position.y;
+  const duration = 100;
+  let elapsed = 0;
   const update = (ticker) => {
     elapsed += ticker.deltaTime;
 
     if (elapsed >= duration) {
-      state.app.ticker.remove(update); // Stop the ticker update
-      state.app.stage.removeChild(damageText); // Remove hitsplat after animation
+      state.app.ticker.remove(update);
+      state.app.stage.removeChild(damageText);
     } else {
       const progress = elapsed / duration;
-      damageText.position.y = startY - (progress * 30); // Update the Y position based on progress
-      damageText.alpha = 1 - progress/3; // Update the alpha (opacity) based on progress
+      damageText.position.y = startY - (progress * 30);
+      damageText.alpha = 1 - progress/3;
     }
   };
 
-  state.app.ticker.add(update); // Start the ticker update for hitsplat animation
+  state.app.ticker.add(update);
 }
 
 
@@ -642,12 +646,22 @@ export function drawHitSplat(enemy) {
   const characterType = getCurrentCharacter();
   const enemyType = enemy.type;
 
+  // Compute base damage (no multiplier) for crit/dud detection
+  let baseDamage;
+  switch (characterType) {
+    case 'character-snail': baseDamage = Math.round(getSnailDamage()); break;
+    case 'character-bird': baseDamage = Math.round(getBirdDamage()); break;
+    case 'character-frog': baseDamage = Math.round(getFrogDamage()); break;
+    case 'character-bee': baseDamage = Math.round(getBeeDamage()); break;
+    default: baseDamage = 0;
+  }
+
   switch (characterType) {
     case 'character-snail':
       if (enemyType === 'imp' || enemyType === 'toofer') {
-        damage = Math.round(getSnailDamage() * 1.75); // Half damage for weak against enemy.type toofer
+        damage = Math.round(getSnailDamage() * 1.75);
       } else if (enemyType === 'scorp') {
-        damage = Math.round(getSnailDamage() * .75); // Double damage for strong against enemy.type scorp and puffer
+        damage = Math.round(getSnailDamage() * .75);
       } else {
         damage = Math.round(getSnailDamage());
       }
@@ -655,9 +669,9 @@ export function drawHitSplat(enemy) {
       break;
     case 'character-bird':
       if (enemyType === 'imp' || enemyType === 'toofer') {
-        damage = Math.round(getBirdDamage() * 0.3); // 1/4 damage for weak against enemy.type imp and toofer
+        damage = Math.round(getBirdDamage() * 0.3);
       } else if (enemyType === 'shark' || enemyType === 'puffer') {
-        damage = Math.round(getBirdDamage() * 1.75); // Double damage for strong against enemy.type shark and octo
+        damage = Math.round(getBirdDamage() * 1.75);
       } else {
         damage = Math.round(getBirdDamage());
       }
@@ -665,9 +679,9 @@ export function drawHitSplat(enemy) {
       break;
     case 'character-frog':
       if (enemyType === 'pig' || enemyType === 'scorp') {
-        damage = Math.round(getFrogDamage() * 1.75); // Double damage for strong against enemy.type pig and scorp
+        damage = Math.round(getFrogDamage() * 1.75);
       } else if (enemyType === 'puffer') {
-        damage = Math.round(getFrogDamage() * 0.75); // Half damage for weak against enemy.type ele and octo
+        damage = Math.round(getFrogDamage() * 0.75);
       } else {
         damage = Math.round(getFrogDamage());
       }
@@ -687,11 +701,26 @@ export function drawHitSplat(enemy) {
       console.log('Invalid character type');
   }
 
+  // Pitch-shifted attack sound for crit/dud feedback
+  const hitSound = state.attackSound.cloneNode();
+  hitSound.volume = state.effectsVolume;
+  if (damage > baseDamage) {
+    hitSound.playbackRate = 1.5; // Crit: higher pitch
+  } else if (damage < baseDamage) {
+    hitSound.playbackRate = 0.6; // Dud: lower pitch
+  }
+  hitSound.play();
+
+  // Color-coded damage text
+  let fillColor = "rgb(240, 70, 60)";       // normal
+  if (damage > baseDamage) fillColor = "rgb(180, 20, 20)";  // crit
+  if (damage < baseDamage) fillColor = "rgb(160, 160, 160)"; // dud
+
   drawEnemyHPBar(enemy);
   updateEnemyGrayscale(enemy.currentHP);
   const damageText = new PIXI.Text(`${-damage}`, {
     fontSize: 24,
-    fill: "rgb(240, 70, 60)", // This is a slightly more red color.
+    fill: fillColor,
     fontWeight: "bold",
     stroke: "#000",
     strokeThickness: 3,
@@ -700,26 +729,27 @@ export function drawHitSplat(enemy) {
 
   damageText.anchor.set(0.5);
   damageText.position.set(enemy.position.x + 40, enemy.position.y - 30);
+  damageText.zIndex = 99999;
   state.app.stage.addChild(damageText);
 
   // Animate the hitsplat
-  const startY = damageText.position.y; // Adjust the starting Y position as needed
-  const duration = 100; // Animation duration in milliseconds
-  let elapsed = 0; // Elapsed time
+  const startY = damageText.position.y;
+  const duration = 100;
+  let elapsed = 0;
   const update = (ticker) => {
     elapsed += ticker.deltaTime;
 
     if (elapsed >= duration) {
-      state.app.ticker.remove(update); // Stop the ticker update
-      state.app.stage.removeChild(damageText); // Remove hitsplat after animation
+      state.app.ticker.remove(update);
+      state.app.stage.removeChild(damageText);
     } else {
       const progress = elapsed / duration;
-      damageText.position.y = startY - progress * 30; // Update the Y position based on progress
-      damageText.alpha = 1 - progress; // Update the alpha (opacity) based on progress
+      damageText.position.y = startY - progress * 30;
+      damageText.alpha = 1 - progress;
     }
   };
 
-  state.app.ticker.add(update); // Start the ticker update for hitsplat animation
+  state.app.ticker.add(update);
 }
 
 

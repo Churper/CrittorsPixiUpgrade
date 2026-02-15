@@ -298,8 +298,17 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const type = getWeatherType();
 
     if (type === 'sun' && weatherSun) {
+      // Track paused time so sun doesn't move during pause
+      if (getisPaused()) {
+        if (!weatherSun.pauseStart) weatherSun.pauseStart = Date.now();
+        return;
+      } else if (weatherSun.pauseStart) {
+        weatherSun.totalPaused = (weatherSun.totalPaused || 0) + (Date.now() - weatherSun.pauseStart);
+        weatherSun.pauseStart = null;
+      }
+
       // Arc the sun across the sky over 60 seconds
-      const elapsed = Date.now() - weatherSun.startTime;
+      const elapsed = Date.now() - weatherSun.startTime - (weatherSun.totalPaused || 0);
       const duration = 60000;
       // Don't cap — let sun keep sinking below the horizon after timer ends
       const progress = elapsed / duration;
@@ -2168,12 +2177,16 @@ state.demiSpawned = 0;
       mountain1.zIndex = 1;
       mountain2.zIndex = 1;
       mountain3.zIndex = 1;
+      clouds.zIndex = 2;
+      clouds2.zIndex = 2;
       // Sun weather goes at zIndex 3 (between mountains and foreground)
       foreground.zIndex = 5;
       castle.zIndex = 6;
+      castlePlayer.zIndex = 6;
       critter.zIndex = 10;
-      clouds.zIndex = 2;
-      clouds2.zIndex = 2;
+      hpBarBackground.zIndex = 12;
+      hpBar.zIndex = 12;
+      state.enemyDeath.zIndex = 15;
 
       function buildEnemyTypes() {
         const allEnemies = [

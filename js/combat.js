@@ -843,6 +843,7 @@ export function createCoffeeDrop(x, y) {
   }
 
   // Add the state.coffee container to the stage or another container in your application
+  coffeeContainer.zIndex = 15;
   state.app.stage.addChild(coffeeContainer);
 
   // Start a state.timer to remove the state.coffee beans after the specified duration
@@ -866,6 +867,7 @@ export function playSpawnAnimation(critter, critterSpawn) {
   stopFlashing();
 
   critterSpawn.position.set(critter.position.x, critter.position.y);
+  critterSpawn.zIndex = 15;
   state.app.stage.addChild(critterSpawn);
 
 
@@ -921,6 +923,7 @@ export function playDeathAnimation(enemy, critter) {
 
   // Add the death animation sprite to the stage
   state.enemyDeath.position.set(enemy.position.x, enemy.position.y);
+  state.enemyDeath.zIndex = 15;
   state.app.stage.addChild(state.enemyDeath);
   const expDropText = enemy.exp;
   const expDrop = new PIXI.Text("+" + enemy.exp + " EXP", {

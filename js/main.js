@@ -1343,12 +1343,12 @@ let cantGainEXP = false;
             //document.getElementById("pause-text").style.visibility = "hidden";
           }
 
-          // Camera: fast pan during unlock walk, keep panning to 0 during celebration
+          // Camera: match sprite walk speed during unlock, keep panning to 0 during celebration
           const unlockActive = unlockAnimSprite && app.stage.children.includes(unlockAnimSprite);
           const celebrating = unlockActive && unlockAnimSprite.celebrating;
           // Keep panning during celebration until camera reaches 0, then freeze
           const cameraAtTarget = Math.abs(app.stage.x) < 2 && Math.abs(app.stage.y) < 2;
-          const cameraSpeed = (celebrating && cameraAtTarget) ? 0 : (unlockActive ? 10 : 6);
+          const cameraSpeed = (celebrating && cameraAtTarget) ? 0 : (unlockActive ? 6 : 6);
 
           // Calculate the target position (start position)
           const targetX = 0;
@@ -1426,8 +1426,8 @@ let cantGainEXP = false;
               setisWiped(true);
             }
 
-            if (state.exploded) {
-              
+            if (state.exploded && !unlockAnimSprite) {
+
               mountain1.tint = getRandomColor();
               mountain2.tint = getRandomColor();
               mountain3.tint = getRandomColor3();
@@ -1448,12 +1448,6 @@ let cantGainEXP = false;
                 // Remove the enemy from the enemies array
                 enemies.splice(i, 1);
                 i--; // Decrement i to adjust for the removed enemy
-              }
-              // Clean up unlock walk-out sprite
-              if (unlockAnimSprite) {
-                app.stage.removeChild(unlockAnimSprite);
-                unlockAnimSprite.destroy();
-                unlockAnimSprite = null;
               }
               state.exploded = false;
               buildEnemyTypes();
@@ -1808,6 +1802,19 @@ state.demiSpawned = 0;
       return;
     }
 
+    // On resume, wait the remaining interval before spawning instead of spawning instantly
+    const currentInterval = state.interval - (state.currentRound * 225);
+    const timeSinceLastSpawn = Date.now() - state.timeOfLastSpawn;
+    if (timeSinceLastSpawn < currentInterval) {
+      const remainingTime = currentInterval - timeSinceLastSpawn;
+      state.isSpawning = true;
+      state.enemySpawnTimeout = setTimeout(() => {
+        state.isSpawning = false;
+        spawnEnemies();
+      }, remainingTime);
+      return;
+    }
+
     state.isSpawning = true;
 
     const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
@@ -1826,7 +1833,7 @@ state.demiSpawned = 0;
     state.enemySpawnTimeout = setTimeout(() => {
       state.isSpawning = false;
       spawnEnemies();
-    }, state.interval - (state.currentRound * 225));
+    }, currentInterval);
   }
 
 
@@ -1888,9 +1895,6 @@ state.demiSpawned = 0;
 
 
   function handleVisibilityChange() {
-    if (!document.hidden && !state.isSpawning && !getisDead()) {
-      spawnEnemies();
-  }
     if (document.hidden || document.webkitHidden) {
       // Document is hidden, perform actions here (e.g., pause the game)
       if (getPlayerCurrentHealth() > 0) {

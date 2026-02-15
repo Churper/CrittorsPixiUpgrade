@@ -14,6 +14,7 @@ import {
 import { pauseTimer, isTimerFinished } from './timer.js';
 import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCharacterDamage } from './characters.js';
 import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
+import { updateEXP } from './upgrades.js';
 
 export function checkEnemyCollision(projectile, enemy) {
   const projectileX = projectile.position.x;
@@ -935,7 +936,7 @@ export function playDeathAnimation(enemy, critter) {
     //ox setPlayerEXP(getPlayerEXP() + 100);
     console.log("YEP", getCharEXP(getCurrentCharacter()));
     console.log("YEPX", getEXPtoLevel(getCurrentCharacter()));
-    state.updateEXP(getCharEXP(getCurrentCharacter()) + enemy.exp, getEXPtoLevel(getCurrentCharacter()));
+    updateEXP(getCharEXP(getCurrentCharacter()) + enemy.exp, getEXPtoLevel(getCurrentCharacter()));
 
     // Create the EXP drop text
 

@@ -1,9 +1,9 @@
 import state from './state.js';
 import {
-  getFrogSpeed, setFrogSpeed, getFrogDamage, setFrogDamage, getFrogHealth, setFrogHealth, getFrogLevel,
-  getSnailSpeed, setSnailSpeed, getSnailDamage, setSnailDamage, getSnailHealth, setSnailHealth, getSnailLevel,
-  getBeeSpeed, setBeeSpeed, getBeeDamage, setBeeDamage, getBeeHealth, setBeeHealth, getBeeLevel,
-  getBirdSpeed, setBirdSpeed, getBirdDamage, setBirdDamage, getBirdHealth, setBirdHealth, getBirdLevel,
+  getFrogSpeed, getFrogDamage, getFrogHealth, getFrogLevel,
+  getSnailSpeed, getSnailDamage, getSnailHealth, getSnailLevel,
+  getBeeSpeed, getBeeDamage, getBeeHealth, getBeeLevel,
+  getBirdSpeed, getBirdDamage, getBirdHealth, getBirdLevel,
   getEnemies, addEnemies,
   getCharSwap, setCharSwap,
   getCurrentCharacter, setCurrentCharacter,
@@ -23,7 +23,7 @@ import { getRandomColor, getRandomColor1, getRandomColor3 } from './utils.js';
 import {
   startFlashing, stopFlashing,
   setCurrentFrogHealth, setCurrentBeeHealth, setCurrentSnailHealth, setCurrentBirdHealth,
-  setPlayerCurrentHealth, setCharEXP, setEXPtoLevel,
+  setPlayerCurrentHealth, setCharEXP,
   updateEXPIndicator, updateEXPIndicatorText,
   getCharacterName, getCharacterPortraitUrl, updateCharacterStats,
   getCharacterDamage, updateCurrentLevels,
@@ -46,6 +46,8 @@ import {
   critterAttack, createCoffeeDrop, addCoffee, playSpawnAnimation,
   createCoffeeDropText, playDeathAnimation, drawEnemyHPBar,
 } from './combat.js';
+import { updateEXP } from './upgrades.js';
+import { saveGame, loadGame } from './save.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
@@ -81,7 +83,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let critterWalkTextures;
   let backgroundSprite;
   let enemies = state.enemies;
-  let gameData;
   let previousCharacter = "";
   let playAgain = false;
   let isAttacking = false;
@@ -1738,247 +1739,6 @@ state.demiSpawned = 0;
 
 
 
-  function updateEXP(exp, expToLevel1) {
-    let leftover = 0;
-    if (exp >= getEXPtoLevel(getCurrentCharacter())) {
-      leftover = exp - expToLevel1;
-      setCharEXP(getCurrentCharacter(), leftover);
-      setEXPtoLevel(getCurrentCharacter(), getEXPtoLevel(getCurrentCharacter() + expToLevel1) * 1.1);
-      levelUp();
-
-    }
-    const playerEXPBarFill = document.getElementById('exp-bar-fill');
-    playerEXPBarFill.style.width = getCharEXP(getCurrentCharacter()) / getEXPtoLevel(getCurrentCharacter()) * 100 + '%';
-    updateExpText('exp-text', 'exp', getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter()));
-  }
-  state.updateEXP = updateEXP;
-
-
-
-  function animateUpgradeBoxes() {
-    console.log("SLECT", getSelectLevel());
-    if (state.isUpgradeBoxesAnimated) {
-      return; // If already animated, exit the function
-    }
-    state.isUpgradeBoxesAnimated = true; // Set the flag to indicate animation has occurred
-    const upgradeBoxes = document.querySelectorAll('.upgrade-box');
-    upgradeBoxes.forEach((box) => {
-      const classNames = box.classList;
-      box.style.visibility = 'hidden'; // Hide all upgrade boxes initially
-
-      if (
-        classNames.contains('spd-upgrade') ||
-        classNames.contains('hp-upgrade') ||
-        classNames.contains('attack-upgrade')
-      ) {
-        box.style.visibility = 'visible'; // Make the first three upgrade boxes visible
-      }
-
-      box.style.animationPlayState = 'running';
-      box.removeEventListener('click', box.clickHandler); // Remove previous event listener
-
-      // Define the click event handler separately
-      box.clickHandler = () => {
-        const upgradeType = classNames[1];
-        handleUpgrade(upgradeType);
-        state.leveling = false;
-      };
-
-      box.addEventListener('click', box.clickHandler); // Add the updated event listener
-    });
-  }
-
-
-  function setCharacterSpeed(currentCharacter, speed) {
-    switch (state.currentCharacter) {
-      case 'character-snail':
-        setSnailSpeed(speed);
-        break;
-      case 'character-bird':
-        setBirdSpeed(speed);
-        break;
-      case 'character-frog':
-        setFrogSpeed(speed);
-        break;
-      case 'character-bee':
-        setBeeSpeed(speed);
-        break;
-      default:
-        console.log('Invalid character', state.currentCharacter);
-    }
-  }
-
-  function setCharacterHealth(currentCharacter, health) {
-    switch (state.currentCharacter) {
-      case 'character-snail':
-        setSnailHealth(health);
-        break;
-      case 'character-bird':
-        setBirdHealth(health);
-        break;
-      case 'character-frog':
-        setFrogHealth(health);
-        break;
-      case 'character-bee':
-        setBeeHealth(health);
-        break;
-      default:
-        console.log('Invalid character', state.currentCharacter);
-    }
-  }
-
-  function setCharacterDamage(currentCharacter, attack) {
-    switch (state.currentCharacter) {
-      case 'character-snail':
-        setSnailDamage(attack);
-        break;
-      case 'character-bird':
-        setBirdDamage(attack);
-        break;
-      case 'character-frog':
-        setFrogDamage(attack);
-        break;
-      case 'character-bee':
-        setBeeDamage(attack);
-        break;
-      default:
-        console.log('Invalid character', state.currentCharacter);
-    }
-  }
-
-
-  function handleUpgrade(upgradeType) {
-    const upgradeBoxes = document.getElementsByClassName('upgrade-box');
-
-    // Get the current character
-    const currentCharacter = getCurrentCharacter();
-
-    // Get the stats for the current character
-    const stats = state.characterStats[state.currentCharacter];
-
-    // Handle different upgrade types
-    switch (upgradeType) {
-      case 'spd-upgrade':
-        // Logic for speed upgrade
-        console.log('Speed upgrade');
-        var divElement = document.getElementById("lightning-level");
-
-        stats.level++;
-        // Update the display
-        stats.speed += .25; // Update the speed stat for the current character
-        setCharacterSpeed(state.currentCharacter, stats.speed);
-        setSpeedChanged(true);
-        //console.log(getCharacterSpeed(state.currentCharacter));
-        divElement.textContent = stats.speed.toString();
-
-        setSelectLevel(getSelectLevel() - 1);
-
-        break;
-
-      case 'attack-upgrade':
-        // Logic for attack upgrade
-        console.log('Attack upgrade');
-        var divElement = document.getElementById("swords-level");
-        stats.attack += 3; // Update the attack stat for the current character
-        setCharacterDamage(state.currentCharacter, stats.attack);
-        // setSnailDamage(getSnailDamage() + 5);
-        // Update the display with the new attack level
-        divElement.textContent = stats.attack.toString();
-        setSelectLevel(getSelectLevel() - 1);
-        break;
-
-      case 'hp-upgrade':
-        // Logic for health upgrade
-        console.log('Health upgrade');
-        var divElement = document.getElementById("heart-level");
-        stats.hp++;
-        stats.health += 20; // Update the health stat for the current character
-        console.log("YYcurrentCharacter", state.currentCharacter);
-        console.log("YYN", getPlayerHealth() + 20);
-        console.log("YYS", getPlayerCurrentHealth());
-        if (!getisDead()) {
-          if (getPlayerCurrentHealth() > 0) {
-            setPlayerCurrentHealth(getPlayerCurrentHealth() + 20);
-          }
-        }
-        setCharacterHealth(state.currentCharacter, getPlayerHealth() + 20);
-        updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
-
-        divElement.textContent = stats.health.toString();
-
-        setSelectLevel(getSelectLevel() - 1);
-
-        break;
-
-      default:
-        console.log('Invalid upgrade type', upgradeType);
-    }
-    state.chooseSound.volume = .22;
-    state.chooseSound.play();
-
-    if (getSelectLevel() <= 0) {
-      for (let i = 0; i < upgradeBoxes.length; i++) {
-        upgradeBoxes[i].style.visibility = 'hidden';
-      }
-    }
-
-    state.isUpgradeBoxesAnimated = false;
-  }
-
-  function levelUp() {
-    state.leveling = true;
-    const characterLevelElement = document.getElementById("character-level");
-
-    // Function to update the character's level
-    function updateCharacterLevel(level) {
-      switch (getCurrentCharacter()) {
-        case 'character-snail':
-          level = state.snailLevel;
-          break;
-        case 'character-bird':
-          level = state.birdLevel;
-          break;
-        case 'character-frog':
-          level = state.frogLevel;
-          break;
-        case 'character-bee':
-          level = state.beeLevel;
-          break;
-        default:
-          console.log('Invalid character', getCurrentCharacter());
-          return;
-      }
-      characterLevelElement.textContent = 'Lvl. ' + level;
-    }
-
-    // Determine which character is being leveled up
-    switch (getCurrentCharacter()) {
-      case 'character-snail':
-        // Update level for character-snail
-        updateCharacterLevel(state.snailLevel++);
-        break;
-      case 'character-bird':
-        // Update level for character-bird
-        updateCharacterLevel(state.birdLevel++);
-        break;
-      case 'character-frog':
-        // Update level for character-frog
-        updateCharacterLevel(state.frogLevel++);
-        break;
-      case 'character-bee':
-        // Update level for character-bee
-        updateCharacterLevel(state.beeLevel++);
-        break;
-      default:
-        console.log('Invalid character');
-        return;
-    }
-
-    setSelectLevel(getSelectLevel() + 1);
-    animateUpgradeBoxes();
-    state.levelSound.play();
-  
-  }
 
   function handleVisibilityChange() {
     if (!document.hidden && !state.isSpawning && !getisDead()) {
@@ -2032,151 +1792,6 @@ state.demiSpawned = 0;
 
 
 
-  // Save game data
-  function saveGame() {
-    localStorage.removeItem('gameSave');
-    gameData = {
-      expToLevel: state.expToLevel,
-      currentRound: state.currentRound,
-      coffee: state.coffee,
-      frogSize: state.frogSize,
-      speedChanged: state.speedChanged,
-      selectLevel: state.selectLevel,
-      frogTintColor: state.frogTintColor,
-      snailSpeed: state.snailSpeed,
-      snailDamage: state.snailDamage,
-      snailHealth: state.snailHealth,
-      snailLevel: state.snailLevel,
-      beeLevel: state.beeLevel,
-      birdLevel: state.birdLevel,
-      birdSpeed: state.birdSpeed,
-      birdDamage: state.birdDamage,
-      touchCount: state.touchCount,
-      birdHealth: state.birdHealth,
-      beeSpeed: state.beeSpeed,
-      beeDamage: state.beeDamage,
-      beeHealth: state.beeHealth,
-      frogSpeed: state.frogSpeed,
-      frogDamage: state.frogDamage,
-      frogHealth: state.frogHealth,
-      frogLevel: state.frogLevel,
-      currentFrogHealth: state.currentFrogHealth,
-      currentSnailHealth: state.currentSnailHealth,
-      currentBeeHealth: state.currentBeeHealth,
-      currentBirdHealth: state.currentBirdHealth,
-      isGameStarted: state.isGameStarted,
-      characterStats: state.characterStats,
-      repicked: state.repicked,
-      frogEXP: state.frogEXP,
-      snailEXP: state.snailEXP,
-      beeEXP: state.beeEXP,
-      birdEXP: state.birdEXP,
-      frogEXPToLevel: state.frogEXPToLevel,
-      snailEXPToLevel: state.snailEXPToLevel,
-      beeEXPToLevel: state.beeEXPToLevel,
-      birdEXPToLevel: state.birdEXPToLevel
-    };
-
-    const saveData = JSON.stringify(gameData);
-    localStorage.setItem('gameSave', saveData);
-  }
-
-  // Load game data
-  function loadGame() {
-    const savedData = localStorage.getItem('gameSave');
-    if (savedData) {
-
-      const gameData = JSON.parse(savedData);
-     state.currentRound = gameData.currentRound;
-   // state.currentRound = 20;
-      // Load the saved values into your variables
-      setCurrentFrogHealth(gameData.currentFrogHealth);
-      setCurrentSnailHealth(gameData.currentSnailHealth);
-      setCurrentBeeHealth(gameData.currentBeeHealth);
-      setCurrentBirdHealth(gameData.currentBirdHealth);
-      setCharEXP("character-frog", gameData.frogEXP);
-      setCharEXP("character-snail", gameData.snailEXP);
-      setCharEXP("character-bee", gameData.beeEXP);
-      setCharEXP("character-bird", gameData.birdEXP);
-      setEXPtoLevel("character-frog", gameData.frogEXPToLevel);
-      setEXPtoLevel("character-snail", gameData.snailEXPToLevel);
-      setEXPtoLevel("character-bee", gameData.beeEXPToLevel);
-      setEXPtoLevel("character-bird", gameData.birdEXPToLevel);
-      updateEXP(gameData.frogEXP, gameData.frogEXPToLevel);
-
-
-      state.expToLevel = gameData.expToLevel;
-
-      state.coffee = gameData.coffee;
-      state.frogSize = gameData.frogSize;
-      state.speedChanged = gameData.speedChanged;
-      state.selectLevel = gameData.selectLevel;
-      state.frogTintColor = gameData.frogTintColor;
-      state.snailSpeed = gameData.snailSpeed;
-      state.snailDamage = gameData.snailDamage;
-      state.snailHealth = gameData.snailHealth;
-      state.snailLevel = gameData.snailLevel;
-      state.beeLevel = gameData.beeLevel;
-      state.birdLevel = gameData.birdLevel;
-      state.birdSpeed = gameData.birdSpeed;
-      state.birdDamage = gameData.birdDamage;
-      state.touchCount = gameData.touchCount;
-      state.birdHealth = gameData.birdHealth;
-      state.beeSpeed = gameData.beeSpeed;
-      state.beeDamage = gameData.beeDamage;
-      state.beeHealth = gameData.beeHealth;
-      state.frogSpeed = gameData.frogSpeed;
-      state.frogDamage = gameData.frogDamage;
-      state.frogHealth = gameData.frogHealth;
-      state.frogLevel = gameData.frogLevel;
-      state.isGameStarted = gameData.isGameStarted;
-      state.characterStats = gameData.characterStats;
-      state.repicked = gameData.repicked;
-      const characterLevelElement = document.getElementById("character-level");
-      const updateLightning = document.getElementById("lightning-level");
-      const updateHP = document.getElementById("heart-level");
-      const updateDamage = document.getElementById("swords-level");
-      let level;
-
-      level = getSnailLevel();
-
-      updateLightning.textContent = getSnailSpeed().toString();
-      updateHP.textContent = getSnailHealth().toString();
-      updateDamage.textContent = getSnailDamage().toString();
-
-      level = getBirdLevel();
-      console.log("DIRTY", level);
-      updateLightning.textContent = getBirdSpeed().toString();
-      updateHP.textContent = getBirdHealth().toString();
-      updateDamage.textContent = getBirdDamage().toString();
-
-      level = getFrogLevel();
-      updateLightning.textContent = getFrogSpeed().toString();
-      updateHP.textContent = getFrogHealth().toString();
-      console.log("LOADER", getCharacterDamage('character-frog').toString());
-      updateDamage.textContent = getCharacterDamage('character-frog').toString();
-      characterLevelElement.textContent = 'Lvl. ' + level;
-      state.isCharacterMenuOpen = false; // Flag to track if the character menu is open
-
-      level = getBeeLevel();
-      updateLightning.textContent = getBeeSpeed().toString();
-      updateHP.textContent = getBeeHealth().toString();
-      updateDamage.textContent = getBeeDamage().toString();
-      updateEXPIndicatorText("character-bird", gameData.birdLevel);
-      updateEXPIndicatorText("character-snail", gameData.snailLevel);
-      updateEXPIndicatorText("character-frog", gameData.frogLevel);
-      updateEXPIndicatorText("character-bee", gameData.beeLevel);
-      //updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
-      console.log("LOADING", getPlayerCurrentHealth());
-      addCoffee(gameData.coffee - gameData.coffee);
-      //updateVelocity();
-      setSelectLevel(0);
-      state.roundOver = false;
-      state.cooldownActive = false;
-
-
-    }
-  }
   resetTimer();
       startTimer();
 startGame();

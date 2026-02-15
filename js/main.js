@@ -82,6 +82,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let backgroundSprite;
   let enemies = state.enemies;
   let gameData;
+  let previousCharacter = "";
+  let playAgain = false;
+  let isAttacking = false;
+  let enemyPortrait;
+  let handleTouchEnd;
   const menuTexture = await PIXI.Assets.load('./assets/mainmenu.png');
   const menuSprite = new PIXI.Sprite(menuTexture);
 
@@ -807,7 +812,7 @@ backgroundTexture = textures.background;
       const enemyDeathTextures = createAnimationTextures('enemy_death', 8, 317);
       state.enemyDeath = createAnimatedSprite(enemyDeathTextures);
       const castleDeathTextures = createAnimationTextures('enemy_death', 8, 317);
-      castleDeath = createAnimatedSprite(castleDeathTextures);
+      let castleDeath = createAnimatedSprite(castleDeathTextures);
       const playerSpawn = createAnimatedSprite(enemyDeathTextures);
       castleDeath.animationSpeed = 0.175;
       castleDeath.loop = false;
@@ -1058,7 +1063,7 @@ backgroundTexture = textures.background;
         document.addEventListener("touchend", handleMouseLeave);
       }
 
-      function handleTouchEnd(event) {
+      handleTouchEnd = function(event) {
 
         activeTouches--;
         clearInterval(pointerHoldInterval);
@@ -1070,7 +1075,7 @@ backgroundTexture = textures.background;
         }
 
         xDir = 1;
-      }
+      };
 
       function getCharacterSpeed(currentCharacter) {
         switch (state.currentCharacter) {
@@ -2879,7 +2884,7 @@ enemy.isAlive = false;
       addCoffee(gameData.coffee - gameData.coffee);
       //updateVelocity();
       setSelectLevel(0);
-      roundover = false;
+      state.roundOver = false;
       state.cooldownActive = false;
 
 

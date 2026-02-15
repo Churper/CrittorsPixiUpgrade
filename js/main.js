@@ -899,6 +899,16 @@ backgroundTexture = textures.background;
       let pointerHoldInterval;
       let activeTouches = 0;
 
+      handleTouchEnd = function(event) {
+        activeTouches--;
+        clearInterval(pointerHoldInterval);
+        state.isPointerDown = false;
+        if (!attackAnimationPlayed) {
+          return;
+        }
+        xDir = 1;
+      };
+
       app.stage.eventMode = 'static';
       app.stage.on("pointerdown", handleTouchStart);
       app.stage.on("pointerup", handleTouchEnd);
@@ -1062,20 +1072,6 @@ backgroundTexture = textures.background;
 
         document.addEventListener("touchend", handleMouseLeave);
       }
-
-      handleTouchEnd = function(event) {
-
-        activeTouches--;
-        clearInterval(pointerHoldInterval);
-
-        state.isPointerDown = false;
-
-        if (!attackAnimationPlayed) {
-          return;
-        }
-
-        xDir = 1;
-      };
 
       function getCharacterSpeed(currentCharacter) {
         switch (state.currentCharacter) {

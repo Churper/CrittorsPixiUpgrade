@@ -20,6 +20,14 @@ import {
 } from './state.js';
 import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
 import { getRandomColor, getRandomColor1, getRandomColor3 } from './utils.js';
+import {
+  startFlashing, stopFlashing,
+  setCurrentFrogHealth, setCurrentBeeHealth, setCurrentSnailHealth, setCurrentBirdHealth,
+  setPlayerCurrentHealth, setCharEXP, setEXPtoLevel,
+  updateEXPIndicator, updateEXPIndicatorText,
+  getCharacterName, getCharacterPortraitUrl, updateCharacterStats,
+  getCharacterDamage, updateCurrentLevels,
+} from './characters.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
@@ -83,173 +91,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
  }
 
 
-  var portrait = document.getElementById('character-portrait');
-
-  // Function to start the state.flashing effect
-  function startFlashing() {
-    if (!state.isFlashing) {
-      state.isFlashing = true;
-      state.intervalId = setInterval(function () {
-        portrait.classList.toggle("flash"); // Toggle the "flash" class
-      }, 1500); // Change the class every 1.5 seconds
-    }
-  }
-
-  // Function to stop the state.flashing effect
-  function stopFlashing() {
-    if (state.isFlashing) {
-      state.isFlashing = false;
-      clearInterval(state.intervalId);
-      portrait.classList.remove("flash"); // Remove the "flash" class when state.flashing stops
-    }
-  }
-
-
-  // Revised setCurrentFrogHealth function
-  function setCurrentFrogHealth(health) {
-    state.currentFrogHealth = health;
-    const frogHpIndicator = document.querySelector('.upgrade-box.character-frog .hp-indicator');
-    const frogBox = document.querySelector('.upgrade-box.character-frog');
-
-    frogHpIndicator.style.setProperty('--hp-indicator-height', `${(1 - (state.currentFrogHealth / getFrogHealth())) * 100}%`);
-
-    if (state.currentFrogHealth <= 0) {
-      frogBox.style.backgroundColor = 'grey';
-      frogBox.style.pointerEvents = ''; // Reset pointer events
-    } else {
-      frogBox.style.backgroundColor = ''; // Reset to default color
-      frogBox.style.pointerEvents = ''; // Reset pointer events
-    }
-  }
-
-
-  function setCurrentBeeHealth(health) {
-    state.currentBeeHealth = health;
-    const beeHpIndicator = document.querySelector('.upgrade-box.character-bee .hp-indicator');
-    const beeBox = document.querySelector('.upgrade-box.character-bee');
-
-    beeHpIndicator.style.setProperty('--hp-indicator-height', `${(1 - (state.currentBeeHealth / getBeeHealth())) * 100}%`);
-
-    if (state.currentBeeHealth <= 0) {
-      beeBox.style.backgroundColor = 'grey';
-      beeBox.style.pointerEvents = ''; // Reset pointer events
-    } else {
-      beeBox.style.backgroundColor = ''; // Reset to default color
-      beeBox.style.pointerEvents = ''; // Reset pointer events
-    }
-  }
-
-  function setCurrentSnailHealth(health) {
-    state.currentSnailHealth = health;
-    const snailHpIndicator = document.querySelector('.upgrade-box.character-snail .hp-indicator');
-    const snailBox = document.querySelector('.upgrade-box.character-snail');
-
-    snailHpIndicator.style.setProperty('--hp-indicator-height', `${(1 - (state.currentSnailHealth / getSnailHealth())) * 100}%`);
-
-    if (state.currentSnailHealth <= 0) {
-      snailBox.style.backgroundColor = 'grey';
-      snailBox.style.pointerEvents = ''; // Reset pointer events
-    } else {
-      snailBox.style.backgroundColor = ''; // Reset to default color
-      snailBox.style.pointerEvents = ''; // Reset pointer events
-    }
-  }
-
-  function setCurrentBirdHealth(health) {
-    state.currentBirdHealth = health;
-    const birdHpIndicator = document.querySelector('.upgrade-box.character-bird .hp-indicator');
-    const birdBox = document.querySelector('.upgrade-box.character-bird');
-
-    birdHpIndicator.style.setProperty('--hp-indicator-height', `${(1 - (state.currentBirdHealth / getBirdHealth())) * 100}%`);
-
-    if (state.currentBirdHealth <= 0) {
-      birdBox.style.backgroundColor = 'grey';
-      birdBox.style.pointerEvents = ''; // Reset pointer events
-    } else {
-      birdBox.style.backgroundColor = ''; // Reset to default color
-      birdBox.style.pointerEvents = ''; // Reset pointer events
-    }
-  }
-
-  function setEXPtoLevel(currentChar, value) {
-    switch (currentChar) {
-      case 'character-snail':
-        state.snailEXPToLevel = value;
-        break;
-      case 'character-bird':
-        state.birdEXPToLevel = value;
-        break;
-      case 'character-frog':
-        state.frogEXPToLevel = value;
-        break;
-      case 'character-bee':
-        state.beeEXPToLevel = value;
-        break;
-      default:
-        state.frogEXPToLevel = value;
-        break;
-    }
-
-    updateEXPIndicator(currentChar, getCharEXP(currentChar), getEXPtoLevel(currentChar), getCharLevel(currentChar));
-  }
-
-  function setCharEXP(currentChar, value) {
-    switch (currentChar) {
-      case 'character-snail':
-        state.snailEXP = value;
-        break;
-      case 'character-bird':
-        state.birdEXP = value;
-        break;
-      case 'character-frog':
-        state.frogEXP = value;
-        break;
-      case 'character-bee':
-        state.beeEXP = value;
-        break;
-      default:
-        state.frogEXP = value;
-        break;
-    }
-
-    updateEXPIndicator(currentChar, getCharEXP(currentChar), getEXPtoLevel(currentChar));
-  }
-
-
-  function updateEXPIndicator(character, currentEXP, maxEXP) {
-    const expIndicator = document.querySelector(`.upgrade-box.${character} .exp-indicator`);
-    const characterBox = document.querySelector(`.upgrade-box.${character}`);
-
-    const heightPercentage = (1 - currentEXP / maxEXP) * 100;
-    expIndicator.style.setProperty('--exp-indicator-height', `${heightPercentage}%`);
-
-
-  }
-
-  function updateEXPIndicatorText(character, level) {
-    const expIndicator = document.querySelector(`.upgrade-box.${character} .exp-indicator`);
-    const levelElement = expIndicator.querySelector('.level');
-    levelElement.textContent = `${level}`;
-  }
-
-  function setPlayerCurrentHealth(value) {
-    switch (getCurrentCharacter()) {
-      case 'character-snail':
-        setCurrentSnailHealth(value);
-        break;
-      case 'character-bird':
-        setCurrentBirdHealth(value);
-        break;
-      case 'character-frog':
-        setCurrentFrogHealth(value);
-        break;
-      case 'character-bee':
-        setCurrentBeeHealth(value)
-        break;
-      default:
-        console.log('Invalid character type');
-    }
-  }
 
   function shouldReturnEarly(value) {
     if ((value && state.pauseMenuContainer) || (!value && state.isUnpausing) || app.stage.children.includes(state.reviveDialogContainer)) {
@@ -903,59 +744,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   }
 
-  function getCharacterName(characterType) {
-    switch (characterType) {
-      case 'character-snail':
-        return 'Snail';
-      case 'character-bird':
-        return 'Bird';
-      case 'character-frog':
-        return 'Frog';
-      case 'character-bee':
-        return 'Bee';
-      default:
-        console.log('Invalid character type', characterType);
-        return '';
-    }
-  }
-
-  function updateCharacterStats() {
-    switch (state.selectedCharacter) {
-      case 'character-snail':
-        // Update stats for character-snail
-        setSnailSpeed(getSnailSpeed());
-        setSnailDamage(getSnailDamage());
-        setSnailHealth(getSnailHealth());
-        // Additional logic or actions specific to character-snail
-        break;
-      case 'character-bird':
-        // Update stats for character-bird
-        setBirdSpeed(getBirdSpeed());
-        setBirdDamage(getBirdDamage());
-        setBirdHealth(getBirdHealth());
-        // Additional logic or actions specific to character-bird
-        break;
-      case 'character-frog':
-        // Update stats for character-frog
-        setFrogSpeed(getFrogSpeed());
-        setFrogDamage(getFrogDamage());
-        setFrogHealth(getFrogHealth());
-        // Additional logic or actions specific to character-frog
-        break;
-      case 'character-bee':
-        // Update stats for character-bee
-        setBeeSpeed(getBeeSpeed());
-        setBeeDamage(getBeeDamage());
-        setBeeHealth(getBeeHealth());
-        // Additional logic or actions specific to character-bee
-        break;
-      default:
-        console.log('Invalid character type', state.selectedCharacter);
-    }
-
-    // Update the display or perform any other actions based on the updated stats
-    // ...
-  }
 
   // Add click event listeners to character boxes
   const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
@@ -967,15 +755,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     });
   });
 
-  function getCharacterPortraitUrl(characterType) {
-    switch (characterType) {
-      case 'character-snail': return './assets/snailportrait.png';
-      case 'character-bird': return './assets/birdportrait.png';
-      case 'character-frog': return './assets/frogportrait.png';
-      case 'character-bee': return './assets/beeportrait.png';
-      default: return '';
-    }
-  }
 
 
   document.body.appendChild(app.canvas);
@@ -2327,40 +2106,6 @@ state.demiSpawned = 0;
         return 0.45;
     }
   }
-  function updateCurrentLevels()
-  {
-    characterLevelElement = document.getElementById("character-level");
-    updateLightning = document.getElementById("lightning-level");
-    updateHP = document.getElementById("heart-level");
-    updateDamage = document.getElementById("swords-level");
-    let level;
-
-    level = getSnailLevel();
-
-    updateLightning.textContent = getSnailSpeed().toString();
-    updateHP.textContent = getSnailHealth().toString();
-    updateDamage.textContent = getSnailDamage().toString();
-
-    level = getBirdLevel();
-    console.log("DIRTY", level);
-    updateLightning.textContent = getBirdSpeed().toString();
-    updateHP.textContent = getBirdHealth().toString();
-    updateDamage.textContent = getBirdDamage().toString();
-
-    level = getFrogLevel();
-    updateLightning.textContent = getFrogSpeed().toString();
-    updateHP.textContent = getFrogHealth().toString();
-    console.log("LOADER", getCharacterDamage('character-frog').toString());
-    updateDamage.textContent = getCharacterDamage('character-frog').toString();
-    characterLevelElement.textContent = 'Lvl. ' + level;
-    state.isCharacterMenuOpen = false; // Flag to track if the character menu is open
-
-    level = getBeeLevel();
-    updateLightning.textContent = getBeeSpeed().toString();
-    updateHP.textContent = getBeeHealth().toString();
-    updateDamage.textContent = getBeeDamage().toString();
-
-  }
 
   function handleEnemySorting(enemy) {
     if (app.stage.children.includes(enemy)) {
@@ -2840,20 +2585,6 @@ enemy.isAlive = false;
     }
   }
 
-  function getCharacterDamage(currentCharacter) {
-    switch (state.currentCharacter) {
-      case 'character-snail':
-        return getSnailDamage();
-      case 'character-bird':
-        return getBirdDamage();
-      case 'character-frog':
-        return getFrogDamage();
-      case 'character-bee':
-        return getBeeDamage();
-      default:
-        console.log('Invalid character', state.currentCharacter);
-    }
-  }
 
 
   function drawCharHitSplat(critter, enemy) {

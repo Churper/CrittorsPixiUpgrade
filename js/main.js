@@ -74,6 +74,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   });
   state.app = app;
   app.stage.sortableChildren = true;
+  // Prevent PIXI from pausing the ticker when tab loses focus
+  app.ticker.backgroundTimeout = -1;
   document.getElementById('game-container').appendChild(app.canvas);
 
   // UNSAFE variables - kept as local vars (also used as function params)
@@ -164,6 +166,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
     weatherContainer = new PIXI.Container();
     weatherContainer.label = 'weatherFX';
+    weatherContainer.eventMode = 'none';
     app.stage.addChild(weatherContainer);
 
     const w = app.screen.width;
@@ -211,6 +214,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       sunLightOverlay.rect(0, 0, w * 3, h * 3).fill({ color: 0x000000 });
       sunLightOverlay.zIndex = 49999;
       sunLightOverlay.alpha = 0.3;
+      sunLightOverlay.eventMode = 'none';
       app.stage.addChild(sunLightOverlay);
 
       // Player shadow — big enough to be noticeable
@@ -672,7 +676,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
   
     state.reviveDialogContainer = new PIXI.Container();
-  
+    state.reviveDialogContainer.zIndex = 999999;
+
     // Create a semi-transparent black background sprite for the dialog box
     backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
     backgroundSprite.width = app.screen.width * 0.6;

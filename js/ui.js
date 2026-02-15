@@ -147,6 +147,8 @@ export function createGarbageButton(backgroundSprite) {
 export function createPauseMenuContainer() {
   state.pauseMenuContainer = new PIXI.Container();
   state.pauseMenuContainer.myCustomID = 'pauseMenuX';
+  state.pauseMenuContainer.zIndex = 999999;
+  state.pauseMenuContainer.eventMode = 'static';
 
   const backgroundSprite = createBackgroundSprite();
   state.pauseMenuContainer.addChild(backgroundSprite);

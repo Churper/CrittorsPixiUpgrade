@@ -9,8 +9,6 @@ import {
   getCurrentCharacter, setCurrentCharacter,
   getCoffee, setCoffee,
   getFrogSize, getSpeedChanged, setSpeedChanged,
-  getSelectLevel, setSelectLevel, getFrogTintColor,
-  getPlayerEXP, setPlayerEXP,
   getisDead, setIsDead,
   getIsCharAttacking, setIsCharAttacking,
   getAreResetting, setCharAttackAnimating,
@@ -19,9 +17,9 @@ import {
   getPlayerHealth, getPlayerCurrentHealth, getisPaused,
 } from './state.js';
 import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
-import { getRandomColor, getRandomColor1, getRandomColor3 } from './utils.js';
+import { getRandomColor, getRandomColor3 } from './utils.js';
 import {
-  startFlashing, stopFlashing,
+  stopFlashing,
   setCurrentFrogHealth, setCurrentBeeHealth, setCurrentSnailHealth, setCurrentBirdHealth,
   setPlayerCurrentHealth, setCharEXP,
   updateEXPIndicator, updateEXPIndicatorText,
@@ -30,21 +28,13 @@ import {
 } from './characters.js';
 import {
   createPauseMenuContainer, shouldReturnEarly, updateDialogPositions,
-  getIsWiped, setisWiped, isCooldownActive, startCooldown, openCharacterMenu,
-  updatePlayerHealthBar, updateBarText, updateGrayscale, updateEnemyGrayscale,
-  updateExpText, playRoundText, getTextStyle,
+  getIsWiped, setisWiped, startCooldown, openCharacterMenu,
+  updatePlayerHealthBar, playRoundText, getTextStyle,
 } from './ui.js';
 import {
-  checkEnemyCollision, getEnemyPortraitUrl,
-  spawnEnemyDemi, createSpawnDemi, spawnEnemy, createSpawnEnemy,
-  determineEnemyScale, handleEnemySorting, handleEnemyActions,
-  handleEnemyMoving, handleEnemyCombat, handleCritterAttack,
-  addEnemyInRange, handleEnemyAttack, prepareEnemyPortrait,
-  removeEnemy, checkProjectileCollisions, rangedAttack,
-  resetEnemiesState, playGhostFly, resetToAttackTextures,
-  handleEnemyAttacking, drawCharHitSplat, drawHitSplat,
-  critterAttack, createCoffeeDrop, addCoffee, playSpawnAnimation,
-  createCoffeeDropText, playDeathAnimation, drawEnemyHPBar,
+  spawnEnemyDemi, spawnEnemy,
+  resetEnemiesState, addCoffee, playSpawnAnimation,
+  createCoffeeDrop,
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';

@@ -1337,8 +1337,10 @@ let cantGainEXP = false;
             //document.getElementById("pause-text").style.visibility = "hidden";
           }
 
-          // Calculate the amount to move the camera per frame
-          const cameraSpeed = 6;
+          // Camera speed: slow during unlock walk, freeze during celebration, normal otherwise
+          const unlockActive = unlockAnimSprite && app.stage.children.includes(unlockAnimSprite);
+          const celebrating = unlockActive && unlockAnimSprite.celebrating;
+          const cameraSpeed = celebrating ? 0 : (unlockActive ? 2 : 6);
 
           // Calculate the target position (start position)
           const targetX = 0;
@@ -1361,19 +1363,46 @@ let cantGainEXP = false;
           mountain4.position.x += velocity.x * mountain4Speed;
 
           // Animate unlock character walking out of castle toward base
-          if (unlockAnimSprite && app.stage.children.includes(unlockAnimSprite)) {
-            // Grow from tiny to full size (squirm out effect)
-            const targetScale = 0.35;
-            const currentScale = Math.abs(unlockAnimSprite.scale.x);
-            if (currentScale < targetScale) {
-              const growStep = 0.005;
-              const newScale = Math.min(currentScale + growStep, targetScale);
-              unlockAnimSprite.scale.set(newScale);
-              unlockAnimSprite.scale.x *= -1; // Keep facing left
+          if (unlockActive) {
+            if (!unlockAnimSprite.celebrating) {
+              // Grow from tiny to full size (squirm out effect)
+              const targetScale = 0.35;
+              const currentScale = Math.abs(unlockAnimSprite.scale.x);
+              if (currentScale < targetScale) {
+                const growStep = 0.006;
+                const newScale = Math.min(currentScale + growStep, targetScale);
+                unlockAnimSprite.scale.set(newScale);
+                unlockAnimSprite.scale.x *= -1; // Keep facing left
+              }
+              // Walk left toward critter
+              unlockAnimSprite.position.x -= 5;
+              unlockAnimSprite.position.y = state.stored + Math.sin(Date.now() * 0.008) * 3;
+
+              // Reached the player — start celebration!
+              if (unlockAnimSprite.position.x <= critter.position.x + 80) {
+                unlockAnimSprite.celebrating = true;
+                unlockAnimSprite.celebrateStart = Date.now();
+                // Position next to player
+                unlockAnimSprite.position.x = critter.position.x + 60;
+              }
+            } else {
+              // Celebration! Both characters bounce together
+              const elapsed = Date.now() - unlockAnimSprite.celebrateStart;
+              const bounce = Math.sin(elapsed * 0.012) * 10;
+              unlockAnimSprite.position.y = state.stored + bounce;
+              critter.position.y = state.stored - bounce; // Opposite phase
+
+              // After 2 seconds, fade out and clean up
+              if (elapsed > 2000) {
+                unlockAnimSprite.alpha -= 0.04;
+                critter.position.y = state.stored; // Reset player position
+                if (unlockAnimSprite.alpha <= 0) {
+                  app.stage.removeChild(unlockAnimSprite);
+                  unlockAnimSprite.destroy();
+                  unlockAnimSprite = null;
+                }
+              }
             }
-            // Walk left toward base with a slight bounce
-            unlockAnimSprite.position.x -= 4;
-            unlockAnimSprite.position.y = state.stored + Math.sin(Date.now() * 0.008) * 3;
           }
 
           // Return if the camera has reached the target position

@@ -130,6 +130,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let weatherContainer = null;
   let weatherSun = null;
   let weatherTicker = null;
+  let sunLightOverlay = null;
+  let playerShadow = null;
 
   function getWeatherType() {
     return weatherTypes[(state.currentRound - 1) % weatherTypes.length].name;
@@ -140,6 +142,16 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.app.stage.removeChild(weatherContainer);
       weatherContainer.destroy({ children: true });
       weatherContainer = null;
+    }
+    if (sunLightOverlay && state.app) {
+      state.app.stage.removeChild(sunLightOverlay);
+      sunLightOverlay.destroy();
+      sunLightOverlay = null;
+    }
+    if (playerShadow && state.app) {
+      state.app.stage.removeChild(playerShadow);
+      playerShadow.destroy();
+      playerShadow = null;
     }
     weatherSun = null;
   }
@@ -159,25 +171,50 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const type = getWeatherType();
 
     if (type === 'sun') {
-      // Sun glow orb
+      // Sun glow orb — larger with layered glow
       weatherSun = new PIXI.Container();
       const glow = new PIXI.Graphics();
-      glow.circle(0, 0, 50).fill({ color: 0xFFDD44, alpha: 0.3 });
-      glow.circle(0, 0, 35).fill({ color: 0xFFEE66, alpha: 0.5 });
-      glow.circle(0, 0, 20).fill({ color: 0xFFFF99, alpha: 0.9 });
+      glow.circle(0, 0, 80).fill({ color: 0xFFDD44, alpha: 0.15 });
+      glow.circle(0, 0, 55).fill({ color: 0xFFDD44, alpha: 0.25 });
+      glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
+      glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
       weatherSun.addChild(glow);
-      // Sun rays
-      for (let i = 0; i < 12; i++) {
+      // Big extruding beams
+      for (let i = 0; i < 8; i++) {
+        const beam = new PIXI.Graphics();
+        const angle = (i / 8) * Math.PI * 2;
+        const len = 120 + Math.random() * 80;
+        beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 4, color: 0xFFEE44, alpha: 0.25 });
+        beam.rayAngle = angle;
+        beam.rayLen = len;
+        beam.isBeam = true;
+        weatherSun.addChild(beam);
+      }
+      // Thinner accent rays between beams
+      for (let i = 0; i < 8; i++) {
         const ray = new PIXI.Graphics();
-        const angle = (i / 12) * Math.PI * 2;
-        const len = 30 + Math.random() * 20;
-        ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 2, color: 0xFFEE44, alpha: 0.4 });
+        const angle = ((i + 0.5) / 8) * Math.PI * 2;
+        const len = 60 + Math.random() * 40;
+        ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
         ray.rayAngle = angle;
         ray.rayLen = len;
         weatherSun.addChild(ray);
       }
       weatherSun.startTime = Date.now();
       weatherContainer.addChild(weatherSun);
+
+      // Lighting overlay — dims at dawn/dusk, bright at noon
+      sunLightOverlay = new PIXI.Graphics();
+      sunLightOverlay.rect(0, 0, w * 3, h * 3).fill({ color: 0x000000 });
+      sunLightOverlay.zIndex = 49999;
+      sunLightOverlay.alpha = 0.3;
+      app.stage.addChild(sunLightOverlay);
+
+      // Player shadow
+      playerShadow = new PIXI.Graphics();
+      playerShadow.ellipse(0, 0, 25, 6).fill({ color: 0x000000, alpha: 0.3 });
+      playerShadow.zIndex = 100;
+      app.stage.addChild(playerShadow);
 
     } else if (type === 'rain') {
       // Rain drops
@@ -257,15 +294,58 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const elapsed = Date.now() - weatherSun.startTime;
       const duration = 60000;
       const progress = Math.min(elapsed / duration, 1);
+
+      // Parallax: sun shifts slightly opposite to camera, feels distant
+      const parallaxX = app.stage.x * 0.04;
+      const parallaxY = app.stage.y * 0.02;
+
       // Parabolic arc: rises from bottom-left, peaks at top-center, sets at bottom-right
-      const arcX = w * 0.1 + progress * w * 0.8;
-      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55;
+      const arcX = w * 0.1 + progress * w * 0.8 + parallaxX;
+      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       weatherSun.position.set(arcX, arcY);
+
       // Rotate rays slowly
       weatherSun.rotation = elapsed * 0.0003;
       // Pulse the glow
       const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
       weatherSun.scale.set(pulse);
+
+      // sinusoidal brightness: 0 at edges, 1 at middle
+      const brightness = Math.sin(progress * Math.PI);
+
+      // Lighting: dim at dawn/dusk (progress near 0 or 1), bright at noon (progress ~0.5)
+      if (sunLightOverlay) {
+        sunLightOverlay.position.set(-app.stage.x - w, -app.stage.y - h);
+        // Overlay alpha: 0.35 at dawn/dusk, 0.0 at peak noon
+        sunLightOverlay.alpha = 0.35 * (1 - brightness);
+        // Warm tint at dawn/dusk via slight orange
+        if (progress < 0.15 || progress > 0.85) {
+          sunLightOverlay.tint = 0x331100;
+        } else {
+          sunLightOverlay.tint = 0x000000;
+        }
+      }
+
+      // Player shadow: direction + length based on sun position
+      if (playerShadow && critter) {
+        const sunScreenX = arcX;
+        const sunScreenY = arcY;
+        const critterScreenX = critter.position.x + app.stage.x;
+        const critterScreenY = critter.position.y + app.stage.y;
+
+        // Shadow stretches away from sun
+        const shadowAngle = Math.atan2(critterScreenY - sunScreenY, critterScreenX - sunScreenX);
+        // Longer shadow when sun is low (low brightness), shorter at noon
+        const shadowLength = 15 + (1 - brightness) * 35;
+        const shadowOffsetX = Math.cos(shadowAngle) * shadowLength;
+
+        playerShadow.position.set(
+          critter.position.x + shadowOffsetX * 0.5,
+          critter.position.y + critter.height * 0.35
+        );
+        playerShadow.scale.set(0.8 + (1 - brightness) * 1.2, 1);
+        playerShadow.alpha = 0.15 + brightness * 0.2;
+      }
 
     } else if (type === 'rain') {
       for (const drop of weatherContainer.children) {

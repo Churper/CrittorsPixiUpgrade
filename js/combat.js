@@ -701,29 +701,43 @@ export function drawHitSplat(enemy) {
       console.log('Invalid character type');
   }
 
-  // Pitch-shifted attack sound for crit/dud feedback
+  // Detect hit type
+  const isCrit = damage > baseDamage;
+  const isDud = damage < baseDamage;
+
+  // Sound feedback — crit gets a sharp slash, dud gets dull thud
   const hitSound = state.attackSound.cloneNode();
   hitSound.volume = state.effectsVolume;
-  if (damage > baseDamage) {
-    hitSound.playbackRate = 2.0; // Crit: high pitch, snappy
-  } else if (damage < baseDamage) {
+  if (isCrit) {
+    hitSound.playbackRate = 2.5; // Crit: sharp, slicing
+  } else if (isDud) {
     hitSound.playbackRate = 0.6; // Dud: lower pitch
   }
   hitSound.play();
 
+  // Crit gets a second layered slash sound for punch
+  if (isCrit) {
+    const slashSound = state.attackSound.cloneNode();
+    slashSound.volume = state.effectsVolume * 0.6;
+    slashSound.playbackRate = 3.0;
+    setTimeout(() => slashSound.play(), 40);
+  }
+
   // Color-coded damage text
   let fillColor = "rgb(255, 100, 80)";        // normal: warm red
-  if (damage > baseDamage) fillColor = "rgb(255, 165, 0)";  // crit: deep gold
-  if (damage < baseDamage) fillColor = "rgb(160, 160, 160)"; // dud: grey
+  if (isCrit) fillColor = "rgb(255, 165, 0)";  // crit: deep gold
+  if (isDud) fillColor = "rgb(160, 160, 160)"; // dud: grey
 
   drawEnemyHPBar(enemy);
   updateEnemyGrayscale(enemy.currentHP);
+
+  const fontSize = isCrit ? 36 : 24;
   const damageText = new PIXI.Text(`${-damage}`, {
-    fontSize: 24,
+    fontSize: fontSize,
     fill: fillColor,
     fontWeight: "bold",
     stroke: "#000",
-    strokeThickness: 3,
+    strokeThickness: isCrit ? 5 : 3,
     strokeOutside: true
   });
 
@@ -732,20 +746,68 @@ export function drawHitSplat(enemy) {
   damageText.zIndex = 99999;
   state.app.stage.addChild(damageText);
 
+  // Crit: fling direction (upper-right diagonal) + spark particles
+  const flingVX = isCrit ? 2.5 : 0;
+  const flingVY = isCrit ? -1.8 : -0.3;
+  const animDuration = isCrit ? 60 : 100;
+
+  // Spawn crit spark particles
+  let critSparks = null;
+  if (isCrit) {
+    critSparks = new PIXI.Container();
+    critSparks.zIndex = 99998;
+    state.app.stage.addChild(critSparks);
+    const sparkColors = [0xFFAA00, 0xFFDD44, 0xFFFFAA, 0xFF8800, 0xFFFFFF];
+    for (let i = 0; i < 12; i++) {
+      const spark = new PIXI.Graphics();
+      const color = sparkColors[Math.floor(Math.random() * sparkColors.length)];
+      spark.circle(0, 0, 2 + Math.random() * 2).fill({ color: color });
+      spark.position.set(enemy.position.x + 20, enemy.position.y - 10);
+      // Spray mostly to the right (attack direction)
+      const angle = -Math.PI * 0.8 + Math.random() * Math.PI * 0.6;
+      const speed = 3 + Math.random() * 5;
+      spark.vx = Math.cos(angle) * speed;
+      spark.vy = Math.sin(angle) * speed;
+      spark.gravity = 0.15;
+      critSparks.addChild(spark);
+    }
+  }
+
   // Animate the hitsplat
+  const startX = damageText.position.x;
   const startY = damageText.position.y;
-  const duration = 100;
   let elapsed = 0;
   const update = (ticker) => {
     elapsed += ticker.deltaTime;
 
-    if (elapsed >= duration) {
+    if (elapsed >= animDuration) {
       state.app.ticker.remove(update);
       state.app.stage.removeChild(damageText);
+      if (critSparks) {
+        state.app.stage.removeChild(critSparks);
+        critSparks.destroy({ children: true });
+      }
     } else {
-      const progress = elapsed / duration;
-      damageText.position.y = startY - progress * 30;
+      const progress = elapsed / animDuration;
+      damageText.position.x = startX + elapsed * flingVX;
+      damageText.position.y = startY + elapsed * flingVY;
       damageText.alpha = 1 - progress;
+      if (isCrit) {
+        // Scale up slightly then down for impact feel
+        const scale = progress < 0.2 ? 1 + progress * 3 : 1.6 - progress * 0.8;
+        damageText.scale.set(scale);
+      }
+
+      // Animate sparks
+      if (critSparks) {
+        for (const spark of critSparks.children) {
+          spark.vy += spark.gravity;
+          spark.position.x += spark.vx;
+          spark.position.y += spark.vy;
+          spark.alpha = 1 - progress;
+          spark.vx *= 0.97;
+        }
+      }
     }
   };
 

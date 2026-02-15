@@ -34,6 +34,18 @@ import {
   updatePlayerHealthBar, updateBarText, updateGrayscale, updateEnemyGrayscale,
   updateExpText, playRoundText, getTextStyle,
 } from './ui.js';
+import {
+  checkEnemyCollision, getEnemyPortraitUrl,
+  spawnEnemyDemi, createSpawnDemi, spawnEnemy, createSpawnEnemy,
+  determineEnemyScale, handleEnemySorting, handleEnemyActions,
+  handleEnemyMoving, handleEnemyCombat, handleCritterAttack,
+  addEnemyInRange, handleEnemyAttack, prepareEnemyPortrait,
+  removeEnemy, checkProjectileCollisions, rangedAttack,
+  resetEnemiesState, playGhostFly, resetToAttackTextures,
+  handleEnemyAttacking, drawCharHitSplat, drawHitSplat,
+  critterAttack, createCoffeeDrop, addCoffee, playSpawnAnimation,
+  createCoffeeDropText, playDeathAnimation, drawEnemyHPBar,
+} from './combat.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
@@ -1573,11 +1585,11 @@ state.demiSpawned = 0;
       playRoundText(state.currentRound);
 
       // document.getElementById("infoboxs").style.visibility = "visible";
-      document.getElementById("state.coffee-button").style.visibility = "visible";
+      document.getElementById("coffee-button").style.visibility = "visible";
       document.getElementById("infoboxes").style.visibility = "visible";
       document.getElementById("ui-overlay").style.visibility = "visible";
       document.getElementById("pause-button").style.visibility = "visible";
-      document.getElementById("state.coffee-button").style.visibility = "visible";
+      document.getElementById("coffee-button").style.visibility = "visible";
       critter.scale.set(getFrogSize());
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
@@ -2422,270 +2434,6 @@ enemy.isAlive = false;
   }
 
 
-  function critterAttack(critter, enemy, critterAttackTextures) {
-    // Reduce enemy's HP
-    console.log('ENEMY TYPE', enemy.type);
-
-    drawHitSplat(enemy);
-
-    console.log("dmgD", getCharacterDamage(getCurrentCharacter()));
-    if (enemy.currentHP - getCharacterDamage(getCurrentCharacter()) <= 0) {
-
-      // Callback function to remove enemy after death animation
-      if (app.stage.children.includes(enemy)) {
-        enemy.tint = 0xFF0000; // Set the hit color
-        if (getCurrentCharacter !== 'character-bird') {
-          if (getEnemiesInRange() > 0) {
-            setEnemiesInRange(getEnemiesInRange() - 1);
-          }
-        }
-        state.isCombat = false;
-        if (getEnemiesInRange() === 0) {
-          const enemyPortrait = document.getElementById('enemy-portrait');
-          enemyPortrait.style.display = 'none'; // Make the element visible
-        }
-        state.currentAttackedEnemy = null;
-
-        enemy.isAlive = false;
-        setIsCharAttacking(false);
-        console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
-        createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-        app.stage.removeChild(enemy);
-        getEnemies().splice(getEnemies().indexOf(enemy), 1);
-
-        playDeathAnimation(enemy, critter);
-      }
-    } 
-  }
-
-
-  function createCoffeeDrop(x, y) {
-    // Create a container to hold the state.coffee beans
-    const coffeeContainer = new PIXI.Container();
-
-    // Get the bean texture from the loaded resources
-    const beanTexture = PIXI.Assets.get('bean');
-
-    // Generate a random number between 1 and 10 for the number of state.coffee beans
-    const numBeans = Math.floor(Math.random() * 15 + state.currentRound * 2) + 1;
-
-    // Define the duration (in milliseconds) for the state.coffee beans to fall
-    const duration = 2000; // Adjust this value as desired
-
-    // Create and position state.coffee beans randomly within the container
-    for (let i = 0; i < numBeans; i++) {
-      const bean = new PIXI.Sprite(beanTexture);
-
-      // Set the initial position of the state.coffee bean
-      bean.anchor.set(0.5); // Set the anchor point to the center of the bean
-      bean.x = x + Math.random() * 80 - 10; // Randomize the x position within a range
-      bean.y = y + Math.random() * 60 - 20;;
-
-      // Set a random rotation angle for the state.coffee bean
-      bean.rotation = Math.random() * Math.PI * 2;
-
-      // Set the scale of the state.coffee bean (adjust the values as desired)
-      bean.scale.set(0.075 + Math.random() * 0.2); // Randomize the scale between 0.3 and 0.5
-
-      // Add the state.coffee bean to the container
-      coffeeContainer.addChild(bean);
-
-      // Animate the state.coffee bean to drop gradually
-      const targetY = y + 50; // Adjust the target position as desired
-      const initialY = bean.y - 50;
-      const startTime = Date.now();
-
-      const update = () => {
-        const elapsedTime = Date.now() - startTime;
-        const progress = elapsedTime / duration;
-
-        if (progress >= 1) {
-          bean.y = targetY;
-          return;
-        }
-
-        bean.y = initialY + (targetY - initialY) * progress;
-        requestAnimationFrame(update);
-      };
-
-      update();
-    }
-
-    // Add the state.coffee container to the stage or another container in your application
-    app.stage.addChild(coffeeContainer);
-
-    // Start a state.timer to remove the state.coffee beans after the specified duration
-    setTimeout(() => {
-      // Remove the state.coffee container from the stage or parent container
-      app.stage.removeChild(coffeeContainer);
-      createCoffeeDropText(x, y + 50, numBeans);
-
-    }, duration * 1.5);
-    addCoffee(numBeans);
-  }
-
-  function addCoffee(amount) {
-    setCoffee(getCoffee() + amount);
-    const coffeeAmountElement = document.getElementById('state.coffee-amount');
-    const coffeeAmount = getCoffee();
-    coffeeAmountElement.textContent = `${coffeeAmount}`;
-  }
-
-  function playSpawnAnimation(critter, critterSpawn) {
-    stopFlashing();
-
-    critterSpawn.position.set(critter.position.x, critter.position.y);
-    app.stage.addChild(critterSpawn);
-
-
-    critterSpawn.gotoAndPlay(0);
-
-    // Remove the death animation after it completes
-    critterSpawn.onComplete = () => {
-      app.stage.removeChild(critterSpawn);
-    };
-
-  }
-  function createCoffeeDropText(x, y, coffeeAmount) {
-    // create the state.coffee drop text
-    const coffeeDropText = "+" + coffeeAmount;
-    const coffeeDrop = new PIXI.Text(coffeeDropText, {
-      fontSize: 24,
-      fill: "rgb(178, 135, 90)",
-      fontWeight: "bold",
-      stroke: "#000",
-      strokeThickness: 3,
-      strokeOutside: true
-    });
-  
-    // Position the state.coffee drop text
-    coffeeDrop.position.set(x, y-50);
-    coffeeDrop.zIndex = 9999999999;
-    app.stage.addChild(coffeeDrop);
-  
-    // Animate the Coffee drop text
-    const startY = y -50;
-    const endY = startY - 100; // Adjust the value to control the floating height
-    const duration = 2600; // Animation duration in milliseconds
-    const startTime = performance.now();
-  
-    const animateCoffeeDrop = (currentTime) => {
-      const elapsed = currentTime - startTime;
-  
-      if (elapsed < duration) {
-        const progress = elapsed / duration;
-        const newY = startY - (progress * (startY - endY));
-        coffeeDrop.position.y = newY;
-        requestAnimationFrame(animateCoffeeDrop);
-      } else {
-        // Animation complete, remove the state.coffee drop text
-        app.stage.removeChild(coffeeDrop);
-      }
-    };
-  
-    requestAnimationFrame(animateCoffeeDrop);
-  }
-
-  function playDeathAnimation(enemy, critter) {
-
-    // Add the death animation sprite to the stage
-    state.enemyDeath.position.set(enemy.position.x, enemy.position.y);
-    app.stage.addChild(state.enemyDeath);
-    const expDropText = enemy.exp;
-    const expDrop = new PIXI.Text("+" + enemy.exp + " EXP", {
-      fontSize: 18,
-      fill: "orange",
-      fontWeight: "bold",
-      stroke: "#000",
-      strokeThickness: 3,
-      strokeOutside: true
-    });
-    expDrop.position.set(enemy.position.x + 20, enemy.position.y - 20);
-    expDrop.zIndex = 9999999999;
-    app.stage.addChild(expDrop);
-
-    // Animate the EXP drop text
-    const startY = enemy.position.y - 20;
-
-    const endY = startY - 50; // Adjust the value to control the floating height
-    const duration = 2600; // Animation duration in milliseconds
-    const startTime = performance.now();
-
-    const animateExpDrop = (currentTime) => {
-      const elapsed = currentTime - startTime;
-
-      if (elapsed < duration) {
-        const progress = elapsed / duration;
-        const newY = startY - (progress * (startY - endY));
-        expDrop.position.y = newY;
-        requestAnimationFrame(animateExpDrop);
-      } else {
-        // Animation complete, remove the EXP drop text
-        app.stage.removeChild(expDrop);
-      }
-    };
-
-    requestAnimationFrame(animateExpDrop);
-    // Play the death animation
-    state.enemyDeath.gotoAndPlay(0);
-
-    // Remove the death animation after it completes
-    state.enemyDeath.onComplete = () => {
-      setCharEXP(getCurrentCharacter(), getCharEXP(getCurrentCharacter()) + enemy.exp);
-      //ox setPlayerEXP(getPlayerEXP() + 100);
-      console.log("YEP", getCharEXP(getCurrentCharacter()));
-      console.log("YEPX", getEXPtoLevel(getCurrentCharacter()));
-      updateEXP(getCharEXP(getCurrentCharacter()) + enemy.exp, getEXPtoLevel(getCurrentCharacter()));
-
-      // Create the EXP drop text
-
-      // Remove the death animation sprite after it completes
-      app.stage.removeChild(state.enemyDeath);
-      //state.isCombat=false;
-    };
-  }
-
-  function drawEnemyHPBar(enemy) {
-
-    if (!enemy.initialWidth) {
-      enemy.initialWidth = Math.round(enemy.width);
-    }
-
-    const hpBarWidth = 100;
-    const hpBarHeight = 8;
-    const hpBarX = enemy.anchor.x - 32;
-    const hpBarY = -40;
-
-
-    if (!enemy.hpBarContainer) {
-      enemy.hpBarContainer = new PIXI.Container();
-      enemy.addChild(enemy.hpBarContainer);
-      console.log("HELLO");
-
-      enemy.hpBarBackground = new PIXI.Graphics();
-      enemy.hpBarBackground.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight).fill({ color: 0x000000, alpha: 0.5 });
-      enemy.hpBarContainer.addChild(enemy.hpBarBackground);
-
-      enemy.hpBar = new PIXI.Graphics();
-      enemy.hpBar.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight).fill({ color: 0xff0000, alpha: 0.75 });
-      enemy.hpBarContainer.addChild(enemy.hpBar);
-      enemy.hpBarBackground.position.set(hpBarX, hpBarY);
-      enemy.hpBar.position.set(hpBarX, hpBarY);
-    }
-
-    const maxHealth = enemy.maxHP; // Replace with actual max health of enemy
-    const currentHealth = enemy.currentHP; // Replace with actual current health of enemy
-    const hpBarRatio = currentHealth / maxHealth;
-    const hpBarWidthActual = Math.max(Math.round(hpBarWidth * hpBarRatio), 0);
-
-    enemy.hpBarContainer.scale.set(1 / Math.abs(enemy.scale.x), 1 / Math.abs(enemy.scale.y));
-    console.log("HPX", hpBarX);
-    console.log("HPY", hpBarY);
-
-    enemy.hpBar.clear();
-    enemy.hpBar.rect(hpBarX + hpBarWidth - hpBarWidthActual, hpBarY, hpBarWidthActual, hpBarHeight).fill({ color: 0xff0000, alpha: 0.75 });
-  }
-
   function handlePlayClick() {
 
     if (!state.isGameStarted) {
@@ -2711,7 +2459,7 @@ enemy.isAlive = false;
     playerEXPBarFill.style.width = getCharEXP(getCurrentCharacter()) / getEXPtoLevel(getCurrentCharacter()) * 100 + '%';
     updateExpText('exp-text', 'exp', getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter()));
   }
-
+  state.updateEXP = updateEXP;
 
 
 

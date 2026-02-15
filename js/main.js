@@ -213,10 +213,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       sunLightOverlay.alpha = 0.3;
       app.stage.addChild(sunLightOverlay);
 
-      // Player shadow
+      // Player shadow — big enough to be noticeable
       playerShadow = new PIXI.Graphics();
-      playerShadow.ellipse(0, 0, 25, 6).fill({ color: 0x000000, alpha: 0.3 });
-      playerShadow.zIndex = 100;
+      playerShadow.ellipse(0, 0, 40, 10).fill({ color: 0x000000, alpha: 0.5 });
+      playerShadow.zIndex = 1;
       app.stage.addChild(playerShadow);
 
     } else if (type === 'rain') {
@@ -334,22 +334,20 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       // Player shadow: direction + length based on sun position
       if (playerShadow && critter) {
         const sunScreenX = arcX;
-        const sunScreenY = arcY;
         const critterScreenX = critter.position.x + app.stage.x;
-        const critterScreenY = critter.position.y + app.stage.y;
 
-        // Shadow stretches away from sun
-        const shadowAngle = Math.atan2(critterScreenY - sunScreenY, critterScreenX - sunScreenX);
-        // Longer shadow when sun is low (low brightness), shorter at noon
-        const shadowLength = 15 + (1 - brightness) * 35;
-        const shadowOffsetX = Math.cos(shadowAngle) * shadowLength;
+        // Shadow cast direction: opposite side from the sun
+        const sunDir = sunScreenX < critterScreenX ? 1 : -1;
+        // Longer shadow when sun is low, shorter at noon
+        const stretchX = 1 + (1 - brightness) * 2.5;
 
+        // Position at character's feet
         playerShadow.position.set(
-          critter.position.x + shadowOffsetX * 0.5,
-          critter.position.y + critter.height * 0.35
+          critter.position.x + sunDir * stretchX * 12,
+          state.stored + critter.height * 0.22
         );
-        playerShadow.scale.set(0.8 + (1 - brightness) * 1.2, 1);
-        playerShadow.alpha = 0.15 + brightness * 0.2;
+        playerShadow.scale.set(stretchX, 1);
+        playerShadow.alpha = 0.25 + brightness * 0.35;
       }
 
     } else if (type === 'rain') {

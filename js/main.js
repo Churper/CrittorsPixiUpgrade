@@ -1466,6 +1466,8 @@ app.stage.addChild(hpBarBackground,hpBar);
 state.demiSpawned = 0;
             }
 
+            // Don't reset the round while unlock animation is still playing
+            if (!unlockAnimSprite) {
             playRoundText(state.currentRound);
 
 
@@ -1544,6 +1546,7 @@ state.demiSpawned = 0;
             setIsDead(false);
             resetEnemiesState();
             spawnEnemies();
+            } // end unlock animation guard
 
           }
           return;

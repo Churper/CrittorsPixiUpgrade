@@ -126,12 +126,208 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     weatherEl.textContent = weatherTypes[index].emoji;
   }
 
-  // Health potion system
-  state.potionFilled = state.potionFilled || false;
+  // --- Weather particle effects ---
+  let weatherContainer = null;
+  let weatherSun = null;
+  let weatherTicker = null;
 
+  function getWeatherType() {
+    return weatherTypes[(state.currentRound - 1) % weatherTypes.length].name;
+  }
+
+  function clearWeatherEffects() {
+    if (weatherContainer && state.app) {
+      state.app.stage.removeChild(weatherContainer);
+      weatherContainer.destroy({ children: true });
+      weatherContainer = null;
+    }
+    weatherSun = null;
+  }
+
+  function createWeatherEffects() {
+    clearWeatherEffects();
+    const app = state.app;
+    if (!app) return;
+
+    weatherContainer = new PIXI.Container();
+    weatherContainer.zIndex = 50000;
+    weatherContainer.label = 'weatherFX';
+    app.stage.addChild(weatherContainer);
+
+    const w = app.screen.width;
+    const h = app.screen.height;
+    const type = getWeatherType();
+
+    if (type === 'sun') {
+      // Sun glow orb
+      weatherSun = new PIXI.Container();
+      const glow = new PIXI.Graphics();
+      glow.circle(0, 0, 50).fill({ color: 0xFFDD44, alpha: 0.3 });
+      glow.circle(0, 0, 35).fill({ color: 0xFFEE66, alpha: 0.5 });
+      glow.circle(0, 0, 20).fill({ color: 0xFFFF99, alpha: 0.9 });
+      weatherSun.addChild(glow);
+      // Sun rays
+      for (let i = 0; i < 12; i++) {
+        const ray = new PIXI.Graphics();
+        const angle = (i / 12) * Math.PI * 2;
+        const len = 30 + Math.random() * 20;
+        ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 2, color: 0xFFEE44, alpha: 0.4 });
+        ray.rayAngle = angle;
+        ray.rayLen = len;
+        weatherSun.addChild(ray);
+      }
+      weatherSun.startTime = Date.now();
+      weatherContainer.addChild(weatherSun);
+
+    } else if (type === 'rain') {
+      // Rain drops
+      for (let i = 0; i < 80; i++) {
+        const drop = new PIXI.Graphics();
+        const alpha = 0.3 + Math.random() * 0.4;
+        const length = 8 + Math.random() * 14;
+        drop.moveTo(0, 0).lineTo(-2, length).stroke({ width: 1.5, color: 0x88BBEE, alpha: alpha });
+        drop.position.set(Math.random() * (w + 100) - 50, Math.random() * h);
+        drop.vy = 6 + Math.random() * 6;
+        drop.vx = -1.5 - Math.random() * 1;
+        drop.dropLength = length;
+        weatherContainer.addChild(drop);
+      }
+
+    } else if (type === 'wind') {
+      // Wind streaks and leaf-like particles
+      for (let i = 0; i < 25; i++) {
+        const streak = new PIXI.Graphics();
+        const len = 20 + Math.random() * 40;
+        const alpha = 0.1 + Math.random() * 0.2;
+        streak.moveTo(0, 0).lineTo(len, 0).stroke({ width: 1, color: 0xFFFFFF, alpha: alpha });
+        streak.position.set(Math.random() * w, Math.random() * h);
+        streak.vx = 8 + Math.random() * 6;
+        streak.vy = (Math.random() - 0.5) * 1.5;
+        streak.streakLen = len;
+        streak.isStreak = true;
+        weatherContainer.addChild(streak);
+      }
+      // Leaf particles
+      const leafColors = [0x66AA44, 0x88CC55, 0xAABB44, 0xCC9933, 0xDD8822];
+      for (let i = 0; i < 15; i++) {
+        const leaf = new PIXI.Graphics();
+        const color = leafColors[Math.floor(Math.random() * leafColors.length)];
+        leaf.ellipse(0, 0, 4, 2.5).fill({ color: color, alpha: 0.7 });
+        leaf.position.set(Math.random() * w, Math.random() * h);
+        leaf.vx = 5 + Math.random() * 5;
+        leaf.vy = -1 + Math.random() * 2;
+        leaf.spinSpeed = (Math.random() - 0.5) * 0.2;
+        leaf.wobble = Math.random() * Math.PI * 2;
+        leaf.isLeaf = true;
+        weatherContainer.addChild(leaf);
+      }
+
+    } else if (type === 'snow') {
+      // Snowflakes
+      for (let i = 0; i < 60; i++) {
+        const flake = new PIXI.Graphics();
+        const size = 1.5 + Math.random() * 3;
+        const alpha = 0.4 + Math.random() * 0.5;
+        flake.circle(0, 0, size).fill({ color: 0xFFFFFF, alpha: alpha });
+        flake.position.set(Math.random() * (w + 60) - 30, Math.random() * h);
+        flake.vy = 0.8 + Math.random() * 1.5;
+        flake.vx = 0;
+        flake.drift = (Math.random() - 0.5) * 0.02;
+        flake.wobblePhase = Math.random() * Math.PI * 2;
+        flake.wobbleAmp = 0.3 + Math.random() * 0.6;
+        flake.flakeSize = size;
+        weatherContainer.addChild(flake);
+      }
+    }
+  }
+
+  function updateWeatherEffects() {
+    if (!weatherContainer || !state.app) return;
+    const app = state.app;
+    const w = app.screen.width;
+    const h = app.screen.height;
+
+    // Keep container screen-fixed (counter camera movement)
+    weatherContainer.position.set(-app.stage.x, -app.stage.y);
+
+    const type = getWeatherType();
+
+    if (type === 'sun' && weatherSun) {
+      // Arc the sun across the sky over 60 seconds
+      const elapsed = Date.now() - weatherSun.startTime;
+      const duration = 60000;
+      const progress = Math.min(elapsed / duration, 1);
+      // Parabolic arc: rises from bottom-left, peaks at top-center, sets at bottom-right
+      const arcX = w * 0.1 + progress * w * 0.8;
+      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55;
+      weatherSun.position.set(arcX, arcY);
+      // Rotate rays slowly
+      weatherSun.rotation = elapsed * 0.0003;
+      // Pulse the glow
+      const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
+      weatherSun.scale.set(pulse);
+
+    } else if (type === 'rain') {
+      for (const drop of weatherContainer.children) {
+        drop.position.x += drop.vx;
+        drop.position.y += drop.vy;
+        // Wrap around
+        if (drop.position.y > h + 20) {
+          drop.position.y = -drop.dropLength;
+          drop.position.x = Math.random() * (w + 100) - 50;
+        }
+        if (drop.position.x < -20) {
+          drop.position.x = w + 10;
+        }
+      }
+
+    } else if (type === 'wind') {
+      for (const p of weatherContainer.children) {
+        p.position.x += p.vx;
+        p.position.y += p.vy;
+        if (p.isLeaf) {
+          p.wobble += 0.05;
+          p.position.y += Math.sin(p.wobble) * 1.2;
+          p.rotation += p.spinSpeed;
+        }
+        // Wrap around right edge
+        if (p.position.x > w + 60) {
+          p.position.x = -60;
+          p.position.y = Math.random() * h;
+        }
+        if (p.position.y < -20) p.position.y = h + 10;
+        if (p.position.y > h + 20) p.position.y = -10;
+      }
+
+    } else if (type === 'snow') {
+      for (const flake of weatherContainer.children) {
+        flake.wobblePhase += flake.drift;
+        flake.position.x += Math.sin(flake.wobblePhase) * flake.wobbleAmp;
+        flake.position.y += flake.vy;
+        // Wrap around
+        if (flake.position.y > h + 10) {
+          flake.position.y = -10;
+          flake.position.x = Math.random() * (w + 60) - 30;
+        }
+        if (flake.position.x < -30) flake.position.x = w + 20;
+        if (flake.position.x > w + 30) flake.position.x = -20;
+      }
+    }
+  }
+
+  // Health potion system (up to 3 doses)
   function updatePotionUI() {
     const btn = document.getElementById('potion-button');
-    if (state.potionFilled) {
+    const fill = document.getElementById('potion-fill');
+    const doseText = document.getElementById('potion-doses');
+    const costText = document.getElementById('potion-cost');
+    const doses = state.potionDoses || 0;
+    const max = state.potionMaxDoses || 3;
+    const fillPct = (doses / max) * 100;
+    fill.style.height = fillPct + '%';
+    doseText.textContent = doses > 0 ? doses + '/' + max : '';
+    costText.style.display = doses >= max ? 'none' : '';
+    if (doses > 0) {
       btn.classList.add('filled');
     } else {
       btn.classList.remove('filled');
@@ -139,11 +335,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   }
 
   document.getElementById('potion-button').addEventListener('pointerdown', () => {
-    if (state.potionFilled) {
-      // Use the potion — heal current character to full
+    const doses = state.potionDoses || 0;
+    const isHurt = getPlayerCurrentHealth() < getPlayerHealth();
+
+    if (doses > 0 && isHurt) {
+      // Use one dose — heal current character to full
       setPlayerCurrentHealth(getPlayerHealth());
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
-      state.potionFilled = false;
+      state.potionDoses--;
       updatePotionUI();
 
       // Gulp gulp feedback
@@ -152,10 +351,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       gulpText.style.transition = 'transform 0.15s';
       setTimeout(() => { gulpText.style.transform = 'scale(0.9)'; }, 150);
       setTimeout(() => { gulpText.style.transform = 'scale(1)'; }, 300);
-    } else if (getCoffee() >= 50) {
-      // Fill the potion — costs 50 coffee
+    } else if (doses < state.potionMaxDoses && getCoffee() >= 50) {
+      // Fill one dose — costs 50 coffee
       addCoffee(-50);
-      state.potionFilled = true;
+      state.potionDoses = doses + 1;
       updatePotionUI();
 
       // Fill animation
@@ -1254,6 +1453,7 @@ let cantGainEXP = false;
         cantGainEXP = true;
         state.currentRound++;
         updateWeatherIcon();
+        createWeatherEffects();
 
         // Check for character unlocks
         const unlocks = { 2: 'character-snail', 5: 'character-bird', 10: 'character-bee' };
@@ -1353,8 +1553,9 @@ let cantGainEXP = false;
       state.initialClouds = clouds.position.x;
       let once = 0;
       app.ticker.add(() => {
+        updateWeatherEffects();
         if (isTimerFinished()) {
-         
+
           console.log("TIMERDONE");
           spawnDemi();
           pauseTimer();
@@ -1827,6 +2028,7 @@ state.demiSpawned = 0;
       document.getElementById("coffee-button").style.visibility = "visible";
       document.getElementById("weather-icon").style.visibility = "visible";
       updateWeatherIcon();
+      createWeatherEffects();
       document.getElementById("potion-button").style.visibility = "visible";
       updatePotionUI();
       critter.scale.set(getFrogSize());
@@ -1996,6 +2198,7 @@ state.demiSpawned = 0;
       app.stage.addChild(critter);
       playRoundText(state.currentRound);
       updateWeatherIcon();
+      createWeatherEffects();
 
       // Loop through the enemies array and remove each enemy
       for (let i = 0; i < getEnemies().length; i++) {

@@ -86,7 +86,8 @@ const state = {
   cooldownDuration: 3000,
 
   // Potion
-  potionFilled: false,
+  potionDoses: 0,
+  potionMaxDoses: 3,
 
   // Misc
   stored: 0,

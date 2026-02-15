@@ -2840,10 +2840,10 @@ enemy.isAlive = false;
       state.isGameStarted = gameData.isGameStarted;
       state.characterStats = gameData.characterStats;
       state.repicked = gameData.repicked;
-      characterLevelElement = document.getElementById("character-level");
-      updateLightning = document.getElementById("lightning-level");
-      updateHP = document.getElementById("heart-level");
-      updateDamage = document.getElementById("swords-level");
+      const characterLevelElement = document.getElementById("character-level");
+      const updateLightning = document.getElementById("lightning-level");
+      const updateHP = document.getElementById("heart-level");
+      const updateDamage = document.getElementById("swords-level");
       let level;
 
       level = getSnailLevel();
@@ -2888,7 +2888,7 @@ enemy.isAlive = false;
   resetTimer();
       startTimer();
 startGame();
-isGameStart=true;
+state.isGameStarted=true;
   }
 
 });

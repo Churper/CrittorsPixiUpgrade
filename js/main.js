@@ -218,10 +218,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       sunLightOverlay.eventMode = 'none';
       app.stage.addChild(sunLightOverlay);
 
-      // Player shadow — big enough to be noticeable
+      // Player shadow — big enough to be noticeable, above foreground
       playerShadow = new PIXI.Graphics();
       playerShadow.ellipse(0, 0, 40, 10).fill({ color: 0x000000, alpha: 0.5 });
-      playerShadow.zIndex = 1;
+      playerShadow.zIndex = 9;
+      playerShadow.eventMode = 'none';
       app.stage.addChild(playerShadow);
 
     } else if (type === 'rain') {

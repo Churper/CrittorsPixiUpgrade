@@ -675,9 +675,9 @@ export function drawHitSplat(enemy) {
       break;
     case 'character-bee':
       if (enemyType === 'ele' || enemyType === 'octo') {
-        damage = Math.round(getBeeDamage() * 1.75); // Double damage for strong against enemy.type ele and puffer
-      } else if (enemyType === 'octo') {
-        damage = Math.round(getBeeDamage() * 0.75); // Half damage for weak against enemy.type shark and pig
+        damage = Math.round(getBeeDamage() * 1.75);
+      } else if (enemyType === 'shark') {
+        damage = Math.round(getBeeDamage() * 0.75);
       } else {
         damage = Math.round(getBeeDamage());
       }

@@ -1022,8 +1022,8 @@ backgroundTexture = textures.background;
           console.log('Delete button clicked');
           return;
         }
-        if (deleteButton.text === '🔵') {
-          console.log('Blue button clicked');
+        if (deleteButton.isSlider) {
+          console.log('Slider clicked');
           return;
         }
         if ((deleteButton && deleteButton.text === '🔊') || (deleteButton && deleteButton.text === '🔈')) {

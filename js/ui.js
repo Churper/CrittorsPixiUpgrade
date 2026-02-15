@@ -62,6 +62,8 @@ export function createVolumeSlider(backgroundSprite, yOffset, label, type) {
 
   const sliderBackground = new PIXI.Graphics();
   sliderBackground.rect(0, -10, trackWidth, 20).fill(0x000000);
+  sliderBackground.eventMode = 'static';
+  sliderBackground.on('pointerdown', (event) => { event.stopPropagation(); });
   volumeSlider.addChild(sliderBackground);
 
   const labelText = new PIXI.Text(label, {
@@ -94,10 +96,12 @@ export function createSliderBall(backgroundSprite, type, trackWidth) {
 
   sliderBall.eventMode = 'static';
   sliderBall.cursor = 'pointer';
+  sliderBall.isSlider = true;
 
   sliderBall.on('pointerdown', (event) => {
     isDragging = true;
     offsetX = event.data.global.x - sliderBall.x;
+    event.stopPropagation();
   });
 
   // Use globalpointermove so drag works even when cursor leaves the ball

@@ -49,9 +49,16 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     rotateMessage.style.display = 'none';
     // Run your app's main function here if it's not already runnin
     if (!appStarted) {
+      // Start music here, within the user gesture (before any await)
+      const sound = new Audio('./theme.ogg');
+      sound.volume = state.musicVolume;
+      sound.loop = true;
+      state.themeMusic = sound;
+      sound.play();
+
       mainAppFunction();
       appStarted = true;
-      
+
     }
   });
 
@@ -492,15 +499,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     loadingSprite.alpha = 1; // Start fully opaque
     app.stage.removeChild(menuSprite);
     app.stage.addChild(loadingSprite);
-    const sound = new Audio();
-    sound.src = "./theme.ogg";
-    sound.volume = state.musicVolume;
-    sound.loop = true;
-    state.themeMusic = sound;
-    sound.play();
 
 
-    // Game elements and logic 
+    // Game elements and logic
     let castleMaxHealth = 100;
     let castleHealth = castleMaxHealth;
     const mountainVelocityX = 0;

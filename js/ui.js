@@ -157,10 +157,10 @@ export function createPauseMenuContainer() {
   const text1 = createText('\n' + roundText, textStyle, backgroundSprite, true);
   state.pauseMenuContainer.addChild(text1);
 
-  const musicSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.4, 'Music', 'music');
+  const musicSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.3, 'Music', 'music');
   state.pauseMenuContainer.addChild(musicSlider);
 
-  const effectsSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.6, 'Effects', 'effects');
+  const effectsSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.45, 'Effects', 'effects');
   state.pauseMenuContainer.addChild(effectsSlider);
 
   const garbageButton = createGarbageButton(backgroundSprite);

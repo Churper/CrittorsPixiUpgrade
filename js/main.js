@@ -28,6 +28,12 @@ import {
   getCharacterName, getCharacterPortraitUrl, updateCharacterStats,
   getCharacterDamage, updateCurrentLevels,
 } from './characters.js';
+import {
+  createPauseMenuContainer, shouldReturnEarly, updateDialogPositions,
+  getIsWiped, setisWiped, isCooldownActive, startCooldown, openCharacterMenu,
+  updatePlayerHealthBar, updateBarText, updateGrayscale, updateEnemyGrayscale,
+  updateExpText, playRoundText, getTextStyle,
+} from './ui.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
@@ -92,66 +98,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
 
 
-  function shouldReturnEarly(value) {
-    if ((value && state.pauseMenuContainer) || (!value && state.isUnpausing) || app.stage.children.includes(state.reviveDialogContainer)) {
-      console.log('returning early');
-      return true;
-
-    }
-
-    const spawnTextElement = document.getElementById('spawn-text');
-    const computedStyle = window.getComputedStyle(spawnTextElement);
-    const visibility = computedStyle.getPropertyValue('visibility');
-
-    return visibility === 'visible';
-  }
-
-
-  function createPauseMenuContainer() {
-    state.pauseMenuContainer = new PIXI.Container();
-    state.pauseMenuContainer.myCustomID = 'pauseMenuX';
-  
-    const backgroundSprite = createBackgroundSprite();
-    state.pauseMenuContainer.addChild(backgroundSprite);
-  
-    const border = createBorder(backgroundSprite);
-    state.pauseMenuContainer.addChild(border);
-  
-    const pauseText = 'Game Paused';
-    const roundText = 'Round: ' + state.currentRound; // Add current round information
-  
-    const textStyle = getTextStyle(backgroundSprite.width);
-    const text = createText(pauseText, textStyle, backgroundSprite);
-    state.pauseMenuContainer.addChild(text);
-  
-    const text1 = createText('\n' + roundText, textStyle, backgroundSprite, true);
-    state.pauseMenuContainer.addChild(text1);
-  
-    // Volume Slider
-    const volumeSlider = createVolumeSlider(backgroundSprite);
-  
-    // Volume Button
-    state.volumeButton = createVolumeButton(backgroundSprite);
-    state.volumeButton.position.set(volumeSlider.x - backgroundSprite.width /8, backgroundSprite.height / 2);
-    state.pauseMenuContainer.addChild(state.volumeButton);
-  
-    // Garbage Button
-    const garbageButton = createGarbageButton(backgroundSprite);
-    garbageButton.position.set(backgroundSprite.width - garbageButton.width - 10, backgroundSprite.height);
-    state.pauseMenuContainer.addChild(garbageButton);
-  
-    // Adjust position and add children to the container
-    state.pauseMenuContainer.addChild(volumeSlider);
-    volumeSlider.addChild(createSliderBall(backgroundSprite));
-  
-    let pauseX = -app.stage.position.x + (app.screen.width / 2) - (state.pauseMenuContainer.width / 2);
-    let pauseY = -app.stage.position.y + (app.screen.width / 2) - (state.pauseMenuContainer.height / 2);
-    state.pauseMenuContainer.position.set(pauseX, pauseY);
-  
-    app.stage.addChild(state.pauseMenuContainer);
-  
-    return state.pauseMenuContainer;
-  }
   
 
   
@@ -184,186 +130,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
   }
 
-  // The remaining helper functions (createBackgroundSprite, createBorder, getTextStyle, createText, createVolumeSlider, createVolumeButton, createGarbageButton, createSliderBall) will need to be implemented.
-  function createBackgroundSprite() {
-    const backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-    backgroundSprite.width = app.screen.width;
-    backgroundSprite.height = Math.max(app.screen.height * 0.4, 300);
-    backgroundSprite.tint = 0xFFFFFF; // White color
-    backgroundSprite.alpha = 0.8; // Semi-transparent background
-    return backgroundSprite;
-  }
-
-  function createBorder(backgroundSprite) {
-    const border = new PIXI.Graphics();
-    border.rect(0, 0, backgroundSprite.width, backgroundSprite.height).stroke({ width: 4, color: 0x8B4513 });
-    return border;
-  }
-
-  function getTextStyle(backgroundSpriteWidth) {
-    return new PIXI.TextStyle({
-      fontFamily: 'Patrick Hand',
-      fontSize: 44, // Increased font size to 60
-      fill: '#FFFFFF', // White color for text fill
-      stroke: '#000000',
-      strokeThickness: 6,
-      dropShadow: true,
-      dropShadowColor: '#000000',
-      dropShadowBlur: 4,
-      dropShadowAngle: Math.PI / 6,
-      dropShadowDistance: 2,
-      wordWrap: true,
-      wordWrapWidth: backgroundSpriteWidth /2,
-    });
-  }
-
-  function createText(textContent, textStyle, backgroundSprite, isRoundText = false) {
-    const text = new PIXI.Text(textContent, textStyle);
-    text.anchor.set(0.5);
-    const yPos = isRoundText ? backgroundSprite.height / 1.5 : backgroundSprite.height / 6;
-    text.position.set(backgroundSprite.width / 2, yPos);
-    return text;
-  }
 
 
-  function setVolume(x,backgroundSprite, boundaryOffset) {
-    let normalizedX = (x + backgroundSprite.width / 8 - boundaryOffset) / (2 * boundaryOffset);
-    if (normalizedX <= 0) {
-        state.volumeButton.text = '🔈';
-    } else if (normalizedX < 0.5) {
-        state.volumeButton.text = '🔉';
-    } else {
-        state.volumeButton.text = '🔊';
-    }
-}
-
-  function createVolumeSlider(backgroundSprite) {
-    const volumeSlider = new PIXI.Container();
-    volumeSlider.position.set(backgroundSprite.width / 2.75, backgroundSprite.height / 2);
-    const sliderBackground = new PIXI.Graphics();
-    sliderBackground.rect(0, -10, backgroundSprite.width/3.5, 20).fill(0x000000);
-    volumeSlider.addChild(sliderBackground);
-     // New function to adjust the volume based on the slider ball's position
-  
-    return volumeSlider;
-  }
-  function createSliderBall(backgroundSprite) {
-    let boundaryOffset = backgroundSprite.width / 8; // You can adjust this value to fine-tune the boundaries
-
-    const sliderBall = new PIXI.Text('🔵', { fontSize: 48 });
-    sliderBall.anchor.set(0.5);
-    sliderBall.position.set(100, 0);
-    
-    let isDragging = false;
-    let offsetX = 0;
-
-    sliderBall.eventMode = 'static';
-    sliderBall.cursor = 'pointer';
-
-    sliderBall.on('pointerdown', (event) => {
-      isDragging = true;
-      offsetX = event.data.global.x - sliderBall.x;
-    });
-
-    sliderBall.on('pointermove', (event) => {
-      if (isDragging) {
-        let newX = event.data.global.x - offsetX;
-        newX = Math.max(-backgroundSprite.width / 8 + boundaryOffset, Math.min(backgroundSprite.width / 8 + boundaryOffset, newX));
-        sliderBall.x = newX;
-        setVolume(newX,backgroundSprite, boundaryOffset);
-        // Update volume based on slider position
-        // Add your volume control logic here
-      }
-    });
-
-    sliderBall.on('pointerup', () => {
-      isDragging = false;
-      setVolume(sliderBall.x,backgroundSprite, boundaryOffset); // Make sure to update the volume when the dragging ends
-
-    });
-
-    sliderBall.on('pointerupoutside', () => {
-      isDragging = false;
-      setVolume(sliderBall.x,backgroundSprite, boundaryOffset); // Make sure to update the volume when the dragging ends
-
-    });
-
-    return sliderBall;
-  }
-
-
-  function createVolumeButton(backgroundSprite) {
-   state.volumeButton = new PIXI.Text('🔉', { fontSize: 80 });
-    state.volumeButton.anchor.set(0.5);
-    state.volumeButton.position.set(backgroundSprite.width / 20, backgroundSprite.height / 2);
-
-    state.volumeButton.eventMode = 'static';
-    state.volumeButton.cursor = 'pointer';
-    let isMuted = false;
-
-    state.volumeButton.on('click', () => {
-      isMuted = !isMuted;
-      state.volumeButton.text = isMuted ? '🔈' : '🔊';
-      // Add your volume control logic here
-    });
-
-    return state.volumeButton;
-  }
-
-  function createGarbageButton(backgroundSprite) {
-    const garbageButton = new PIXI.Text('🗑️', { fontSize: 70 });
-    garbageButton.anchor.set(0.4);
-    garbageButton.position.set((backgroundSprite.width / 4) * 2, backgroundSprite.height -200 );
-
-    garbageButton.eventMode = 'static';
-    garbageButton.cursor = 'pointer';
-
-    garbageButton.on('pointerdown', () => {
-      // Handle delete game save functionality here
-      // Close the game or perform other necessary actions
-      alert("DELETED");
-      localStorage.removeItem('gameSave');
-    });
-
-    return garbageButton;
-  }
-
-
-  function update() {
-    // Calculate the center of the screen regardless of the stage position
-    if (state.reviveDialogContainer) {
-      let dialogX = -app.stage.position.x + (app.screen.width / 2) - (state.reviveDialogContainer.width / 2);
-      let dialogY = -app.stage.position.y + (app.screen.height / 2) - (state.reviveDialogContainer.height / 2);
-      state.reviveDialogContainer.position.set(dialogX, dialogY);
-    }
-
-    if (state.pauseMenuContainer) {
-      let pauseX = -app.stage.position.x + (app.screen.width / 2) - (state.pauseMenuContainer.width / 2);
-      let pauseY = -app.stage.position.y + (app.screen.height / 2) - (state.pauseMenuContainer.height / 2);
-      state.pauseMenuContainer.position.set(pauseX, pauseY);
-    }
-  }
-
-
-  function getIsWiped() {
-    return state.isWiped;
-  }
-
-  function setisWiped(value) {
-    console.log("WIPED");
-    state.isWiped = value;
-
-    // Get the pause text element
-    var wipeText = document.getElementById("wipe-text");
-
-    // Swap the visibility based on the state.isPaused value
-    if (getIsWiped()) {
-      wipeText.style.visibility = "visible";
-    } else {
-      wipeText.style.visibility = "hidden";
-    }
-
-  }
 
 
   var pauseButton = document.getElementById("pause-button");
@@ -399,24 +167,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   });
 
 
-  function isCooldownActive() {
-    return state.cooldownActive;
-  }
-
-  function startCooldown() {
-    state.cooldownActive = true;
-
-    // Show the cooldown overlay
-    const overlayElement = document.getElementById("cooldown-overlay");
-    overlayElement.style.display = "block";
-
-    setTimeout(() => {
-      state.cooldownActive = false;
-
-      // Hide the cooldown overlay
-      overlayElement.style.display = "none";
-    }, state.cooldownDuration);
-  }
 
 
 ["character-portrait", "exp-bar", "health-bar"].forEach(id => {
@@ -447,37 +197,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     });
 });
   
-  function openCharacterMenu() {
-    if (getSelectLevel() >= 1) {
-      return;
-    }
-  
-    // Check if there is a cooldown
-    if (isCooldownActive()) {
-      return;
-    }
-  
-    // Toggle the visibility of the character info boxes
-    const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
-  
-    if (state.isCharacterMenuOpen) {
-      characterBoxes.forEach((box) => {
-        box.style.visibility = 'hidden';
-      });
-      state.isCharacterMenuOpen = false;
-    } else {
-      characterBoxes.forEach((box) => {
-        if (state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
-          box.style.visibility = 'hidden';
-        } else {
-          box.style.visibility = 'visible';
-        }
-      });
-      state.isCharacterMenuOpen = true;
-    }
-  
-    // Start the cooldown
-  }
 
   function handleCharacterClick(characterType) {
     let characterHealth;
@@ -727,22 +446,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     });
   }
 
-  function update() {
-    // Calculate the center of the screen regardless of the stage position
-    if (state.reviveDialogContainer) {
-      let dialogX = -app.stage.position.x + (app.screen.width / 2) - (state.reviveDialogContainer.width / 2);
-      let dialogY = -app.stage.position.y + (app.screen.height / 2) - (state.reviveDialogContainer.height / 2);
-      state.reviveDialogContainer.position.set(dialogX, dialogY);
-
-    }
-    if (state.pauseMenuContainer) {
-      let pauseX = -app.stage.position.x + (app.screen.width / 2) - (state.pauseMenuContainer.width / 2);
-      let pauseY = -app.stage.position.y + (app.screen.height / 2) - (state.pauseMenuContainer.height / 2);
-      state.pauseMenuContainer.position.set(pauseX, pauseY);
-
-    }
-
-  }
 
 
   // Add click event listeners to character boxes
@@ -1544,10 +1247,10 @@ let cantGainEXP = false;
         }
         //console.log("HERXOROR:", getEnemiesInRange());
         if (state.reviveDialogContainer) {
-          update();
+          updateDialogPositions();
         }
         if (state.pauseMenuContainer) {
-          update();
+          updateDialogPositions();
         }
         if (getisPaused()) {
 
@@ -2994,29 +2697,6 @@ enemy.isAlive = false;
   }
 
 
-  function updatePlayerHealthBar(health) {
-    const playerHealthBarFill = document.getElementById('health-bar-fill');
-    playerHealthBarFill.style.width = health + '%';
-    updateGrayscale(health);
-    updateBarText('hp-text', 'hp', health);
-  }
-
-
-  function updateBarText(elementId, labelText, value) {
-    const barText = document.getElementById(elementId);
-    const roundedValue = getPlayerCurrentHealth().toFixed();
-    barText.innerText = `${labelText}:\u00A0 ${roundedValue}\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\/${getPlayerHealth()}`;
-  }
-
-  function updateGrayscale(hpPercentage) {
-    const grayscalePercentage = 100 - hpPercentage;
-    document.getElementById('character-portrait').style.filter = `sepia(${grayscalePercentage}%)`;
-  }
-
-  function updateEnemyGrayscale(hpPercentage) {
-    const grayscalePercentage = 100 - hpPercentage;
-    document.getElementById('enemy-portrait').style.filter = `grayscale(${grayscalePercentage}%)`;
-  }
 
   function updateEXP(exp, expToLevel1) {
     let leftover = 0;
@@ -3033,12 +2713,6 @@ enemy.isAlive = false;
   }
 
 
-  function updateExpText(elementId, labelText, value, expToLevel) {
-    const barText = document.getElementById(elementId);
-    const roundedEXPValue = Math.round(value).toFixed();
-    const roundedEnder = Math.round(state.expToLevel).toFixed();
-    barText.innerText = `${labelText}: ${roundedEXPValue}\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\/${roundedEnder}`;
-  }
 
 
   function animateUpgradeBoxes() {
@@ -3283,35 +2957,6 @@ enemy.isAlive = false;
     }
   }
 
-  function playRoundText(round) {
-
-    // Get the element with id "Round-text"
-    var roundText = document.getElementById("round-text");
-
-    // Set the round text
-    roundText.innerHTML = round;
-
-    // Reset opacity and display properties
-    roundText.style.opacity = 1;
-    roundText.style.display = "block";
-
-    // Set the visibility to "visible"
-    roundText.style.visibility = "visible";
-
-    // Fade out the element gradually over 1 second
-    var opacity = 1;
-    var fadeOutInterval = setInterval(function () {
-      if (opacity > 0) {
-        opacity -= 0.01; // Adjust the fade out speed by changing this value
-        roundText.style.opacity = opacity;
-      } else {
-        // When the element is completely faded out, hide it and stop the state.interval
-        roundText.style.display = "none";
-        clearInterval(fadeOutInterval);
-      }
-    }, 10); // Adjust the state.interval duration by changing this value
-    
-  }
 
 
   // Add event listeners for visibility change

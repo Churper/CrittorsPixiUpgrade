@@ -112,9 +112,22 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
  }
 
+  // Weather system — icon based on current round
+  const weatherTypes = [
+    { name: 'sun', emoji: '\u2600\uFE0F' },
+    { name: 'rain', emoji: '\uD83C\uDF27\uFE0F' },
+    { name: 'wind', emoji: '\uD83D\uDCA8' },
+    { name: 'snow', emoji: '\u2744\uFE0F' },
+  ];
+
+  function updateWeatherIcon() {
+    const weatherEl = document.getElementById('weather-icon');
+    const index = (state.currentRound - 1) % weatherTypes.length;
+    weatherEl.textContent = weatherTypes[index].emoji;
+  }
 
 
-  
+
 
   
   // Initial check
@@ -1202,6 +1215,7 @@ let cantGainEXP = false;
       function castleExplode() {
         cantGainEXP = true;
         state.currentRound++;
+        updateWeatherIcon();
 
         // Check for character unlocks
         const unlocks = { 2: 'character-snail', 5: 'character-bird', 10: 'character-bee' };
@@ -1773,6 +1787,8 @@ state.demiSpawned = 0;
       document.getElementById("ui-overlay").style.visibility = "visible";
       document.getElementById("pause-button").style.visibility = "visible";
       document.getElementById("coffee-button").style.visibility = "visible";
+      document.getElementById("weather-icon").style.visibility = "visible";
+      updateWeatherIcon();
       critter.scale.set(getFrogSize());
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
@@ -1939,6 +1955,7 @@ state.demiSpawned = 0;
       critter.play();
       app.stage.addChild(critter);
       playRoundText(state.currentRound);
+      updateWeatherIcon();
 
       // Loop through the enemies array and remove each enemy
       for (let i = 0; i < getEnemies().length; i++) {

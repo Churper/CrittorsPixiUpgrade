@@ -211,8 +211,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       weatherContainer.addChild(weatherSun);
 
       // Lighting overlay — dims at dawn/dusk, bright at noon
+      // Use huge fixed size to cover any screen orientation/camera position
       sunLightOverlay = new PIXI.Graphics();
-      sunLightOverlay.rect(0, 0, w * 3, h * 3).fill({ color: 0x000000 });
+      sunLightOverlay.rect(0, 0, 8000, 8000).fill({ color: 0x000000 });
       sunLightOverlay.zIndex = 49999;
       sunLightOverlay.alpha = 0.3;
       sunLightOverlay.eventMode = 'none';
@@ -335,7 +336,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
       // Lighting: dim at dawn/dusk (progress near 0 or 1), bright at noon (progress ~0.5)
       if (sunLightOverlay) {
-        sunLightOverlay.position.set(-app.stage.x - w, -app.stage.y - h);
+        sunLightOverlay.position.set(-app.stage.x - 2000, -app.stage.y - 2000);
         // Overlay alpha: 0.35 at dawn/dusk, 0.0 at peak noon
         sunLightOverlay.alpha = 0.35 * (1 - brightness);
         // Warm tint at dawn/dusk via slight orange
@@ -359,7 +360,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         // Position at character's feet
         playerShadow.position.set(
           critter.position.x + sunDir * stretchX * 12,
-          state.stored + critter.height * 0.22
+          state.stored + critter.height * 0.42
         );
         playerShadow.scale.set(stretchX, 1);
         playerShadow.alpha = 0.25 + brightness * 0.35;

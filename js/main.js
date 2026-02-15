@@ -1898,17 +1898,7 @@ state.demiSpawned = 0;
 
 
   function handleVisibilityChange() {
-    if (document.hidden || document.webkitHidden) {
-      // Document is hidden, perform actions here (e.g., pause the game)
-      if (getPlayerCurrentHealth() > 0) {
-        setisPaused(true);
-      }
-    } else {
-      if (getPlayerCurrentHealth() > 0) {
-        // Document is visible again, perform actions here (e.g., resume the game)
-        setisPaused(false);
-      }
-    }
+    // No-op: game continues running when tab loses focus
   }
 
 

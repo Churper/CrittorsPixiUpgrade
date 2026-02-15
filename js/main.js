@@ -1364,6 +1364,8 @@ let cantGainEXP = false;
 
           // Animate unlock character walking out of castle toward base
           if (unlockActive) {
+            const baseX = app.screen.width / 5; // Walk to the base area
+
             if (!unlockAnimSprite.celebrating) {
               // Grow from tiny to full size (squirm out effect)
               const targetScale = 0.35;
@@ -1374,16 +1376,18 @@ let cantGainEXP = false;
                 unlockAnimSprite.scale.set(newScale);
                 unlockAnimSprite.scale.x *= -1; // Keep facing left
               }
-              // Walk left toward critter
-              unlockAnimSprite.position.x -= 5;
+              // Walk left toward base (not critter — critter is still at castle)
+              unlockAnimSprite.position.x -= 6;
               unlockAnimSprite.position.y = state.stored + Math.sin(Date.now() * 0.008) * 3;
 
-              // Reached the player — start celebration!
-              if (unlockAnimSprite.position.x <= critter.position.x + 80) {
+              // Reached the base — start celebration!
+              if (unlockAnimSprite.position.x <= baseX) {
                 unlockAnimSprite.celebrating = true;
                 unlockAnimSprite.celebrateStart = Date.now();
-                // Position next to player
-                unlockAnimSprite.position.x = critter.position.x + 60;
+                unlockAnimSprite.position.x = baseX;
+                // Snap critter to base to celebrate together
+                critter.position.x = baseX - 60;
+                critter.position.y = state.stored;
               }
             } else {
               // Celebration! Both characters bounce together

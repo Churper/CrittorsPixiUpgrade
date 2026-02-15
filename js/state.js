@@ -152,7 +152,7 @@ const state = {
 
   // Spawning
   timeOfLastSpawn: Date.now(),
-  interval: 13000,
+  interval: 6500,
   enemySpawnTimeout: null,
   isSpawning: false,
 

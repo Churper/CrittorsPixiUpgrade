@@ -1253,6 +1253,7 @@ backgroundTexture = textures.background;
       handleTouchEnd = function(event) {
         activeTouches--;
         clearInterval(pointerHoldInterval);
+        pointerHoldInterval = null;
         state.isPointerDown = false;
         if (!attackAnimationPlayed) {
           return;
@@ -1268,12 +1269,11 @@ backgroundTexture = textures.background;
       }
 
       document.addEventListener("mouseout", handleMouseLeave);
-      document.addEventListener("touchend", handleMouseLeave);
 
       app.stage.eventMode = 'static';
       app.stage.on("pointerdown", handleTouchStart);
       app.stage.on("pointerup", handleTouchEnd);
-      app.stage.on("touchendoutside", handleTouchEnd);
+      app.stage.on("pointerupoutside", handleTouchEnd);
       xDir = 1;
       updateVelocity();
       critter.loop = true;
@@ -1688,6 +1688,11 @@ let cantGainEXP = false;
           return;
         }
 
+
+        // Safety net: if pointer is held but the attack interval was cleared, restart it
+        if (state.isPointerDown && !pointerHoldInterval && !getisDead() && !state.roundOver) {
+          pointerHoldInterval = setInterval(handleTouchHold, 10);
+        }
 
         //console.log("isatt:", state.isAttackingChar);
         if (state.roundOver) {

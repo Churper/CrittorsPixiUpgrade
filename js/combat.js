@@ -705,16 +705,16 @@ export function drawHitSplat(enemy) {
   const hitSound = state.attackSound.cloneNode();
   hitSound.volume = state.effectsVolume;
   if (damage > baseDamage) {
-    hitSound.playbackRate = 1.5; // Crit: higher pitch
+    hitSound.playbackRate = 2.0; // Crit: high pitch, snappy
   } else if (damage < baseDamage) {
     hitSound.playbackRate = 0.6; // Dud: lower pitch
   }
   hitSound.play();
 
   // Color-coded damage text
-  let fillColor = "rgb(240, 70, 60)";       // normal
-  if (damage > baseDamage) fillColor = "rgb(180, 20, 20)";  // crit
-  if (damage < baseDamage) fillColor = "rgb(160, 160, 160)"; // dud
+  let fillColor = "rgb(255, 255, 255)";      // normal: white
+  if (damage > baseDamage) fillColor = "rgb(255, 215, 0)";  // crit: gold
+  if (damage < baseDamage) fillColor = "rgb(160, 160, 160)"; // dud: grey
 
   drawEnemyHPBar(enemy);
   updateEnemyGrayscale(enemy.currentHP);

@@ -123,6 +123,12 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   function setisPaused(value) {
     state.isPaused = value;
     if (value) {
+      // Clear pending spawn timeout so it doesn't fire during pause
+      if (state.enemySpawnTimeout) {
+        clearTimeout(state.enemySpawnTimeout);
+        state.enemySpawnTimeout = null;
+        state.isSpawning = false;
+      }
       pauseTimer();
     }
     if (shouldReturnEarly(value)) {

@@ -57,7 +57,9 @@ export function saveGame() {
     frogEXPToLevel: state.frogEXPToLevel,
     snailEXPToLevel: state.snailEXPToLevel,
     beeEXPToLevel: state.beeEXPToLevel,
-    birdEXPToLevel: state.birdEXPToLevel
+    birdEXPToLevel: state.birdEXPToLevel,
+    musicVolume: state.musicVolume,
+    effectsVolume: state.effectsVolume,
   };
 
   const saveData = JSON.stringify(gameData);
@@ -152,6 +154,16 @@ export function loadGame() {
     addCoffee(gameData.coffee - gameData.coffee);
     //updateVelocity();
     setSelectLevel(0);
+    if (gameData.musicVolume !== undefined) {
+      state.musicVolume = gameData.musicVolume;
+      if (state.themeMusic) {
+        state.themeMusic.volume = state.musicVolume;
+      }
+    }
+    if (gameData.effectsVolume !== undefined) {
+      state.effectsVolume = gameData.effectsVolume;
+    }
+
     state.roundOver = false;
     state.cooldownActive = false;
 

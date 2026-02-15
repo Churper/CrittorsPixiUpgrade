@@ -181,7 +181,7 @@ export function handleUpgrade(upgradeType) {
     default:
       console.log('Invalid upgrade type', upgradeType);
   }
-  state.chooseSound.volume = .22;
+  state.chooseSound.volume = state.effectsVolume;
   state.chooseSound.play();
 
   if (getSelectLevel() <= 0) {

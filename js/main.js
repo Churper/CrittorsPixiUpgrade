@@ -494,8 +494,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     app.stage.addChild(loadingSprite);
     const sound = new Audio();
     sound.src = "./theme.ogg";
-   // sound.volume = .42;
-    //sound.play();
+    sound.volume = state.musicVolume;
+    sound.loop = true;
+    state.themeMusic = sound;
+    sound.play();
 
 
     // Game elements and logic 
@@ -925,7 +927,7 @@ backgroundTexture = textures.background;
               }
               if (state.isAttackingChar) {
                 attackAnimationPlayed = true;
-                state.attackSound.volume = 0.25;
+                state.attackSound.volume = state.effectsVolume;
                 state.attackSound.play();
                 if (getCurrentCharacter() === "character-bird") {
                   const birdProjectile = new PIXI.Sprite(textures.bird_egg);

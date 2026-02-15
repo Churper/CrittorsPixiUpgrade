@@ -44,32 +44,49 @@ export function createText(textContent, textStyle, backgroundSprite, isRoundText
   return text;
 }
 
-export function setVolume(x, backgroundSprite, boundaryOffset) {
-  let normalizedX = (x + backgroundSprite.width / 8 - boundaryOffset) / (2 * boundaryOffset);
-  if (normalizedX <= 0) {
-    state.volumeButton.text = '\u{1F508}';
-  } else if (normalizedX < 0.5) {
-    state.volumeButton.text = '\u{1F509}';
-  } else {
-    state.volumeButton.text = '\u{1F50A}';
+export function setVolume(normalizedValue, type) {
+  if (type === 'music') {
+    state.musicVolume = normalizedValue;
+    if (state.themeMusic) {
+      state.themeMusic.volume = normalizedValue;
+    }
+  } else if (type === 'effects') {
+    state.effectsVolume = normalizedValue;
   }
 }
 
-export function createVolumeSlider(backgroundSprite) {
+export function createVolumeSlider(backgroundSprite, yOffset, label, type) {
   const volumeSlider = new PIXI.Container();
-  volumeSlider.position.set(backgroundSprite.width / 2.75, backgroundSprite.height / 2);
+  const trackWidth = backgroundSprite.width * 0.35;
+  volumeSlider.position.set(backgroundSprite.width * 0.4, yOffset);
+
   const sliderBackground = new PIXI.Graphics();
-  sliderBackground.rect(0, -10, backgroundSprite.width / 3.5, 20).fill(0x000000);
+  sliderBackground.rect(0, -10, trackWidth, 20).fill(0x000000);
   volumeSlider.addChild(sliderBackground);
+
+  const labelText = new PIXI.Text(label, {
+    fontFamily: 'Patrick Hand',
+    fontSize: 32,
+    fill: '#FFFFFF',
+    stroke: '#000000',
+    strokeThickness: 4,
+  });
+  labelText.anchor.set(1, 0.5);
+  labelText.position.set(-20, 0);
+  volumeSlider.addChild(labelText);
+
+  const ball = createSliderBall(backgroundSprite, type, trackWidth);
+  volumeSlider.addChild(ball);
+
   return volumeSlider;
 }
 
-export function createSliderBall(backgroundSprite) {
-  let boundaryOffset = backgroundSprite.width / 8;
+export function createSliderBall(backgroundSprite, type, trackWidth) {
+  const currentVolume = type === 'music' ? state.musicVolume : state.effectsVolume;
 
   const sliderBall = new PIXI.Text('\u{1F535}', { fontSize: 48 });
   sliderBall.anchor.set(0.5);
-  sliderBall.position.set(100, 0);
+  sliderBall.position.set(currentVolume * trackWidth, 0);
 
   let isDragging = false;
   let offsetX = 0;
@@ -85,40 +102,21 @@ export function createSliderBall(backgroundSprite) {
   sliderBall.on('pointermove', (event) => {
     if (isDragging) {
       let newX = event.data.global.x - offsetX;
-      newX = Math.max(-backgroundSprite.width / 8 + boundaryOffset, Math.min(backgroundSprite.width / 8 + boundaryOffset, newX));
+      newX = Math.max(0, Math.min(trackWidth, newX));
       sliderBall.x = newX;
-      setVolume(newX, backgroundSprite, boundaryOffset);
+      setVolume(newX / trackWidth, type);
     }
   });
 
   sliderBall.on('pointerup', () => {
     isDragging = false;
-    setVolume(sliderBall.x, backgroundSprite, boundaryOffset);
   });
 
   sliderBall.on('pointerupoutside', () => {
     isDragging = false;
-    setVolume(sliderBall.x, backgroundSprite, boundaryOffset);
   });
 
   return sliderBall;
-}
-
-export function createVolumeButton(backgroundSprite) {
-  state.volumeButton = new PIXI.Text('\u{1F509}', { fontSize: 80 });
-  state.volumeButton.anchor.set(0.5);
-  state.volumeButton.position.set(backgroundSprite.width / 20, backgroundSprite.height / 2);
-
-  state.volumeButton.eventMode = 'static';
-  state.volumeButton.cursor = 'pointer';
-  let isMuted = false;
-
-  state.volumeButton.on('click', () => {
-    isMuted = !isMuted;
-    state.volumeButton.text = isMuted ? '\u{1F508}' : '\u{1F50A}';
-  });
-
-  return state.volumeButton;
 }
 
 export function createGarbageButton(backgroundSprite) {
@@ -159,18 +157,15 @@ export function createPauseMenuContainer() {
   const text1 = createText('\n' + roundText, textStyle, backgroundSprite, true);
   state.pauseMenuContainer.addChild(text1);
 
-  const volumeSlider = createVolumeSlider(backgroundSprite);
+  const musicSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.4, 'Music', 'music');
+  state.pauseMenuContainer.addChild(musicSlider);
 
-  state.volumeButton = createVolumeButton(backgroundSprite);
-  state.volumeButton.position.set(volumeSlider.x - backgroundSprite.width / 8, backgroundSprite.height / 2);
-  state.pauseMenuContainer.addChild(state.volumeButton);
+  const effectsSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.6, 'Effects', 'effects');
+  state.pauseMenuContainer.addChild(effectsSlider);
 
   const garbageButton = createGarbageButton(backgroundSprite);
   garbageButton.position.set(backgroundSprite.width - garbageButton.width - 10, backgroundSprite.height);
   state.pauseMenuContainer.addChild(garbageButton);
-
-  state.pauseMenuContainer.addChild(volumeSlider);
-  volumeSlider.addChild(createSliderBall(backgroundSprite));
 
   let pauseX = -state.app.stage.position.x + (state.app.screen.width / 2) - (state.pauseMenuContainer.width / 2);
   let pauseY = -state.app.stage.position.y + (state.app.screen.width / 2) - (state.pauseMenuContainer.height / 2);

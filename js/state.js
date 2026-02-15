@@ -168,6 +168,9 @@ const state = {
   chooseSound: null,
   levelSound: null,
   hitSound: null,
+  musicVolume: 0.42,
+  effectsVolume: 0.25,
+  themeMusic: null,
 
   // PIXI app reference (set after creation)
   app: null,
@@ -180,7 +183,7 @@ state.chooseSound = new Audio();
 state.chooseSound.src = "./upgradeavailable.wav";
 state.levelSound = new Audio();
 state.levelSound.src = "./levelup.wav";
-state.levelSound.volume = 0.2;
+state.levelSound.volume = state.effectsVolume;
 state.hitSound = new Audio();
 state.hitSound.src = "./hurt.wav";
 

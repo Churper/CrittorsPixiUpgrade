@@ -1337,10 +1337,10 @@ let cantGainEXP = false;
             //document.getElementById("pause-text").style.visibility = "hidden";
           }
 
-          // Camera speed: slow during unlock walk, freeze during celebration, normal otherwise
+          // Camera speed: fast during unlock walk so it reaches base first, freeze during celebration
           const unlockActive = unlockAnimSprite && app.stage.children.includes(unlockAnimSprite);
           const celebrating = unlockActive && unlockAnimSprite.celebrating;
-          const cameraSpeed = celebrating ? 0 : (unlockActive ? 2 : 6);
+          const cameraSpeed = celebrating ? 0 : (unlockActive ? 10 : 6);
 
           // Calculate the target position (start position)
           const targetX = 0;
@@ -1790,8 +1790,8 @@ state.demiSpawned = 0;
       return;
     }
 
-    // Cap enemies per round — spawn them early, leave end clear for castle
-    const maxSpawns = 4 + Math.floor(state.currentRound * 0.5);
+    // Cap enemies per round — spawn across ~75% of timer, leave end for castle
+    const maxSpawns = 5 + Math.floor(state.currentRound * 0.5);
     if (state.spawnedThisRound >= maxSpawns) {
       return;
     }

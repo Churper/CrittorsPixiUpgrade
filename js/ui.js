@@ -84,8 +84,9 @@ export function createVolumeSlider(backgroundSprite, yOffset, label, type) {
 export function createSliderBall(backgroundSprite, type, trackWidth) {
   const currentVolume = type === 'music' ? state.musicVolume : state.effectsVolume;
 
-  const sliderBall = new PIXI.Text('\u{1F535}', { fontSize: 48 });
-  sliderBall.anchor.set(0.5);
+  // White circle with black outline instead of emoji
+  const sliderBall = new PIXI.Graphics();
+  sliderBall.circle(0, 0, 14).fill({ color: 0xFFFFFF }).stroke({ width: 3, color: 0x000000 });
   sliderBall.position.set(currentVolume * trackWidth, 0);
 
   let isDragging = false;
@@ -99,7 +100,8 @@ export function createSliderBall(backgroundSprite, type, trackWidth) {
     offsetX = event.data.global.x - sliderBall.x;
   });
 
-  sliderBall.on('pointermove', (event) => {
+  // Use globalpointermove so drag works even when cursor leaves the ball
+  sliderBall.on('globalpointermove', (event) => {
     if (isDragging) {
       let newX = event.data.global.x - offsetX;
       newX = Math.max(0, Math.min(trackWidth, newX));

@@ -64,7 +64,7 @@ export function spawnEnemyDemi(critter, critterAttackTextures, critterWalkTextur
 
 export function createSpawnDemi(critterWalkTextures, enemyName) {
   const enemy = new PIXI.AnimatedSprite(critterWalkTextures);
-  enemy.scale.set(determineEnemyScale(enemyName) * 2);
+  enemy.scale.set(determineEnemyScale(enemyName) * 1.4);
   enemy.exp = 32 + Math.floor(state.currentRound * 4);
   enemy.anchor.set(0.5, 0.5);
   enemy.resett = false;
@@ -72,7 +72,7 @@ export function createSpawnDemi(critterWalkTextures, enemyName) {
   enemy.tint = Math.floor(Math.random() * 0xFFFFFF);
   enemy.isAttacking = false;
   enemy.enemyAdded = false;
-  enemy.position.set(2800, state.app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 120 + (Math.random() * 60 - 30));
+  enemy.position.set(2800, state.app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 60 + (Math.random() * 60 - 30));
   enemy.zIndex = enemy.position.y + 10000;
   enemy.animationSpeed = enemyName === "pig" ? 0.23 : enemyName === "scorp" ? 0.15 : 0.25;
   enemy.loop = true;
@@ -857,7 +857,7 @@ export function createCoffeeDrop(x, y) {
   const beanTexture = PIXI.Assets.get('bean');
   const numBeans = Math.floor(Math.random() * 15 + state.currentRound * 2) + 1;
   const fallDuration = 1200;
-  const flyDuration = 600;
+  const flyDuration = 900;
 
   const beans = [];
   for (let i = 0; i < numBeans; i++) {
@@ -904,9 +904,9 @@ export function createCoffeeDrop(x, y) {
       const startX = bean.x;
       const startY = bean.y;
       const startScale = bean.scale.x;
-      // Control point for quadratic bezier — arcs up and to the right
-      const cpX = startX + (stageTargetX - startX) * 0.3;
-      const cpY = Math.min(startY, stageTargetY) - 200 - Math.random() * 100;
+      // Control point for quadratic bezier — gentle arc toward the counter
+      const cpX = startX + (stageTargetX - startX) * 0.5;
+      const cpY = startY - 80 - Math.random() * 40;
       const flyStart = Date.now() + delay;
 
       const flyUpdate = () => {

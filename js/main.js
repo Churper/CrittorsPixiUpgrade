@@ -215,7 +215,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       sunLightOverlay = new PIXI.Graphics();
       sunLightOverlay.rect(0, 0, 8000, 8000).fill({ color: 0x000000 });
       sunLightOverlay.zIndex = 49999;
-      sunLightOverlay.alpha = 0.3;
+      sunLightOverlay.alpha = 0.12;
       sunLightOverlay.eventMode = 'none';
       app.stage.addChild(sunLightOverlay);
 
@@ -338,7 +338,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       if (sunLightOverlay) {
         sunLightOverlay.position.set(-app.stage.x - 2000, -app.stage.y - 2000);
         // Overlay alpha: 0.35 at dawn/dusk, 0.0 at peak noon
-        sunLightOverlay.alpha = 0.35 * (1 - brightness);
+        sunLightOverlay.alpha = 0.15 * (1 - brightness);
         // Warm tint at dawn/dusk via slight orange
         if (progress < 0.15 || progress > 0.85) {
           sunLightOverlay.tint = 0x331100;
@@ -1610,6 +1610,7 @@ let cantGainEXP = false;
         for (let i = 0; i < 7; i++) {
             // Create a new explosion sprite for each explosion
             const explosion = createAnimatedSprite(castleDeathTextures);
+            explosion.zIndex = 15;
 
             // Customize the position, size, speed, and tint of each explosion
             explosion.position.set(

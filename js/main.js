@@ -1772,6 +1772,9 @@ state.demiSpawned = 0;
       window.addEventListener('resize', handleResize);
       window.addEventListener('orientationchange', () => setTimeout(handleResize, 100));
 
+      // Start timer here — after all assets are loaded and setup is done
+      resetTimer();
+      startTimer();
       spawnEnemies();
 
 
@@ -1927,8 +1930,6 @@ state.demiSpawned = 0;
 
 
 
-  resetTimer();
-      startTimer();
 startGame();
 state.isGameStarted=true;
   }

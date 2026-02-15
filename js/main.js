@@ -18,6 +18,8 @@ import {
   getCharLevel, getCharEXP, getEXPtoLevel,
   getPlayerHealth, getPlayerCurrentHealth, getisPaused,
 } from './state.js';
+import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
+import { getRandomColor, getRandomColor1, getRandomColor3 } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
@@ -52,82 +54,12 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let foreground;
   let critterWalkTextures;
   let backgroundSprite;
-  let startTime = null;
   let enemies = state.enemies;
   let gameData;
   const menuTexture = await PIXI.Assets.load('./assets/mainmenu.png');
   const menuSprite = new PIXI.Sprite(menuTexture);
 
   // Start Timer
-  function startTimer() {
-    if (state.timerFinished) return;
-
-    const snail = document.getElementById('snail');
-    const progressFilled = document.getElementById('progress-filled');
-
-    if (state.isPaused1) {
-      // Resume from the paused time
-      const currentTime = Date.now();
-      const pausedDuration = currentTime - state.pauseTime;
-      state.totalPausedTime += pausedDuration;
-      startTime = state.resetStartTime + state.totalPausedTime;
-      state.isPaused1 = false;
-    } else if (!state.timer) {
-      // Start from the beginning
-      state.resetStartTime = Date.now();
-      startTime = state.resetStartTime;
-      state.totalPausedTime = 0;
-    }
-
-    if (state.timer) {
-      clearInterval(state.timer);
-    }
-
-    // Cause a reflow by accessing offsetWidth
-    snail.getBoundingClientRect();
-    progressFilled.getBoundingClientRect();
-
-    // Set the animations
-    snail.style.animation = 'snail-movement 60s linear, snail-animation 1s steps(2) infinite';
-    progressFilled.style.animation = 'progress-fill 60s linear';
-    setTimeout(() => {
-      snail.style.animationPlayState = 'running';
-      progressFilled.style.animationPlayState = 'running';
-    }, 0);
-  
-
-    state.timer = setInterval(() => {
-      const diff = Date.now() - startTime;
-      const percentage = Math.min(diff / 60000, 1); // 100 seconds
-
-      if (percentage === 1) {
-        clearInterval(state.timer);
-        state.timer = null;
-        state.timerFinished = true;
-        snail.style.animation = 'none';
-        progressFilled.style.animation = 'none';
-        snail.style.left = 'calc(80vw)';  // Changed line
-        progressFilled.style.width = '68vw';  // Changed line
-      }
-    }, 10);
-  }
-
-  // Pause Timer
-  function pauseTimer() {
-    const snail = document.getElementById('snail');
-    const progressFilled = document.getElementById('progress-filled');
-
-    snail.style.animationPlayState = 'paused';
-    progressFilled.style.animationPlayState = 'paused';
-
-    state.pauseTime = Date.now();
-    state.isPaused1 = true;
-
-    if (state.timer) {
-      clearInterval(state.timer);
-      state.timer = null;
-    }
-  }
 
  function spawnDemi()
  {
@@ -149,34 +81,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   }
 
  }
-  // Reset Timer
-  function resetTimer() {
-    const snail = document.getElementById('snail');
-    const progressFilled = document.getElementById('progress-filled');
-
-    snail.style.animation = 'none';
-    progressFilled.style.animation = 'none';
-
-    snail.style.left = 'calc(12%)';
-    progressFilled.style.width = '0%';
-
-    if (state.timer) {
-      clearInterval(state.timer);
-      state.timer = null;
-    }
-
-    state.isPaused1 = false;
-    state.pauseTime = null;
-    startTime = null;
-    state.resetStartTime = null;
-    state.timerFinished = false;
-    state.totalPausedTime = 0;
-  }
-
-  // Check if state.timer has finished
-  function isTimerFinished() {
-    return state.timerFinished;
-  }
 
 
   var portrait = document.getElementById('character-portrait');
@@ -3710,29 +3614,6 @@ enemy.isAlive = false;
     handleTouchEnd();
   }
 
-  function getRandomColor() {
-    const r = Math.floor(Math.random() * 192) + 64;
-    const g = Math.floor(Math.random() * 192) + 64;
-    const b = Math.floor(Math.random() * 128) + 128;
-    const color = (r << 16) | (g << 8) | b;
-    return color;
-  }
-
-  function getRandomColor1() {
-    const r = Math.floor(Math.random() * 64) + 192;
-    const g = Math.floor(Math.random() * 64) + 192;
-    const b = Math.floor(Math.random() * 128) + 128;
-    const color = (r << 16) | (g << 8) | b;
-    return color;
-  }
-
-  function getRandomColor3() {
-    const r = Math.floor(Math.random() * 256);
-    const g = Math.floor(Math.random() * 128) + 128;
-    const b = Math.floor(Math.random() * 256);
-    const color = (r << 16) | (g << 8) | b;
-    return color;
-  }
 
 
   // Save game data

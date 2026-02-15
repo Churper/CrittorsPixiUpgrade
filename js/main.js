@@ -2237,6 +2237,14 @@ state.demiSpawned = 0;
         state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
         critter.position.y = state.stored;
 
+        // Reposition mountains to match new screen height
+        [mountain1, mountain2, mountain3, mountain4].forEach(m => {
+          const minHeightOffset = foreground ? foreground.height * 0.34 : 0;
+          const heightOffsetRatio = (1 - Math.abs(m.scale.y)) * 0.3;
+          const foregroundHeightOffset = foreground ? minHeightOffset + m.height * heightOffsetRatio : 0;
+          m.position.y = app.screen.height - foregroundHeightOffset;
+        });
+
         // Reposition existing enemies preserving their offset from the ground
         getEnemies().forEach(enemy => {
           const offsetFromBottom = oldHeight - enemy.position.y;

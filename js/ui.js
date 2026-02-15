@@ -6,8 +6,8 @@ import { pauseTimer, startTimer } from './timer.js';
 
 export function createBackgroundSprite() {
   const backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-  backgroundSprite.width = state.DESIGN_WIDTH || 960;
-  backgroundSprite.height = Math.max((state.DESIGN_HEIGHT || 540) * 0.4, 300);
+  backgroundSprite.width = state.app.screen.width;
+  backgroundSprite.height = Math.max(state.app.screen.height * 0.4, 300);
   backgroundSprite.tint = 0xFFFFFF;
   backgroundSprite.alpha = 0.8;
   return backgroundSprite;

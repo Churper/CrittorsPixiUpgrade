@@ -11,8 +11,7 @@ body {
 }
 
 #game-container {
-  position: absolute;
-  transform-origin: top left;
+  position: relative;
   overflow: hidden;
   user-select: none;
 

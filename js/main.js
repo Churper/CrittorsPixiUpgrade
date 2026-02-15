@@ -39,26 +39,6 @@ import {
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';
 
-const DESIGN_WIDTH = 960;
-const DESIGN_HEIGHT = 540;
-
-function getContainerDimensions() {
-  const scaleX = window.innerWidth / DESIGN_WIDTH;
-  const scaleY = window.innerHeight / DESIGN_HEIGHT;
-  const gameScale = Math.min(scaleX, scaleY);
-  const containerWidth = Math.ceil(window.innerWidth / gameScale);
-  const containerHeight = Math.ceil(window.innerHeight / gameScale);
-  return { containerWidth, containerHeight, gameScale };
-}
-
-function applyContainerTransform(containerWidth, containerHeight, gameScale) {
-  const container = document.getElementById('game-container');
-  container.style.width = containerWidth + 'px';
-  container.style.height = containerHeight + 'px';
-  container.style.transform = `scale(${gameScale})`;
-  container.style.left = `${(window.innerWidth - containerWidth * gameScale) / 2}px`;
-  container.style.top = `${(window.innerHeight - containerHeight * gameScale) / 2}px`;
-}
 
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
@@ -84,20 +64,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   });
 
   async function mainAppFunction() {
-  const { containerWidth, containerHeight, gameScale } = getContainerDimensions();
-  applyContainerTransform(containerWidth, containerHeight, gameScale);
-
   const app = new PIXI.Application();
   await app.init({
-    width: containerWidth,
-    height: containerHeight,
+    width: window.innerWidth,
+    height: window.innerHeight,
     antialias: true,
     transparent: false,
     resolution: 1,
   });
   state.app = app;
-  state.DESIGN_WIDTH = DESIGN_WIDTH;
-  state.DESIGN_HEIGHT = DESIGN_HEIGHT;
   document.getElementById('game-container').appendChild(app.canvas);
 
   // UNSAFE variables - kept as local vars (also used as function params)
@@ -361,8 +336,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   
     // Create a semi-transparent black background sprite for the dialog box
     backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-    backgroundSprite.width = DESIGN_WIDTH * 0.6;
-    backgroundSprite.height = DESIGN_HEIGHT / 2;
+    backgroundSprite.width = app.screen.width * 0.6;
+    backgroundSprite.height = app.screen.height / 2;
     backgroundSprite.tint = 0x000000; // Black color
     backgroundSprite.alpha = 0.5; // Make it semi-transparent
     state.reviveDialogContainer.addChild(backgroundSprite);
@@ -397,7 +372,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // Create the 'Yes' button with emoji
     const playerCoins = getCoffee(); // Assuming getCoffee() is the function that returns the player's current coin amount
     const yesButtonStyle = new PIXI.TextStyle({
-      fontSize: DESIGN_WIDTH * 0.26,
+      fontSize: app.screen.width * 0.26,
       fill: playerCoins >= 50 ? '#008000' : '#808080',
       backgroundColor: '#000000',
       fontFamily: 'Marker Felt',
@@ -409,7 +384,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       dropShadowAngle: Math.PI / 6,
       dropShadowDistance: 2,
       wordWrap: true,
-      wordWrapWidth: DESIGN_WIDTH / 3,
+      wordWrapWidth: app.screen.width / 3,
     });
   
     const yesButton = new PIXI.Text('☑', yesButtonStyle);
@@ -419,7 +394,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   
     // Create the 'No' button with emoji and red tint
     const noButtonStyle = new PIXI.TextStyle({
-      fontSize: DESIGN_WIDTH * 0.26,
+      fontSize: app.screen.width * 0.26,
       fill: '#FF0000',
       backgroundColor: '#000000',
       fontFamily: 'Marker Felt',
@@ -431,7 +406,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       dropShadowAngle: Math.PI / 6,
       dropShadowDistance: 2,
       wordWrap: true,
-      wordWrapWidth: DESIGN_WIDTH / 3,
+      wordWrapWidth: app.screen.width / 3,
     });
   
     const noButton = new PIXI.Text('☒', noButtonStyle);
@@ -899,7 +874,7 @@ backgroundTexture = textures.background;
         const sprite = new PIXI.AnimatedSprite(textures);
         sprite.scale.set(0.5);
         sprite.anchor.set(.5, .5);
-        sprite.position.set(DESIGN_WIDTH / 3, app.screen.height - foreground.height / 1.6);
+        sprite.position.set(app.screen.width / 3, app.screen.height - foreground.height / 1.6);
         sprite.animationSpeed = 0.25;
         sprite.zIndex = 1;
         sprite.loop = true;
@@ -1390,7 +1365,7 @@ state.demiSpawned = 0;
             setCharAttackAnimating(false);
             setIsCharAttacking(false);
             app.stage.removeChild(state.frogGhostPlayer);
-            critter.position.set(DESIGN_WIDTH / 20, state.stored);
+            critter.position.set(app.screen.width / 20, state.stored);
             if (state.fullReset) {
               setPlayerCurrentHealth(getPlayerHealth());
               updatePlayerHealthBar(getPlayerHealth() / getPlayerHealth() * 100);
@@ -1615,7 +1590,7 @@ state.demiSpawned = 0;
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       console.log("STORED", state.stored);
-      critter.position.set(DESIGN_WIDTH / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
+      critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
       updateEXP(0, state.expToLevel);
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
       // Start the state.timer animation
@@ -1662,13 +1637,11 @@ state.demiSpawned = 0;
 
       ];
 
-      // Resize handler — repositions key elements when viewport changes
+      // Resize handler — adapts to rotation and window changes
       function handleResize() {
-        const { containerWidth, containerHeight, gameScale } = getContainerDimensions();
-        applyContainerTransform(containerWidth, containerHeight, gameScale);
-        app.renderer.resize(containerWidth, containerHeight);
+        app.renderer.resize(window.innerWidth, window.innerHeight);
 
-        // Reposition elements that depend on screen height (ground level)
+        // Reposition elements that depend on screen dimensions
         background.height = app.screen.height;
         foreground.y = app.screen.height;
         castle.position.y = app.screen.height - castle.height * 0.25;
@@ -1726,7 +1699,7 @@ state.demiSpawned = 0;
       setCharAttackAnimating(false);
       setIsCharAttacking(false);
       app.stage.removeChild(state.frogGhostPlayer);
-      critter.position.set(DESIGN_WIDTH / 20, state.stored);
+      critter.position.set(app.screen.width / 20, state.stored);
       setPlayerCurrentHealth(getPlayerHealth());
       updatePlayerHealthBar(getPlayerHealth() / getPlayerHealth() * 100);
       // Reset castle health

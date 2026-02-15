@@ -1305,6 +1305,7 @@ backgroundTexture = textures.background;
                   );
                   birdProjectile.name = "birdProjectile";
                   birdProjectile.scale.set(0.3);
+                  birdProjectile.zIndex = 11;
                   app.stage.addChild(birdProjectile);
 
                   const projectileSpeed = 6;

@@ -462,6 +462,7 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
 
 
   let hasDied = false;
+  let hasPlayedSound = false;
   if (state.roundOver) { return; }
 
 

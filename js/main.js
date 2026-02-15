@@ -311,7 +311,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
       const currentCharacterBox = document.querySelector('.upgrade-box.' + state.selectedCharacter);
       const prevCharacterBox = document.querySelector('.upgrade-box.' + characterType);
-      const tempPosition = { ...characterPositions[state.selectedCharacter] };
+      const tempPosition = { ...state.characterPositions[state.selectedCharacter] };
 
       currentCharacterBox.style.top = state.characterPositions[characterType].top;
       currentCharacterBox.style.left = state.characterPositions[characterType].left;
@@ -2131,6 +2131,7 @@ enemy.isAlive = false;
 
 
     let hasDied = false;
+    let hasPlayedSound = false;
     if (state.roundOver) { return; }
 
 

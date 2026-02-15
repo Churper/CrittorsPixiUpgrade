@@ -419,49 +419,62 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const btn = document.getElementById('potion-button');
     const fill = document.getElementById('potion-fill');
     const doseText = document.getElementById('potion-doses');
-    const costText = document.getElementById('potion-cost');
+    const shop = document.getElementById('potion-shop');
     const doses = state.potionDoses || 0;
     const max = state.potionMaxDoses || 3;
     const fillPct = (doses / max) * 100;
     fill.style.height = fillPct + '%';
     doseText.textContent = doses > 0 ? doses + '/' + max : '';
-    costText.style.display = doses >= max ? 'none' : '';
     if (doses > 0) {
       btn.classList.add('filled');
     } else {
       btn.classList.remove('filled');
     }
+    // Update shop button state
+    shop.classList.remove('cant-afford', 'maxed');
+    if (doses >= max) {
+      shop.classList.add('maxed');
+    } else if (getCoffee() < 50) {
+      shop.classList.add('cant-afford');
+    }
   }
 
-  document.getElementById('potion-button').addEventListener('pointerdown', () => {
+  // Shop button — BUY a dose (50 coffee)
+  document.getElementById('potion-shop').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
+    const doses = state.potionDoses || 0;
+    if (doses >= state.potionMaxDoses) return;
+    if (getCoffee() < 50) return;
+
+    addCoffee(-50);
+    state.potionDoses = doses + 1;
+    updatePotionUI();
+
+    // Fill animation on potion
+    const icon = document.getElementById('potion-icon');
+    icon.style.transform = 'scale(1.3)';
+    icon.style.transition = 'transform 0.2s';
+    setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
+  });
+
+  // Potion button — USE a dose (heal to full)
+  document.getElementById('potion-button').addEventListener('pointerdown', (e) => {
+    e.stopPropagation();
     const doses = state.potionDoses || 0;
     const isHurt = getPlayerCurrentHealth() < getPlayerHealth();
+    if (doses <= 0 || !isHurt) return;
 
-    if (doses > 0 && isHurt) {
-      // Use one dose — heal current character to full
-      setPlayerCurrentHealth(getPlayerHealth());
-      updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
-      state.potionDoses--;
-      updatePotionUI();
+    setPlayerCurrentHealth(getPlayerHealth());
+    updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+    state.potionDoses--;
+    updatePotionUI();
 
-      // Gulp gulp feedback
-      const gulpText = document.getElementById('potion-icon');
-      gulpText.style.transform = 'scale(1.4)';
-      gulpText.style.transition = 'transform 0.15s';
-      setTimeout(() => { gulpText.style.transform = 'scale(0.9)'; }, 150);
-      setTimeout(() => { gulpText.style.transform = 'scale(1)'; }, 300);
-    } else if (doses < state.potionMaxDoses && getCoffee() >= 50) {
-      // Fill one dose — costs 50 coffee
-      addCoffee(-50);
-      state.potionDoses = doses + 1;
-      updatePotionUI();
-
-      // Fill animation
-      const icon = document.getElementById('potion-icon');
-      icon.style.transform = 'scale(1.3)';
-      icon.style.transition = 'transform 0.2s';
-      setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
-    }
+    // Gulp gulp feedback
+    const gulpText = document.getElementById('potion-icon');
+    gulpText.style.transform = 'scale(1.4)';
+    gulpText.style.transition = 'transform 0.15s';
+    setTimeout(() => { gulpText.style.transform = 'scale(0.9)'; }, 150);
+    setTimeout(() => { gulpText.style.transform = 'scale(1)'; }, 300);
   });
 
 
@@ -1267,8 +1280,6 @@ backgroundTexture = textures.background;
         attackAnimationPlayed = true;
         handleTouchEnd(event);
       }
-
-      document.addEventListener("mouseout", handleMouseLeave);
 
       app.stage.eventMode = 'static';
       app.stage.on("pointerdown", handleTouchStart);
@@ -2135,7 +2146,7 @@ state.demiSpawned = 0;
       document.getElementById("weather-icon").style.visibility = "visible";
       updateWeatherIcon();
       createWeatherEffects();
-      document.getElementById("potion-button").style.visibility = "visible";
+      document.getElementById("potion-area").style.visibility = "visible";
       updatePotionUI();
       critter.scale.set(getFrogSize());
 

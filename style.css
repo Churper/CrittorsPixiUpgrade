@@ -96,18 +96,64 @@ touch-action: manipulation;
 
 }
 
-#potion-button {
+#potion-area {
   visibility: hidden;
   position: fixed;
   bottom: 16px;
   right: 16px;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+  gap: 8px;
+  z-index: 99999999999999999999999;
+}
+
+#potion-shop {
+  width: 52px;
+  height: 52px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 3px solid rgba(255, 200, 50, 0.5);
+  cursor: pointer;
+  user-select: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+#potion-shop.cant-afford {
+  opacity: 0.4;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+#potion-shop.maxed {
+  opacity: 0.3;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+#shop-icon {
+  font-size: 24px;
+  filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.6));
+}
+
+#shop-cost {
+  font-family: 'Luckiest Guy';
+  font-size: 10px;
+  color: #fff;
+  text-shadow: 1px 1px 2px black;
+  margin-top: -2px;
+}
+
+#potion-button {
   width: 64px;
   height: 80px;
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.4);
   border: 3px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
-  z-index: 99999999999999999999999;
   user-select: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -116,6 +162,7 @@ touch-action: manipulation;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 #potion-button.filled {
@@ -144,16 +191,6 @@ touch-action: manipulation;
 #potion-button:not(.filled) #potion-icon {
   filter: grayscale(80%) drop-shadow(1px 1px 2px rgba(0,0,0,0.6));
   opacity: 0.6;
-}
-
-#potion-cost {
-  font-family: 'Luckiest Guy';
-  font-size: 11px;
-  color: #fff;
-  position: relative;
-  z-index: 1;
-  text-shadow: 1px 1px 2px black;
-  margin-top: 2px;
 }
 
 #potion-doses {

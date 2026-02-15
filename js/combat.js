@@ -660,7 +660,7 @@ export function drawHitSplat(enemy) {
     case 'character-snail':
       if (enemyType === 'imp' || enemyType === 'toofer') {
         damage = Math.round(getSnailDamage() * 1.75);
-      } else if (enemyType === 'scorp') {
+      } else if (enemyType === 'scorp' || enemyType === 'shark') {
         damage = Math.round(getSnailDamage() * .75);
       } else {
         damage = Math.round(getSnailDamage());
@@ -853,68 +853,90 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
 
 
 export function createCoffeeDrop(x, y) {
-  // Create a container to hold the state.coffee beans
   const coffeeContainer = new PIXI.Container();
-
-  // Get the bean texture from the loaded resources
   const beanTexture = PIXI.Assets.get('bean');
-
-  // Generate a random number between 1 and 10 for the number of state.coffee beans
   const numBeans = Math.floor(Math.random() * 15 + state.currentRound * 2) + 1;
+  const fallDuration = 1200;
+  const flyDuration = 600;
 
-  // Define the duration (in milliseconds) for the state.coffee beans to fall
-  const duration = 2000; // Adjust this value as desired
-
-  // Create and position state.coffee beans randomly within the container
+  const beans = [];
   for (let i = 0; i < numBeans; i++) {
     const bean = new PIXI.Sprite(beanTexture);
-
-    // Set the initial position of the state.coffee bean
-    bean.anchor.set(0.5); // Set the anchor point to the center of the bean
-    bean.x = x + Math.random() * 80 - 10; // Randomize the x position within a range
-    bean.y = y + Math.random() * 60 - 20;;
-
-    // Set a random rotation angle for the state.coffee bean
+    bean.anchor.set(0.5);
+    bean.x = x + Math.random() * 80 - 10;
+    bean.y = y + Math.random() * 60 - 20;
     bean.rotation = Math.random() * Math.PI * 2;
-
-    // Set the scale of the state.coffee bean (adjust the values as desired)
-    bean.scale.set(0.075 + Math.random() * 0.2); // Randomize the scale between 0.3 and 0.5
-
-    // Add the state.coffee bean to the container
+    bean.scale.set(0.075 + Math.random() * 0.2);
     coffeeContainer.addChild(bean);
+    beans.push(bean);
 
-    // Animate the state.coffee bean to drop gradually
-    const targetY = y + 50; // Adjust the target position as desired
+    // Phase 1: fall down
+    const targetY = y + 50;
     const initialY = bean.y - 50;
     const startTime = Date.now();
 
     const update = () => {
-      const elapsedTime = Date.now() - startTime;
-      const progress = elapsedTime / duration;
-
+      const elapsed = Date.now() - startTime;
+      const progress = elapsed / fallDuration;
       if (progress >= 1) {
         bean.y = targetY;
         return;
       }
-
       bean.y = initialY + (targetY - initialY) * progress;
       requestAnimationFrame(update);
     };
-
     update();
   }
 
-  // Add the state.coffee container to the stage or another container in your application
   coffeeContainer.zIndex = 15;
   state.app.stage.addChild(coffeeContainer);
 
-  // Start a state.timer to remove the state.coffee beans after the specified duration
+  // Phase 2: after falling, fly each bean toward the coffee UI
   setTimeout(() => {
-    // Remove the state.coffee container from the stage or parent container
-    state.app.stage.removeChild(coffeeContainer);
-    createCoffeeDropText(x, y + 50, numBeans);
+    // Coffee UI is top-right of screen — convert to stage coordinates
+    const screenTargetX = state.app.screen.width - 30;
+    const screenTargetY = 30;
+    const stageTargetX = -state.app.stage.position.x + screenTargetX;
+    const stageTargetY = -state.app.stage.position.y + screenTargetY;
 
-  }, duration * 1.5);
+    beans.forEach((bean, i) => {
+      const delay = i * 30; // stagger each bean
+      const startX = bean.x;
+      const startY = bean.y;
+      const startScale = bean.scale.x;
+      const flyStart = Date.now() + delay;
+
+      const flyUpdate = () => {
+        const elapsed = Date.now() - flyStart;
+        if (elapsed < 0) { requestAnimationFrame(flyUpdate); return; }
+        const progress = Math.min(elapsed / flyDuration, 1);
+        // Ease-in curve for snappy arrival
+        const ease = progress * progress;
+
+        bean.x = startX + (stageTargetX - startX) * ease;
+        bean.y = startY + (stageTargetY - startY) * ease;
+        bean.scale.set(startScale * (1 - ease * 0.8));
+        bean.rotation += 0.15;
+        bean.alpha = 1 - ease * 0.5;
+
+        if (progress >= 1) {
+          bean.visible = false;
+          return;
+        }
+        requestAnimationFrame(flyUpdate);
+      };
+      requestAnimationFrame(flyUpdate);
+    });
+
+    // Clean up after all beans arrive
+    setTimeout(() => {
+      state.app.stage.removeChild(coffeeContainer);
+      coffeeContainer.destroy({ children: true });
+      createCoffeeDropText(x, y + 50, numBeans);
+    }, flyDuration + beans.length * 30 + 100);
+
+  }, fallDuration + 300);
+
   addCoffee(numBeans);
 }
 

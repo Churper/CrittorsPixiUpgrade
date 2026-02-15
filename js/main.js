@@ -39,6 +39,27 @@ import {
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';
 
+const DESIGN_WIDTH = 960;
+const DESIGN_HEIGHT = 540;
+
+function getContainerDimensions() {
+  const scaleX = window.innerWidth / DESIGN_WIDTH;
+  const scaleY = window.innerHeight / DESIGN_HEIGHT;
+  const gameScale = Math.min(scaleX, scaleY);
+  const containerWidth = Math.ceil(window.innerWidth / gameScale);
+  const containerHeight = Math.ceil(window.innerHeight / gameScale);
+  return { containerWidth, containerHeight, gameScale };
+}
+
+function applyContainerTransform(containerWidth, containerHeight, gameScale) {
+  const container = document.getElementById('game-container');
+  container.style.width = containerWidth + 'px';
+  container.style.height = containerHeight + 'px';
+  container.style.transform = `scale(${gameScale})`;
+  container.style.left = `${(window.innerWidth - containerWidth * gameScale) / 2}px`;
+  container.style.top = `${(window.innerHeight - containerHeight * gameScale) / 2}px`;
+}
+
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
 console.log("PIXIVERSION:",PIXI.VERSION);
@@ -63,16 +84,21 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   });
 
   async function mainAppFunction() {
+  const { containerWidth, containerHeight, gameScale } = getContainerDimensions();
+  applyContainerTransform(containerWidth, containerHeight, gameScale);
+
   const app = new PIXI.Application();
   await app.init({
-    width: window.innerWidth,
-    height: Math.max(window.innerHeight),
+    width: containerWidth,
+    height: containerHeight,
     antialias: true,
     transparent: false,
     resolution: 1,
   });
   state.app = app;
-  document.body.appendChild(app.canvas);
+  state.DESIGN_WIDTH = DESIGN_WIDTH;
+  state.DESIGN_HEIGHT = DESIGN_HEIGHT;
+  document.getElementById('game-container').appendChild(app.canvas);
 
   // UNSAFE variables - kept as local vars (also used as function params)
   let critter;
@@ -335,8 +361,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   
     // Create a semi-transparent black background sprite for the dialog box
     backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-    backgroundSprite.width = app.screen.width * 0.6; // 60% of the screen width
-    backgroundSprite.height = app.screen.height/2; // Fixed height
+    backgroundSprite.width = DESIGN_WIDTH * 0.6;
+    backgroundSprite.height = DESIGN_HEIGHT / 2;
     backgroundSprite.tint = 0x000000; // Black color
     backgroundSprite.alpha = 0.5; // Make it semi-transparent
     state.reviveDialogContainer.addChild(backgroundSprite);
@@ -371,19 +397,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // Create the 'Yes' button with emoji
     const playerCoins = getCoffee(); // Assuming getCoffee() is the function that returns the player's current coin amount
     const yesButtonStyle = new PIXI.TextStyle({
-      fontSize: app.screen.width * 0.26, // Responsive font size
-      fill: playerCoins >= 50 ? '#008000' : '#808080', // Green color if player has 50 or more coins, grey otherwise
-      backgroundColor: '#000000', // Black background
+      fontSize: DESIGN_WIDTH * 0.26,
+      fill: playerCoins >= 50 ? '#008000' : '#808080',
+      backgroundColor: '#000000',
       fontFamily: 'Marker Felt',
-      stroke: '#000000', // Black outline color
-      strokeThickness: -6, // Outline thickness
+      stroke: '#000000',
+      strokeThickness: -6,
       dropShadow: true,
-      dropShadowColor: '#000000', // Shadow color
-      dropShadowBlur: 4, // Shadow blur
-      dropShadowAngle: Math.PI / 6, // Shadow angle
-      dropShadowDistance: 2, // Shadow distance
+      dropShadowColor: '#000000',
+      dropShadowBlur: 4,
+      dropShadowAngle: Math.PI / 6,
+      dropShadowDistance: 2,
       wordWrap: true,
-      wordWrapWidth: app.screen.width /3,
+      wordWrapWidth: DESIGN_WIDTH / 3,
     });
   
     const yesButton = new PIXI.Text('☑', yesButtonStyle);
@@ -393,19 +419,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   
     // Create the 'No' button with emoji and red tint
     const noButtonStyle = new PIXI.TextStyle({
-      fontSize: app.screen.width * 0.26, // Responsive font size
-      fill: '#FF0000', // Red color
-      backgroundColor: '#000000', // Black background
+      fontSize: DESIGN_WIDTH * 0.26,
+      fill: '#FF0000',
+      backgroundColor: '#000000',
       fontFamily: 'Marker Felt',
-      stroke: '#000000', // Black outline color
-      strokeThickness: -6, // Outline thickness
+      stroke: '#000000',
+      strokeThickness: -6,
       dropShadow: true,
-      dropShadowColor: '#000000', // Shadow color
-      dropShadowBlur: 4, // Shadow blur
-      dropShadowAngle: Math.PI / 6, // Shadow angle
-      dropShadowDistance: 2, // Shadow distance
+      dropShadowColor: '#000000',
+      dropShadowBlur: 4,
+      dropShadowAngle: Math.PI / 6,
+      dropShadowDistance: 2,
       wordWrap: true,
-      wordWrapWidth: app.screen.width /3,
+      wordWrapWidth: DESIGN_WIDTH / 3,
     });
   
     const noButton = new PIXI.Text('☒', noButtonStyle);
@@ -475,8 +501,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
 
 
-  document.body.appendChild(app.canvas);
- 
+  document.getElementById('game-container').appendChild(app.canvas);
+
   const hoverScale = 1.2;
   const hoverAlpha = 0.8;
  
@@ -873,7 +899,7 @@ backgroundTexture = textures.background;
         const sprite = new PIXI.AnimatedSprite(textures);
         sprite.scale.set(0.5);
         sprite.anchor.set(.5, .5);
-        sprite.position.set(app.screen.width / 3, app.screen.height - foreground.height / 1.6);
+        sprite.position.set(DESIGN_WIDTH / 3, app.screen.height - foreground.height / 1.6);
         sprite.animationSpeed = 0.25;
         sprite.zIndex = 1;
         sprite.loop = true;
@@ -1364,7 +1390,7 @@ state.demiSpawned = 0;
             setCharAttackAnimating(false);
             setIsCharAttacking(false);
             app.stage.removeChild(state.frogGhostPlayer);
-            critter.position.set(app.screen.width / 20, state.stored);
+            critter.position.set(DESIGN_WIDTH / 20, state.stored);
             if (state.fullReset) {
               setPlayerCurrentHealth(getPlayerHealth());
               updatePlayerHealthBar(getPlayerHealth() / getPlayerHealth() * 100);
@@ -1589,7 +1615,7 @@ state.demiSpawned = 0;
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       console.log("STORED", state.stored);
-      critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
+      critter.position.set(DESIGN_WIDTH / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
       updateEXP(0, state.expToLevel);
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
       // Start the state.timer animation
@@ -1636,6 +1662,23 @@ state.demiSpawned = 0;
 
       ];
 
+      // Resize handler — repositions key elements when viewport changes
+      function handleResize() {
+        const { containerWidth, containerHeight, gameScale } = getContainerDimensions();
+        applyContainerTransform(containerWidth, containerHeight, gameScale);
+        app.renderer.resize(containerWidth, containerHeight);
+
+        // Reposition elements that depend on screen height (ground level)
+        background.height = app.screen.height;
+        foreground.y = app.screen.height;
+        castle.position.y = app.screen.height - castle.height * 0.25;
+        castlePlayer.position.y = app.screen.height - castle.height * 0.25;
+        state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
+        critter.position.y = state.stored;
+      }
+
+      window.addEventListener('resize', handleResize);
+      window.addEventListener('orientationchange', () => setTimeout(handleResize, 100));
 
       spawnEnemies();
 
@@ -1683,7 +1726,7 @@ state.demiSpawned = 0;
       setCharAttackAnimating(false);
       setIsCharAttacking(false);
       app.stage.removeChild(state.frogGhostPlayer);
-      critter.position.set(app.screen.width / 20, state.stored);
+      critter.position.set(DESIGN_WIDTH / 20, state.stored);
       setPlayerCurrentHealth(getPlayerHealth());
       updatePlayerHealthBar(getPlayerHealth() / getPlayerHealth() * 100);
       // Reset castle health

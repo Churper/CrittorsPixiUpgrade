@@ -85,6 +85,9 @@ const state = {
   cooldownActive: false,
   cooldownDuration: 3000,
 
+  // Potion
+  potionFilled: false,
+
   // Misc
   stored: 0,
   enemies: [],

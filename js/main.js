@@ -126,7 +126,45 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     weatherEl.textContent = weatherTypes[index].emoji;
   }
 
+  // Health potion system
+  state.potionFilled = state.potionFilled || false;
 
+  function updatePotionUI() {
+    const btn = document.getElementById('potion-button');
+    if (state.potionFilled) {
+      btn.classList.add('filled');
+    } else {
+      btn.classList.remove('filled');
+    }
+  }
+
+  document.getElementById('potion-button').addEventListener('pointerdown', () => {
+    if (state.potionFilled) {
+      // Use the potion — heal current character to full
+      setPlayerCurrentHealth(getPlayerHealth());
+      updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+      state.potionFilled = false;
+      updatePotionUI();
+
+      // Gulp gulp feedback
+      const gulpText = document.getElementById('potion-icon');
+      gulpText.style.transform = 'scale(1.4)';
+      gulpText.style.transition = 'transform 0.15s';
+      setTimeout(() => { gulpText.style.transform = 'scale(0.9)'; }, 150);
+      setTimeout(() => { gulpText.style.transform = 'scale(1)'; }, 300);
+    } else if (getCoffee() >= 50) {
+      // Fill the potion — costs 50 coffee
+      addCoffee(-50);
+      state.potionFilled = true;
+      updatePotionUI();
+
+      // Fill animation
+      const icon = document.getElementById('potion-icon');
+      icon.style.transform = 'scale(1.3)';
+      icon.style.transition = 'transform 0.2s';
+      setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
+    }
+  });
 
 
   
@@ -1789,6 +1827,8 @@ state.demiSpawned = 0;
       document.getElementById("coffee-button").style.visibility = "visible";
       document.getElementById("weather-icon").style.visibility = "visible";
       updateWeatherIcon();
+      document.getElementById("potion-button").style.visibility = "visible";
+      updatePotionUI();
       critter.scale.set(getFrogSize());
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;

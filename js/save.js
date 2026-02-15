@@ -61,6 +61,7 @@ export function saveGame() {
     musicVolume: state.musicVolume,
     effectsVolume: state.effectsVolume,
     unlockedCharacters: state.unlockedCharacters,
+    potionFilled: state.potionFilled || false,
   };
 
   const saveData = JSON.stringify(gameData);
@@ -167,6 +168,10 @@ export function loadGame() {
 
     if (gameData.unlockedCharacters) {
       state.unlockedCharacters = gameData.unlockedCharacters;
+    }
+
+    if (gameData.potionFilled !== undefined) {
+      state.potionFilled = gameData.potionFilled;
     }
 
     state.roundOver = false;

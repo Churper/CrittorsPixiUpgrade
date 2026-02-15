@@ -155,6 +155,7 @@ const state = {
   interval: 6500,
   enemySpawnTimeout: null,
   isSpawning: false,
+  spawnedThisRound: 0,
 
   // Enemy
   attackingEnemy: null,

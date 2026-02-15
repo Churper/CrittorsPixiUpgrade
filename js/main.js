@@ -1536,6 +1536,7 @@ state.demiSpawned = 0;
               enemies.length = 0;
             }
             state.roundOver = false;
+            state.spawnedThisRound = 0;
             // setisPaused(false);
             setIsDead(false);
             resetEnemiesState();
@@ -1781,15 +1782,21 @@ state.demiSpawned = 0;
 
   function spawnEnemies() {
     if (state.isSpawning || getisDead() || getisPaused()) {
-      return; // If already spawning or game is paused or player is dead, exit the function
+      return;
     }
 
     if (isTimerFinished()) {
       console.log("TIMERDONE");
-      return
+      return;
     }
 
-    state.isSpawning = true; // Set state.isSpawning to true to indicate that a spawn ticker is running
+    // Cap enemies per round — spawn them early, leave end clear for castle
+    const maxSpawns = 4 + Math.floor(state.currentRound * 0.5);
+    if (state.spawnedThisRound >= maxSpawns) {
+      return;
+    }
+
+    state.isSpawning = true;
 
     const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
     const selectedEnemy = state.enemyTypes[randomIndex];
@@ -1801,12 +1808,13 @@ state.demiSpawned = 0;
       selectedEnemy.name
     );
 
-    state.timeOfLastSpawn = Date.now(); // Update the time of last spawn
+    state.spawnedThisRound++;
+    state.timeOfLastSpawn = Date.now();
 
     state.enemySpawnTimeout = setTimeout(() => {
-      state.isSpawning = false; // Set state.isSpawning to false when the timeout completes
-      spawnEnemies(); // Spawn the next enemy
-    }, state.interval- (state.currentRound * 225)) ;
+      state.isSpawning = false;
+      spawnEnemies();
+    }, state.interval - (state.currentRound * 225));
   }
 
 

@@ -904,6 +904,16 @@ backgroundTexture = textures.background;
         xDir = 1;
       };
 
+      function handleMouseLeave(event) {
+        state.isPointerDown = false;
+        console.log('Mouse has left the screen');
+        attackAnimationPlayed = true;
+        handleTouchEnd(event);
+      }
+
+      document.addEventListener("mouseout", handleMouseLeave);
+      document.addEventListener("touchend", handleMouseLeave);
+
       app.stage.eventMode = 'static';
       app.stage.on("pointerdown", handleTouchStart);
       app.stage.on("pointerup", handleTouchEnd);
@@ -1024,7 +1034,7 @@ backgroundTexture = textures.background;
         }
 
 
-        if (state.isPointerDown = true) {
+        if (state.isPointerDown) {
           state.isPointerDown = false;
           console.log('Mouse has left the screen');
           attackAnimationPlayed = true;
@@ -1050,22 +1060,8 @@ backgroundTexture = textures.background;
           }
           return;
         }
-        function handleMouseLeave(event) {
-          state.isPointerDown = false;
-          console.log('Mouse has left the screen');
-          attackAnimationPlayed = true;
-          handleTouchEnd(event);
-
-          // Perform any additional actions you want here
-        }
-
-     
-
         state.isPointerDown = true;
         pointerHoldInterval = setInterval(handleTouchHold, 10);
-        document.addEventListener("mouseout", handleMouseLeave);
-
-        document.addEventListener("touchend", handleMouseLeave);
       }
 
       function getCharacterSpeed(currentCharacter) {
@@ -1639,6 +1635,7 @@ state.demiSpawned = 0;
 
       // Resize handler — adapts to rotation and window changes
       function handleResize() {
+        const oldHeight = app.screen.height;
         app.renderer.resize(window.innerWidth, window.innerHeight);
 
         // Reposition elements that depend on screen dimensions
@@ -1648,6 +1645,12 @@ state.demiSpawned = 0;
         castlePlayer.position.y = app.screen.height - castle.height * 0.25;
         state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
         critter.position.y = state.stored;
+
+        // Reposition existing enemies preserving their offset from the ground
+        getEnemies().forEach(enemy => {
+          const offsetFromBottom = oldHeight - enemy.position.y;
+          enemy.position.y = app.screen.height - offsetFromBottom;
+        });
       }
 
       window.addEventListener('resize', handleResize);

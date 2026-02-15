@@ -258,7 +258,7 @@ export function handleEnemyAttack(critter, critterAttackTextures, critterWalkTex
 }
 
 export function prepareEnemyPortrait(enemyName) {
-  enemyPortrait = document.getElementById('enemy-portrait');
+  const enemyPortrait = document.getElementById('enemy-portrait');
   updateEnemyGrayscale(100);
 
 

@@ -73,6 +73,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     resolution: 1,
   });
   state.app = app;
+  app.stage.sortableChildren = true;
   document.getElementById('game-container').appendChild(app.canvas);
 
   // UNSAFE variables - kept as local vars (also used as function params)
@@ -162,13 +163,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     if (!app) return;
 
     weatherContainer = new PIXI.Container();
-    weatherContainer.zIndex = 50000;
     weatherContainer.label = 'weatherFX';
     app.stage.addChild(weatherContainer);
 
     const w = app.screen.width;
     const h = app.screen.height;
     const type = getWeatherType();
+
+    // Sun renders behind foreground (low zIndex); other weather renders in front
+    weatherContainer.zIndex = (type === 'sun') ? -1 : 50000;
 
     if (type === 'sun') {
       // Sun glow orb — larger with layered glow
@@ -293,14 +296,16 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       // Arc the sun across the sky over 60 seconds
       const elapsed = Date.now() - weatherSun.startTime;
       const duration = 60000;
-      const progress = Math.min(elapsed / duration, 1);
+      // Don't cap — let sun keep sinking below the horizon after timer ends
+      const progress = elapsed / duration;
 
       // Parallax: sun shifts slightly opposite to camera, feels distant
       const parallaxX = app.stage.x * 0.04;
       const parallaxY = app.stage.y * 0.02;
 
       // Parabolic arc: rises from bottom-left, peaks at top-center, sets at bottom-right
-      const arcX = w * 0.1 + progress * w * 0.8 + parallaxX;
+      // After progress > 1.0, sin(progress * PI) goes negative → sun dips below horizon
+      const arcX = w * 0.1 + Math.min(progress, 1.3) * w * 0.8 + parallaxX;
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       weatherSun.position.set(arcX, arcY);
 
@@ -310,8 +315,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
       weatherSun.scale.set(pulse);
 
-      // sinusoidal brightness: 0 at edges, 1 at middle
-      const brightness = Math.sin(progress * Math.PI);
+      // sinusoidal brightness: 0 at edges, 1 at middle, clamp so it doesn't go negative after sunset
+      const brightness = Math.max(0, Math.sin(progress * Math.PI));
 
       // Lighting: dim at dawn/dusk (progress near 0 or 1), bright at noon (progress ~0.5)
       if (sunLightOverlay) {

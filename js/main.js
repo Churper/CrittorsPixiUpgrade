@@ -173,8 +173,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const h = app.screen.height;
     const type = getWeatherType();
 
-    // Sun renders behind foreground (low zIndex); other weather renders in front
-    weatherContainer.zIndex = (type === 'sun') ? -1 : 50000;
+    // Sun renders behind foreground (zIndex 3, between mountains=1 and foreground=5)
+    // Other weather renders in front of everything
+    weatherContainer.zIndex = (type === 'sun') ? 3 : 50000;
 
     if (type === 'sun') {
       // Sun glow orb — larger with layered glow
@@ -2160,6 +2161,19 @@ state.demiSpawned = 0;
 
       }
       app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
+
+      // Z-layer ordering for weather effects (sun renders behind foreground)
+      background.zIndex = 0;
+      mountain4.zIndex = 1;
+      mountain1.zIndex = 1;
+      mountain2.zIndex = 1;
+      mountain3.zIndex = 1;
+      // Sun weather goes at zIndex 3 (between mountains and foreground)
+      foreground.zIndex = 5;
+      castle.zIndex = 6;
+      critter.zIndex = 10;
+      clouds.zIndex = 2;
+      clouds2.zIndex = 2;
 
       function buildEnemyTypes() {
         const allEnemies = [

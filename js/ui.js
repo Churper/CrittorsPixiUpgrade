@@ -334,6 +334,7 @@ export function openCharacterMenu() {
     });
     state.isCharacterMenuOpen = false;
   } else {
+    const visibleBoxes = [];
     characterBoxes.forEach((box) => {
       const charClass = box.classList[1];
       if (!state.unlockedCharacters.includes(charClass)) {
@@ -342,7 +343,14 @@ export function openCharacterMenu() {
         box.style.visibility = 'hidden';
       } else {
         box.style.visibility = 'visible';
+        visibleBoxes.push(box);
       }
+    });
+    // Evenly space visible boxes so nothing overlaps
+    const totalWidth = visibleBoxes.length * 60;
+    const startOffset = -totalWidth / 2;
+    visibleBoxes.forEach((box, i) => {
+      box.style.left = 'calc(45% + ' + (startOffset + i * 60) + 'px)';
     });
     state.isCharacterMenuOpen = true;
   }

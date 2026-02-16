@@ -1490,10 +1490,64 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         addCoffee(-50);
         app.stage.removeChild(state.reviveDialogContainer);
         state.reviveDialogContainer = null;
+        const revivingSelf = characterType === state.selectedCharacter;
 
-        // Keep isDead = true so handleCharacterClick runs its ghost
-        // cleanup block, then let it set isDead = false internally.
-        handleCharacterClick(characterType);
+        // --- Ghost cleanup (shared by both paths) ---
+        setIsDead(false);
+        if (state.ghostFlyInterval) {
+          clearInterval(state.ghostFlyInterval);
+          state.ghostFlyInterval = null;
+        }
+        if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
+          state.app.stage.removeChild(state.frogGhostPlayer);
+        }
+        // Reset enemies
+        for (const enemy of state.enemies) {
+          enemy.play();
+          enemy.enemyAdded = false;
+          enemy.isAttacking = false;
+          enemy.onFrameChange = null;
+        }
+        state.roundOver = false;
+        state.isCombat = false;
+        setEnemiesInRange(0);
+        state.isAttackingChar = false;
+        state.isPointerDown = false;
+        // Restart spawner
+        if (state.enemySpawnTimeout) {
+          clearTimeout(state.enemySpawnTimeout);
+          state.enemySpawnTimeout = null;
+        }
+        state.isSpawning = false;
+        state.timeOfLastSpawn = Date.now();
+
+        if (revivingSelf) {
+          // Same character — just put them back on stage
+          document.getElementById('spawn-text').style.visibility = 'hidden';
+          const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+          characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
+          state.isCharacterMenuOpen = false;
+          stopFlashing();
+          if (!app.stage.children.includes(critter)) {
+            app.stage.addChild(critter);
+          }
+          critter.visible = true;
+          critter.textures = state.frogWalkTextures;
+          critter.loop = true;
+          critter.play();
+          critter.tint = 0xffffff;
+          updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+          updateEXP(getCharEXP(getCurrentCharacter()));
+          // Spawn protection
+          if (Date.now() - state.lastInvulnTime >= 15000) {
+            state.spawnProtectionEnd = Date.now() + 2000;
+            state.lastInvulnTime = Date.now();
+          }
+        } else {
+          // Different character — use normal swap flow
+          handleCharacterClick(characterType);
+        }
+        spawnEnemies();
       } else {
         // Can't afford — shake dialog
         state.hitSound.volume = state.effectsVolume;

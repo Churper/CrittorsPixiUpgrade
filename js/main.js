@@ -1017,16 +1017,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           state.app.stage.removeChild(state.frogGhostPlayer);
         }
 
-        // Resume frozen enemies — don't kill them
+        // Fully reset enemies so they re-engage cleanly
         for (const enemy of state.enemies) {
           enemy.play();
           enemy.enemyAdded = false;
           enemy.isAttacking = false;
+          enemy.onFrameChange = null;
         }
 
         // Reset combat flags so enemies can fight again
         state.roundOver = false;
+        state.isCombat = false;
         setEnemiesInRange(0);
+        state.isAttackingChar = false;
         state.isPointerDown = false;
       }
 
@@ -1486,16 +1489,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
         // Resume enemies when reviving FROM the ghost/dead state.
         if (wasDead) {
-          // Resume frozen enemies — don't kill them
+          // Fully reset enemies so they re-engage cleanly
           for (const enemy of state.enemies) {
             enemy.play();
             enemy.enemyAdded = false;
             enemy.isAttacking = false;
+            enemy.onFrameChange = null;
           }
 
           // Reset combat flags so enemies can fight again
           state.roundOver = false;
+          state.isCombat = false;
           setEnemiesInRange(0);
+          state.isAttackingChar = false;
           state.isPointerDown = false;
         }
       } else {
@@ -3684,8 +3690,7 @@ state.demiSpawned = 0;
           stopFlashing();
           critter.visible = true;
           app.stage.addChild(critter);
-
-          return;
+          // Fall through to auto-attack check (no early return)
         }
         // Auto-attack: trigger attack when enemies are in range
         if (state.autoAttack && getEnemiesInRange() > 0 && !state.isAttackingChar && !state.isPointerDown) {

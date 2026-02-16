@@ -1316,7 +1316,7 @@ export function playPotionBottleAnimation(critter, app) {
   body.roundRect(-4, -2, 3, 8, 1).fill({ color: 0xff6666, alpha: 0.5 });
   bottle.addChild(body);
 
-  bottle.position.set(critter.position.x + 15, critter.position.y - 20);
+  bottle.position.set(critter.position.x + 30, critter.position.y - 20);
   bottle.zIndex = 99999;
   bottle.pivot.set(0, 0);
   bottle.rotation = -0.3;

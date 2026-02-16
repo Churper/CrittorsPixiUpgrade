@@ -1587,7 +1587,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       document.getElementById('progress').style.display = 'none';
       document.getElementById('progress-filled').style.display = 'none';
       // Show endless timer
-      document.getElementById('endless-timer').style.display = 'block';
+      document.getElementById('endless-timer').style.display = 'flex';
       // Wire auto-attack button (shown after loading finishes)
       const autoBtn = document.getElementById('auto-attack-btn');
       autoBtn.addEventListener('click', () => {
@@ -1628,7 +1628,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setShieldCount(getShieldCount() - 1);
           document.getElementById('shield-count').textContent = getShieldCount();
           shieldBtn.classList.toggle('active', getShieldCount() > 0);
-          if (getShieldCount() <= 0) { shieldBtn.style.display = 'none'; repositionItemButtons(); }
+          if (getShieldCount() <= 0) { shieldBtn.style.display = 'none'; }
+          repositionItemButtons();
 
           state.shieldActive = true;
           state.shieldHP = 100;
@@ -1664,7 +1665,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setBombCount(getBombCount() - 1);
           document.getElementById('bomb-count').textContent = getBombCount();
           bombBtn.classList.toggle('active', getBombCount() > 0);
-          if (getBombCount() <= 0) { bombBtn.style.display = 'none'; repositionItemButtons(); }
+          if (getBombCount() <= 0) { bombBtn.style.display = 'none'; }
+          repositionItemButtons();
           triggerAirstrike(app, critter);
         }
       });
@@ -1675,7 +1677,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setRageCount(getRageCount() - 1);
           document.getElementById('rage-count').textContent = getRageCount();
           rageBtn.classList.toggle('active', getRageCount() > 0);
-          if (getRageCount() <= 0) { rageBtn.style.display = 'none'; repositionItemButtons(); }
+          if (getRageCount() <= 0) { rageBtn.style.display = 'none'; }
+          repositionItemButtons();
 
           state.rageActive = true;
           state.rageEndTime = Date.now() + 30000;
@@ -1693,7 +1696,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setFeatherCount(getFeatherCount() - 1);
           document.getElementById('feather-count').textContent = getFeatherCount();
           featherBtn.classList.toggle('active', getFeatherCount() > 0);
-          if (getFeatherCount() <= 0) { featherBtn.style.display = 'none'; repositionItemButtons(); }
+          if (getFeatherCount() <= 0) { featherBtn.style.display = 'none'; }
+          repositionItemButtons();
 
           state.featherActive = true;
           // Create feather sprite above critter
@@ -1713,7 +1717,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setGoldenBeanCount(getGoldenBeanCount() - 1);
           document.getElementById('golden-bean-count').textContent = getGoldenBeanCount();
           goldenBeanBtn.classList.toggle('active', getGoldenBeanCount() > 0);
-          if (getGoldenBeanCount() <= 0) { goldenBeanBtn.style.display = 'none'; repositionItemButtons(); }
+          if (getGoldenBeanCount() <= 0) { goldenBeanBtn.style.display = 'none'; }
+          repositionItemButtons();
           playGoldenBeanFlyEffect(critter, 100);
           playGoldenBeanSound();
         }
@@ -3234,7 +3239,7 @@ let cantGainEXP = false;
         // Endless mode: update kill counter + track elapsed for weather cycling
         if (state.gameMode === 'endless' && state.endlessStartTime && !getisPaused()) {
           state.endlessElapsed = Math.floor((Date.now() - state.endlessStartTime) / 1000);
-          document.getElementById('endless-timer').textContent = state.endlessKillCount + ' kills';
+          document.getElementById('endless-kill-count').textContent = state.endlessKillCount;
 
           // Cycle weather every 60s — crossfade ground + weather effects
           const currentWeather = getWeatherType();

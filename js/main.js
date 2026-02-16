@@ -36,7 +36,8 @@ import {
   spawnEnemyDemi, spawnEnemy,
   resetEnemiesState, addCoffee, playSpawnAnimation,
   createCoffeeDrop, collectGroundItem, drawEnemyHPBar,
-  playShieldActivateSound, playShieldBreakSound, playAirstrikeSound,
+  playShieldActivateSound, playShieldBreakSound,
+  playBombDropSound, playExplosionSound,
   createItemDrop,
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
@@ -972,109 +973,229 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   // --- Airstrike (bomb item) ---
   function triggerAirstrike(app, critter) {
-    playAirstrikeSound();
+    // Drop target = center of visible screen in stage coords
+    const dropX = -app.stage.x + app.screen.width / 2;
+    const dropY = -app.stage.y + app.screen.height / 2;
+    const groundY = critter.position.y;
 
-    // Windup: red tint overlay
-    const overlay = new PIXI.Graphics();
-    overlay.rect(0, 0, app.screen.width, app.screen.height);
-    overlay.fill({ color: 0xff0000, alpha: 0.15 });
-    overlay.zIndex = 9999;
-    // Position in screen space (fixed)
-    overlay.position.set(-app.stage.x, -app.stage.y);
-    app.stage.addChild(overlay);
+    // Play falling bomb whistle
+    playBombDropSound();
 
-    setTimeout(() => {
-      // Strike flash
-      overlay.clear();
-      overlay.rect(0, 0, app.screen.width, app.screen.height);
-      overlay.fill({ color: 0xffffff, alpha: 0.8 });
-      overlay.position.set(-app.stage.x, -app.stage.y);
+    // Create bomb emoji dropping from top of screen
+    const bombSprite = new PIXI.Text({ text: '💣', style: { fontSize: 48 } });
+    bombSprite.anchor.set(0.5);
+    bombSprite.position.set(dropX, -app.stage.y - 60);
+    bombSprite.zIndex = 9998;
+    app.stage.addChild(bombSprite);
 
-      // Damage all on-screen enemies
-      const enemies = getEnemies();
-      const deadEnemies = [];
-      for (let i = enemies.length - 1; i >= 0; i--) {
-        const enemy = enemies[i];
-        if (!enemy.isAlive) continue;
-        const damage = Math.round(enemy.maxHP * 0.75);
-        enemy.currentHP -= damage;
-        enemy.tint = 0xffffff;
-        setTimeout(() => { if (enemy.isAlive) enemy.tint = 0xffffff; }, 100);
-        drawEnemyHPBar(enemy);
+    // Animate bomb falling
+    const fallStart = Date.now();
+    const fallDuration = 700;
+    const startBombY = bombSprite.position.y;
+    const targetBombY = groundY;
 
-        if (enemy.currentHP <= 0) {
-          enemy.isAlive = false;
-          if (enemy.isDemi) state.lastDemiKillTime = Date.now();
-          deadEnemies.push(enemy);
+    const animateFall = () => {
+      const elapsed = Date.now() - fallStart;
+      const progress = Math.min(elapsed / fallDuration, 1);
+      // Accelerating fall (ease-in)
+      const t = progress * progress;
+      bombSprite.position.y = startBombY + (targetBombY - startBombY) * t;
+      bombSprite.rotation += 0.15;
+      // Grow slightly as it gets closer
+      const s = 1 + progress * 0.4;
+      bombSprite.scale.set(s);
+
+      if (progress < 1) {
+        requestAnimationFrame(animateFall);
+      } else {
+        // IMPACT — remove bomb sprite
+        app.stage.removeChild(bombSprite);
+        bombSprite.destroy();
+
+        // Play explosion sound
+        playExplosionSound();
+
+        // --- Explosion visual ---
+        const explosionContainer = new PIXI.Container();
+        explosionContainer.zIndex = 9999;
+        explosionContainer.position.set(dropX, groundY);
+        app.stage.addChild(explosionContainer);
+
+        // Central fireball ring (expanding circle)
+        const fireball = new PIXI.Graphics();
+        fireball.circle(0, 0, 10);
+        fireball.fill({ color: 0xff6600, alpha: 0.9 });
+        explosionContainer.addChild(fireball);
+
+        // Inner white-hot core
+        const core = new PIXI.Graphics();
+        core.circle(0, 0, 6);
+        core.fill({ color: 0xffffcc, alpha: 1 });
+        explosionContainer.addChild(core);
+
+        // Explosion particles — fiery debris
+        const particles = [];
+        const particleCount = 24;
+        for (let i = 0; i < particleCount; i++) {
+          const p = new PIXI.Graphics();
+          const size = 3 + Math.random() * 5;
+          const colors = [0xff4400, 0xff8800, 0xffcc00, 0xff2200, 0xffaa00];
+          const color = colors[Math.floor(Math.random() * colors.length)];
+          p.circle(0, 0, size);
+          p.fill({ color: color, alpha: 0.9 });
+          p.position.set(0, 0);
+          const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
+          const speed = 3 + Math.random() * 6;
+          p.vx = Math.cos(angle) * speed;
+          p.vy = Math.sin(angle) * speed - Math.random() * 3;
+          p.gravity = 0.12;
+          p.drag = 0.96;
+          explosionContainer.addChild(p);
+          particles.push(p);
         }
-      }
 
-      // Process dead enemies
-      deadEnemies.forEach(enemy => {
-        if (app.stage.children.includes(enemy)) {
-          enemy.tint = 0xFF0000;
-          createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-          // Item drop from airstrike kills (endless mode)
-          if (state.gameMode === 'endless') {
-            const roll = Math.random();
-            if (roll < 0.025) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
-            else if (roll < 0.05) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+        // Smoke puffs
+        const smokes = [];
+        for (let i = 0; i < 8; i++) {
+          const s = new PIXI.Graphics();
+          const smokeSize = 8 + Math.random() * 12;
+          const grey = Math.floor(80 + Math.random() * 80);
+          s.circle(0, 0, smokeSize);
+          s.fill({ color: (grey << 16) | (grey << 8) | grey, alpha: 0.5 });
+          s.position.set((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 20);
+          s.vx = (Math.random() - 0.5) * 1.5;
+          s.vy = -1 - Math.random() * 2;
+          explosionContainer.addChild(s);
+          smokes.push(s);
+        }
+
+        // Screen flash overlay
+        const overlay = new PIXI.Graphics();
+        overlay.rect(0, 0, app.screen.width, app.screen.height);
+        overlay.fill({ color: 0xffffff, alpha: 0.7 });
+        overlay.zIndex = 10000;
+        overlay.position.set(-app.stage.x, -app.stage.y);
+        app.stage.addChild(overlay);
+
+        // Animate explosion
+        const explosionStart = Date.now();
+        const explosionDuration = 800;
+        const animateExplosion = () => {
+          const elapsed = Date.now() - explosionStart;
+          const progress = Math.min(elapsed / explosionDuration, 1);
+
+          // Expand fireball then fade
+          const fireScale = 1 + progress * 8;
+          fireball.scale.set(fireScale);
+          fireball.alpha = Math.max(0, 0.9 - progress * 1.2);
+          core.scale.set(1 + progress * 5);
+          core.alpha = Math.max(0, 1 - progress * 2);
+
+          // Particles fly outward
+          for (const p of particles) {
+            p.position.x += p.vx;
+            p.position.y += p.vy;
+            p.vy += p.gravity;
+            p.vx *= p.drag;
+            p.vy *= p.drag;
+            p.alpha = Math.max(0, 1 - progress * 1.3);
+            p.scale.set(Math.max(0, 1 - progress * 0.8));
           }
-          app.stage.removeChild(enemy);
-          const idx = enemies.indexOf(enemy);
-          if (idx !== -1) enemies.splice(idx, 1);
-          // EXP from kill
-          const expGain = enemy.exp || 32;
-          const currentChar = getCurrentCharacter();
-          setCharEXP(currentChar, getCharEXP(currentChar) + expGain);
-          updateEXP(getCharEXP(currentChar), getEXPtoLevel(currentChar));
-        }
-      });
 
-      if (getEnemiesInRange() > 0) {
-        setEnemiesInRange(Math.max(0, getEnemiesInRange() - deadEnemies.length));
-      }
-      if (getEnemiesInRange() === 0) {
-        const enemyPortrait = document.getElementById('enemy-portrait');
-        if (enemyPortrait) enemyPortrait.style.display = 'none';
-        state.isCombat = false;
-      }
+          // Smoke drifts up
+          for (const s of smokes) {
+            s.position.x += s.vx;
+            s.position.y += s.vy;
+            s.vy *= 0.98;
+            s.alpha = Math.max(0, 0.5 - progress * 0.7);
+            s.scale.set(1 + progress * 1.5);
+          }
 
-      // Fade out flash
-      let flashAlpha = 0.8;
-      const flashFade = () => {
-        flashAlpha -= 0.05;
-        if (flashAlpha <= 0) {
-          if (app.stage.children.includes(overlay)) {
-            app.stage.removeChild(overlay);
+          // Fade flash overlay
+          const flashAlpha = Math.max(0, 0.7 - progress * 1.4);
+          overlay.clear();
+          overlay.rect(0, 0, app.screen.width, app.screen.height);
+          overlay.fill({ color: 0xffffff, alpha: flashAlpha });
+          overlay.position.set(-app.stage.x, -app.stage.y);
+
+          if (progress < 1) {
+            requestAnimationFrame(animateExplosion);
+          } else {
+            // Cleanup
+            if (app.stage.children.includes(explosionContainer)) {
+              app.stage.removeChild(explosionContainer);
+            }
+            explosionContainer.destroy({ children: true });
+            if (app.stage.children.includes(overlay)) {
+              app.stage.removeChild(overlay);
+            }
             overlay.destroy();
           }
-          return;
-        }
-        overlay.clear();
-        overlay.rect(0, 0, app.screen.width, app.screen.height);
-        overlay.fill({ color: 0xffffff, alpha: flashAlpha });
-        overlay.position.set(-app.stage.x, -app.stage.y);
-        requestAnimationFrame(flashFade);
-      };
-      requestAnimationFrame(flashFade);
+        };
+        requestAnimationFrame(animateExplosion);
 
-      // Screen shake
-      const origX = app.stage.x;
-      const origY = app.stage.y;
-      let shakeTime = 0;
-      const shakeInterval = setInterval(() => {
-        shakeTime += 20;
-        if (shakeTime > 300) {
-          clearInterval(shakeInterval);
-          return;
+        // Screen shake
+        let shakeTime = 0;
+        const shakeInterval = setInterval(() => {
+          shakeTime += 20;
+          if (shakeTime > 400) {
+            clearInterval(shakeInterval);
+            return;
+          }
+          const intensity = Math.max(0, 1 - shakeTime / 400);
+          app.stage.x += (Math.random() - 0.5) * 8 * intensity;
+          app.stage.y += (Math.random() - 0.5) * 8 * intensity;
+        }, 20);
+
+        // --- Apply damage to all enemies ---
+        const enemies = getEnemies();
+        const deadEnemies = [];
+        for (let i = enemies.length - 1; i >= 0; i--) {
+          const enemy = enemies[i];
+          if (!enemy.isAlive) continue;
+          const damage = Math.round(enemy.maxHP * 0.75);
+          enemy.currentHP -= damage;
+          enemy.tint = 0xffffff;
+          setTimeout(() => { if (enemy && enemy.isAlive) enemy.tint = 0xffffff; }, 150);
+          drawEnemyHPBar(enemy);
+          if (enemy.currentHP <= 0) {
+            enemy.isAlive = false;
+            if (enemy.isDemi) state.lastDemiKillTime = Date.now();
+            deadEnemies.push(enemy);
+          }
         }
-        const offsetX = (Math.random() - 0.5) * 6;
-        const offsetY = (Math.random() - 0.5) * 6;
-        app.stage.x += offsetX;
-        app.stage.y += offsetY;
-      }, 20);
-    }, 300); // windup delay
+
+        // Process dead enemies
+        deadEnemies.forEach(enemy => {
+          if (app.stage.children.includes(enemy)) {
+            enemy.tint = 0xFF0000;
+            createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
+            if (state.gameMode === 'endless') {
+              const roll = Math.random();
+              if (roll < 0.025) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
+              else if (roll < 0.05) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+            }
+            app.stage.removeChild(enemy);
+            const idx = enemies.indexOf(enemy);
+            if (idx !== -1) enemies.splice(idx, 1);
+            const expGain = enemy.exp || 32;
+            const currentChar = getCurrentCharacter();
+            setCharEXP(currentChar, getCharEXP(currentChar) + expGain);
+            updateEXP(getCharEXP(currentChar), getEXPtoLevel(currentChar));
+          }
+        });
+
+        if (getEnemiesInRange() > 0) {
+          setEnemiesInRange(Math.max(0, getEnemiesInRange() - deadEnemies.length));
+        }
+        if (getEnemiesInRange() === 0) {
+          const enemyPortrait = document.getElementById('enemy-portrait');
+          if (enemyPortrait) enemyPortrait.style.display = 'none';
+          state.isCombat = false;
+        }
+      }
+    };
+    animateFall();
   }
 
 

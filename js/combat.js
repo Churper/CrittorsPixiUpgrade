@@ -1176,39 +1176,81 @@ export function playShieldBreakSound() {
   });
 }
 
-export function playAirstrikeSound() {
+export function playBombDropSound() {
   const ctx = getAudioCtx();
   const vol = state.effectsVolume;
   if (vol <= 0) return;
-  // Warning siren
-  const gain = ctx.createGain();
-  gain.connect(ctx.destination);
-  gain.gain.setValueAtTime(vol * 0.2, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(vol * 0.4, ctx.currentTime + 0.2);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-  const osc = ctx.createOscillator();
-  osc.type = 'sawtooth';
-  osc.frequency.setValueAtTime(300, ctx.currentTime);
-  osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.15);
-  osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.3);
-  osc.connect(gain);
-  osc.start(ctx.currentTime);
-  osc.stop(ctx.currentTime + 0.5);
-  // Explosion
-  const explosionGain = ctx.createGain();
-  explosionGain.connect(ctx.destination);
-  explosionGain.gain.setValueAtTime(0.001, ctx.currentTime + 0.3);
-  explosionGain.gain.linearRampToValueAtTime(vol * 0.5, ctx.currentTime + 0.35);
-  explosionGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
-  const bufferSize = ctx.sampleRate * 0.5;
+  // Falling whistle — high pitch sweeping down over ~0.7s
+  const whistleGain = ctx.createGain();
+  whistleGain.connect(ctx.destination);
+  whistleGain.gain.setValueAtTime(vol * 0.15, ctx.currentTime);
+  whistleGain.gain.linearRampToValueAtTime(vol * 0.4, ctx.currentTime + 0.5);
+  whistleGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.75);
+  const whistle = ctx.createOscillator();
+  whistle.type = 'sine';
+  whistle.frequency.setValueAtTime(2000, ctx.currentTime);
+  whistle.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.7);
+  whistle.connect(whistleGain);
+  whistle.start(ctx.currentTime);
+  whistle.stop(ctx.currentTime + 0.75);
+  // Layered second whistle for thickness
+  const whistle2Gain = ctx.createGain();
+  whistle2Gain.connect(ctx.destination);
+  whistle2Gain.gain.setValueAtTime(vol * 0.08, ctx.currentTime);
+  whistle2Gain.gain.linearRampToValueAtTime(vol * 0.2, ctx.currentTime + 0.5);
+  whistle2Gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+  const whistle2 = ctx.createOscillator();
+  whistle2.type = 'sawtooth';
+  whistle2.frequency.setValueAtTime(1800, ctx.currentTime);
+  whistle2.frequency.exponentialRampToValueAtTime(150, ctx.currentTime + 0.7);
+  whistle2.connect(whistle2Gain);
+  whistle2.start(ctx.currentTime);
+  whistle2.stop(ctx.currentTime + 0.7);
+}
+
+export function playExplosionSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  // Big boom — low frequency thump
+  const boomGain = ctx.createGain();
+  boomGain.connect(ctx.destination);
+  boomGain.gain.setValueAtTime(vol * 0.6, ctx.currentTime);
+  boomGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+  const boom = ctx.createOscillator();
+  boom.type = 'sine';
+  boom.frequency.setValueAtTime(80, ctx.currentTime);
+  boom.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.5);
+  boom.connect(boomGain);
+  boom.start(ctx.currentTime);
+  boom.stop(ctx.currentTime + 0.6);
+  // Noise burst — the crackle/blast
+  const noiseGain = ctx.createGain();
+  noiseGain.connect(ctx.destination);
+  noiseGain.gain.setValueAtTime(vol * 0.5, ctx.currentTime);
+  noiseGain.gain.exponentialRampToValueAtTime(vol * 0.15, ctx.currentTime + 0.15);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+  const bufferSize = Math.floor(ctx.sampleRate * 0.8);
   const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const output = noiseBuffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
   const noise = ctx.createBufferSource();
   noise.buffer = noiseBuffer;
-  noise.connect(explosionGain);
-  noise.start(ctx.currentTime + 0.3);
+  noise.connect(noiseGain);
+  noise.start(ctx.currentTime);
   noise.stop(ctx.currentTime + 0.8);
+  // Mid crunch layer
+  const crunchGain = ctx.createGain();
+  crunchGain.connect(ctx.destination);
+  crunchGain.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
+  crunchGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+  const crunch = ctx.createOscillator();
+  crunch.type = 'square';
+  crunch.frequency.setValueAtTime(150, ctx.currentTime);
+  crunch.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.3);
+  crunch.connect(crunchGain);
+  crunch.start(ctx.currentTime);
+  crunch.stop(ctx.currentTime + 0.4);
 }
 
 function updateItemButtonState(itemType) {

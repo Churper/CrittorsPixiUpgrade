@@ -1070,14 +1070,17 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
       characterLevelElement.textContent = 'Lvl. ' + level;
 
-      const currentCharacterBox = document.querySelector('.upgrade-box.' + state.selectedCharacter);
-      const prevCharacterBox = document.querySelector('.upgrade-box.' + characterType);
-      const tempPosition = { ...state.characterPositions[state.selectedCharacter] };
+      // Swap box positions (skip if selectedCharacter is empty, e.g. self-revive)
+      if (state.selectedCharacter) {
+        const currentCharacterBox = document.querySelector('.upgrade-box.' + state.selectedCharacter);
+        const prevCharacterBox = document.querySelector('.upgrade-box.' + characterType);
+        const tempPosition = { ...state.characterPositions[state.selectedCharacter] };
 
-      currentCharacterBox.style.top = state.characterPositions[characterType].top;
-      currentCharacterBox.style.left = state.characterPositions[characterType].left;
-      state.characterPositions[state.selectedCharacter] = state.characterPositions[characterType];
-      state.characterPositions[characterType] = tempPosition;
+        currentCharacterBox.style.top = state.characterPositions[characterType].top;
+        currentCharacterBox.style.left = state.characterPositions[characterType].left;
+        state.characterPositions[state.selectedCharacter] = state.characterPositions[characterType];
+        state.characterPositions[characterType] = tempPosition;
+      }
 
       previousCharacter = state.selectedCharacter;
       state.selectedCharacter = characterType;
@@ -1539,28 +1542,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           clearInterval(pointerHoldInterval);
           pointerHoldInterval = null;
         }
+        // Unify both self-revive and cross-revive through handleCharacterClick.
+        // For self-revive, clear selectedCharacter so handleCharacterClick runs
+        // the full swap path (line 933 check: selectedCharacter !== characterType).
         if (revivingSelf) {
-          // Same character — use the ticker charSwap path (proven to work)
-          // instead of setting visibility inline (which has PixiJS timing issues)
-          document.getElementById('spawn-text').style.visibility = 'hidden';
-          const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
-          characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
-          state.isCharacterMenuOpen = false;
-          stopFlashing();
-          updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
-          updateEXP(getCharEXP(getCurrentCharacter()));
-          setisPaused(false);
-          // Let the ticker charSwap block handle critter visibility + textures
-          setCharSwap(true);
-          // Spawn protection
-          if (Date.now() - state.lastInvulnTime >= 15000) {
-            state.spawnProtectionEnd = Date.now() + 2000;
-            state.lastInvulnTime = Date.now();
-          }
-        } else {
-          // Different character — use normal swap flow
-          handleCharacterClick(characterType);
+          state.selectedCharacter = '';
         }
+        handleCharacterClick(characterType);
         // Reset spawner AFTER setisPaused — setisPaused adjusts timeOfLastSpawn
         // by adding pause duration, which can push it into the future and stall spawns
         if (state.enemySpawnTimeout) {

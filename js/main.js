@@ -1862,14 +1862,6 @@ const biomeTints = {
   snow:  { bg: 0xc8d8e8, mountain: 0xb8c8d8 },
 };
 
-// Apply initial biome tints so the first round starts with correct colors
-const initialTints = biomeTints[initialWeather] || biomeTints.sun;
-background.tint = initialTints.bg;
-mountain1.tint = initialTints.mountain;
-mountain2.tint = initialTints.mountain;
-mountain3.tint = initialTints.mountain;
-mountain4.tint = initialTints.mountain;
-
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
   const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
@@ -2036,6 +2028,15 @@ backgroundTexture = textures.background;
       const mountain2 = createMountainSprite('mountain2', app.screen.width * 0.45, mountainVelocity2, foreground);
       const mountain3 = createMountainSprite('mountain2', -200, mountainVelocity3, foreground); // Adjust the position as needed
       const mountain4 = createMountainSprite('mountain1', app.screen.width * 1.2, mountainVelocity4, foreground); // Adjust the position as needed
+
+      // Apply initial biome tints so the first round starts with correct colors
+      const _initTints = biomeTints[initialWeather] || biomeTints.sun;
+      background.tint = _initTints.bg;
+      mountain1.tint = _initTints.mountain;
+      mountain2.tint = _initTints.mountain;
+      mountain3.tint = _initTints.mountain;
+      mountain4.tint = _initTints.mountain;
+
       function createMountainSprite(resourceName, xPos, velocity, foreground) {
         const sprite = new PIXI.Sprite(textures[resourceName]);
 

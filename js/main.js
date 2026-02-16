@@ -891,8 +891,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       }
       startCooldown();
 
-      // Spawn protection — 2s invincibility after swapping in
-      state.spawnProtectionEnd = Date.now() + 2000;
+      // Spawn protection — 2s invincibility, but only once per 15s
+      if (Date.now() - state.lastInvulnTime >= 15000) {
+        state.spawnProtectionEnd = Date.now() + 2000;
+        state.lastInvulnTime = Date.now();
+      }
 
       updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
       characterLevelElement.textContent = 'Lvl. ' + level;

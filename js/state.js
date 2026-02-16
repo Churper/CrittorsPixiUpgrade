@@ -94,6 +94,7 @@ const state = {
 
   // Spawn protection (invincibility after character swap)
   spawnProtectionEnd: 0,
+  lastInvulnTime: 0,
 
   // Potion
   potionDoses: 0,

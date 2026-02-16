@@ -245,12 +245,28 @@ touch-action: manipulation;
   justify-content: center;
   font-size: 24px;
   z-index: 99999999999999999999999;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#auto-attack-btn:hover {
+  transform: scale(1.12);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+}
+
+#auto-attack-btn:active {
+  transform: scale(0.95);
 }
 
 #auto-attack-btn.active {
   border-color: rgba(80, 255, 80, 0.8);
   box-shadow: 0 0 12px rgba(50, 255, 50, 0.5);
   background: rgba(0, 60, 0, 0.5);
+}
+
+#auto-attack-btn.active:hover {
+  transform: scale(1.12);
+  box-shadow: 0 0 16px rgba(50, 255, 50, 0.7);
 }
 
 /* ── Item buttons (shield + bomb) ──────────────────────── */
@@ -270,6 +286,17 @@ touch-action: manipulation;
   justify-content: center;
   font-size: 24px;
   z-index: 99999999999999999999999;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.item-btn:hover {
+  transform: scale(1.12);
+  border-color: rgba(130, 220, 255, 0.7);
+  box-shadow: 0 0 10px rgba(80, 200, 255, 0.3);
+}
+
+.item-btn:active {
+  transform: scale(0.95);
 }
 
 /* Item button positions are set dynamically by repositionItemButtons() in main.js */
@@ -368,6 +395,17 @@ touch-action: manipulation;
   align-items: center;
   justify-content: center;
   z-index: 99999999999999999999999;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#potion-shop:hover {
+  transform: scale(1.1);
+  border-color: rgba(140, 200, 255, 0.7);
+  box-shadow: 0 0 10px rgba(100, 180, 255, 0.3);
+}
+
+#potion-shop:active {
+  transform: scale(0.95);
 }
 
 #potion-shop.cant-afford {
@@ -413,11 +451,27 @@ touch-action: manipulation;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+#potion-button:hover {
+  transform: scale(1.1);
+  border-color: rgba(255, 150, 180, 0.6);
+  box-shadow: 0 0 10px rgba(255, 100, 140, 0.3);
+}
+
+#potion-button:active {
+  transform: scale(0.95);
 }
 
 #potion-button.filled {
   border-color: rgba(255, 80, 120, 0.8);
   box-shadow: 0 0 12px rgba(255, 50, 100, 0.5);
+}
+
+#potion-button.filled:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 18px rgba(255, 50, 100, 0.7);
 }
 
 #potion-fill {

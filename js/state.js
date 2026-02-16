@@ -108,6 +108,7 @@ const state = {
   flashColor: 0xff5555,
   isCombat: false,
   isPointerDown: false,
+  autoAttack: false,
 
   // Config
   characterPositions: {

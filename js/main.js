@@ -1118,6 +1118,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       document.getElementById('progress-filled').style.display = 'none';
       // Show endless timer
       document.getElementById('endless-timer').style.display = 'block';
+      // Show auto-attack button
+      const autoBtn = document.getElementById('auto-attack-btn');
+      autoBtn.style.display = 'flex';
+      autoBtn.addEventListener('click', () => {
+        state.autoAttack = !state.autoAttack;
+        autoBtn.classList.toggle('active', state.autoAttack);
+      });
       // Set endless start time
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
@@ -3070,7 +3077,10 @@ state.demiSpawned = 0;
 
           return;
         }
-       // if(getEnemiesInRange()>0){handleTouchHold();}
+        // Auto-attack: trigger attack when enemies are in range
+        if (state.autoAttack && getEnemiesInRange() > 0 && !state.isAttackingChar && !state.isPointerDown) {
+          handleTouchHold();
+        }
         if (getSpeedChanged()) { updateVelocity(); setSpeedChanged(false); }
         if (!state.isAttackingChar) {
           //  console.log("attacking char",state.isAttackingChar);

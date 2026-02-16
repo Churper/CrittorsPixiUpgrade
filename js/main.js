@@ -850,9 +850,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // --- Guard: prevent rapid double-clicks ---
     if (_swapLock) return;
 
-    // --- Guard: block swap while ghost fly animation is still playing ---
-    if (state.ghostFlyInterval) return;
-
     // --- Guard: prevent swapping to same character while alive ---
     if (characterType === state.selectedCharacter && !getisDead()) {
       return;

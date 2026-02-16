@@ -928,6 +928,7 @@ export function createCoffeeDrop(x, y) {
 
         if (progress >= 1) {
           bean.visible = false;
+          addCoffee(1); // +1 as each bean arrives
           return;
         }
         requestAnimationFrame(flyUpdate);
@@ -943,8 +944,6 @@ export function createCoffeeDrop(x, y) {
     }, flyDuration + beans.length * 40 + 100);
 
   }, fallDuration + 300);
-
-  addCoffee(numBeans);
 }
 
 export function addCoffee(amount) {

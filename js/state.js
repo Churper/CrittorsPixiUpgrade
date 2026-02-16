@@ -1,6 +1,11 @@
 // state.js — Central game state object + getters/setters
 
 const state = {
+  // Game mode
+  gameMode: 'story',          // 'story' or 'endless'
+  endlessStartTime: null,     // Date.now() when endless begins
+  endlessElapsed: 0,          // seconds survived
+
   // Core game state
   leveling: false,
   timer: null,

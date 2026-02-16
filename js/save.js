@@ -17,6 +17,7 @@ import { updateEXP } from './upgrades.js';
 import { addCoffee } from './combat.js';
 
 export function saveGame() {
+  if (state.gameMode === 'endless') return; // Endless mode doesn't save progress
   localStorage.removeItem('gameSave');
   const gameData = {
     expToLevel: state.expToLevel,
@@ -69,6 +70,7 @@ export function saveGame() {
 }
 
 export function loadGame() {
+  if (state.gameMode === 'endless') return; // Endless mode always starts fresh
   const savedData = localStorage.getItem('gameSave');
   if (savedData) {
 

@@ -3,6 +3,7 @@
 import state from './state.js';
 
 export function startTimer() {
+  if (state.gameMode === 'endless') return;
   if (state.timerFinished) return;
 
   const snail = document.getElementById('snail');
@@ -72,6 +73,7 @@ export function pauseTimer() {
 }
 
 export function resetTimer() {
+  if (state.gameMode === 'endless') return;
   const snail = document.getElementById('snail');
   const progressFilled = document.getElementById('progress-filled');
 

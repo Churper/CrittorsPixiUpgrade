@@ -46,10 +46,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let rotateMessage = document.getElementById('rotateDevice');
   rotateMessage.style.display = "block"; // Always display the new menu
 
-  document.getElementById('proceedAnyway').addEventListener('click', function() {
+  function startFromMenu(mode) {
     rotateMessage.style.display = 'none';
-    // Run your app's main function here if it's not already runnin
     if (!appStarted) {
+      state.gameMode = mode;
       // Start music here, within the user gesture (before any await)
       const sound = new Audio('./theme.ogg');
       sound.volume = state.musicVolume;
@@ -59,8 +59,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
       mainAppFunction();
       appStarted = true;
-
     }
+  }
+
+  document.getElementById('story-mode-btn').addEventListener('click', function() {
+    startFromMenu('story');
+  });
+
+  document.getElementById('endless-mode-btn').addEventListener('click', function() {
+    startFromMenu('endless');
   });
 
   async function mainAppFunction() {
@@ -457,14 +464,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
   });
 
-  // Potion button — USE a dose (heal to full)
+  // Potion button — USE a dose (heal 50 HP)
   document.getElementById('potion-button').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
+    if (getisDead()) return; // Can't heal a dead character
     const doses = state.potionDoses || 0;
     const isHurt = getPlayerCurrentHealth() < getPlayerHealth();
     if (doses <= 0 || !isHurt) return;
 
-    setPlayerCurrentHealth(getPlayerHealth());
+    setPlayerCurrentHealth(Math.min(getPlayerCurrentHealth() + 50, getPlayerHealth()));
     updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
     state.potionDoses--;
     updatePotionUI();
@@ -492,6 +500,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.isSpawning = false;
       }
       pauseTimer();
+      // Pause endless timer
+      if (state.gameMode === 'endless' && state.endlessStartTime) {
+        state._endlessPauseTime = Date.now();
+      }
     }
     if (shouldReturnEarly(value)) {
       return;
@@ -508,7 +520,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
       state.isUnpausing = false;
       state.isPaused = false; // Resume the game
-      
+
+      // Resume endless timer — adjust start time for paused duration
+      if (state.gameMode === 'endless' && state._endlessPauseTime) {
+        state.endlessStartTime += (Date.now() - state._endlessPauseTime);
+        state._endlessPauseTime = null;
+      }
+
       spawnEnemies();
       startTimer();
     }
@@ -882,6 +900,22 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const mountainVelocity4 = new PIXI.Point(0.1, 0.1);
     const hpBarColor = 0xff0000;
     loadGame();
+
+    // --- Endless mode setup ---
+    if (state.gameMode === 'endless') {
+      // Unlock all 4 characters
+      state.unlockedCharacters = ['character-frog', 'character-snail', 'character-bird', 'character-bee'];
+      // Hide timer bar (snail + progress)
+      document.getElementById('snail').style.display = 'none';
+      document.getElementById('progress').style.display = 'none';
+      document.getElementById('progress-filled').style.display = 'none';
+      // Show endless timer
+      document.getElementById('endless-timer').style.display = 'block';
+      // Set endless start time
+      state.endlessStartTime = Date.now();
+      state.endlessElapsed = 0;
+    }
+
     var snailHPIndicator = document.querySelector('.upgrade-box.character-snail .hp-indicator');
     var birdHPIndicator = document.querySelector('.upgrade-box.character-bird .hp-indicator');
     var beeHPIndicator = document.querySelector('.upgrade-box.character-bee .hp-indicator');
@@ -1348,7 +1382,7 @@ backgroundTexture = textures.background;
                   app.ticker.add(updateProjectile);
                 }
 
-                if (critter.position.x > castle.position.x - castle.width / 1.1) {
+                if (state.gameMode !== 'endless' && critter.position.x > castle.position.x - castle.width / 1.1) {
                   console.log("takingDamage");
                   const greyscaleFilter = new PIXI.ColorMatrixFilter();
                   const remainingHealthPercentage = castleHealth / castleMaxHealth;
@@ -1667,6 +1701,15 @@ let cantGainEXP = false;
       let once = 0;
       app.ticker.add(() => {
         updateWeatherEffects();
+
+        // Endless mode: update survival timer
+        if (state.gameMode === 'endless' && state.endlessStartTime && !getisPaused()) {
+          state.endlessElapsed = Math.floor((Date.now() - state.endlessStartTime) / 1000);
+          const mins = Math.floor(state.endlessElapsed / 60);
+          const secs = state.endlessElapsed % 60;
+          document.getElementById('endless-timer').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+        }
+
         if (isTimerFinished()) {
 
           console.log("TIMERDONE");
@@ -1869,10 +1912,24 @@ let cantGainEXP = false;
 
             if (state.currentSnailHealth + state.currentBeeHealth + state.currentBirdHealth + state.currentFrogHealth <= 0) {
               console.log("BANG");
-              setisWiped(true);
+              if (state.gameMode === 'endless' && !state.isWiped) {
+                setisWiped(true);
+                // Show final survival time
+                const mins = Math.floor(state.endlessElapsed / 60);
+                const secs = state.endlessElapsed % 60;
+                const timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                const wipeEl = document.getElementById('wipe-text');
+                wipeEl.textContent = 'YOU WIPED!! ' + timeStr;
+                // Return to menu after delay (reload page to reset state)
+                setTimeout(() => {
+                  location.reload();
+                }, 4000);
+              } else {
+                setisWiped(true);
+              }
             }
 
-            if (state.exploded && !unlockAnimSprite) {
+            if (state.gameMode !== 'endless' && state.exploded && !unlockAnimSprite) {
 
               mountain1.tint = getRandomColor();
               mountain2.tint = getRandomColor();
@@ -2043,7 +2100,8 @@ state.demiSpawned = 0;
 
 
           }
-          critter.position.x -= 20;
+          // Spawn near the left side of the visible screen so the player can see the action
+          critter.position.x = -app.stage.x + app.screen.width * 0.15;
           updateEXP(getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter));
           document.getElementById('spawn-text').style.visibility = 'hidden';
           updateVelocity();
@@ -2108,7 +2166,7 @@ state.demiSpawned = 0;
           if (critter.position.x > maxX - 100) {
             critter.position.x = maxX - 100;
           }
-          if (critter.position.x > 1500) {
+          if (state.gameMode !== 'endless' && critter.position.x > 1500) {
             hpBar.visible = true; // Show the HP bar
             hpBarBackground.visible = true;
           } else {
@@ -2190,7 +2248,11 @@ state.demiSpawned = 0;
 
 
       }
-      app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
+      if (state.gameMode === 'endless') {
+        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, critter, clouds, clouds2, state.enemyDeath, castlePlayer);
+      } else {
+        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
+      }
 
       // Z-layer ordering for weather effects (sun renders behind foreground)
       background.zIndex = 0;
@@ -2220,7 +2282,11 @@ state.demiSpawned = 0;
           { attackTextures: octoAttackTextures, walkTextures: octoWalkTextures, name: "octo", minRound: 7 },
           { attackTextures: eleAttackTextures, walkTextures: eleWalkTextures, name: "ele", minRound: 8 },
         ];
-        state.enemyTypes = allEnemies.filter(e => state.currentRound >= e.minRound);
+        if (state.gameMode === 'endless') {
+          state.enemyTypes = allEnemies; // All enemy types available in endless
+        } else {
+          state.enemyTypes = allEnemies.filter(e => state.currentRound >= e.minRound);
+        }
       }
       buildEnemyTypes();
 
@@ -2271,6 +2337,55 @@ state.demiSpawned = 0;
       return;
     }
 
+    if (state.gameMode === 'endless') {
+      // Endless mode: no max spawns, no timer check
+      const elapsed = state.endlessElapsed || 0;
+      const currentInterval = Math.max(2000, 12000 - Math.floor(elapsed / 5) * 50);
+
+      const timeSinceLastSpawn = Date.now() - state.timeOfLastSpawn;
+      if (timeSinceLastSpawn < currentInterval) {
+        const remainingTime = currentInterval - timeSinceLastSpawn;
+        state.isSpawning = true;
+        state.enemySpawnTimeout = setTimeout(() => {
+          state.isSpawning = false;
+          spawnEnemies();
+        }, remainingTime);
+        return;
+      }
+
+      state.isSpawning = true;
+
+      const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
+      const selectedEnemy = state.enemyTypes[randomIndex];
+
+      // Spawn demi boss every ~45 seconds after the first 30s
+      if (elapsed >= 30 && Math.floor(elapsed) % 45 < 2 && state.demiSpawned < Math.floor((elapsed - 30) / 45) + 1) {
+        spawnEnemyDemi(
+          critter,
+          selectedEnemy.attackTextures,
+          selectedEnemy.walkTextures,
+          selectedEnemy.name
+        );
+        state.demiSpawned++;
+      } else {
+        spawnEnemy(
+          critter,
+          selectedEnemy.attackTextures,
+          selectedEnemy.walkTextures,
+          selectedEnemy.name
+        );
+      }
+
+      state.timeOfLastSpawn = Date.now();
+
+      state.enemySpawnTimeout = setTimeout(() => {
+        state.isSpawning = false;
+        spawnEnemies();
+      }, currentInterval);
+      return;
+    }
+
+    // Story mode logic below
     if (isTimerFinished()) {
       console.log("TIMERDONE");
       return;

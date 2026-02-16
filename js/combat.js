@@ -65,7 +65,6 @@ export function spawnEnemyDemi(critter, critterAttackTextures, critterWalkTextur
 export function createSpawnDemi(critterWalkTextures, enemyName) {
   const enemy = new PIXI.AnimatedSprite(critterWalkTextures);
   enemy.scale.set(determineEnemyScale(enemyName) * 1.4);
-  enemy.exp = 32 + Math.floor(state.currentRound * 4);
   enemy.anchor.set(0.5, 0.5);
   enemy.resett = false;
   enemy.type = enemyName;
@@ -77,8 +76,18 @@ export function createSpawnDemi(critterWalkTextures, enemyName) {
   enemy.animationSpeed = enemyName === "pig" ? 0.23 : enemyName === "scorp" ? 0.15 : 0.25;
   enemy.loop = true;
   enemy.isAlive = true;
-  enemy.attackDamage = Math.round(2 + state.currentRound /2) ;
-  enemy.maxHP = 200 + state.currentRound * 7;
+
+  if (state.gameMode === 'endless') {
+    const elapsed = state.endlessElapsed || 0;
+    enemy.attackDamage = Math.round(2 + elapsed / 20) + 2;
+    enemy.maxHP = 200 + Math.floor(elapsed / 10) * 7;
+    enemy.exp = 32 + Math.floor(elapsed / 10) * 4;
+  } else {
+    enemy.attackDamage = Math.round(2 + state.currentRound / 2);
+    enemy.maxHP = 200 + state.currentRound * 7;
+    enemy.exp = 32 + Math.floor(state.currentRound * 4);
+  }
+
   enemy.currentHP = enemy.maxHP;
   enemy.scale.x *= -1; // Flip the enemy horizontally
   enemy.play();
@@ -116,7 +125,6 @@ export function spawnEnemy(critter, critterAttackTextures, critterWalkTextures, 
 export function createSpawnEnemy(critterWalkTextures, enemyName) {
   const enemy = new PIXI.AnimatedSprite(critterWalkTextures);
   enemy.scale.set(determineEnemyScale(enemyName));
-  enemy.exp = 32 + Math.floor(state.currentRound * 2);
   enemy.anchor.set(0.5, 0.5);
   enemy.resett = false;
   enemy.type = enemyName;
@@ -127,8 +135,18 @@ export function createSpawnEnemy(critterWalkTextures, enemyName) {
   enemy.animationSpeed = enemyName === "pig" ? 0.23 : enemyName === "scorp" ? 0.15 : 0.25;
   enemy.loop = true;
   enemy.isAlive = true;
-  enemy.attackDamage = Math.round(2 + state.currentRound /3) ;
-  enemy.maxHP = 80 + state.currentRound * 7;
+
+  if (state.gameMode === 'endless') {
+    const elapsed = state.endlessElapsed || 0;
+    enemy.attackDamage = Math.round(2 + elapsed / 20);
+    enemy.maxHP = 80 + Math.floor(elapsed / 10) * 7;
+    enemy.exp = 32 + Math.floor(elapsed / 10) * 2;
+  } else {
+    enemy.attackDamage = Math.round(2 + state.currentRound / 3);
+    enemy.maxHP = 80 + state.currentRound * 7;
+    enemy.exp = 32 + Math.floor(state.currentRound * 2);
+  }
+
   enemy.currentHP = enemy.maxHP;
   enemy.scale.x *= -1; // Flip the enemy horizontally
   enemy.play();
@@ -893,26 +911,28 @@ export function createCoffeeDrop(x, y) {
 
   // Phase 2: after falling, fly each bean toward the coffee UI
   setTimeout(() => {
-    // Coffee UI is top-right of screen — convert to stage coordinates
-    const screenTargetX = state.app.screen.width - 30;
-    const screenTargetY = 30;
-    const stageTargetX = -state.app.stage.position.x + screenTargetX;
-    const stageTargetY = -state.app.stage.position.y + screenTargetY;
-
     beans.forEach((bean, i) => {
       const delay = i * 40; // stagger each bean
       const startX = bean.x;
       const startY = bean.y;
       const startScale = bean.scale.x;
-      // Control point for quadratic bezier — gentle arc toward the counter
-      const cpX = startX + (stageTargetX - startX) * 0.5;
-      const cpY = startY - 80 - Math.random() * 40;
+      // Capture initial arc height offset per bean
+      const arcHeight = 80 + Math.random() * 40;
       const flyStart = Date.now() + delay;
 
       const flyUpdate = () => {
         const elapsed = Date.now() - flyStart;
         if (elapsed < 0) { requestAnimationFrame(flyUpdate); return; }
         const progress = Math.min(elapsed / flyDuration, 1);
+
+        // Recalculate target each frame so rotation/resize doesn't leave beans midair
+        const screenTargetX = state.app.screen.width - 30;
+        const screenTargetY = 30;
+        const stageTargetX = -state.app.stage.position.x + screenTargetX;
+        const stageTargetY = -state.app.stage.position.y + screenTargetY;
+        const cpX = startX + (stageTargetX - startX) * 0.5;
+        const cpY = startY - arcHeight;
+
         // Ease-in-out for smooth arc
         const t = progress < 0.5
           ? 2 * progress * progress

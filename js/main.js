@@ -823,6 +823,23 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         setisPaused(false);
       }
       startCooldown();
+
+      // Spawn protection — 2s invincibility after swapping in
+      state.spawnProtectionEnd = Date.now() + 2000;
+
+      // Push nearby enemies away to give breathing room
+      const pushRadius = 200;
+      const pushForce = 250;
+      for (const enemy of state.enemies) {
+        if (!enemy.isAlive) continue;
+        const dx = enemy.position.x - critter.position.x;
+        const dist = Math.abs(dx);
+        if (dist < pushRadius) {
+          const dir = dx >= 0 ? 1 : -1;
+          enemy.position.x += dir * pushForce * (1 - dist / pushRadius);
+        }
+      }
+
       updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
       characterLevelElement.textContent = 'Lvl. ' + level;
 
@@ -1617,7 +1634,7 @@ backgroundTexture = textures.background;
         sprite.scale.set(scaleFactor);
         sprite.anchor.set(0, 1);
 
-        const minHeightOffset = foreground ? foreground.height * 0.34 : 0;
+        const minHeightOffset = foreground ? foreground.height * 0.22 : 0;
         const heightOffsetRatio = (1 - scaleFactor) * 0.3; // Adjust this ratio based on your preference
 
         const foregroundHeightOffset = foreground ? minHeightOffset + sprite.height * heightOffsetRatio : 0; // Adjusted offset calculation
@@ -2212,6 +2229,13 @@ let cantGainEXP = false;
       state.initialClouds = clouds.position.x;
       let once = 0;
       app.ticker.add(() => {
+        // Spawn protection blink effect
+        if (Date.now() < state.spawnProtectionEnd && critter) {
+          critter.alpha = (Math.floor(Date.now() / 100) % 2 === 0) ? 0.4 : 1.0;
+        } else if (critter && critter.alpha !== 1) {
+          critter.alpha = 1;
+        }
+
         updateWeatherEffects();
 
         // Endless mode: update survival timer
@@ -2854,7 +2878,7 @@ state.demiSpawned = 0;
 
         // Reposition mountains to match new screen height
         [mountain1, mountain2, mountain3, mountain4].forEach(m => {
-          const minHeightOffset = foreground ? foreground.height * 0.34 : 0;
+          const minHeightOffset = foreground ? foreground.height * 0.22 : 0;
           const heightOffsetRatio = (1 - Math.abs(m.scale.y)) * 0.3;
           const foregroundHeightOffset = foreground ? minHeightOffset + m.height * heightOffsetRatio : 0;
           m.position.y = app.screen.height - foregroundHeightOffset;

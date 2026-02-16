@@ -90,6 +90,9 @@ const state = {
   cooldownActive: false,
   cooldownDuration: 3000,
 
+  // Spawn protection (invincibility after character swap)
+  spawnProtectionEnd: 0,
+
   // Potion
   potionDoses: 0,
   potionMaxDoses: 3,

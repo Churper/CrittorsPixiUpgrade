@@ -514,6 +514,11 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
         if (!getisDead()) {
           if (!hasDied) {
 
+            // Skip damage during spawn protection
+            if (Date.now() < state.spawnProtectionEnd) {
+              return;
+            }
+
             critter.tint = state.flashColor;
             setPlayerCurrentHealth(getPlayerCurrentHealth() - enemy.attackDamage);
             drawCharHitSplat(critter, enemy);

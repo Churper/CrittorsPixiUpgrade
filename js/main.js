@@ -999,7 +999,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           state.originalAnimSpeed = null;
         }
         const rageBtnEl = document.getElementById('rage-btn');
-        if (rageBtnEl) rageBtnEl.classList.remove('rage-active-glow');
+        if (rageBtnEl) {
+          rageBtnEl.classList.remove('rage-active-glow');
+          if (getRageCount() <= 0) {
+            rageBtnEl.style.display = 'none';
+            repositionItemButtons();
+          }
+        }
         const rageFill = document.getElementById('rage-fill');
         if (rageFill) rageFill.style.height = '0%';
       }

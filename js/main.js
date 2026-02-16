@@ -1604,6 +1604,24 @@ if (state.gameMode === 'endless') {
   foreground.visible = false;
 }
 
+// Per-biome tints for background and mountains
+const biomeTints = {
+  sun:   { bg: 0xFFFFFF, mountain: 0xFFFFFF },
+  night: { bg: 0x2a2a4a, mountain: 0x3a3a5a },
+  rain:  { bg: 0x8899aa, mountain: 0x7a8a9a },
+  wind:  { bg: 0xddeeff, mountain: 0xccddee },
+  snow:  { bg: 0xc8d8e8, mountain: 0xb8c8d8 },
+};
+
+function lerpColor(a, b, t) {
+  const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
+  const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
+  const r = Math.round(ar + (br - ar) * t);
+  const g = Math.round(ag + (bg - ag) * t);
+  const bl = Math.round(ab + (bb - ab) * t);
+  return (r << 16) | (g << 8) | bl;
+}
+
 function transitionWeather(newWeather) {
   const app = state.app;
   if (!app) return;
@@ -1613,6 +1631,10 @@ function transitionWeather(newWeather) {
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
   const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars];
+
+  // Capture current background tint as the "from" color
+  const oldBgTint = background.tint ?? 0xFFFFFF;
+  const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
 
   // Create new ground Graphics and draw with new palette
   const newGround = new PIXI.Graphics();
@@ -1655,6 +1677,9 @@ function transitionWeather(newWeather) {
   const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
   const targetMoonStarsAlpha = moonStars ? 1 : 0;
 
+  // Target tints for the new biome
+  const newTints = biomeTints[newWeather] || biomeTints.sun;
+
   updateWeatherIcon();
 
   // Initialize crossfade transition
@@ -1674,6 +1699,11 @@ function transitionWeather(newWeather) {
     targetSunLightAlpha,
     targetPlayerShadowAlpha,
     targetMoonStarsAlpha,
+    // Background/mountain color lerp
+    oldBgTint,
+    newBgTint: newTints.bg,
+    oldMtnTint,
+    newMtnTint: newTints.mountain,
     progress: 0,
   };
 }
@@ -1684,6 +1714,14 @@ function updateBiomeTransition() {
 
   t.progress += 0.02; // ~50 frames = ~2s at 60fps
   const p = Math.min(1, t.progress);
+
+  // Lerp background and mountain tints
+  background.tint = lerpColor(t.oldBgTint, t.newBgTint, p);
+  const mtnTint = lerpColor(t.oldMtnTint, t.newMtnTint, p);
+  mountain1.tint = mtnTint;
+  mountain2.tint = mtnTint;
+  mountain3.tint = mtnTint;
+  mountain4.tint = mtnTint;
 
   // Fade old out
   if (t.oldWeather) t.oldWeather.alpha = 1 - p;

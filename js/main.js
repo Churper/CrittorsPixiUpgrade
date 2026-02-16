@@ -1903,21 +1903,6 @@ function transitionWeather(newWeather) {
 
   const newTints = biomeTints[newWeather] || biomeTints.sun;
 
-  // Sun setting animation for night transition
-  let settingSun = null;
-  if (newWeather === 'night') {
-    settingSun = new PIXI.Graphics();
-    // Orange sun disc
-    settingSun.circle(0, 0, 30).fill({ color: 0xff8833 });
-    settingSun.circle(0, 0, 22).fill({ color: 0xffcc44, alpha: 0.7 });
-    settingSun.circle(0, 0, 12).fill({ color: 0xffeeaa, alpha: 0.5 });
-    // Position at top-center of screen in world coords
-    const screenCenterX = -app.stage.position.x + app.screen.width / 2;
-    settingSun.position.set(screenCenterX, app.screen.height * 0.15);
-    settingSun.zIndex = 999;
-    app.stage.addChild(settingSun);
-  }
-
   updateWeatherIcon();
 
   state.biomeTransition = {
@@ -1942,8 +1927,6 @@ function transitionWeather(newWeather) {
     targetMoonStarsAlpha,
     newFireGlows: nightFireGlows,
     targetFireGlowsAlpha,
-    settingSun,
-    sunHorizonY: app.screen.height - endlessGroundHeight,
     oldBgTint,
     newBgTint: newTints.bg,
     oldMtnTint,
@@ -1971,15 +1954,6 @@ function updateBiomeTransition() {
   const sweepOffset = (t.sweepEnd - t.sweepStart) * p;
   if (t.groundMask) t.groundMask.position.x = sweepOffset;
   if (t.decorMask) t.decorMask.position.x = sweepOffset;
-
-  // Sun setting animation — moves from top to horizon
-  if (t.settingSun) {
-    const startY = state.app.screen.height * 0.15;
-    t.settingSun.position.y = startY + (t.sunHorizonY - startY) * p;
-    t.settingSun.alpha = p < 0.85 ? 1 : Math.max(0, 1 - (p - 0.85) / 0.15);
-    // Keep sun centered on screen as camera moves
-    t.settingSun.position.x = -state.app.stage.position.x + state.app.screen.width / 2;
-  }
 
   // Old weather particles + overlays crossfade out
   if (t.oldWeather) t.oldWeather.alpha = 1 - p;
@@ -2014,11 +1988,6 @@ function updateBiomeTransition() {
         state.app.stage.removeChild(o);
         o.destroy({ children: true });
       }
-    }
-    // Remove sun
-    if (t.settingSun && t.settingSun.parent) {
-      state.app.stage.removeChild(t.settingSun);
-      t.settingSun.destroy({ children: true });
     }
     // Remove masks — new ground is now fully visible
     if (t.groundMask && t.groundMask.parent) {

@@ -132,8 +132,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   function updateWeatherIcon() {
     const weatherEl = document.getElementById('weather-icon');
-    const index = (state.currentRound - 1) % weatherTypes.length;
-    weatherEl.textContent = weatherTypes[index].emoji;
+    const type = getWeatherType();
+    const entry = weatherTypes.find(w => w.name === type) || weatherTypes[0];
+    weatherEl.textContent = entry.emoji;
   }
 
   // --- Weather particle effects ---
@@ -1099,7 +1100,7 @@ const endlessGroundPalettes = {
           rock: 0xa8aab0, rockShade: 0x8a8c92, trunk: 0x5a4a3a, canopy: [0x2a5a3a, 0x1a4a2a, 0xc8d8e0], flower: 0xd0dae0 },
 };
 let endlessGroundCurrentWeather = null;
-const endlessGroundHeight = foreground.height * 0.85;
+const endlessGroundHeight = foreground.height * 0.65;
 
 // Seeded random for consistent positions across redraws
 let _endlessGroundSeed = 12345;
@@ -1108,69 +1109,65 @@ function endlessGroundRandom() {
   return (_endlessGroundSeed & 0x7fffffff) / 2147483647;
 }
 
+// Helper to get the curving top-edge Y offset at a given x position
+const terrainWaveFreq1 = 0.0004;
+const terrainWaveFreq2 = 0.0011;
+const terrainWaveAmp = 14;
+function terrainTopY(x) {
+  return Math.sin(x * terrainWaveFreq1) * terrainWaveAmp
+       + Math.sin(x * terrainWaveFreq2) * terrainWaveAmp * 0.5;
+}
+
 function drawEndlessGround(weather) {
   const palette = endlessGroundPalettes[weather] || endlessGroundPalettes.sun;
   const g = endlessGround;
   const w = 50000;
   const h = endlessGroundHeight;
+  const step = 50; // polygon segment width
   g.clear();
 
-  // 1. Base fill
-  g.rect(0, 0, w, h).fill({ color: palette.base });
+  // 1. Base fill with curving top edge
+  g.moveTo(0, terrainTopY(0));
+  for (let x = step; x <= w; x += step) { g.lineTo(x, terrainTopY(x)); }
+  g.lineTo(w, h);
+  g.lineTo(0, h);
+  g.closePath().fill({ color: palette.base });
 
   // 2. Dirt/subsoil strip at the bottom (20% of height) with sub-layers
   const dirtH = h * 0.20;
   g.rect(0, h - dirtH, w, dirtH).fill({ color: palette.dirt });
-  // Thin dark line between dirt and grass
   g.rect(0, h - dirtH, w, 3).fill({ color: palette.rockShade, alpha: 0.4 });
-  // Lighter sub-layer in the dirt
   g.rect(0, h - dirtH * 0.5, w, dirtH * 0.25).fill({ color: palette.dirt, alpha: 0.6 });
 
-  // 3. Multiple color variation bands for depth
+  // 3. Color variation bands
   const bandH = h * 0.06;
   g.rect(0, h * 0.18, w, bandH).fill({ color: palette.variation, alpha: 0.35 });
   g.rect(0, h * 0.35, w, bandH * 1.2).fill({ color: palette.variation, alpha: 0.5 });
   g.rect(0, h * 0.55, w, bandH).fill({ color: palette.variation, alpha: 0.3 });
   g.rect(0, h * 0.72, w, bandH * 0.8).fill({ color: palette.variation, alpha: 0.4 });
 
-  // 4. Walking path — wide, gently winding
+  // 4. Walking path — thick, gently winding
   const pathCenterY = h * 0.38;
-  const pathH = 34;
-  const pathStep = 40; // draw in segments for the curve
-  const pathWaveAmp = 8; // how much it undulates up/down
-  const pathWaveFreq = 0.0008; // how quickly it undulates
-  // Border pass (slightly bigger)
-  g.moveTo(0, pathCenterY + Math.sin(0) * pathWaveAmp - 3);
-  for (let px = 0; px <= w; px += pathStep) {
-    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
-    g.lineTo(px, pathCenterY + offset - 3);
+  const pathH = 44;
+  const pathWaveAmp = 8;
+  const pathWaveFreq = 0.0008;
+  function pathOffset(px) {
+    return Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
   }
-  for (let px = w; px >= 0; px -= pathStep) {
-    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
-    g.lineTo(px, pathCenterY + offset + pathH + 3);
-  }
+  // Border
+  g.moveTo(0, pathCenterY + pathOffset(0) - 3);
+  for (let px = 0; px <= w; px += step) g.lineTo(px, pathCenterY + pathOffset(px) - 3);
+  for (let px = w; px >= 0; px -= step) g.lineTo(px, pathCenterY + pathOffset(px) + pathH + 3);
   g.closePath().fill({ color: palette.variation, alpha: 0.5 });
-  // Main path fill
-  g.moveTo(0, pathCenterY + Math.sin(0) * pathWaveAmp);
-  for (let px = 0; px <= w; px += pathStep) {
-    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
-    g.lineTo(px, pathCenterY + offset);
-  }
-  for (let px = w; px >= 0; px -= pathStep) {
-    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
-    g.lineTo(px, pathCenterY + offset + pathH);
-  }
+  // Main fill
+  g.moveTo(0, pathCenterY + pathOffset(0));
+  for (let px = 0; px <= w; px += step) g.lineTo(px, pathCenterY + pathOffset(px));
+  for (let px = w; px >= 0; px -= step) g.lineTo(px, pathCenterY + pathOffset(px) + pathH);
   g.closePath().fill({ color: palette.path, alpha: 0.7 });
-  // Highlight stripe following the curve
-  g.moveTo(0, pathCenterY + Math.sin(0) * pathWaveAmp + 5);
-  for (let px = 0; px <= w; px += pathStep) {
-    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
-    g.lineTo(px, pathCenterY + offset + 5);
-  }
-  for (let px = w; px >= 0; px -= pathStep) {
-    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
-    g.lineTo(px, pathCenterY + offset + 8);
-  }
+  // Highlight
+  g.moveTo(0, pathCenterY + pathOffset(0) + 5);
+  for (let px = 0; px <= w; px += step) g.lineTo(px, pathCenterY + pathOffset(px) + 5);
+  for (let px = w; px >= 0; px -= step) g.lineTo(px, pathCenterY + pathOffset(px) + 9);
   g.closePath().fill({ color: palette.path, alpha: 0.3 });
 
   // 5. Scattered rocks embedded in the ground
@@ -1180,9 +1177,7 @@ function drawEndlessGround(weather) {
     const rw = 8 + endlessGroundRandom() * 16;
     const rh = 5 + endlessGroundRandom() * 10;
     const ry = h * 0.5 + endlessGroundRandom() * (h * 0.3);
-    // Rock body
     g.roundRect(rx, ry, rw, rh, 3).fill({ color: palette.rock });
-    // Rock highlight
     g.roundRect(rx + 2, ry + 1, rw * 0.5, rh * 0.4, 2).fill({ color: palette.rockShade, alpha: 0.3 });
     rx += 150 + endlessGroundRandom() * 350;
   }
@@ -1197,19 +1192,20 @@ function drawEndlessGround(weather) {
     px += 60 + endlessGroundRandom() * 120;
   }
 
-  // 7. Grass tufts along the top edge — denser, varied heights
+  // 7. Grass tufts along the curving top edge
   _endlessGroundSeed = 12345;
   let gx = 5;
   while (gx < w) {
+    const topY = terrainTopY(gx);
     const cluster = 1 + Math.floor(endlessGroundRandom() * 3);
     for (let i = 0; i < cluster; i++) {
       const tuftH = 5 + endlessGroundRandom() * 12;
       const tuftW = 3 + endlessGroundRandom() * 5;
       const ox = i * (tuftW * 0.7);
       g.poly([
-        gx + ox, 0,
-        gx + ox + tuftW / 2, -tuftH,
-        gx + ox + tuftW, 0,
+        gx + ox, topY,
+        gx + ox + tuftW / 2, topY - tuftH,
+        gx + ox + tuftW, topY,
       ]).fill({ color: palette.grass });
     }
     gx += 20 + endlessGroundRandom() * 40;
@@ -1222,29 +1218,20 @@ function drawEndlessGround(weather) {
     const tuftH = 4 + endlessGroundRandom() * 6;
     const tuftW = 3 + endlessGroundRandom() * 4;
     const sy = h * 0.15 + endlessGroundRandom() * (h * 0.4);
-    g.poly([
-      sgx, sy,
-      sgx + tuftW / 2, sy - tuftH,
-      sgx + tuftW, sy,
-    ]).fill({ color: palette.grass, alpha: 0.6 });
+    g.poly([sgx, sy, sgx + tuftW / 2, sy - tuftH, sgx + tuftW, sy]).fill({ color: palette.grass, alpha: 0.6 });
     sgx += 70 + endlessGroundRandom() * 140;
   }
 
-  // 9. Individual grass blades — thin, slightly curved, scattered everywhere
+  // 9. Individual grass blades
   _endlessGroundSeed = 11111;
   let bx2 = 15;
   while (bx2 < w) {
     const bladeH = 8 + endlessGroundRandom() * 14;
     const bladeY = h * 0.05 + endlessGroundRandom() * (h * 0.55);
-    const lean = (endlessGroundRandom() - 0.5) * 6; // slight lean left or right
+    const lean = (endlessGroundRandom() - 0.5) * 6;
     const bladeColor = endlessGroundRandom() > 0.5 ? palette.grass : palette.variation;
     const bladeAlpha = 0.4 + endlessGroundRandom() * 0.4;
-    // Single thin blade: base, leaning tip, base+1
-    g.poly([
-      bx2, bladeY,
-      bx2 + lean, bladeY - bladeH,
-      bx2 + 1.5, bladeY,
-    ]).fill({ color: bladeColor, alpha: bladeAlpha });
+    g.poly([bx2, bladeY, bx2 + lean, bladeY - bladeH, bx2 + 1.5, bladeY]).fill({ color: bladeColor, alpha: bladeAlpha });
     bx2 += 15 + endlessGroundRandom() * 35;
   }
 
@@ -1260,7 +1247,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
   const d = new PIXI.Graphics();
   const w = 50000;
 
-  // Trees — behind the walking area (drawn above ground line)
+  // Trees — behind the walking area (positioned on the curving terrain)
   _endlessGroundSeed = 33333;
   let tx = 120;
   while (tx < w) {
@@ -1269,48 +1256,58 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     const trunkH = (30 + endlessGroundRandom() * 25) * treeScale;
     const trunkW = (6 + endlessGroundRandom() * 4) * treeScale;
     const canopyR = (18 + endlessGroundRandom() * 14) * treeScale;
-    const treeY = 0; // ground line in decor coordinates
+    const treeY = terrainTopY(tx); // follow terrain curve
     const canopyColor = palette.canopy[Math.floor(endlessGroundRandom() * palette.canopy.length)];
+
+    if (weather === 'wind' && treeType < 0.35) {
+      // Cactus for wind biome — no trunk/canopy, just a cactus shape
+      const cH = (20 + endlessGroundRandom() * 30) * treeScale;
+      const cW = 8 * treeScale;
+      // Main body
+      d.roundRect(tx - cW / 2, treeY - cH, cW, cH, cW * 0.4).fill({ color: 0x3a7a30 });
+      // Left arm
+      const armY = treeY - cH * 0.6;
+      d.roundRect(tx - cW / 2 - cW * 0.8, armY, cW * 0.8, cW, cW * 0.3).fill({ color: 0x3a7a30 });
+      d.roundRect(tx - cW / 2 - cW * 0.8, armY - cH * 0.25, cW, cH * 0.25 + cW, cW * 0.3).fill({ color: 0x3a7a30 });
+      // Right arm
+      const armY2 = treeY - cH * 0.45;
+      d.roundRect(tx + cW / 2, armY2, cW * 0.7, cW, cW * 0.3).fill({ color: 0x3a7a30 });
+      d.roundRect(tx + cW / 2 + cW * 0.7 - cW, armY2 - cH * 0.2, cW, cH * 0.2 + cW, cW * 0.3).fill({ color: 0x3a7a30 });
+      // Highlight
+      d.rect(tx - 1, treeY - cH + 3, 2, cH - 6).fill({ color: 0x5aaa50, alpha: 0.3 });
+      tx += 300 + endlessGroundRandom() * 500;
+      continue;
+    }
 
     // Trunk
     d.rect(tx - trunkW / 2, treeY - trunkH, trunkW, trunkH).fill({ color: palette.trunk });
-    // Trunk detail — bark line
     d.rect(tx - 1, treeY - trunkH + 4, 2, trunkH - 8).fill({ color: palette.trunk, alpha: 0.4 });
 
     if (weather === 'sun' && treeType < 0.5) {
-      // Maple tree — wide rounded crown with layered canopy
-      const cx = tx;
-      const cy = treeY - trunkH;
+      // Maple tree
+      const cx = tx, cy = treeY - trunkH;
       d.circle(cx, cy - canopyR * 0.3, canopyR * 1.1).fill({ color: canopyColor, alpha: 0.9 });
       d.circle(cx - canopyR * 0.5, cy, canopyR * 0.7).fill({ color: canopyColor, alpha: 0.8 });
       d.circle(cx + canopyR * 0.5, cy, canopyR * 0.7).fill({ color: canopyColor, alpha: 0.8 });
-      // Highlight
       d.circle(cx - canopyR * 0.2, cy - canopyR * 0.5, canopyR * 0.4).fill({ color: 0xffffff, alpha: 0.1 });
     } else if (weather === 'snow' && treeType < 0.6) {
-      // Evergreen / pine — triangle shape with snow caps
-      const cx = tx;
-      const cy = treeY - trunkH;
-      const pineH = canopyR * 2.2;
-      const pineW = canopyR * 1.4;
-      // Three tiered triangles
+      // Pine with snow caps
+      const cx = tx, cy = treeY - trunkH;
+      const pineH = canopyR * 2.2, pineW = canopyR * 1.4;
       for (let tier = 0; tier < 3; tier++) {
         const ty = cy - tier * pineH * 0.28;
-        const tw = pineW * (1 - tier * 0.22);
-        const th = pineH * 0.45;
+        const tw = pineW * (1 - tier * 0.22), th = pineH * 0.45;
         d.poly([cx - tw / 2, ty, cx, ty - th, cx + tw / 2, ty]).fill({ color: canopyColor });
-        // Snow cap on each tier
         d.poly([cx - tw * 0.3, ty, cx, ty - th * 0.3, cx + tw * 0.3, ty]).fill({ color: 0xe8eef5, alpha: 0.7 });
       }
     } else if (weather === 'rain') {
-      // Dark, droopy canopy — single large oval
-      const cx = tx;
-      const cy = treeY - trunkH - canopyR * 0.4;
+      // Dark droopy canopy
+      const cx = tx, cy = treeY - trunkH - canopyR * 0.4;
       d.ellipse(cx, cy, canopyR * 1.0, canopyR * 1.3).fill({ color: canopyColor, alpha: 0.85 });
       d.ellipse(cx, cy + canopyR * 0.3, canopyR * 0.6, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.5 });
     } else {
       // Default round tree
-      const cx = tx;
-      const cy = treeY - trunkH - canopyR * 0.5;
+      const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
       d.circle(cx, cy, canopyR).fill({ color: canopyColor, alpha: 0.85 });
       d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor, alpha: 0.6 });
       d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.6 });
@@ -1319,43 +1316,86 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     tx += 300 + endlessGroundRandom() * 500;
   }
 
+  // Bushes with berries — all biomes
+  _endlessGroundSeed = 22222;
+  let bsx = 80;
+  const berryColors = { sun: 0xcc2244, rain: 0x5544aa, wind: 0xddaa22, snow: 0x8844bb };
+  const berryColor = berryColors[weather] || 0xcc2244;
+  while (bsx < w) {
+    const bushY = terrainTopY(bsx);
+    const bushW = 16 + endlessGroundRandom() * 20;
+    const bushH = 10 + endlessGroundRandom() * 12;
+    // Bush body — overlapping circles
+    d.circle(bsx, bushY - bushH * 0.5, bushW * 0.4).fill({ color: palette.canopy[0], alpha: 0.8 });
+    d.circle(bsx - bushW * 0.25, bushY - bushH * 0.3, bushW * 0.35).fill({ color: palette.canopy[Math.min(1, palette.canopy.length - 1)], alpha: 0.75 });
+    d.circle(bsx + bushW * 0.25, bushY - bushH * 0.3, bushW * 0.33).fill({ color: palette.canopy[0], alpha: 0.7 });
+    // Berries — small bright dots
+    const numBerries = 2 + Math.floor(endlessGroundRandom() * 4);
+    for (let b = 0; b < numBerries; b++) {
+      const bxOff = (endlessGroundRandom() - 0.5) * bushW * 0.6;
+      const byOff = -bushH * 0.2 - endlessGroundRandom() * bushH * 0.5;
+      d.circle(bsx + bxOff, bushY + byOff, 2 + endlessGroundRandom() * 1.5).fill({ color: berryColor });
+      d.circle(bsx + bxOff - 0.5, bushY + byOff - 0.5, 1).fill({ color: 0xffffff, alpha: 0.4 });
+    }
+    bsx += 200 + endlessGroundRandom() * 400;
+  }
+
+  // Wind biome: tumbleweed
+  if (weather === 'wind') {
+    _endlessGroundSeed = 77700;
+    let twx = 150;
+    while (twx < w) {
+      const twY = terrainTopY(twx);
+      const twR = 6 + endlessGroundRandom() * 8;
+      // Tumbleweed — scribbled circle
+      d.circle(twx, twY - twR, twR).fill({ color: 0x8a7a50, alpha: 0.7 });
+      d.circle(twx, twY - twR, twR * 0.7).fill({ color: 0xa09060, alpha: 0.5 });
+      // Inner scribble lines
+      for (let i = 0; i < 5; i++) {
+        const angle = endlessGroundRandom() * Math.PI * 2;
+        const len = twR * 0.6;
+        d.moveTo(twx, twY - twR).lineTo(twx + Math.cos(angle) * len, twY - twR + Math.sin(angle) * len)
+          .stroke({ width: 1, color: 0x6a5a30, alpha: 0.4 });
+      }
+      twx += 500 + endlessGroundRandom() * 800;
+    }
+  }
+
   // Large rocks / boulders above the ground
   _endlessGroundSeed = 44444;
   let bx = 200;
   while (bx < w) {
     const bw = 14 + endlessGroundRandom() * 22;
     const bh = 10 + endlessGroundRandom() * 14;
-    const by = -bh * 0.4; // partially embedded
-    // Boulder body
+    const by = terrainTopY(bx) - bh * 0.4;
     d.roundRect(bx, by, bw, bh, bh * 0.4).fill({ color: palette.rock });
-    // Shadow
-    d.ellipse(bx + bw / 2, bh * 0.6 + 2, bw * 0.5, 3).fill({ color: 0x000000, alpha: 0.15 });
-    // Highlight
+    d.ellipse(bx + bw / 2, by + bh + 2, bw * 0.5, 3).fill({ color: 0x000000, alpha: 0.15 });
     d.roundRect(bx + 3, by + 2, bw * 0.4, bh * 0.35, 3).fill({ color: 0xffffff, alpha: 0.12 });
     bx += 400 + endlessGroundRandom() * 600;
   }
 
-  // Small flowers / detail (sun and wind only)
+  // Small flowers (sun and wind only — but not as many in wind)
   if (weather === 'sun' || weather === 'wind') {
     _endlessGroundSeed = 66666;
     let fx = 60;
+    const flowerSpacing = weather === 'wind' ? 200 : 80;
     while (fx < w) {
-      const fy = -2 - endlessGroundRandom() * 6;
+      const fy = terrainTopY(fx) - 2 - endlessGroundRandom() * 6;
       const fSize = 2 + endlessGroundRandom() * 3;
       d.circle(fx, fy, fSize).fill({ color: palette.flower, alpha: 0.8 });
       d.circle(fx, fy, fSize * 0.5).fill({ color: 0xffffff, alpha: 0.4 });
-      fx += 80 + endlessGroundRandom() * 200;
+      fx += flowerSpacing + endlessGroundRandom() * 200;
     }
   }
 
-  // Snow patches on ground (snow only)
+  // Snow patches (snow only)
   if (weather === 'snow') {
     _endlessGroundSeed = 88888;
     let sx = 40;
     while (sx < w) {
       const sw = 20 + endlessGroundRandom() * 40;
       const sh = 4 + endlessGroundRandom() * 6;
-      d.ellipse(sx, -1, sw, sh).fill({ color: 0xf0f4fa, alpha: 0.5 });
+      d.ellipse(sx, terrainTopY(sx) - 1, sw, sh).fill({ color: 0xf0f4fa, alpha: 0.5 });
       sx += 100 + endlessGroundRandom() * 200;
     }
   }

@@ -1540,27 +1540,18 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           pointerHoldInterval = null;
         }
         if (revivingSelf) {
-          // Same character — put them back on stage
+          // Same character — use the ticker charSwap path (proven to work)
+          // instead of setting visibility inline (which has PixiJS timing issues)
           document.getElementById('spawn-text').style.visibility = 'hidden';
           const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
           characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
           state.isCharacterMenuOpen = false;
           stopFlashing();
-          // Full visual reset — match what the ticker charSwap block does
-          critter.scale.set(getFrogSize());
-          critter.textures = state.frogWalkTextures;
-          critter.loop = true;
-          critter.gotoAndPlay(0);
-          critter.tint = 0xffffff;
-          critter.visible = true;
-          critter.alpha = 1;
-          critter.renderable = true;
-          app.stage.addChild(critter);
           updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
           updateEXP(getCharEXP(getCurrentCharacter()));
-          updateVelocity();
-          // Properly unpause (revive dialog pauses via setisPaused(true))
           setisPaused(false);
+          // Let the ticker charSwap block handle critter visibility + textures
+          setCharSwap(true);
           // Spawn protection
           if (Date.now() - state.lastInvulnTime >= 15000) {
             state.spawnProtectionEnd = Date.now() + 2000;

@@ -28,9 +28,11 @@
       <div id="menu-spacer"></div>
       <button id="story-mode-btn" class="menu-btn">Story Mode</button>
       <button id="endless-mode-btn" class="menu-btn">Endless Mode</button>
-      <button id="info-btn" class="menu-info-btn">i</button>
-      <button id="leaderboard-btn" class="menu-info-btn">&#127942;</button>
-      <button id="guide-btn" class="menu-info-btn">&#128214;</button>
+      <div class="menu-bottom-row">
+        <button id="leaderboard-btn" class="menu-info-btn">&#127942;</button>
+        <button id="info-btn" class="menu-info-btn">i</button>
+        <button id="guide-btn" class="menu-info-btn">&#128214;</button>
+      </div>
       <div id="info-panel">
         <h2>Crittors</h2>
         <p>A side-scrolling combat adventure!</p>
@@ -89,6 +91,13 @@
         </div>
         <button id="guide-close-btn" class="menu-btn">Close</button>
       </div>
+    </div>
+  </div>
+  <div id="loading-overlay">
+    <div id="loading-content">
+      <div id="loading-title">Crittors</div>
+      <div id="loading-bar-track"><div id="loading-bar-fill"></div></div>
+      <div id="loading-status">Loading...</div>
     </div>
   </div>
   <div id="game-container">

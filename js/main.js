@@ -62,6 +62,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   function startFromMenu(mode) {
     rotateMessage.style.display = 'none';
+    // Show loading overlay
+    const loadingOverlay = document.getElementById('loading-overlay');
+    if (loadingOverlay) loadingOverlay.style.display = 'flex';
     if (!appStarted) {
       state.gameMode = mode;
       // Start music here, within the user gesture (before any await)
@@ -1901,53 +1904,27 @@ PIXI.Assets.add({ alias: 'clouds', src: './assets/clouds.png' });
 PIXI.Assets.add({ alias: 'clouds2', src: './assets/clouds2.png' });
 PIXI.Assets.add({ alias: 'clouds3', src: './assets/clouds3.png' });
 
-// Load the assets and get a resolved promise once all are loaded
-const texturesPromise = PIXI.Assets.load([
-  'shark_emerge',
-  'shark_submerge',
-  'shark_walk',
-  'shark_attack',
-  'pig_walk',
-  'pig_attack',
-  'ele_walk',
-  'ele_attack',
-  'scorp_walk',
-  'scorp_attack',
-  'octo_walk',
-  'octo_attack',
-  'toofer_walk',
-  'toofer_attack',
-  'bird_egg',
-  'bird_ghost',
-  'bird_walk',
-  'bird_attack',
-  'snail_ghost',
-  'bee_ghost',
-  'bee_walk',
-  'bee_attack',
-  'puffer_walk',
-  'puffer_attack',
-  'bean',
-  'background',
-  'frog_ghost',
-  'foreground',
-  'critter',
-  'critter_walk',
-  'critter_attack',
-  'snail_idle',
-  'snail_walk',
-  'snail_attack',
-  'frog',
-  'frog_walk',
-  'frog_attack',
-  'enemy_death',
-  'mountain1',
-  'mountain2',
-  'castle',
-  'clouds',
-  'clouds2',
-  'clouds3'
-]);
+// Load the assets with progress tracking
+const assetList = [
+  'shark_emerge', 'shark_submerge', 'shark_walk', 'shark_attack',
+  'pig_walk', 'pig_attack', 'ele_walk', 'ele_attack',
+  'scorp_walk', 'scorp_attack', 'octo_walk', 'octo_attack',
+  'toofer_walk', 'toofer_attack', 'bird_egg', 'bird_ghost',
+  'bird_walk', 'bird_attack', 'snail_ghost', 'bee_ghost',
+  'bee_walk', 'bee_attack', 'puffer_walk', 'puffer_attack',
+  'bean', 'background', 'frog_ghost', 'foreground',
+  'critter', 'critter_walk', 'critter_attack',
+  'snail_idle', 'snail_walk', 'snail_attack',
+  'frog', 'frog_walk', 'frog_attack',
+  'enemy_death', 'mountain1', 'mountain2',
+  'castle', 'clouds', 'clouds2', 'clouds3'
+];
+const texturesPromise = PIXI.Assets.load(assetList, (progress) => {
+  const fill = document.getElementById('loading-bar-fill');
+  const status = document.getElementById('loading-status');
+  if (fill) fill.style.width = Math.round(progress * 100) + '%';
+  if (status) status.textContent = Math.round(progress * 100) + '%';
+});
 
 // When the promise resolves, we have the textures!
 // Detect GPU max texture size and downscale oversized textures
@@ -3992,6 +3969,9 @@ state.demiSpawned = 0;
         else { }
       });
       app.stage.removeChild(loadingSprite);
+      // Hide HTML loading overlay
+      const loadingOverlay = document.getElementById('loading-overlay');
+      if (loadingOverlay) loadingOverlay.style.display = 'none';
       playRoundText(state.currentRound);
 
       // document.getElementById("infoboxs").style.visibility = "visible";

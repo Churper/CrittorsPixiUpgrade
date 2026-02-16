@@ -1,5 +1,5 @@
 import state from './state.js';
-import { getPlayerCurrentHealth, getPlayerHealth, getCurrentCharacter, getEXPtoLevel, getSelectLevel, getCoffee, getisPaused } from './state.js';
+import { getPlayerCurrentHealth, getPlayerHealth, getCurrentCharacter, getEXPtoLevel, getSelectLevel, getCoffee, getisPaused, getisDead } from './state.js';
 import { pauseTimer, startTimer } from './timer.js';
 import { showLeaderboardPanel } from './leaderboard.js';
 
@@ -339,7 +339,7 @@ export function openCharacterMenu() {
       const charClass = box.classList[1];
       if (!state.unlockedCharacters.includes(charClass)) {
         box.style.visibility = 'hidden';
-      } else if (state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
+      } else if (!getisDead() && state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
         box.style.visibility = 'hidden';
       } else {
         box.style.visibility = 'visible';

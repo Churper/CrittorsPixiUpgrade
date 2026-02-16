@@ -1042,26 +1042,34 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setCurrentBeeHealth(getBeeHealth());
         }
         addCoffee(-50);
-        // Remove the dialog box from the PIXI stage
         app.stage.removeChild(state.reviveDialogContainer);
         state.reviveDialogContainer = null;
-        // Switch to the revived character so player doesn't stay on dead one
+        // Switch to the revived character
         setIsDead(false);
         handleCharacterClick(characterType);
       } else {
-        // Player doesn't have enough coins — still need to pick an alive character
-        console.log('Not enough coins to revive');
-        app.stage.removeChild(state.reviveDialogContainer);
-        state.reviveDialogContainer = null;
-        setisPaused(false);
+        // Can't afford — play dud sound and shake the dialog, don't dismiss
+        state.hitSound.volume = state.effectsVolume;
+        state.hitSound.play();
+        // Quick shake effect
+        const origX = state.reviveDialogContainer.position.x;
+        let shakeCount = 0;
+        const shakeInterval = setInterval(() => {
+          state.reviveDialogContainer.position.x = origX + (shakeCount % 2 === 0 ? 8 : -8);
+          shakeCount++;
+          if (shakeCount >= 6) {
+            clearInterval(shakeInterval);
+            state.reviveDialogContainer.position.x = origX;
+          }
+        }, 50);
       }
     });
 
     noButton.on('pointerdown', () => {
-      // Remove the dialog box — player must pick an alive character from the menu
+      // Dismiss dialog — reopen character menu so player picks an alive one
       app.stage.removeChild(state.reviveDialogContainer);
       state.reviveDialogContainer = null;
-      setisPaused(false);
+      openCharacterMenu();
     });
   }
 

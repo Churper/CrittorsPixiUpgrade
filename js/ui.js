@@ -1,6 +1,7 @@
 import state from './state.js';
 import { getPlayerCurrentHealth, getPlayerHealth, getCurrentCharacter, getEXPtoLevel, getSelectLevel, getCoffee, getisPaused } from './state.js';
 import { pauseTimer, startTimer } from './timer.js';
+import { showLeaderboardPanel } from './leaderboard.js';
 
 // --- Pause menu helpers ---
 
@@ -9,9 +10,9 @@ export function createBackgroundSprite() {
   const sh = state.app.screen.height;
   const backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
   backgroundSprite.width = Math.min(sw * 0.7, 520);
-  backgroundSprite.height = Math.min(sh * 0.55, 380);
-  backgroundSprite.tint = 0x000000;
-  backgroundSprite.alpha = 0.8;
+  backgroundSprite.height = Math.min(sh * 0.75, 500);
+  backgroundSprite.tint = 0x0a0a14;
+  backgroundSprite.alpha = 0.88;
   return backgroundSprite;
 }
 
@@ -20,7 +21,7 @@ export function createBorder(backgroundSprite) {
   const bw = backgroundSprite.width;
   const bh = backgroundSprite.height;
   const r = 14;
-  border.roundRect(0, 0, bw, bh, r).stroke({ width: 3, color: 0xFFFFFF });
+  border.roundRect(0, 0, bw, bh, r).stroke({ width: 2, color: 0x6688aa });
   return border;
 }
 
@@ -182,42 +183,54 @@ export function createPauseMenuContainer() {
   const text1 = createText(roundText, textStyle, backgroundSprite, true);
   state.pauseMenuContainer.addChild(text1);
 
-  const musicSlider = createVolumeSlider(backgroundSprite, bh * 0.38, 'Music', 'music');
+  const musicSlider = createVolumeSlider(backgroundSprite, bh * 0.32, 'Music', 'music');
   state.pauseMenuContainer.addChild(musicSlider);
 
-  const effectsSlider = createVolumeSlider(backgroundSprite, bh * 0.54, 'Effects', 'effects');
+  const effectsSlider = createVolumeSlider(backgroundSprite, bh * 0.44, 'Effects', 'effects');
   state.pauseMenuContainer.addChild(effectsSlider);
 
-  // Main Menu button — scaled to panel
-  const menuFontSize = Math.max(16, Math.min(26, bw * 0.05));
-  const menuBtnStyle = new PIXI.TextStyle({
-    fontFamily: 'Luckiest Guy',
-    fontSize: menuFontSize,
-    fill: '#FFFFFF',
-    stroke: '#000000',
-    strokeThickness: 3,
-  });
-  const menuBtn = new PIXI.Text('Main Menu', menuBtnStyle);
-  menuBtn.anchor.set(0.5);
-  menuBtn.position.set(bw / 2, bh * 0.73);
-  menuBtn.eventMode = 'static';
-  menuBtn.cursor = 'pointer';
+  // Button dimensions
+  const menuFontSize = Math.max(15, Math.min(22, bw * 0.045));
+  const btnW = Math.max(140, bw * 0.55);
+  const btnH = Math.max(36, bh * 0.085);
 
-  const btnW = Math.max(120, bw * 0.4);
-  const btnH = Math.max(32, bh * 0.1);
-  const btnBg = new PIXI.Graphics();
-  btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10)
-    .fill({ color: 0x000000, alpha: 0.5 })
-    .stroke({ width: 2, color: 0xFFFFFF });
-  btnBg.position.set(menuBtn.x, menuBtn.y);
-  btnBg.eventMode = 'static';
-  btnBg.cursor = 'pointer';
+  // Helper to create a styled button with accent color
+  function addPauseButton(label, yPos, handler, fillColor, strokeColor) {
+    const style = new PIXI.TextStyle({
+      fontFamily: 'Luckiest Guy',
+      fontSize: menuFontSize,
+      fill: '#FFFFFF',
+      stroke: '#000000',
+      strokeThickness: 2,
+    });
+    const txt = new PIXI.Text(label, style);
+    txt.anchor.set(0.5);
+    txt.position.set(bw / 2, yPos);
+    txt.eventMode = 'static';
+    txt.cursor = 'pointer';
+    const bg = new PIXI.Graphics();
+    bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 8)
+      .fill({ color: fillColor, alpha: 0.65 })
+      .stroke({ width: 1.5, color: strokeColor, alpha: 0.8 });
+    bg.position.set(txt.x, txt.y);
+    bg.eventMode = 'static';
+    bg.cursor = 'pointer';
+    bg.on('pointerdown', handler);
+    txt.on('pointerdown', handler);
+    state.pauseMenuContainer.addChild(bg);
+    state.pauseMenuContainer.addChild(txt);
+  }
 
-  btnBg.on('pointerdown', () => { window.location.reload(); });
-  menuBtn.on('pointerdown', () => { window.location.reload(); });
+  // Leaderboard button — teal accent
+  addPauseButton('Leaderboard', bh * 0.56, () => { showLeaderboardPanel(); }, 0x1a5566, 0x44aacc);
 
-  state.pauseMenuContainer.addChild(btnBg);
-  state.pauseMenuContainer.addChild(menuBtn);
+  // Submit Score button — blue accent
+  addPauseButton('Submit Score', bh * 0.68, () => {
+    if (window._crittorsShowPauseScore) window._crittorsShowPauseScore();
+  }, 0x2a4477, 0x5588bb);
+
+  // Main Menu button — muted red accent
+  addPauseButton('Main Menu', bh * 0.80, () => { window.location.reload(); }, 0x662233, 0xaa5566);
 
   const garbageButton = createGarbageButton(backgroundSprite);
   state.pauseMenuContainer.addChild(garbageButton);

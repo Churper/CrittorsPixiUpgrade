@@ -1376,14 +1376,12 @@ texturesPromise.then((loadedTextures) => {
 
       let backgroundTexture = textures.background;
 
-// Create background — use TilingSprite in endless mode for infinite scrolling
+// Create background — TilingSprite for biome tint transitions in both modes
 let background;
 if (state.gameMode === 'endless') {
   background = new PIXI.TilingSprite(backgroundTexture, 50000, app.screen.height);
 } else {
-  background = new PIXI.Sprite(backgroundTexture);
-  background.width = 2800;
-  background.height = app.screen.height;
+  background = new PIXI.TilingSprite(backgroundTexture, 2800, app.screen.height);
 }
 background.anchor.set(0, 0);
 background.position.set(0, 0);
@@ -1436,7 +1434,7 @@ function terrainTopY(x) {
 function drawEndlessGround(weather) {
   const palette = endlessGroundPalettes[weather] || endlessGroundPalettes.sun;
   const g = endlessGround;
-  const w = 50000;
+  const w = state.gameMode === 'endless' ? 50000 : Math.ceil(foreground.width);
   const h = endlessGroundHeight;
   const step = 50; // polygon segment width
   g.clear();
@@ -1844,19 +1842,16 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
   endlessGroundDecor.addChild(d);
 }
 
-if (state.gameMode === 'endless') {
-  endlessGround = new PIXI.Graphics();
-  endlessGround.position.set(0, app.screen.height - endlessGroundHeight);
-  endlessGround.zIndex = 5;
-  // Decor layer (trees, boulders) sits just above the ground surface
-  endlessGroundDecor = new PIXI.Container();
-  endlessGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
-  endlessGroundDecor.zIndex = 6; // above ground, below critter (10)
-  drawEndlessGround('sun');
-  endlessGroundCurrentWeather = 'sun';
-  // Hide the original foreground sprite in endless mode
-  foreground.visible = false;
-}
+endlessGround = new PIXI.Graphics();
+endlessGround.position.set(0, app.screen.height - endlessGroundHeight);
+endlessGround.zIndex = 5;
+endlessGroundDecor = new PIXI.Container();
+endlessGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
+endlessGroundDecor.zIndex = 6;
+const initialWeather = getWeatherType();
+drawEndlessGround(initialWeather);
+endlessGroundCurrentWeather = initialWeather;
+foreground.visible = false;
 
 // Per-biome tints for background and mountains
 const biomeTints = {
@@ -1866,6 +1861,14 @@ const biomeTints = {
   wind:  { bg: 0xddeeff, mountain: 0xccddee },
   snow:  { bg: 0xc8d8e8, mountain: 0xb8c8d8 },
 };
+
+// Apply initial biome tints so the first round starts with correct colors
+const initialTints = biomeTints[initialWeather] || biomeTints.sun;
+background.tint = initialTints.bg;
+mountain1.tint = initialTints.mountain;
+mountain2.tint = initialTints.mountain;
+mountain3.tint = initialTints.mountain;
+mountain4.tint = initialTints.mountain;
 
 function lerpColor(a, b, t) {
   const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
@@ -2523,6 +2526,11 @@ let cantGainEXP = false;
         cantGainEXP = true;
         state.currentRound++;
         updateWeatherIcon();
+        // Transition ground biome for the new round
+        const newWeather = getWeatherType();
+        if (endlessGround && newWeather !== endlessGroundCurrentWeather && !state.biomeTransition) {
+          transitionWeather(newWeather);
+        }
         createWeatherEffects();
 
         // Check for character unlocks
@@ -3241,7 +3249,7 @@ state.demiSpawned = 0;
       if (state.gameMode === 'endless') {
         app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, endlessGroundDecor, foreground, critter, clouds, clouds2, state.enemyDeath, castlePlayer);
       } else {
-        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
+        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, endlessGroundDecor, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
       }
 
       // Z-layer ordering for weather effects (sun renders behind foreground)
@@ -3548,7 +3556,7 @@ state.demiSpawned = 0;
 
 
 // ── Score submission overlay ────────────────────────────────
-function showScoreSubmitOverlay(mode, score) {
+function showScoreSubmitOverlay(mode, score, fromPause = false) {
   const overlay = document.getElementById('score-submit-overlay');
   const scoreEl = document.getElementById('score-submit-score');
   const nameInput = document.getElementById('score-submit-name');
@@ -3574,7 +3582,11 @@ function showScoreSubmitOverlay(mode, score) {
     const result = await submitScore(name, mode, score);
     if (result.ok) {
       statusEl.textContent = 'Score submitted!';
-      setTimeout(() => location.reload(), 1200);
+      if (fromPause) {
+        setTimeout(() => overlay.classList.remove('visible'), 1200);
+      } else {
+        setTimeout(() => location.reload(), 1200);
+      }
     } else {
       statusEl.textContent = 'Error: ' + (result.error || 'try again');
       submitBtn.disabled = false;
@@ -3582,9 +3594,19 @@ function showScoreSubmitOverlay(mode, score) {
   };
 
   skipBtn.onclick = () => {
-    location.reload();
+    if (fromPause) {
+      overlay.classList.remove('visible');
+    } else {
+      location.reload();
+    }
   };
 }
+
+window._crittorsShowPauseScore = function() {
+  const mode = state.gameMode;
+  const score = mode === 'endless' ? state.endlessElapsed : state.currentRound;
+  showScoreSubmitOverlay(mode, score, true);
+};
 
 startGame();
 state.isGameStarted=true;

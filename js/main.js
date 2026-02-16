@@ -1856,9 +1856,10 @@ function transitionWeather(newWeather) {
   const app = state.app;
   if (!app) return;
 
-  // Sweep: new biome starts far ahead and the boundary sweeps back past the player
-  const sweepStart = critter.position.x + 800;
-  const sweepEnd = critter.position.x - 1200;
+  // Fixed boundary in world space — player walks into the new biome
+  const boundaryX = critter.position.x + 500;
+  // Sky/weather fully transitions over this distance past the boundary
+  const transitionDist = 600;
 
   // Save references to old elements
   const oldWeather = weatherContainer;
@@ -1870,7 +1871,7 @@ function transitionWeather(newWeather) {
   const oldBgTint = background.tint ?? 0xFFFFFF;
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
 
-  // Create new ground — full width, masked with a sweep boundary
+  // Create new ground — full width, masked from boundary forward
   const newGround = new PIXI.Graphics();
   newGround.position.set(0, app.screen.height - endlessGroundHeight);
   newGround.zIndex = 5;
@@ -1881,15 +1882,15 @@ function transitionWeather(newWeather) {
   newGroundDecor.zIndex = 6;
   app.stage.addChild(newGroundDecor);
 
-  // Mask starts at sweepStart — will shift left each frame via position.x
+  // Mask at fixed boundary — stays in world space, player walks past it
   const groundMask = new PIXI.Graphics();
-  groundMask.rect(sweepStart, 0, 50000, endlessGroundHeight + 200).fill({ color: 0xffffff });
+  groundMask.rect(boundaryX, 0, 50000, endlessGroundHeight + 200).fill({ color: 0xffffff });
   groundMask.position.set(0, app.screen.height - endlessGroundHeight);
   app.stage.addChild(groundMask);
   newGround.mask = groundMask;
 
   const decorMask = new PIXI.Graphics();
-  decorMask.rect(sweepStart, -200, 50000, endlessGroundHeight + 400).fill({ color: 0xffffff });
+  decorMask.rect(boundaryX, -200, 50000, endlessGroundHeight + 400).fill({ color: 0xffffff });
   decorMask.position.set(0, app.screen.height - endlessGroundHeight);
   app.stage.addChild(decorMask);
   newGroundDecor.mask = decorMask;
@@ -1910,7 +1911,7 @@ function transitionWeather(newWeather) {
 
   // Create new weather effects
   createWeatherEffects();
-  // Start new weather/overlay at alpha 0 — they crossfade in
+  // Start new weather/overlay at alpha 0 — they crossfade as player crosses
   if (weatherContainer) weatherContainer.alpha = 0;
   if (sunLightOverlay) sunLightOverlay.alpha = 0;
   if (nightOverlay) nightOverlay.alpha = 0;
@@ -1938,8 +1939,8 @@ function transitionWeather(newWeather) {
     newGroundDecor,
     groundMask,
     decorMask,
-    sweepStart,
-    sweepEnd,
+    boundaryX,
+    transitionDist,
     newWeather: weatherContainer,
     newSunLight: sunLightOverlay,
     newNightOverlay: nightOverlay,
@@ -1955,7 +1956,6 @@ function transitionWeather(newWeather) {
     newBgTint: newTints.bg,
     oldMtnTint,
     newMtnTint: newTints.mountain,
-    progress: 0,
   };
 }
 
@@ -1963,8 +1963,9 @@ function updateBiomeTransition() {
   const t = state.biomeTransition;
   if (!t) return;
 
-  t.progress += 0.003; // ~333 frames = ~14s at 60fps
-  const p = Math.min(1, t.progress);
+  // Progress is driven by player position relative to boundary
+  const distPast = critter.position.x - t.boundaryX;
+  const p = Math.min(1, Math.max(0, distPast / t.transitionDist));
 
   // Lerp background and mountain tints
   background.tint = lerpColor(t.oldBgTint, t.newBgTint, p);
@@ -1974,15 +1975,12 @@ function updateBiomeTransition() {
   mountain3.tint = mtnTint;
   mountain4.tint = mtnTint;
 
-  // Sweep the mask boundary from ahead to behind the player
-  const sweepOffset = (t.sweepEnd - t.sweepStart) * p;
-  if (t.groundMask) t.groundMask.position.x = sweepOffset;
-  if (t.decorMask) t.decorMask.position.x = sweepOffset;
+  // Ground mask stays fixed — player walks past it naturally
 
   // Old weather particles + overlays crossfade out
   if (t.oldWeather) t.oldWeather.alpha = 1 - p;
   for (const o of (t.oldOverlays || [])) {
-    if (o && o.parent) o.alpha *= (1 - 0.04);
+    if (o && o.parent) o.alpha = (1 - p) * 1;
   }
 
   // Fade new weather/overlays in

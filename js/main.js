@@ -826,15 +826,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         return;
     }
 
-    app.stage.addChild(critter);
-
-
     document.getElementById('spawn-text').style.visibility = 'hidden';
     state.choose = false;
     if (characterHealth <= 0) {
       createReviveDialog(characterType);
       return;
     }
+
+    app.stage.addChild(critter);
     stopFlashing();
 
     // Interrupt any in-progress attack animation

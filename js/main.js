@@ -1071,26 +1071,24 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         visibleBtns.push(btn);
       }
     }
+    if (visibleBtns.length === 0) return;
 
-    // Scale buttons to fit between auto-attack btn (bottom 35%) and screen edge
+    const btnSize = 56;
+    const gap = 6;
+    // Stack below auto-attack btn (bottom 42%), work downward
     const screenH = window.innerHeight;
-    const anchorPx = screenH * 0.35; // auto-attack btn bottom in px
-    const topMargin = 66; // gap below auto-attack btn
-    const available = anchorPx - topMargin - 8; // 8px safety margin at bottom
-    const count = visibleBtns.length;
-    if (count === 0) return;
-
-    const maxBtnSize = 56;
-    const minGap = 4;
-    const totalNeeded = count * maxBtnSize + (count - 1) * minGap;
-    const scale = totalNeeded > available ? available / totalNeeded : 1;
-    const btnSize = Math.floor(maxBtnSize * scale);
-    const gap = Math.max(minGap, Math.floor((available - count * btnSize) / Math.max(count - 1, 1)));
+    const autoAtkBottom = screenH * 0.42;
+    const startBottom = autoAtkBottom - 66; // gap below auto-attack btn
+    // Max items per column before wrapping to a second column
+    const maxPerCol = Math.floor((startBottom - 8) / (btnSize + gap));
 
     visibleBtns.forEach((btn, i) => {
+      const col = Math.floor(i / maxPerCol);
+      const row = i % maxPerCol;
       btn.style.width = btnSize + 'px';
       btn.style.height = btnSize + 'px';
-      btn.style.bottom = `calc(35% - ${topMargin + i * (btnSize + gap)}px)`;
+      btn.style.bottom = (startBottom - row * (btnSize + gap)) + 'px';
+      btn.style.left = (16 + col * (btnSize + gap)) + 'px';
     });
   }
 

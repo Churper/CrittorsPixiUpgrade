@@ -828,6 +828,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
     document.getElementById('spawn-text').style.visibility = 'hidden';
     state.choose = false;
+
+    // Close revive dialog if open
+    if (state.reviveDialogContainer && state.reviveDialogContainer.parent) {
+      app.stage.removeChild(state.reviveDialogContainer);
+      state.reviveDialogContainer = null;
+    }
+
     if (characterHealth <= 0) {
       createReviveDialog(characterType);
       return;
@@ -1954,7 +1961,7 @@ function updateBiomeTransition() {
   if (!t) return;
 
   // Simple time-based crossfade (~3s at 60fps)
-  t.progress += 0.005;
+  t.progress += 0.002;
   const p = Math.min(1, t.progress);
 
   // Lerp background + mountain tints

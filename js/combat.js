@@ -68,7 +68,7 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
   enemy.anchor.set(0.5, 0.5);
   enemy.resett = false;
   enemy.type = enemyName;
-  enemy.tint = Math.floor(Math.random() * 0xFFFFFF);
+  enemy.tint = 0xffaaaa;
   enemy.isAttacking = false;
   enemy.enemyAdded = false;
   const spawnX = (state.gameMode === 'endless' && critter)

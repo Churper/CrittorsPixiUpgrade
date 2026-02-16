@@ -2531,8 +2531,9 @@ let cantGainEXP = false;
         const newWeather = getWeatherType();
         if (endlessGround && newWeather !== endlessGroundCurrentWeather && !state.biomeTransition) {
           transitionWeather(newWeather);
+        } else {
+          createWeatherEffects();
         }
-        createWeatherEffects();
 
         // Check for character unlocks
         const unlocks = { 2: 'character-snail', 5: 'character-bird', 10: 'character-bee' };
@@ -3418,13 +3419,13 @@ state.demiSpawned = 0;
     }
 
     // Cap enemies per round — spawn across ~75% of timer, leave end for castle
-    const maxSpawns = 5 + Math.floor(state.currentRound * 0.5);
+    const maxSpawns = 4 + Math.floor(state.currentRound * 0.4);
     if (state.spawnedThisRound >= maxSpawns) {
       return;
     }
 
     // On resume, wait the remaining interval before spawning instead of spawning instantly
-    const currentInterval = state.interval - (state.currentRound * 225);
+    const currentInterval = state.interval + 2000 - (state.currentRound * 150);
     const timeSinceLastSpawn = Date.now() - state.timeOfLastSpawn;
     if (timeSinceLastSpawn < currentInterval) {
       const remainingTime = currentInterval - timeSinceLastSpawn;

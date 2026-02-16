@@ -3987,8 +3987,8 @@ state.demiSpawned = 0;
               visibleBoxes.push(box);
             }
           });
-          // Re-space boxes when dead so nothing overlaps
-          if (getisDead() && visibleBoxes.length > 0) {
+          // Evenly center all visible boxes
+          if (visibleBoxes.length > 0) {
             const totalWidth = visibleBoxes.length * 60;
             const startOffset = -totalWidth / 2;
             visibleBoxes.forEach((box, i) => {

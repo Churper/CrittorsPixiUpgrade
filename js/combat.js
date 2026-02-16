@@ -426,25 +426,10 @@ export function rangedAttack(critter, enemy) {
 
           console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
           createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-          // Item drop (endless mode only)
-          if (state.gameMode === 'endless') {
-            if (enemy.isDemi) {
-              const items = ['shield','bomb','rage','feather','goldenBean'];
-              createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
-            } else {
-              const roll = Math.random();
-              if (roll < 0.01) {
-                createItemDrop(enemy.position.x, enemy.position.y, 'shield');
-              } else if (roll < 0.02) {
-                createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
-              } else if (roll < 0.03) {
-                createItemDrop(enemy.position.x, enemy.position.y, 'rage');
-              } else if (roll < 0.04) {
-                createItemDrop(enemy.position.x, enemy.position.y, 'feather');
-              } else if (roll < 0.05) {
-                createItemDrop(enemy.position.x, enemy.position.y, 'goldenBean');
-              }
-            }
+          // Item drop — demi-boss only
+          if (state.gameMode === 'endless' && enemy.isDemi) {
+            const items = ['shield','bomb','rage','feather','goldenBean'];
+            createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
           }
           state.app.stage.removeChild(enemy);
           getEnemies().splice(getEnemies().indexOf(enemy), 1);
@@ -452,6 +437,7 @@ export function rangedAttack(critter, enemy) {
           if (enemy.isDemi) {
             state.lastDemiKillTime = Date.now();
           }
+          if (state.gameMode === 'endless') state.endlessKillCount++;
           state.isCombat = false;
           setIsCharAttacking(false);
           playDeathAnimation(enemy, critter);
@@ -1028,29 +1014,14 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       if (enemy.isDemi) {
         state.lastDemiKillTime = Date.now();
       }
+      if (state.gameMode === 'endless') state.endlessKillCount++;
       setIsCharAttacking(false);
       console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-      // Item drop (endless mode only)
-      if (state.gameMode === 'endless') {
-        if (enemy.isDemi) {
-          // Demi-boss: guaranteed random item drop
-          const items = ['shield','bomb','rage','feather','goldenBean'];
-          createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
-        } else {
-          const roll = Math.random();
-          if (roll < 0.01) {
-            createItemDrop(enemy.position.x, enemy.position.y, 'shield');
-          } else if (roll < 0.02) {
-            createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
-          } else if (roll < 0.03) {
-            createItemDrop(enemy.position.x, enemy.position.y, 'rage');
-          } else if (roll < 0.04) {
-            createItemDrop(enemy.position.x, enemy.position.y, 'feather');
-          } else if (roll < 0.05) {
-            createItemDrop(enemy.position.x, enemy.position.y, 'goldenBean');
-          }
-        }
+      // Item drop — demi-boss only
+      if (state.gameMode === 'endless' && enemy.isDemi) {
+        const items = ['shield','bomb','rage','feather','goldenBean'];
+        createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
       }
       state.app.stage.removeChild(enemy);
       getEnemies().splice(getEnemies().indexOf(enemy), 1);
@@ -1373,6 +1344,8 @@ function updateItemButtonState(itemType) {
     btn.style.display = count > 0 ? 'flex' : 'none';
     btn.classList.toggle('active', count > 0);
   }
+  // Notify main.js to reposition visible buttons
+  document.dispatchEvent(new Event('itemButtonsChanged'));
 }
 
 export function createItemDrop(x, y, itemType) {

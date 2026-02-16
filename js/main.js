@@ -1011,6 +1011,31 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   }
 
 
+  // --- Dynamic item button layout ---
+  // Stacks only visible item buttons below the auto-attack btn with no gaps.
+  // Called whenever an item count changes.
+  function repositionItemButtons() {
+    const btnIds = ['shield-btn', 'bomb-btn', 'rage-btn', 'feather-btn', 'golden-bean-btn'];
+    const baseBottom = 35; // percent matching #auto-attack-btn bottom
+    const btnHeight = 56;
+    const gap = 10;
+    let slot = 0;
+    for (const id of btnIds) {
+      const btn = document.getElementById(id);
+      if (!btn) continue;
+      if (btn.style.display === 'none' || btn.style.display === '') {
+        // hidden — no position needed
+        continue;
+      }
+      // Position below auto-attack: first slot is 66px below 35%, then stack down
+      btn.style.bottom = `calc(${baseBottom}% - ${66 + slot * (btnHeight + gap)}px)`;
+      slot++;
+    }
+  }
+
+  // Re-layout whenever combat.js dispatches an item-count change (e.g. pickup)
+  document.addEventListener('itemButtonsChanged', repositionItemButtons);
+
   // --- Airstrike (bomb item) ---
   function triggerAirstrike(app, critter) {
     // Drop target = ahead of player (shifted ~2 character lengths to the right)
@@ -1025,7 +1050,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const bombSprite = new PIXI.Text({ text: '💣', style: { fontSize: 48 } });
     bombSprite.anchor.set(0.5);
     bombSprite.position.set(dropX, -app.stage.y - 60);
-    bombSprite.zIndex = 9998;
+    bombSprite.zIndex = 999999;
     app.stage.addChild(bombSprite);
 
     // Animate bomb falling
@@ -1057,7 +1082,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
         // --- Explosion visual ---
         const explosionContainer = new PIXI.Container();
-        explosionContainer.zIndex = 9999;
+        explosionContainer.zIndex = 999999;
         explosionContainer.position.set(dropX, groundY);
         app.stage.addChild(explosionContainer);
 
@@ -1498,34 +1523,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
 
-      // Start with 1 of each item
-      setShieldCount(1);
-      setBombCount(1);
-      setRageCount(1);
-      setFeatherCount(1);
-      setGoldenBeanCount(1);
+      // Start with 0 items — drops come from demi-bosses only
+      setShieldCount(0);
+      setBombCount(0);
+      setRageCount(0);
+      setFeatherCount(0);
+      setGoldenBeanCount(0);
 
-      // Wire item buttons
+      // Wire item buttons (all hidden until items are picked up)
       const shieldBtn = document.getElementById('shield-btn');
       const bombBtn = document.getElementById('bomb-btn');
       const rageBtn = document.getElementById('rage-btn');
       const featherBtn = document.getElementById('feather-btn');
       const goldenBeanBtn = document.getElementById('golden-bean-btn');
-      shieldBtn.style.display = 'flex';
-      bombBtn.style.display = 'flex';
-      rageBtn.style.display = 'flex';
-      featherBtn.style.display = 'flex';
-      goldenBeanBtn.style.display = 'flex';
-      document.getElementById('shield-count').textContent = '1';
-      document.getElementById('bomb-count').textContent = '1';
-      document.getElementById('rage-count').textContent = '1';
-      document.getElementById('feather-count').textContent = '1';
-      document.getElementById('golden-bean-count').textContent = '1';
-      shieldBtn.classList.add('active');
-      bombBtn.classList.add('active');
-      rageBtn.classList.add('active');
-      featherBtn.classList.add('active');
-      goldenBeanBtn.classList.add('active');
 
       // Shield button handler
       shieldBtn.addEventListener('click', () => {
@@ -1533,7 +1543,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setShieldCount(getShieldCount() - 1);
           document.getElementById('shield-count').textContent = getShieldCount();
           shieldBtn.classList.toggle('active', getShieldCount() > 0);
-          if (getShieldCount() <= 0) shieldBtn.style.display = 'none';
+          if (getShieldCount() <= 0) { shieldBtn.style.display = 'none'; repositionItemButtons(); }
 
           state.shieldActive = true;
           state.shieldHP = 100;
@@ -1569,7 +1579,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setBombCount(getBombCount() - 1);
           document.getElementById('bomb-count').textContent = getBombCount();
           bombBtn.classList.toggle('active', getBombCount() > 0);
-          if (getBombCount() <= 0) bombBtn.style.display = 'none';
+          if (getBombCount() <= 0) { bombBtn.style.display = 'none'; repositionItemButtons(); }
           triggerAirstrike(app, critter);
         }
       });
@@ -1580,7 +1590,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setRageCount(getRageCount() - 1);
           document.getElementById('rage-count').textContent = getRageCount();
           rageBtn.classList.toggle('active', getRageCount() > 0);
-          if (getRageCount() <= 0) rageBtn.style.display = 'none';
+          if (getRageCount() <= 0) { rageBtn.style.display = 'none'; repositionItemButtons(); }
 
           state.rageActive = true;
           state.rageEndTime = Date.now() + 30000;
@@ -1598,7 +1608,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setFeatherCount(getFeatherCount() - 1);
           document.getElementById('feather-count').textContent = getFeatherCount();
           featherBtn.classList.toggle('active', getFeatherCount() > 0);
-          if (getFeatherCount() <= 0) featherBtn.style.display = 'none';
+          if (getFeatherCount() <= 0) { featherBtn.style.display = 'none'; repositionItemButtons(); }
 
           state.featherActive = true;
           // Create feather sprite above critter
@@ -1618,7 +1628,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setGoldenBeanCount(getGoldenBeanCount() - 1);
           document.getElementById('golden-bean-count').textContent = getGoldenBeanCount();
           goldenBeanBtn.classList.toggle('active', getGoldenBeanCount() > 0);
-          if (getGoldenBeanCount() <= 0) goldenBeanBtn.style.display = 'none';
+          if (getGoldenBeanCount() <= 0) { goldenBeanBtn.style.display = 'none'; repositionItemButtons(); }
           addCoffee(100);
           playGoldenBeanSound();
         }
@@ -3135,6 +3145,21 @@ let cantGainEXP = false;
           if (endlessGround && currentWeather !== endlessGroundCurrentWeather && !state.biomeTransition) {
             transitionWeather(currentWeather);
           }
+
+          // --- Spawn chain safety net ---
+          // If the setTimeout chain stalled (e.g. browser throttled background tab),
+          // detect the gap and restart spawning.
+          if (state.isSpawning && !getisDead() && !getisPaused()) {
+            const spawnGap = Date.now() - state.timeOfLastSpawn;
+            const maxAllowedGap = 15000; // 15s — well above any normal interval
+            if (spawnGap > maxAllowedGap) {
+              console.warn('[spawn-safety] Spawn chain stalled for', spawnGap, 'ms — restarting');
+              if (state.enemySpawnTimeout) clearTimeout(state.enemySpawnTimeout);
+              state.enemySpawnTimeout = null;
+              state.isSpawning = false;
+              spawnEnemies();
+            }
+          }
         }
 
         if (isTimerFinished()) {
@@ -3901,8 +3926,8 @@ state.demiSpawned = 0;
       const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
       const selectedEnemy = state.enemyTypes[randomIndex];
 
-      // Spawn demi boss every ~45 seconds after the first 30s
-      if (elapsed >= 30 && Math.floor(elapsed) % 45 < 2 && state.demiSpawned < Math.floor((elapsed - 30) / 45) + 1) {
+      // Spawn demi boss every 5 kills
+      if (state.endlessKillCount > 0 && state.endlessKillCount % 5 === 0 && state.demiSpawned < Math.floor(state.endlessKillCount / 5)) {
         spawnEnemyDemi(
           critter,
           selectedEnemy.attackTextures,

@@ -263,25 +263,7 @@ touch-action: manipulation;
   z-index: 99999999999999999999999;
 }
 
-#shield-btn {
-  bottom: calc(35% - 66px);
-}
-
-#bomb-btn {
-  bottom: calc(35% - 132px);
-}
-
-#rage-btn {
-  bottom: calc(35% - 198px);
-}
-
-#feather-btn {
-  bottom: calc(35% - 264px);
-}
-
-#golden-bean-btn {
-  bottom: calc(35% - 330px);
-}
+/* Item button positions are set dynamically by repositionItemButtons() in main.js */
 
 .item-count {
   position: absolute;

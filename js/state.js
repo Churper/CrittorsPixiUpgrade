@@ -122,6 +122,7 @@ const state = {
   featherCount: 0, featherActive: false, featherSprite: null,
   goldenBeanCount: 0,
   ghostFlyInterval: null,
+  endlessKillCount: 0,
 
   // Config
   characterPositions: {

@@ -1479,11 +1479,6 @@ export function collectGroundItem(groundItem) {
   const btnIdMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn' };
   const btnId = btnIdMap[itemType] || 'shield-btn';
   const btn = document.getElementById(btnId);
-  const btnRect = btn ? btn.getBoundingClientRect() : { left: 16, top: window.innerHeight * 0.65 };
-  const screenTargetX = btnRect.left + 28;
-  const screenTargetY = btnRect.top + 28;
-  const stageTargetX = -state.app.stage.position.x + screenTargetX;
-  const stageTargetY = -state.app.stage.position.y + screenTargetY;
 
   const startX = sprite.position.x;
   const startY = sprite.position.y;
@@ -1496,9 +1491,10 @@ export function collectGroundItem(groundItem) {
     const progress = Math.min(elapsed / flyDuration, 1);
     const t = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
 
-    // Recalculate target each frame
-    const curTargetX = -state.app.stage.position.x + screenTargetX;
-    const curTargetY = -state.app.stage.position.y + screenTargetY;
+    // Recalculate button position each frame so the item tracks the actual button
+    const btnRect = btn ? btn.getBoundingClientRect() : { left: 16, top: window.innerHeight * 0.65, width: 56, height: 56 };
+    const curTargetX = -state.app.stage.position.x + btnRect.left + btnRect.width / 2;
+    const curTargetY = -state.app.stage.position.y + btnRect.top + btnRect.height / 2;
 
     sprite.position.x = startX + (curTargetX - startX) * t;
     sprite.position.y = startY + (curTargetY - startY) * t;

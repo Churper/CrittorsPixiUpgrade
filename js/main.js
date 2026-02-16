@@ -1550,10 +1550,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.hasAttackedThisFrame = false;
         state.isPointerDown = false;
         state.isPaused = false;
-        if (pointerHoldInterval) {
-          clearInterval(pointerHoldInterval);
-          pointerHoldInterval = null;
-        }
         // Unify both self-revive and cross-revive through handleCharacterClick.
         // For self-revive, clear selectedCharacter so handleCharacterClick runs
         // the full swap path (line 933 check: selectedCharacter !== characterType).

@@ -16,6 +16,62 @@ import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCha
 import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
 import { updateEXP } from './upgrades.js';
 
+// --- Synthesized SFX via Web Audio API ---
+let _audioCtx = null;
+function getAudioCtx() {
+  if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return _audioCtx;
+}
+
+export function playCoinSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.25, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+  // Two quick high-pitched tones for a metallic clink
+  [1800, 2400].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.04);
+    osc.connect(gain);
+    osc.start(ctx.currentTime + i * 0.04);
+    osc.stop(ctx.currentTime + i * 0.04 + 0.08);
+  });
+}
+
+export function playSwordSlashSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  // Noise burst shaped like a slash — fast attack, quick decay
+  const duration = 0.12;
+  const bufferSize = ctx.sampleRate * duration;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    const t = i / bufferSize;
+    // Envelope: sharp attack, fast decay
+    const env = t < 0.05 ? t / 0.05 : Math.exp(-12 * (t - 0.05));
+    data[i] = (Math.random() * 2 - 1) * env;
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buffer;
+  // Bandpass filter for a metallic, airy quality
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(3000, ctx.currentTime);
+  filter.Q.setValueAtTime(1.2, ctx.currentTime);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(vol * 0.5, ctx.currentTime);
+  src.connect(filter);
+  filter.connect(gain);
+  gain.connect(ctx.destination);
+  src.start();
+}
+
 export function checkEnemyCollision(projectile, enemy) {
   const projectileX = projectile.position.x;
   const projectileWidth = projectile.width;
@@ -758,22 +814,14 @@ export function drawHitSplat(enemy) {
   const isCrit = damage > baseDamage;
   const isDud = damage < baseDamage;
 
-  // Sound feedback — crit gets a sharp slash, dud gets dull thud
-  const hitSound = state.attackSound.cloneNode();
-  hitSound.volume = state.effectsVolume;
+  // Sound feedback
   if (isCrit) {
-    hitSound.playbackRate = 2.5; // Crit: sharp, slicing
-  } else if (isDud) {
-    hitSound.playbackRate = 0.6; // Dud: lower pitch
-  }
-  hitSound.play();
-
-  // Crit gets a second layered slash sound for punch
-  if (isCrit) {
-    const slashSound = state.attackSound.cloneNode();
-    slashSound.volume = state.effectsVolume * 0.6;
-    slashSound.playbackRate = 3.0;
-    setTimeout(() => slashSound.play(), 40);
+    playSwordSlashSound();
+  } else {
+    const hitSound = state.attackSound.cloneNode();
+    hitSound.volume = state.effectsVolume;
+    if (isDud) hitSound.playbackRate = 0.6;
+    hitSound.play();
   }
 
   // Color-coded damage text
@@ -1009,6 +1057,7 @@ export function addCoffee(amount) {
   const coffeeAmountElement = document.getElementById('coffee-amount');
   const coffeeAmount = getCoffee();
   coffeeAmountElement.textContent = `${coffeeAmount}`;
+  playCoinSound();
 }
 
 export function playSpawnAnimation(critter, critterSpawn) {

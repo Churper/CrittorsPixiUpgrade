@@ -35,6 +35,8 @@ const state = {
   choose: false,
   backgroundSprite: null,
   demiSpawned: 0,
+  lastDemiKillTime: 0,
+  biomeTransition: null,
   speedChanged: false,
   selectLevel: 0,
   frogTintColor: 0xffffff,

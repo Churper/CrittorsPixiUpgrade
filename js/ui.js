@@ -5,41 +5,47 @@ import { pauseTimer, startTimer } from './timer.js';
 // --- Pause menu helpers ---
 
 export function createBackgroundSprite() {
+  const sw = state.app.screen.width;
+  const sh = state.app.screen.height;
   const backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-  backgroundSprite.width = state.app.screen.width;
-  backgroundSprite.height = Math.max(state.app.screen.height * 0.4, 300);
-  backgroundSprite.tint = 0xFFFFFF;
-  backgroundSprite.alpha = 0.8;
+  backgroundSprite.width = Math.min(sw * 0.7, 520);
+  backgroundSprite.height = Math.min(sh * 0.55, 380);
+  backgroundSprite.tint = 0x1a1a2e;
+  backgroundSprite.alpha = 0.92;
   return backgroundSprite;
 }
 
 export function createBorder(backgroundSprite) {
   const border = new PIXI.Graphics();
-  border.rect(0, 0, backgroundSprite.width, backgroundSprite.height).stroke({ width: 4, color: 0x8B4513 });
+  const bw = backgroundSprite.width;
+  const bh = backgroundSprite.height;
+  const r = 14;
+  border.roundRect(0, 0, bw, bh, r).stroke({ width: 3, color: 0xFFC832 });
   return border;
 }
 
 export function getTextStyle(backgroundSpriteWidth) {
+  const baseFontSize = Math.max(18, Math.min(36, backgroundSpriteWidth * 0.07));
   return new PIXI.TextStyle({
     fontFamily: 'Patrick Hand',
-    fontSize: 44,
+    fontSize: baseFontSize,
     fill: '#FFFFFF',
     stroke: '#000000',
-    strokeThickness: 6,
+    strokeThickness: 4,
     dropShadow: true,
     dropShadowColor: '#000000',
-    dropShadowBlur: 4,
+    dropShadowBlur: 3,
     dropShadowAngle: Math.PI / 6,
     dropShadowDistance: 2,
     wordWrap: true,
-    wordWrapWidth: backgroundSpriteWidth / 2,
+    wordWrapWidth: backgroundSpriteWidth * 0.8,
   });
 }
 
 export function createText(textContent, textStyle, backgroundSprite, isRoundText = false) {
   const text = new PIXI.Text(textContent, textStyle);
   text.anchor.set(0.5);
-  const yPos = isRoundText ? backgroundSprite.height / 1.5 : backgroundSprite.height / 6;
+  const yPos = isRoundText ? backgroundSprite.height * 0.22 : backgroundSprite.height * 0.1;
   text.position.set(backgroundSprite.width / 2, yPos);
   return text;
 }
@@ -56,25 +62,31 @@ export function setVolume(normalizedValue, type) {
 }
 
 export function createVolumeSlider(backgroundSprite, yOffset, label, type) {
+  const bw = backgroundSprite.width;
   const volumeSlider = new PIXI.Container();
-  const trackWidth = backgroundSprite.width * 0.35;
-  volumeSlider.position.set(backgroundSprite.width * 0.4, yOffset);
+  const trackWidth = bw * 0.4;
+  volumeSlider.position.set(bw * 0.45, yOffset);
 
+  const labelFontSize = Math.max(14, Math.min(24, bw * 0.05));
+
+  // Rounded track background
   const sliderBackground = new PIXI.Graphics();
-  sliderBackground.rect(0, -10, trackWidth, 20).fill(0x000000);
+  sliderBackground.roundRect(0, -8, trackWidth, 16, 8)
+    .fill({ color: 0x000000, alpha: 0.4 })
+    .stroke({ width: 1, color: 0x666666 });
   sliderBackground.eventMode = 'static';
   sliderBackground.on('pointerdown', (event) => { event.stopPropagation(); });
   volumeSlider.addChild(sliderBackground);
 
   const labelText = new PIXI.Text(label, {
     fontFamily: 'Patrick Hand',
-    fontSize: 32,
+    fontSize: labelFontSize,
     fill: '#FFFFFF',
     stroke: '#000000',
-    strokeThickness: 4,
+    strokeThickness: 3,
   });
   labelText.anchor.set(1, 0.5);
-  labelText.position.set(-20, 0);
+  labelText.position.set(-12, 0);
   volumeSlider.addChild(labelText);
 
   const ball = createSliderBall(backgroundSprite, type, trackWidth);
@@ -85,10 +97,10 @@ export function createVolumeSlider(backgroundSprite, yOffset, label, type) {
 
 export function createSliderBall(backgroundSprite, type, trackWidth) {
   const currentVolume = type === 'music' ? state.musicVolume : state.effectsVolume;
+  const ballRadius = Math.max(8, Math.min(14, backgroundSprite.width * 0.028));
 
-  // White circle with black outline instead of emoji
   const sliderBall = new PIXI.Graphics();
-  sliderBall.circle(0, 0, 14).fill({ color: 0xFFFFFF }).stroke({ width: 3, color: 0x000000 });
+  sliderBall.circle(0, 0, ballRadius).fill({ color: 0xFFFFFF }).stroke({ width: 2, color: 0xFFC832 });
   sliderBall.position.set(currentVolume * trackWidth, 0);
 
   let isDragging = false;
@@ -126,9 +138,10 @@ export function createSliderBall(backgroundSprite, type, trackWidth) {
 }
 
 export function createGarbageButton(backgroundSprite) {
-  const garbageButton = new PIXI.Text('\u{1F5D1}\u{FE0F}', { fontSize: 70 });
-  garbageButton.anchor.set(0.4);
-  garbageButton.position.set((backgroundSprite.width / 4) * 2, backgroundSprite.height - 200);
+  const iconSize = Math.max(24, Math.min(40, backgroundSprite.width * 0.08));
+  const garbageButton = new PIXI.Text('\u{1F5D1}\u{FE0F}', { fontSize: iconSize });
+  garbageButton.anchor.set(0.5);
+  garbageButton.position.set(backgroundSprite.width * 0.85, backgroundSprite.height * 0.9);
 
   garbageButton.eventMode = 'static';
   garbageButton.cursor = 'pointer';
@@ -156,43 +169,43 @@ export function createPauseMenuContainer() {
   const border = createBorder(backgroundSprite);
   state.pauseMenuContainer.addChild(border);
 
-  const pauseText = 'Game Paused';
-  const roundText = 'Round: ' + state.currentRound;
+  const bw = backgroundSprite.width;
+  const bh = backgroundSprite.height;
 
-  const textStyle = getTextStyle(backgroundSprite.width);
+  const pauseText = 'Game Paused';
+  const roundText = state.gameMode === 'endless' ? 'Endless Mode' : 'Round: ' + state.currentRound;
+
+  const textStyle = getTextStyle(bw);
   const text = createText(pauseText, textStyle, backgroundSprite);
   state.pauseMenuContainer.addChild(text);
 
-  const text1 = createText('\n' + roundText, textStyle, backgroundSprite, true);
+  const text1 = createText(roundText, textStyle, backgroundSprite, true);
   state.pauseMenuContainer.addChild(text1);
 
-  const musicSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.3, 'Music', 'music');
+  const musicSlider = createVolumeSlider(backgroundSprite, bh * 0.38, 'Music', 'music');
   state.pauseMenuContainer.addChild(musicSlider);
 
-  const effectsSlider = createVolumeSlider(backgroundSprite, backgroundSprite.height * 0.45, 'Effects', 'effects');
+  const effectsSlider = createVolumeSlider(backgroundSprite, bh * 0.54, 'Effects', 'effects');
   state.pauseMenuContainer.addChild(effectsSlider);
 
-  const garbageButton = createGarbageButton(backgroundSprite);
-  garbageButton.position.set(backgroundSprite.width - garbageButton.width - 10, backgroundSprite.height);
-  state.pauseMenuContainer.addChild(garbageButton);
-
-  // Main Menu button
+  // Main Menu button — scaled to panel
+  const menuFontSize = Math.max(16, Math.min(26, bw * 0.05));
   const menuBtnStyle = new PIXI.TextStyle({
     fontFamily: 'Luckiest Guy',
-    fontSize: 28,
+    fontSize: menuFontSize,
     fill: '#FFFFFF',
     stroke: '#000000',
-    strokeThickness: 4,
+    strokeThickness: 3,
   });
   const menuBtn = new PIXI.Text('Main Menu', menuBtnStyle);
   menuBtn.anchor.set(0.5);
-  menuBtn.position.set(backgroundSprite.width / 2, backgroundSprite.height * 0.62);
+  menuBtn.position.set(bw / 2, bh * 0.73);
   menuBtn.eventMode = 'static';
   menuBtn.cursor = 'pointer';
 
-  // Background pill for the button
+  const btnW = Math.max(120, bw * 0.4);
+  const btnH = Math.max(32, bh * 0.1);
   const btnBg = new PIXI.Graphics();
-  const btnW = 180, btnH = 44;
   btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10)
     .fill({ color: 0x000000, alpha: 0.5 })
     .stroke({ width: 2, color: 0xFFC832 });
@@ -206,8 +219,11 @@ export function createPauseMenuContainer() {
   state.pauseMenuContainer.addChild(btnBg);
   state.pauseMenuContainer.addChild(menuBtn);
 
+  const garbageButton = createGarbageButton(backgroundSprite);
+  state.pauseMenuContainer.addChild(garbageButton);
+
   let pauseX = -state.app.stage.position.x + (state.app.screen.width / 2) - (state.pauseMenuContainer.width / 2);
-  let pauseY = -state.app.stage.position.y + (state.app.screen.width / 2) - (state.pauseMenuContainer.height / 2);
+  let pauseY = -state.app.stage.position.y + (state.app.screen.height / 2) - (state.pauseMenuContainer.height / 2);
   state.pauseMenuContainer.position.set(pauseX, pauseY);
 
   state.app.stage.addChild(state.pauseMenuContainer);

@@ -79,6 +79,7 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
   enemy.animationSpeed = enemyName === "pig" ? 0.23 : enemyName === "scorp" ? 0.15 : 0.25;
   enemy.loop = true;
   enemy.isAlive = true;
+  enemy.isDemi = true;
 
   if (state.gameMode === 'endless') {
     const elapsed = state.endlessElapsed || 0;
@@ -207,6 +208,15 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
   }
 
   if (enemy.isAlive && enemy.position.x - critter.position.x > 100 && enemy.position.x > 250) {
+    // Queue gate: hold position when 2 enemies are already engaged and this one is close
+    if (getEnemiesInRange() >= 2 && enemy.position.x - critter.position.x < 250) {
+      if (enemy.textures !== critterWalkTextures) {
+        enemy.textures = critterWalkTextures;
+        enemy.loop = true;
+        enemy.play();
+      }
+      return;
+    }
     handleEnemyMoving(critterWalkTextures, enemy);
   } else {
     handleEnemyCombat(critter, critterAttackTextures, critterWalkTextures, enemy, enemyName);
@@ -352,7 +362,10 @@ export function rangedAttack(critter, enemy) {
           createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
           state.app.stage.removeChild(enemy);
           getEnemies().splice(getEnemies().indexOf(enemy), 1);
-enemy.isAlive = false;
+          enemy.isAlive = false;
+          if (enemy.isDemi) {
+            state.lastDemiKillTime = Date.now();
+          }
           state.isCombat = false;
           setIsCharAttacking(false);
           playDeathAnimation(enemy, critter);
@@ -873,6 +886,9 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       state.currentAttackedEnemy = null;
 
       enemy.isAlive = false;
+      if (enemy.isDemi) {
+        state.lastDemiKillTime = Date.now();
+      }
       setIsCharAttacking(false);
       console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);

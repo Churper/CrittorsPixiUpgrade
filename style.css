@@ -15,7 +15,7 @@ body {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: linear-gradient(135deg, #0a0e1a 0%, #101828 50%, #0a1220 100%);
-  z-index: 999999;
+  z-index: 2147483647;
   justify-content: center;
   align-items: center;
 }

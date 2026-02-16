@@ -4091,6 +4091,9 @@ state.demiSpawned = 0;
           const offsetFromBottom = oldHeight - enemy.position.y;
           enemy.position.y = app.screen.height - offsetFromBottom;
         });
+
+        // Re-layout item buttons for new screen dimensions
+        repositionItemButtons();
       }
 
       window.addEventListener('resize', handleResize);

@@ -509,11 +509,6 @@ export function playGhostFly() {
   state.isCharacterMenuOpen = true;
   document.getElementById('spawn-text').style.visibility = 'visible';
 
-  // Auto-open revive dialog for the dead character after a brief moment
-  setTimeout(() => {
-    const deadBox = document.querySelector('.upgrade-box.' + state.selectedCharacter);
-    if (deadBox) deadBox.click();
-  }, 150);
 
   // Ghost fly is purely cosmetic — just animates and removes itself
   let startY = state.frogGhostPlayer.y;

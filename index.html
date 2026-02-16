@@ -29,12 +29,22 @@
       <button id="story-mode-btn" class="menu-btn">Story Mode</button>
       <button id="endless-mode-btn" class="menu-btn">Endless Mode</button>
       <button id="info-btn" class="menu-info-btn">i</button>
+      <button id="leaderboard-btn" class="menu-info-btn">&#127942;</button>
       <div id="info-panel">
         <h2>Crittors</h2>
         <p>A side-scrolling combat adventure!</p>
         <p>Choose your crittor and fight through waves of enemies. Level up, swap characters, and survive as long as you can!</p>
         <p class="info-credits">Made with PixiJS</p>
         <button id="info-close-btn" class="menu-btn">Close</button>
+      </div>
+      <div id="leaderboard-panel">
+        <h2>Leaderboard</h2>
+        <div id="leaderboard-tabs">
+          <button class="lb-tab active" data-mode="endless">Endless</button>
+          <button class="lb-tab" data-mode="story">Story</button>
+        </div>
+        <div id="leaderboard-list"></div>
+        <button id="leaderboard-close-btn" class="menu-btn">Close</button>
       </div>
     </div>
   </div>
@@ -44,6 +54,18 @@
     <div id="weather-icon"></div>
     
 
+    <div id="score-submit-overlay">
+      <div id="score-submit-panel">
+        <h2 id="score-submit-title">Game Over</h2>
+        <p id="score-submit-score"></p>
+        <input type="text" id="score-submit-name" maxlength="20" placeholder="Enter name">
+        <div id="score-submit-buttons">
+          <button id="score-submit-btn" class="menu-btn">Submit</button>
+          <button id="score-skip-btn" class="menu-btn">Skip</button>
+        </div>
+        <p id="score-submit-status"></p>
+      </div>
+    </div>
     <div id="wipe-text">YOU WIPED!!</div>
     <div id="pause-text">paused</div>
     <div id="spawn-text">Choose Your Crittor!</div>

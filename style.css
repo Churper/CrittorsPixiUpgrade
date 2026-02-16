@@ -999,3 +999,190 @@ z-index: 99999999999999999999999;
   z-index: 9999;
 }
 
+/* ── Leaderboard button ──────────────────────────────────── */
+#leaderboard-btn {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  right: auto;
+  font-size: 1.1em;
+}
+
+/* ── Leaderboard panel ───────────────────────────────────── */
+#leaderboard-panel {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 85%;
+  max-width: 380px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: rgba(0, 0, 0, 0.9);
+  border: 3px solid rgba(255, 200, 50, 0.7);
+  border-radius: 16px;
+  padding: 20px 16px;
+  color: #fff;
+  font-family: 'Patrick Hand', cursive;
+  text-align: center;
+  z-index: 10001;
+}
+
+#leaderboard-panel h2 {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1.8em;
+  color: gold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0 0 12px 0;
+}
+
+/* Tabs */
+#leaderboard-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.lb-tab {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1em;
+  padding: 6px 18px;
+  border-radius: 8px;
+  border: 2px solid rgba(255, 200, 50, 0.4);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ccc;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.lb-tab.active {
+  background: rgba(255, 200, 50, 0.2);
+  border-color: rgba(255, 200, 50, 0.7);
+  color: gold;
+}
+
+/* Rows */
+#leaderboard-list {
+  text-align: left;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 5px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 1em;
+}
+
+.lb-row.lb-top .lb-rank {
+  color: gold;
+  text-shadow: 0 0 6px rgba(255, 200, 50, 0.6);
+}
+
+.lb-rank {
+  width: 28px;
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1.1em;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.lb-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lb-score {
+  flex-shrink: 0;
+  margin-left: 8px;
+  font-family: 'Luckiest Guy', cursive;
+  color: rgba(255, 200, 50, 0.9);
+}
+
+/* ── Score submission overlay ────────────────────────────── */
+#score-submit-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100000;
+  justify-content: center;
+  align-items: center;
+}
+
+#score-submit-overlay.visible {
+  display: flex;
+}
+
+#score-submit-panel {
+  width: 80%;
+  max-width: 340px;
+  background: rgba(0, 0, 0, 0.92);
+  border: 3px solid rgba(255, 200, 50, 0.7);
+  border-radius: 16px;
+  padding: 24px 20px;
+  text-align: center;
+  color: #fff;
+  font-family: 'Patrick Hand', cursive;
+}
+
+#score-submit-panel h2 {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1.8em;
+  color: gold;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0 0 8px 0;
+}
+
+#score-submit-score {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1.6em;
+  color: #fff;
+  margin: 0 0 16px 0;
+}
+
+#score-submit-name {
+  width: 80%;
+  padding: 10px 12px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1.1em;
+  color: #fff;
+  background: transparent;
+  border: 2px solid rgba(255, 200, 50, 0.7);
+  border-radius: 8px;
+  outline: none;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+#score-submit-name::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+#score-submit-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+#score-submit-buttons .menu-btn {
+  width: auto;
+  padding: 10px 24px;
+  font-size: 1.1em;
+}
+
+#score-submit-status {
+  font-size: 0.95em;
+  margin: 10px 0 0 0;
+  min-height: 1.2em;
+}
+

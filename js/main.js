@@ -38,6 +38,11 @@ import {
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';
+import {
+  submitScore, formatScore,
+  getSavedPlayerName, savePlayerName,
+  showLeaderboardPanel,
+} from './leaderboard.js';
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -76,6 +81,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   document.getElementById('info-close-btn').addEventListener('click', function() {
     document.getElementById('info-panel').style.display = 'none';
+  });
+
+  document.getElementById('leaderboard-btn').addEventListener('click', function() {
+    showLeaderboardPanel();
+  });
+
+  document.getElementById('leaderboard-close-btn').addEventListener('click', function() {
+    document.getElementById('leaderboard-panel').style.display = 'none';
   });
 
   async function mainAppFunction() {
@@ -2870,12 +2883,15 @@ let cantGainEXP = false;
                 const timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
                 const wipeEl = document.getElementById('wipe-text');
                 wipeEl.textContent = 'YOU WIPED!! ' + timeStr;
-                // Return to menu after delay (reload page to reset state)
+                // Show score submission after a short delay
                 setTimeout(() => {
-                  location.reload();
-                }, 4000);
-              } else {
+                  showScoreSubmitOverlay('endless', state.endlessElapsed);
+                }, 2000);
+              } else if (!state.isWiped) {
                 setisWiped(true);
+                setTimeout(() => {
+                  showScoreSubmitOverlay('story', state.currentRound);
+                }, 2000);
               }
             }
 
@@ -3530,6 +3546,45 @@ state.demiSpawned = 0;
   }
 
 
+
+// ── Score submission overlay ────────────────────────────────
+function showScoreSubmitOverlay(mode, score) {
+  const overlay = document.getElementById('score-submit-overlay');
+  const scoreEl = document.getElementById('score-submit-score');
+  const nameInput = document.getElementById('score-submit-name');
+  const submitBtn = document.getElementById('score-submit-btn');
+  const skipBtn = document.getElementById('score-skip-btn');
+  const statusEl = document.getElementById('score-submit-status');
+
+  scoreEl.textContent = formatScore(score, mode);
+  nameInput.value = getSavedPlayerName();
+  statusEl.textContent = '';
+  submitBtn.disabled = false;
+  overlay.classList.add('visible');
+
+  submitBtn.onclick = async () => {
+    const name = nameInput.value.trim();
+    if (!name || name.length > 20) {
+      statusEl.textContent = 'Enter a name (1-20 chars)';
+      return;
+    }
+    submitBtn.disabled = true;
+    statusEl.textContent = 'Submitting...';
+    savePlayerName(name);
+    const result = await submitScore(name, mode, score);
+    if (result.ok) {
+      statusEl.textContent = 'Score submitted!';
+      setTimeout(() => location.reload(), 1200);
+    } else {
+      statusEl.textContent = 'Error: ' + (result.error || 'try again');
+      submitBtn.disabled = false;
+    }
+  };
+
+  skipBtn.onclick = () => {
+    location.reload();
+  };
+}
 
 startGame();
 state.isGameStarted=true;

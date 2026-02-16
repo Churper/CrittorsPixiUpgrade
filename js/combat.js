@@ -1261,6 +1261,73 @@ export function playRageSound() {
   });
 }
 
+export function playPotionChugSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  // Gulp bubbles — 3 descending "glug" tones
+  [0, 0.12, 0.26].forEach((delay, i) => {
+    const gain = ctx.createGain();
+    gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(vol * 0.2, ctx.currentTime + delay);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.12);
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    const freq = 400 - i * 60;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+    osc.frequency.exponentialRampToValueAtTime(freq * 0.6, ctx.currentTime + delay + 0.1);
+    osc.connect(gain);
+    osc.start(ctx.currentTime + delay);
+    osc.stop(ctx.currentTime + delay + 0.12);
+  });
+  // Satisfying "ahh" finish
+  const ahhGain = ctx.createGain();
+  ahhGain.connect(ctx.destination);
+  ahhGain.gain.setValueAtTime(0, ctx.currentTime + 0.38);
+  ahhGain.gain.linearRampToValueAtTime(vol * 0.1, ctx.currentTime + 0.42);
+  ahhGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.7);
+  const ahh = ctx.createOscillator();
+  ahh.type = 'triangle';
+  ahh.frequency.setValueAtTime(250, ctx.currentTime + 0.38);
+  ahh.frequency.linearRampToValueAtTime(200, ctx.currentTime + 0.65);
+  ahh.connect(ahhGain);
+  ahh.start(ctx.currentTime + 0.38);
+  ahh.stop(ctx.currentTime + 0.7);
+}
+
+export function playPotionBottleAnimation(critter, app) {
+  const potionSprite = new PIXI.Text({ text: '🧪', style: { fontSize: 22 } });
+  potionSprite.anchor.set(0.5, 0.5);
+  // Position at character's mouth area
+  potionSprite.position.set(critter.position.x + 15, critter.position.y - 20);
+  potionSprite.zIndex = 99999;
+  potionSprite.rotation = -0.3; // slight tilt toward mouth
+  app.stage.addChild(potionSprite);
+
+  const startTime = Date.now();
+  const duration = 500;
+
+  const ticker = () => {
+    const t = Math.min(1, (Date.now() - startTime) / duration);
+    if (t < 0.4) {
+      // Tip the bottle (rotate to pouring position)
+      potionSprite.rotation = -0.3 + (t / 0.4) * -1.2;
+    } else {
+      // Hold tipped position, fade out and shrink
+      potionSprite.rotation = -1.5;
+      const fadeT = (t - 0.4) / 0.6;
+      potionSprite.alpha = 1 - fadeT;
+      potionSprite.scale.set(1 - fadeT * 0.5);
+    }
+    if (t >= 1) {
+      app.stage.removeChild(potionSprite);
+      potionSprite.destroy();
+      app.ticker.remove(ticker);
+    }
+  };
+  app.ticker.add(ticker);
+}
+
 export function playFeatherReviveSound() {
   const ctx = getAudioCtx();
   const vol = state.effectsVolume;

@@ -43,6 +43,7 @@ import {
   createItemDrop,
   playRageSound, playFeatherReviveSound, playGoldenBeanSound,
   playGoldenBeanFlyEffect,
+  playPotionChugSound, playPotionBottleAnimation,
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';
@@ -722,7 +723,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     state.potionDoses--;
     updatePotionUI();
 
-    // Gulp gulp feedback
+    // Chug sound + bottle animation at character
+    playPotionChugSound();
+    playPotionBottleAnimation(critter, app);
+
+    // Button feedback
     const gulpText = document.getElementById('potion-icon');
     gulpText.style.transform = 'scale(1.4)';
     gulpText.style.transition = 'transform 0.15s';
@@ -995,6 +1000,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         }
         const rageBtnEl = document.getElementById('rage-btn');
         if (rageBtnEl) rageBtnEl.classList.remove('rage-active-glow');
+        const rageFill = document.getElementById('rage-fill');
+        if (rageFill) rageFill.style.height = '0%';
       }
 
       // Clean up ghost state when swapping away from a dead character
@@ -1673,11 +1680,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           repositionItemButtons();
 
           state.rageActive = true;
+          state.rageStartTime = Date.now();
           state.rageEndTime = Date.now() + 30000;
           state.originalAnimSpeed = critter.animationSpeed;
           critter.animationSpeed *= 2;
           critter.tint = 0xff4444;
           rageBtn.classList.add('rage-active-glow');
+          // Show full rage fill
+          const rageFill = document.getElementById('rage-fill');
+          if (rageFill) rageFill.style.height = '100%';
           playRageSound();
         }
       });
@@ -3737,7 +3748,14 @@ state.demiSpawned = 0;
             }
             const rageBtnEl = document.getElementById('rage-btn');
             if (rageBtnEl) rageBtnEl.classList.remove('rage-active-glow');
+            const rageFill = document.getElementById('rage-fill');
+            if (rageFill) rageFill.style.height = '0%';
           } else {
+            // Drain the rage fill meter
+            const elapsed = Date.now() - state.rageStartTime;
+            const remaining = Math.max(0, 1 - elapsed / 30000);
+            const rageFill = document.getElementById('rage-fill');
+            if (rageFill) rageFill.style.height = (remaining * 100) + '%';
             // Pulse tint between red shades while active
             const t = Math.sin(Date.now() * 0.008) * 0.5 + 0.5;
             const r = 0xff;

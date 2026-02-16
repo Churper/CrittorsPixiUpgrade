@@ -119,7 +119,7 @@ const state = {
   shieldHP: 0,
   groundItems: [],
   shieldSprite: null,
-  rageCount: 0, rageActive: false, rageEndTime: 0,
+  rageCount: 0, rageActive: false, rageStartTime: 0, rageEndTime: 0,
   featherCount: 0, featherActive: false, featherSprite: null,
   goldenBeanCount: 0,
   ghostFlyInterval: null,

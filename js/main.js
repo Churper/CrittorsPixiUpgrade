@@ -744,6 +744,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
 
   function setisPaused(value) {
+    console.log('[PAUSE-1] setisPaused called with:', value, 'current isPaused:', state.isPaused);
     state.isPaused = value;
     if (value) {
       // Clear pending spawn timeout so it doesn't fire during pause
@@ -758,7 +759,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state._endlessPauseTime = Date.now();
       }
     }
-    if (shouldReturnEarly(value)) {
+    const earlyResult = shouldReturnEarly(value);
+    console.log('[PAUSE-2] shouldReturnEarly:', earlyResult, 'isUnpausing:', state.isUnpausing, 'pauseMenuContainer:', !!state.pauseMenuContainer, 'reviveDialog:', !!state.reviveDialogContainer);
+    if (earlyResult) {
       return;
     }
 
@@ -855,11 +858,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let _swapLock = false; // debounce guard for swap clicks
 
   function handleCharacterClick(characterType) {
+    console.log('[HCC-1] enter. charType:', characterType, 'selectedChar:', state.selectedCharacter, 'swapLock:', _swapLock, 'isDead:', getisDead());
     // --- Guard: prevent rapid double-clicks ---
-    if (_swapLock) return;
+    if (_swapLock) { console.log('[HCC-2] BLOCKED by swapLock'); return; }
 
     // --- Guard: prevent swapping to same character while alive ---
     if (characterType === state.selectedCharacter && !getisDead()) {
+      console.log('[HCC-3] BLOCKED same char while alive');
       return;
     }
 
@@ -892,11 +897,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.reviveDialogContainer = null;
     }
 
+    console.log('[HCC-4] characterHealth:', characterHealth);
     if (characterHealth <= 0) {
+      console.log('[HCC-5] BLOCKED health<=0, opening revive dialog');
       createReviveDialog(characterType);
       return;
     }
 
+    console.log('[HCC-6] past all guards, doing swap');
     // Lock swap for a short debounce window
     _swapLock = true;
     setTimeout(() => { _swapLock = false; }, 300);
@@ -929,10 +937,12 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     updateEXPIndicatorText(getCurrentCharacter(), getCharLevel(getCurrentCharacter()));
     state.isCharacterMenuOpen = false;
     setCharSwap(true);
+    console.log('[HCC-7] setCharSwap(true), critter.visible:', critter.visible);
 
     setCurrentCharacter(characterType);
 
     // Swap positions of the current character box and the previously selected character box
+    console.log('[HCC-8] selectedChar !== charType?', state.selectedCharacter !== characterType, 'sel:', state.selectedCharacter, 'type:', characterType);
     if (state.selectedCharacter !== characterType) {
       const characterLevelElement = document.getElementById("character-level");
       var updateLightning = document.getElementById("lightning-level");
@@ -969,9 +979,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           console.log('Invalid character', characterType);
           return;
       }
+      console.log('[HCC-9] about to setisPaused(false). currentHP:', getPlayerCurrentHealth(), 'isPaused:', getisPaused());
       if (getPlayerCurrentHealth() >= 0) {
         setisPaused(false);
       }
+      console.log('[HCC-10] after setisPaused(false). isPaused:', getisPaused());
       startCooldown();
 
       // Break shield on character swap
@@ -1545,10 +1557,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         // Unify both self-revive and cross-revive through handleCharacterClick.
         // For self-revive, clear selectedCharacter so handleCharacterClick runs
         // the full swap path (line 933 check: selectedCharacter !== characterType).
+        console.log('[REVIVE-1] revivingSelf:', revivingSelf, 'selectedChar:', state.selectedCharacter, 'charType:', characterType);
+        console.log('[REVIVE-2] isDead:', getisDead(), 'isPaused:', getisPaused(), 'charSwap:', getCharSwap());
         if (revivingSelf) {
           state.selectedCharacter = '';
+          console.log('[REVIVE-3] cleared selectedCharacter to empty');
         }
         handleCharacterClick(characterType);
+        console.log('[REVIVE-4] after handleCharacterClick. charSwap:', getCharSwap(), 'isPaused:', getisPaused(), 'visible:', critter.visible, 'selectedChar:', state.selectedCharacter);
         // Reset spawner AFTER setisPaused — setisPaused adjusts timeOfLastSpawn
         // by adding pause duration, which can push it into the future and stall spawns
         if (state.enemySpawnTimeout) {
@@ -3370,8 +3386,7 @@ let cantGainEXP = false;
         }
 
         if (getisPaused()) {
-
-
+          if (getCharSwap()) console.log('[TICKER] PAUSED but charSwap is TRUE — charSwap blocked!');
           // Game is paused, skip logic
           critter.stop();
 
@@ -3382,6 +3397,7 @@ let cantGainEXP = false;
           return;
         }
         if (unPauser === 1) {
+          console.log('[TICKER] unPauser frame. charSwap:', getCharSwap(), 'visible:', critter.visible);
           critter.play();
           // Only resume enemies that are actively engaged — queued ones stay idle
           getEnemies().forEach(enemy => {
@@ -3390,9 +3406,11 @@ let cantGainEXP = false;
             }
           });
           unPauser = 0;
+          console.log('[TICKER] unPauser done, returning. charSwap will run next frame');
           return;
         }
 
+        if (getCharSwap()) console.log('[TICKER] charSwap block about to run! visible:', critter.visible, 'currentChar:', getCurrentCharacter());
 
         // Safety net: if pointer is held but the attack interval was cleared, restart it
         if (state.isPointerDown && !pointerHoldInterval && !getisDead() && !state.roundOver) {

@@ -911,6 +911,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     critter.onFrameChange = null;
     critter.stop();
 
+    // Hide critter until the ticker swaps textures to the new character
+    critter.visible = false;
+
     // Swap character portraits
     const characterPortrait = document.getElementById("character-portrait");
     characterPortrait.style.backgroundImage = `url('${getCharacterPortraitUrl(characterType)}')`;
@@ -3620,12 +3623,16 @@ state.demiSpawned = 0;
 
 
           }
-          // Character swap: keep critter at their current position (no teleport)
+          // Character swap: apply correct textures before showing critter
+          critter.textures = state.frogWalkTextures;
+          critter.loop = true;
+          critter.play();
           updateEXP(getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter()));
           document.getElementById('spawn-text').style.visibility = 'hidden';
           updateVelocity();
           setCharSwap(false);
           stopFlashing();
+          critter.visible = true;
           app.stage.addChild(critter);
 
           return;

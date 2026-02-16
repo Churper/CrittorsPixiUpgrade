@@ -670,9 +670,12 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
                   state.featherSprite = null;
                 }
                 playFeatherReviveSound();
-                // Gold flash on critter
+                // 7-second invulnerability with gold shimmer
+                state.spawnProtectionEnd = Date.now() + 7000;
+                state.featherReviveEnd = Date.now() + 7000;
                 critter.tint = 0xffd700;
-                setTimeout(() => { critter.tint = state.rageActive ? 0xff4444 : 0xffffff; }, 300);
+                // Gold sparkle burst
+                playFeatherReviveBurst(critter);
                 // Remove feather glow from button
                 const featherBtn = document.getElementById('feather-btn');
                 if (featherBtn) featherBtn.classList.remove('feather-active-glow');
@@ -1309,6 +1312,49 @@ export function playFeatherReviveSound() {
     osc.start(ctx.currentTime + i * 0.1);
     osc.stop(ctx.currentTime + i * 0.1 + 0.15);
   });
+}
+
+function playFeatherReviveBurst(critter) {
+  const app = state.app;
+  const cx = critter.position.x;
+  const cy = critter.position.y;
+  const particles = [];
+  for (let i = 0; i < 16; i++) {
+    const p = new PIXI.Graphics();
+    const size = 3 + Math.random() * 4;
+    p.circle(0, 0, size);
+    p.fill({ color: 0xffd700, alpha: 0.9 });
+    p.position.set(cx, cy);
+    p.zIndex = 9999;
+    const angle = (Math.PI * 2 / 16) * i + (Math.random() - 0.5) * 0.4;
+    const speed = 2 + Math.random() * 3;
+    p.vx = Math.cos(angle) * speed;
+    p.vy = Math.sin(angle) * speed;
+    app.stage.addChild(p);
+    particles.push(p);
+  }
+  let elapsed = 0;
+  const duration = 50;
+  const update = (ticker) => {
+    elapsed += ticker.deltaTime;
+    const t = elapsed / duration;
+    if (t >= 1) {
+      for (const p of particles) {
+        if (app.stage.children.includes(p)) app.stage.removeChild(p);
+        p.destroy();
+      }
+      app.ticker.remove(update);
+      return;
+    }
+    for (const p of particles) {
+      p.position.x += p.vx;
+      p.position.y += p.vy;
+      p.vy += 0.03;
+      p.alpha = 1 - t;
+      p.scale.set(1 - t * 0.5);
+    }
+  };
+  app.ticker.add(update);
 }
 
 export function playGoldenBeanSound() {

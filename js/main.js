@@ -3226,11 +3226,23 @@ let cantGainEXP = false;
       state.initialClouds = clouds.position.x;
       let once = 0;
       app.ticker.add(() => {
-        // Spawn protection blink effect
+        // Spawn protection / feather revive visual effect
         if (Date.now() < state.spawnProtectionEnd && critter) {
-          critter.alpha = (Math.floor(Date.now() / 100) % 2 === 0) ? 0.4 : 1.0;
-        } else if (critter && critter.alpha !== 1) {
+          if (state.featherReviveEnd && Date.now() < state.featherReviveEnd) {
+            // Gold shimmer during feather revive
+            const pulse = 0.7 + Math.sin(Date.now() * 0.008) * 0.3;
+            critter.alpha = pulse;
+            critter.tint = 0xffd700;
+          } else {
+            // Normal spawn protection blink
+            critter.alpha = (Math.floor(Date.now() / 100) % 2 === 0) ? 0.4 : 1.0;
+          }
+        } else if (critter && (critter.alpha !== 1 || critter.tint === 0xffd700)) {
           critter.alpha = 1;
+          if (state.featherReviveEnd) {
+            critter.tint = state.rageActive ? 0xff4444 : 0xffffff;
+            state.featherReviveEnd = null;
+          }
         }
 
         updateWeatherEffects();
@@ -3845,6 +3857,9 @@ state.demiSpawned = 0;
         weatherIconEl.style.transform = 'translateY(-50%)';
         weatherIconEl.style.zIndex = '4';
         document.getElementById('progress').appendChild(weatherIconEl);
+      } else {
+        // In endless mode, sit just left of the centered kill counter
+        weatherIconEl.style.left = 'calc(50% - 70px)';
       }
       updateWeatherIcon();
       createWeatherEffects();

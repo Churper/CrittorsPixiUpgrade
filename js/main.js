@@ -1036,7 +1036,17 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.isCombat = false;
         setEnemiesInRange(0);
         state.isAttackingChar = false;
+        state.isCharAttacking = false;
+        state.hasAttackedThisFrame = false;
         state.isPointerDown = false;
+        // Ensure game is not paused (defensive — death flow shouldn't pause,
+        // but stale state can leave it stuck)
+        state.isPaused = false;
+        // Clear any leaked pointer-hold interval from before death
+        if (pointerHoldInterval) {
+          clearInterval(pointerHoldInterval);
+          pointerHoldInterval = null;
+        }
 
         // Restart spawner chain (was broken when isDead blocked it)
         if (state.enemySpawnTimeout) {
@@ -1518,7 +1528,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.isCombat = false;
         setEnemiesInRange(0);
         state.isAttackingChar = false;
+        state.isCharAttacking = false;
+        state.hasAttackedThisFrame = false;
         state.isPointerDown = false;
+        state.isPaused = false;
+        if (pointerHoldInterval) {
+          clearInterval(pointerHoldInterval);
+          pointerHoldInterval = null;
+        }
         // Restart spawner
         if (state.enemySpawnTimeout) {
           clearTimeout(state.enemySpawnTimeout);

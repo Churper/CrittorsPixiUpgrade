@@ -1489,46 +1489,50 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         addCoffee(-50);
         app.stage.removeChild(state.reviveDialogContainer);
         state.reviveDialogContainer = null;
+        const wasDead = getisDead();
         setIsDead(false);
         handleCharacterClick(characterType);
 
-        // Full combat cleanup — fixes ghost revive breaking combat
-        for (let i = state.enemies.length - 1; i >= 0; i--) {
-          const enemy = state.enemies[i];
-          if (app.stage.children.includes(enemy)) app.stage.removeChild(enemy);
-          if (enemy.hpBarBackground && app.stage.children.includes(enemy.hpBarBackground))
-            app.stage.removeChild(enemy.hpBarBackground);
-          if (enemy.hpBar && app.stage.children.includes(enemy.hpBar))
-            app.stage.removeChild(enemy.hpBar);
-          enemy.onFrameChange = null;
-          enemy.onComplete = null;
+        // Full combat cleanup — only when reviving FROM the ghost/dead state.
+        // If the player is alive and just reviving a teammate, skip this.
+        if (wasDead) {
+          for (let i = state.enemies.length - 1; i >= 0; i--) {
+            const enemy = state.enemies[i];
+            if (app.stage.children.includes(enemy)) app.stage.removeChild(enemy);
+            if (enemy.hpBarBackground && app.stage.children.includes(enemy.hpBarBackground))
+              app.stage.removeChild(enemy.hpBarBackground);
+            if (enemy.hpBar && app.stage.children.includes(enemy.hpBar))
+              app.stage.removeChild(enemy.hpBar);
+            enemy.onFrameChange = null;
+            enemy.onComplete = null;
+          }
+          state.enemies.length = 0;
+
+          // Reset combat flags
+          state.isCombat = false;
+          state.isAttackingChar = false;
+          setEnemiesInRange(0);
+          state.roundOver = false;
+          state.isPointerDown = false;
+
+          // Hide enemy portrait
+          const enemyPortrait = document.getElementById('enemy-portrait');
+          if (enemyPortrait) enemyPortrait.style.display = 'none';
+
+          // Reset critter to walking
+          critter.loop = true;
+          critter.textures = state.frogWalkTextures;
+          critter.play();
+
+          // Restart spawning
+          if (state.enemySpawnTimeout) {
+            clearTimeout(state.enemySpawnTimeout);
+            state.enemySpawnTimeout = null;
+          }
+          state.isSpawning = false;
+          state.timeOfLastSpawn = Date.now();
+          spawnEnemies();
         }
-        state.enemies.length = 0;
-
-        // Reset combat flags
-        state.isCombat = false;
-        state.isAttackingChar = false;
-        setEnemiesInRange(0);
-        state.roundOver = false;
-        state.isPointerDown = false;
-
-        // Hide enemy portrait
-        const enemyPortrait = document.getElementById('enemy-portrait');
-        if (enemyPortrait) enemyPortrait.style.display = 'none';
-
-        // Reset critter to walking
-        critter.loop = true;
-        critter.textures = state.frogWalkTextures;
-        critter.play();
-
-        // Restart spawning
-        if (state.enemySpawnTimeout) {
-          clearTimeout(state.enemySpawnTimeout);
-          state.enemySpawnTimeout = null;
-        }
-        state.isSpawning = false;
-        state.timeOfLastSpawn = Date.now();
-        spawnEnemies();
       } else {
         // Can't afford — shake dialog
         state.hitSound.volume = state.effectsVolume;

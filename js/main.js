@@ -15,6 +15,7 @@ import {
   getEnemiesInRange, setEnemiesInRange,
   getCharLevel, getCharEXP, getEXPtoLevel,
   getPlayerHealth, getPlayerCurrentHealth, getisPaused,
+  getShieldCount, setShieldCount, getBombCount, setBombCount,
 } from './state.js';
 import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
 import { getRandomColor, getRandomColor3 } from './utils.js';
@@ -34,7 +35,9 @@ import {
 import {
   spawnEnemyDemi, spawnEnemy,
   resetEnemiesState, addCoffee, playSpawnAnimation,
-  createCoffeeDrop,
+  createCoffeeDrop, collectGroundItem, drawEnemyHPBar,
+  playShieldActivateSound, playShieldBreakSound, playAirstrikeSound,
+  createItemDrop,
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';
@@ -921,6 +924,21 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       }
       startCooldown();
 
+      // Break shield on character swap
+      if (state.shieldActive) {
+        state.shieldActive = false;
+        state.shieldHP = 0;
+        if (state.shieldSprite && state.app.stage.children.includes(state.shieldSprite)) {
+          state.app.stage.removeChild(state.shieldSprite);
+        }
+        state.shieldSprite = null;
+        const shieldBarFill = document.getElementById('shield-bar-fill');
+        if (shieldBarFill) shieldBarFill.style.width = '0%';
+        const shieldBtnEl = document.getElementById('shield-btn');
+        if (shieldBtnEl) shieldBtnEl.classList.remove('shield-active-glow');
+        playShieldBreakSound();
+      }
+
       // Spawn protection — 2s invincibility, but only once per 15s
       if (Date.now() - state.lastInvulnTime >= 15000) {
         state.spawnProtectionEnd = Date.now() + 2000;
@@ -946,6 +964,114 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
 
     updateCharacterStats(); // Update the stats for the new character
+  }
+
+
+  // --- Airstrike (bomb item) ---
+  function triggerAirstrike(app, critter) {
+    playAirstrikeSound();
+
+    // Windup: red tint overlay
+    const overlay = new PIXI.Graphics();
+    overlay.rect(0, 0, app.screen.width, app.screen.height);
+    overlay.fill({ color: 0xff0000, alpha: 0.15 });
+    overlay.zIndex = 9999;
+    // Position in screen space (fixed)
+    overlay.position.set(-app.stage.x, -app.stage.y);
+    app.stage.addChild(overlay);
+
+    setTimeout(() => {
+      // Strike flash
+      overlay.clear();
+      overlay.rect(0, 0, app.screen.width, app.screen.height);
+      overlay.fill({ color: 0xffffff, alpha: 0.8 });
+      overlay.position.set(-app.stage.x, -app.stage.y);
+
+      // Damage all on-screen enemies
+      const enemies = getEnemies();
+      const deadEnemies = [];
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        if (!enemy.isAlive) continue;
+        const damage = Math.round(enemy.maxHP * 0.75);
+        enemy.currentHP -= damage;
+        enemy.tint = 0xffffff;
+        setTimeout(() => { if (enemy.isAlive) enemy.tint = 0xffffff; }, 100);
+        drawEnemyHPBar(enemy);
+
+        if (enemy.currentHP <= 0) {
+          enemy.isAlive = false;
+          if (enemy.isDemi) state.lastDemiKillTime = Date.now();
+          deadEnemies.push(enemy);
+        }
+      }
+
+      // Process dead enemies
+      deadEnemies.forEach(enemy => {
+        if (app.stage.children.includes(enemy)) {
+          enemy.tint = 0xFF0000;
+          createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
+          // Item drop from airstrike kills (endless mode)
+          if (state.gameMode === 'endless') {
+            const roll = Math.random();
+            if (roll < 0.025) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
+            else if (roll < 0.05) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+          }
+          app.stage.removeChild(enemy);
+          const idx = enemies.indexOf(enemy);
+          if (idx !== -1) enemies.splice(idx, 1);
+          // EXP from kill
+          const expGain = enemy.exp || 32;
+          const currentChar = getCurrentCharacter();
+          setCharEXP(currentChar, getCharEXP(currentChar) + expGain);
+          updateEXP(getCharEXP(currentChar), getEXPtoLevel(currentChar));
+        }
+      });
+
+      if (getEnemiesInRange() > 0) {
+        setEnemiesInRange(Math.max(0, getEnemiesInRange() - deadEnemies.length));
+      }
+      if (getEnemiesInRange() === 0) {
+        const enemyPortrait = document.getElementById('enemy-portrait');
+        if (enemyPortrait) enemyPortrait.style.display = 'none';
+        state.isCombat = false;
+      }
+
+      // Fade out flash
+      let flashAlpha = 0.8;
+      const flashFade = () => {
+        flashAlpha -= 0.05;
+        if (flashAlpha <= 0) {
+          if (app.stage.children.includes(overlay)) {
+            app.stage.removeChild(overlay);
+            overlay.destroy();
+          }
+          return;
+        }
+        overlay.clear();
+        overlay.rect(0, 0, app.screen.width, app.screen.height);
+        overlay.fill({ color: 0xffffff, alpha: flashAlpha });
+        overlay.position.set(-app.stage.x, -app.stage.y);
+        requestAnimationFrame(flashFade);
+      };
+      requestAnimationFrame(flashFade);
+
+      // Screen shake
+      const origX = app.stage.x;
+      const origY = app.stage.y;
+      let shakeTime = 0;
+      const shakeInterval = setInterval(() => {
+        shakeTime += 20;
+        if (shakeTime > 300) {
+          clearInterval(shakeInterval);
+          return;
+        }
+        const offsetX = (Math.random() - 0.5) * 6;
+        const offsetY = (Math.random() - 0.5) * 6;
+        app.stage.x += offsetX;
+        app.stage.y += offsetY;
+      }, 20);
+    }, 300); // windup delay
   }
 
 
@@ -1165,6 +1291,53 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       // Set endless start time
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
+
+      // Show item buttons
+      const shieldBtn = document.getElementById('shield-btn');
+      const bombBtn = document.getElementById('bomb-btn');
+      shieldBtn.style.display = 'flex';
+      bombBtn.style.display = 'flex';
+
+      // Shield button handler
+      shieldBtn.addEventListener('click', () => {
+        if (getShieldCount() > 0 && !state.shieldActive) {
+          setShieldCount(getShieldCount() - 1);
+          document.getElementById('shield-count').textContent = getShieldCount();
+          shieldBtn.classList.toggle('active', getShieldCount() > 0);
+
+          state.shieldActive = true;
+          state.shieldHP = 100;
+
+          // Create shield visual
+          const shield = new PIXI.Graphics();
+          shield.circle(0, 0, 50);
+          shield.fill({ color: 0x00ffff, alpha: 0.2 });
+          shield.stroke({ width: 2, color: 0x00ffff, alpha: 0.5 });
+          shield.zIndex = 14;
+          shield.position.set(critter.position.x, critter.position.y);
+          state.app.stage.addChild(shield);
+          state.shieldSprite = shield;
+
+          // Update shield bar
+          const shieldBarFill = document.getElementById('shield-bar-fill');
+          if (shieldBarFill) shieldBarFill.style.width = '100%';
+
+          // Glow on button
+          shieldBtn.classList.add('shield-active-glow');
+
+          playShieldActivateSound();
+        }
+      });
+
+      // Bomb button handler
+      bombBtn.addEventListener('click', () => {
+        if (getBombCount() > 0) {
+          setBombCount(getBombCount() - 1);
+          document.getElementById('bomb-count').textContent = getBombCount();
+          bombBtn.classList.toggle('active', getBombCount() > 0);
+          triggerAirstrike(app, critter);
+        }
+      });
     }
 
     var snailHPIndicator = document.querySelector('.upgrade-box.character-snail .hp-indicator');
@@ -3094,6 +3267,33 @@ state.demiSpawned = 0;
         if (state.autoAttack && getEnemiesInRange() > 0 && !state.isAttackingChar && !state.isPointerDown) {
           handleTouchHold();
         }
+
+        // --- Item pickup proximity check ---
+        if (state.gameMode === 'endless' && state.groundItems.length > 0 && critter) {
+          for (let i = state.groundItems.length - 1; i >= 0; i--) {
+            const item = state.groundItems[i];
+            if (item.collected) continue;
+            const dx = critter.position.x - item.x;
+            const dy = critter.position.y - item.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            // Proximity pickup or auto-collect after 3s
+            if (dist < 80 || (Date.now() - item.createdAt > 3000)) {
+              collectGroundItem(item);
+            }
+          }
+        }
+
+        // --- Shield visual update ---
+        if (state.shieldActive && state.shieldSprite && critter) {
+          state.shieldSprite.position.set(critter.position.x, critter.position.y);
+          // Pulse alpha
+          const pulse = 0.225 + Math.sin(Date.now() * 0.004) * 0.075;
+          state.shieldSprite.alpha = pulse;
+          // Scale based on remaining HP
+          const s = 0.7 + (state.shieldHP / 100) * 0.3;
+          state.shieldSprite.scale.set(s);
+        }
+
         if (getSpeedChanged()) { updateVelocity(); setSpeedChanged(false); }
         if (!state.isAttackingChar) {
           //  console.log("attacking char",state.isAttackingChar);

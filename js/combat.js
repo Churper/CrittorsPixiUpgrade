@@ -10,6 +10,7 @@ import {
   getSnailDamage, getBirdDamage, getFrogDamage, getBeeDamage,
   getFrogTintColor, getCoffee, setCoffee,
   getCharEXP, getEXPtoLevel,
+  getShieldCount, setShieldCount, getBombCount, setBombCount,
 } from './state.js';
 import { pauseTimer, isTimerFinished } from './timer.js';
 import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCharacterDamage } from './characters.js';
@@ -423,6 +424,15 @@ export function rangedAttack(critter, enemy) {
 
           console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
           createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
+          // Item drop (endless mode only)
+          if (state.gameMode === 'endless') {
+            const roll = Math.random();
+            if (roll < 0.025) {
+              createItemDrop(enemy.position.x, enemy.position.y, 'shield');
+            } else if (roll < 0.05) {
+              createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+            }
+          }
           state.app.stage.removeChild(enemy);
           getEnemies().splice(getEnemies().indexOf(enemy), 1);
           enemy.isAlive = false;
@@ -592,6 +602,44 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
 
             // Skip damage during spawn protection
             if (Date.now() < state.spawnProtectionEnd) {
+              return;
+            }
+
+            // Shield damage interception
+            if (state.shieldActive && state.shieldHP > 0) {
+              const prevShieldHP = state.shieldHP;
+              state.shieldHP -= enemy.attackDamage;
+              // Flash shield sprite
+              if (state.shieldSprite) {
+                state.shieldSprite.tint = 0xffffff;
+                setTimeout(() => { if (state.shieldSprite) state.shieldSprite.tint = 0x00ffff; }, 100);
+              }
+              // Update shield bar
+              const shieldBarFill = document.getElementById('shield-bar-fill');
+              if (shieldBarFill) shieldBarFill.style.width = Math.max(0, state.shieldHP) + '%';
+              if (state.shieldHP <= 0) {
+                const overflow = -state.shieldHP;
+                state.shieldActive = false;
+                state.shieldHP = 0;
+                // Remove shield sprite
+                if (state.shieldSprite && state.app.stage.children.includes(state.shieldSprite)) {
+                  state.app.stage.removeChild(state.shieldSprite);
+                }
+                state.shieldSprite = null;
+                playShieldBreakSound();
+                // Update shield button
+                const shieldBtn = document.getElementById('shield-btn');
+                if (shieldBtn) shieldBtn.classList.remove('shield-active-glow');
+                if (shieldBarFill) shieldBarFill.style.width = '0%';
+                // Apply overflow damage
+                if (overflow > 0) {
+                  critter.tint = state.flashColor;
+                  setPlayerCurrentHealth(getPlayerCurrentHealth() - overflow);
+                  drawCharHitSplat(critter, enemy);
+                  updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
+                }
+              }
+              drawCharHitSplat(critter, enemy);
               return;
             }
 
@@ -947,6 +995,15 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       setIsCharAttacking(false);
       console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
+      // Item drop (endless mode only)
+      if (state.gameMode === 'endless') {
+        const roll = Math.random();
+        if (roll < 0.025) {
+          createItemDrop(enemy.position.x, enemy.position.y, 'shield');
+        } else if (roll < 0.05) {
+          createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+        }
+      }
       state.app.stage.removeChild(enemy);
       getEnemies().splice(getEnemies().indexOf(enemy), 1);
 
@@ -1058,6 +1115,220 @@ export function addCoffee(amount) {
   const coffeeAmount = getCoffee();
   coffeeAmountElement.textContent = `${coffeeAmount}`;
   playCoinSound();
+}
+
+// --- Item Drop System (Shield + Bomb) ---
+
+export function playItemPickupSound(itemType) {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+  const freqs = itemType === 'shield' ? [600, 500, 400] : [400, 600, 800];
+  freqs.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+    osc.connect(gain);
+    osc.start(ctx.currentTime + i * 0.08);
+    osc.stop(ctx.currentTime + i * 0.08 + 0.12);
+  });
+}
+
+export function playShieldActivateSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.25, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(800, ctx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.15);
+  osc.connect(gain);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.25);
+}
+
+export function playShieldBreakSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+  [1000, 600, 300].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.06);
+    osc.connect(gain);
+    osc.start(ctx.currentTime + i * 0.06);
+    osc.stop(ctx.currentTime + i * 0.06 + 0.1);
+  });
+}
+
+export function playAirstrikeSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  // Warning siren
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.2, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(vol * 0.4, ctx.currentTime + 0.2);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+  const osc = ctx.createOscillator();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(300, ctx.currentTime);
+  osc.frequency.linearRampToValueAtTime(600, ctx.currentTime + 0.15);
+  osc.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.3);
+  osc.connect(gain);
+  osc.start(ctx.currentTime);
+  osc.stop(ctx.currentTime + 0.5);
+  // Explosion
+  const explosionGain = ctx.createGain();
+  explosionGain.connect(ctx.destination);
+  explosionGain.gain.setValueAtTime(0.001, ctx.currentTime + 0.3);
+  explosionGain.gain.linearRampToValueAtTime(vol * 0.5, ctx.currentTime + 0.35);
+  explosionGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
+  const bufferSize = ctx.sampleRate * 0.5;
+  const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const output = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) output[i] = Math.random() * 2 - 1;
+  const noise = ctx.createBufferSource();
+  noise.buffer = noiseBuffer;
+  noise.connect(explosionGain);
+  noise.start(ctx.currentTime + 0.3);
+  noise.stop(ctx.currentTime + 0.8);
+}
+
+function updateItemButtonState(itemType) {
+  const btnId = itemType === 'shield' ? 'shield-btn' : 'bomb-btn';
+  const countId = itemType === 'shield' ? 'shield-count' : 'bomb-count';
+  const count = itemType === 'shield' ? getShieldCount() : getBombCount();
+  const btn = document.getElementById(btnId);
+  const countEl = document.getElementById(countId);
+  if (countEl) countEl.textContent = count;
+  if (btn) btn.classList.toggle('active', count > 0);
+}
+
+export function createItemDrop(x, y, itemType) {
+  const emoji = itemType === 'shield' ? '🛡️' : '💣';
+  const itemText = new PIXI.Text({ text: emoji, style: { fontSize: 32 } });
+  itemText.anchor.set(0.5);
+  itemText.position.set(x, y - 30);
+  itemText.zIndex = 16;
+  state.app.stage.addChild(itemText);
+
+  // Phase 1 — Fall to ground with bounce
+  const groundY = y + 40;
+  const startY = y - 30;
+  const fallDuration = 800;
+  const fallStart = Date.now();
+
+  const fallUpdate = () => {
+    const elapsed = Date.now() - fallStart;
+    const progress = Math.min(elapsed / fallDuration, 1);
+    // Ease-out bounce
+    const t = progress;
+    const bounce = t < 0.6
+      ? (t / 0.6) * (t / 0.6)
+      : t < 0.8
+        ? 1 - (1 - ((t - 0.6) / 0.2)) * 0.3
+        : 1 - (1 - ((t - 0.8) / 0.2)) * 0.1 * (1 - ((t - 0.8) / 0.2));
+    itemText.position.y = startY + (groundY - startY) * Math.min(bounce, 1);
+    itemText.rotation = Math.sin(t * Math.PI * 4) * 0.2 * (1 - t);
+    if (progress < 1) {
+      requestAnimationFrame(fallUpdate);
+    } else {
+      // Item is on the ground — add to ground items
+      itemText.position.y = groundY;
+      const groundItem = {
+        sprite: itemText,
+        type: itemType,
+        x: x,
+        y: groundY,
+        createdAt: Date.now(),
+        collected: false,
+      };
+      state.groundItems.push(groundItem);
+    }
+  };
+  fallUpdate();
+}
+
+export function collectGroundItem(groundItem) {
+  if (groundItem.collected) return;
+  groundItem.collected = true;
+
+  const sprite = groundItem.sprite;
+  const itemType = groundItem.type;
+
+  playItemPickupSound(itemType);
+
+  // Fly to UI button position
+  const btnId = itemType === 'shield' ? 'shield-btn' : 'bomb-btn';
+  const btn = document.getElementById(btnId);
+  const btnRect = btn ? btn.getBoundingClientRect() : { left: 16, top: window.innerHeight * 0.65 };
+  const screenTargetX = btnRect.left + 28;
+  const screenTargetY = btnRect.top + 28;
+  const stageTargetX = -state.app.stage.position.x + screenTargetX;
+  const stageTargetY = -state.app.stage.position.y + screenTargetY;
+
+  const startX = sprite.position.x;
+  const startY = sprite.position.y;
+  const flyDuration = 600;
+  const flyStart = Date.now();
+
+  const flyUpdate = () => {
+    const elapsed = Date.now() - flyStart;
+    const progress = Math.min(elapsed / flyDuration, 1);
+    const t = progress < 0.5 ? 2 * progress * progress : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+    // Recalculate target each frame
+    const curTargetX = -state.app.stage.position.x + screenTargetX;
+    const curTargetY = -state.app.stage.position.y + screenTargetY;
+
+    sprite.position.x = startX + (curTargetX - startX) * t;
+    sprite.position.y = startY + (curTargetY - startY) * t;
+    sprite.scale.set(1 - t * 0.5);
+    sprite.alpha = t < 0.7 ? 1 : 1 - (t - 0.7) * 3.33;
+
+    if (progress >= 1) {
+      // Increment count
+      if (itemType === 'shield') {
+        setShieldCount(getShieldCount() + 1);
+      } else {
+        setBombCount(getBombCount() + 1);
+      }
+      updateItemButtonState(itemType);
+
+      // Flash the button
+      if (btn) {
+        btn.style.transform = 'scale(1.3)';
+        setTimeout(() => { btn.style.transform = ''; }, 200);
+      }
+
+      // Remove sprite
+      if (state.app.stage.children.includes(sprite)) {
+        state.app.stage.removeChild(sprite);
+      }
+      sprite.destroy();
+
+      // Remove from groundItems
+      const idx = state.groundItems.indexOf(groundItem);
+      if (idx !== -1) state.groundItems.splice(idx, 1);
+      return;
+    }
+    requestAnimationFrame(flyUpdate);
+  };
+  flyUpdate();
 }
 
 export function playSpawnAnimation(critter, critterSpawn) {

@@ -111,6 +111,14 @@ const state = {
   isPointerDown: false,
   autoAttack: false,
 
+  // Item drops (endless mode)
+  shieldCount: 0,
+  bombCount: 0,
+  shieldActive: false,
+  shieldHP: 0,
+  groundItems: [],
+  shieldSprite: null,
+
   // Config
   characterPositions: {
     "character-snail": { top: "-50px", left: "calc(45% - 70px)" },
@@ -268,6 +276,12 @@ export function setCurrentCharacter(value) { state.currentCharacter = value; }
 // Coffee
 export function getCoffee() { return state.coffee; }
 export function setCoffee(value) { state.coffee = value; }
+
+// Item drops
+export function getShieldCount() { return state.shieldCount; }
+export function setShieldCount(v) { state.shieldCount = v; }
+export function getBombCount() { return state.bombCount; }
+export function setBombCount(v) { state.bombCount = v; }
 
 // Misc getters/setters
 export function getFrogSize() { return state.frogSize; }

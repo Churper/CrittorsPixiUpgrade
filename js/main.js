@@ -387,130 +387,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
   }
 
-  function transitionWeather(newWeather) {
-    const app = state.app;
-    if (!app) return;
-
-    // Save references to old elements that will fade out
-    const oldWeather = weatherContainer;
-    const oldGround = endlessGround;
-    const oldGroundDecor = endlessGroundDecor;
-    const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars];
-
-    // Create new ground Graphics and draw with new palette
-    const newGround = new PIXI.Graphics();
-    newGround.position.set(0, app.screen.height - endlessGroundHeight);
-    newGround.zIndex = 5;
-    newGround.alpha = 0;
-    app.stage.addChild(newGround);
-
-    const newGroundDecor = new PIXI.Container();
-    newGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
-    newGroundDecor.zIndex = 6;
-    newGroundDecor.alpha = 0;
-    app.stage.addChild(newGroundDecor);
-
-    // Swap references so drawEndlessGround draws onto the new objects
-    endlessGround = newGround;
-    endlessGroundDecor = newGroundDecor;
-    drawEndlessGround(newWeather);
-    endlessGroundCurrentWeather = newWeather;
-
-    // Detach old overlays from active vars so clearWeatherEffects creates fresh ones
-    sunLightOverlay = null;
-    nightOverlay = null;
-    playerShadow = null;
-    moonStars = null;
-    weatherContainer = null;
-
-    // Create new weather effects (rain/snow/sun/night particles + overlays)
-    createWeatherEffects();
-    // Start new weather container at alpha 0
-    if (weatherContainer) weatherContainer.alpha = 0;
-    if (sunLightOverlay) sunLightOverlay.alpha = 0;
-    if (nightOverlay) nightOverlay.alpha = 0;
-    if (playerShadow) playerShadow.alpha = 0;
-    if (moonStars) moonStars.alpha = 0;
-
-    // Store target alphas for new overlays (they vary by type)
-    const targetNightAlpha = nightOverlay ? 0.35 : 0;
-    const targetSunLightAlpha = sunLightOverlay ? 0.12 : 0;
-    const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
-    const targetMoonStarsAlpha = moonStars ? 1 : 0;
-
-    updateWeatherIcon();
-
-    // Initialize crossfade transition
-    state.biomeTransition = {
-      oldWeather,
-      oldGround,
-      oldGroundDecor,
-      oldOverlays,
-      newGround,
-      newGroundDecor,
-      newWeather: weatherContainer,
-      newSunLight: sunLightOverlay,
-      newNightOverlay: nightOverlay,
-      newPlayerShadow: playerShadow,
-      newMoonStars: moonStars,
-      targetNightAlpha,
-      targetSunLightAlpha,
-      targetPlayerShadowAlpha,
-      targetMoonStarsAlpha,
-      progress: 0,
-    };
-  }
-
-  function updateBiomeTransition() {
-    const t = state.biomeTransition;
-    if (!t) return;
-
-    t.progress += 0.02; // ~50 frames = ~2s at 60fps
-    const p = Math.min(1, t.progress);
-
-    // Fade old out
-    if (t.oldWeather) t.oldWeather.alpha = 1 - p;
-    if (t.oldGround) t.oldGround.alpha = 1 - p;
-    if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1 - p;
-
-    // Fade old overlays out
-    for (const o of (t.oldOverlays || [])) {
-      if (o && o.parent) o.alpha *= (1 - 0.04); // gradual per-frame fade
-    }
-
-    // Fade new in
-    if (t.newGround) t.newGround.alpha = p;
-    if (t.newGroundDecor) t.newGroundDecor.alpha = p;
-    if (t.newWeather) t.newWeather.alpha = p;
-    if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha * p;
-    if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
-    if (t.newPlayerShadow) t.newPlayerShadow.alpha = t.targetPlayerShadowAlpha * p;
-    if (t.newMoonStars) t.newMoonStars.alpha = t.targetMoonStarsAlpha * p;
-
-    if (p >= 1) {
-      // Cleanup: destroy old elements
-      if (t.oldWeather && t.oldWeather.parent) {
-        state.app.stage.removeChild(t.oldWeather);
-        t.oldWeather.destroy({ children: true });
-      }
-      if (t.oldGround && t.oldGround.parent) {
-        state.app.stage.removeChild(t.oldGround);
-        t.oldGround.destroy({ children: true });
-      }
-      if (t.oldGroundDecor && t.oldGroundDecor.parent) {
-        state.app.stage.removeChild(t.oldGroundDecor);
-        t.oldGroundDecor.destroy({ children: true });
-      }
-      for (const o of (t.oldOverlays || [])) {
-        if (o && o.parent) {
-          state.app.stage.removeChild(o);
-          o.destroy({ children: true });
-        }
-      }
-      state.biomeTransition = null;
-    }
-  }
-
   function updateWeatherEffects() {
     if (!weatherContainer || !state.app) return;
     const app = state.app;
@@ -1728,6 +1604,129 @@ if (state.gameMode === 'endless') {
   foreground.visible = false;
 }
 
+function transitionWeather(newWeather) {
+  const app = state.app;
+  if (!app) return;
+
+  // Save references to old elements that will fade out
+  const oldWeather = weatherContainer;
+  const oldGround = endlessGround;
+  const oldGroundDecor = endlessGroundDecor;
+  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars];
+
+  // Create new ground Graphics and draw with new palette
+  const newGround = new PIXI.Graphics();
+  newGround.position.set(0, app.screen.height - endlessGroundHeight);
+  newGround.zIndex = 5;
+  newGround.alpha = 0;
+  app.stage.addChild(newGround);
+
+  const newGroundDecor = new PIXI.Container();
+  newGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
+  newGroundDecor.zIndex = 6;
+  newGroundDecor.alpha = 0;
+  app.stage.addChild(newGroundDecor);
+
+  // Swap references so drawEndlessGround draws onto the new objects
+  endlessGround = newGround;
+  endlessGroundDecor = newGroundDecor;
+  drawEndlessGround(newWeather);
+  endlessGroundCurrentWeather = newWeather;
+
+  // Detach old overlays from active vars so clearWeatherEffects creates fresh ones
+  sunLightOverlay = null;
+  nightOverlay = null;
+  playerShadow = null;
+  moonStars = null;
+  weatherContainer = null;
+
+  // Create new weather effects (rain/snow/sun/night particles + overlays)
+  createWeatherEffects();
+  // Start new weather container at alpha 0
+  if (weatherContainer) weatherContainer.alpha = 0;
+  if (sunLightOverlay) sunLightOverlay.alpha = 0;
+  if (nightOverlay) nightOverlay.alpha = 0;
+  if (playerShadow) playerShadow.alpha = 0;
+  if (moonStars) moonStars.alpha = 0;
+
+  // Store target alphas for new overlays (they vary by type)
+  const targetNightAlpha = nightOverlay ? 0.35 : 0;
+  const targetSunLightAlpha = sunLightOverlay ? 0.12 : 0;
+  const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
+  const targetMoonStarsAlpha = moonStars ? 1 : 0;
+
+  updateWeatherIcon();
+
+  // Initialize crossfade transition
+  state.biomeTransition = {
+    oldWeather,
+    oldGround,
+    oldGroundDecor,
+    oldOverlays,
+    newGround,
+    newGroundDecor,
+    newWeather: weatherContainer,
+    newSunLight: sunLightOverlay,
+    newNightOverlay: nightOverlay,
+    newPlayerShadow: playerShadow,
+    newMoonStars: moonStars,
+    targetNightAlpha,
+    targetSunLightAlpha,
+    targetPlayerShadowAlpha,
+    targetMoonStarsAlpha,
+    progress: 0,
+  };
+}
+
+function updateBiomeTransition() {
+  const t = state.biomeTransition;
+  if (!t) return;
+
+  t.progress += 0.02; // ~50 frames = ~2s at 60fps
+  const p = Math.min(1, t.progress);
+
+  // Fade old out
+  if (t.oldWeather) t.oldWeather.alpha = 1 - p;
+  if (t.oldGround) t.oldGround.alpha = 1 - p;
+  if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1 - p;
+
+  // Fade old overlays out
+  for (const o of (t.oldOverlays || [])) {
+    if (o && o.parent) o.alpha *= (1 - 0.04); // gradual per-frame fade
+  }
+
+  // Fade new in
+  if (t.newGround) t.newGround.alpha = p;
+  if (t.newGroundDecor) t.newGroundDecor.alpha = p;
+  if (t.newWeather) t.newWeather.alpha = p;
+  if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha * p;
+  if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
+  if (t.newPlayerShadow) t.newPlayerShadow.alpha = t.targetPlayerShadowAlpha * p;
+  if (t.newMoonStars) t.newMoonStars.alpha = t.targetMoonStarsAlpha * p;
+
+  if (p >= 1) {
+    // Cleanup: destroy old elements
+    if (t.oldWeather && t.oldWeather.parent) {
+      state.app.stage.removeChild(t.oldWeather);
+      t.oldWeather.destroy({ children: true });
+    }
+    if (t.oldGround && t.oldGround.parent) {
+      state.app.stage.removeChild(t.oldGround);
+      t.oldGround.destroy({ children: true });
+    }
+    if (t.oldGroundDecor && t.oldGroundDecor.parent) {
+      state.app.stage.removeChild(t.oldGroundDecor);
+      t.oldGroundDecor.destroy({ children: true });
+    }
+    for (const o of (t.oldOverlays || [])) {
+      if (o && o.parent) {
+        state.app.stage.removeChild(o);
+        o.destroy({ children: true });
+      }
+    }
+    state.biomeTransition = null;
+  }
+}
 
 const frogGhostTextures = textures.frog_ghost;
 state.frogGhostPlayer = new PIXI.Sprite(frogGhostTextures);

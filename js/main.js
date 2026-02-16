@@ -1543,14 +1543,16 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
           state.isCharacterMenuOpen = false;
           stopFlashing();
-          // Always re-add to ensure critter is on stage and properly layered
-          app.stage.addChild(critter);
-          critter.visible = true;
-          critter.alpha = 1;
+          // Full visual reset — match what the ticker charSwap block does
+          critter.scale.set(getFrogSize());
           critter.textures = state.frogWalkTextures;
           critter.loop = true;
-          critter.play();
+          critter.gotoAndPlay(0);
           critter.tint = 0xffffff;
+          critter.visible = true;
+          critter.alpha = 1;
+          critter.renderable = true;
+          app.stage.addChild(critter);
           updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
           updateEXP(getCharEXP(getCurrentCharacter()));
           updateVelocity();

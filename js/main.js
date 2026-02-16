@@ -1031,6 +1031,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         setEnemiesInRange(0);
         state.isAttackingChar = false;
         state.isPointerDown = false;
+
+        // Restart spawner chain (was broken when isDead blocked it)
+        if (state.enemySpawnTimeout) {
+          clearTimeout(state.enemySpawnTimeout);
+          state.enemySpawnTimeout = null;
+        }
+        state.isSpawning = false;
+        state.timeOfLastSpawn = Date.now();
+        spawnEnemies();
       }
 
       // Spawn protection — 2s invincibility, but only once per 15s
@@ -1501,6 +1510,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setEnemiesInRange(0);
           state.isAttackingChar = false;
           state.isPointerDown = false;
+
+          // Restart spawner chain
+          if (state.enemySpawnTimeout) {
+            clearTimeout(state.enemySpawnTimeout);
+            state.enemySpawnTimeout = null;
+          }
+          state.isSpawning = false;
+          state.timeOfLastSpawn = Date.now();
+          spawnEnemies();
         }
       } else {
         // Can't afford — shake dialog
@@ -1676,8 +1694,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setRageCount(getRageCount() - 1);
           document.getElementById('rage-count').textContent = getRageCount();
           rageBtn.classList.toggle('active', getRageCount() > 0);
-          if (getRageCount() <= 0) { rageBtn.style.display = 'none'; }
-          repositionItemButtons();
 
           state.rageActive = true;
           state.rageStartTime = Date.now();
@@ -3747,7 +3763,13 @@ state.demiSpawned = 0;
               state.originalAnimSpeed = null;
             }
             const rageBtnEl = document.getElementById('rage-btn');
-            if (rageBtnEl) rageBtnEl.classList.remove('rage-active-glow');
+            if (rageBtnEl) {
+              rageBtnEl.classList.remove('rage-active-glow');
+              if (getRageCount() <= 0) {
+                rageBtnEl.style.display = 'none';
+                repositionItemButtons();
+              }
+            }
             const rageFill = document.getElementById('rage-fill');
             if (rageFill) rageFill.style.height = '0%';
           } else {

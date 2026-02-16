@@ -1296,13 +1296,24 @@ export function playPotionChugSound() {
 }
 
 export function playPotionBottleAnimation(critter, app) {
-  const potionSprite = new PIXI.Text({ text: '🧪', style: { fontSize: 22 } });
-  potionSprite.anchor.set(0.5, 0.5);
-  // Position at character's mouth area
-  potionSprite.position.set(critter.position.x + 15, critter.position.y - 20);
-  potionSprite.zIndex = 99999;
-  potionSprite.rotation = -0.3; // slight tilt toward mouth
-  app.stage.addChild(potionSprite);
+  // Draw a small red potion bottle
+  const bottle = new PIXI.Container();
+  const body = new PIXI.Graphics();
+  // Bottle body (red liquid)
+  body.roundRect(-6, -4, 12, 16, 3).fill({ color: 0xdd2222, alpha: 0.9 });
+  // Neck
+  body.roundRect(-3, -10, 6, 8, 2).fill({ color: 0xdd2222, alpha: 0.7 });
+  // Cork
+  body.roundRect(-4, -13, 8, 4, 1).fill({ color: 0x8B5E3C });
+  // Highlight
+  body.roundRect(-4, -2, 3, 8, 1).fill({ color: 0xff6666, alpha: 0.5 });
+  bottle.addChild(body);
+
+  bottle.position.set(critter.position.x + 15, critter.position.y - 20);
+  bottle.zIndex = 99999;
+  bottle.pivot.set(0, 0);
+  bottle.rotation = -0.3;
+  app.stage.addChild(bottle);
 
   const startTime = Date.now();
   const duration = 500;
@@ -1310,18 +1321,18 @@ export function playPotionBottleAnimation(critter, app) {
   const ticker = () => {
     const t = Math.min(1, (Date.now() - startTime) / duration);
     if (t < 0.4) {
-      // Tip the bottle (rotate to pouring position)
-      potionSprite.rotation = -0.3 + (t / 0.4) * -1.2;
+      // Tip the bottle toward mouth
+      bottle.rotation = -0.3 + (t / 0.4) * -1.2;
     } else {
-      // Hold tipped position, fade out and shrink
-      potionSprite.rotation = -1.5;
+      // Hold tipped, fade out and shrink
+      bottle.rotation = -1.5;
       const fadeT = (t - 0.4) / 0.6;
-      potionSprite.alpha = 1 - fadeT;
-      potionSprite.scale.set(1 - fadeT * 0.5);
+      bottle.alpha = 1 - fadeT;
+      bottle.scale.set(1 - fadeT * 0.5);
     }
     if (t >= 1) {
-      app.stage.removeChild(potionSprite);
-      potionSprite.destroy();
+      app.stage.removeChild(bottle);
+      bottle.destroy({ children: true });
       app.ticker.remove(ticker);
     }
   };

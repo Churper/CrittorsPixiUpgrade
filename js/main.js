@@ -144,6 +144,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let playerShadow = null;
 
   function getWeatherType() {
+    if (state.gameMode === 'endless') {
+      const cycle = Math.floor((state.endlessElapsed || 0) / 60) % weatherTypes.length;
+      return weatherTypes[cycle].name;
+    }
     return weatherTypes[(state.currentRound - 1) % weatherTypes.length].name;
   }
 
@@ -1078,10 +1082,15 @@ texturesPromise.then((texturesPromise) => {
 
       let backgroundTexture = textures.background;
 
-// Create first background sprite
-let background = new PIXI.Sprite(backgroundTexture);
-background.width = 2800;
-background.height = app.screen.height;
+// Create background — use TilingSprite in endless mode for infinite scrolling
+let background;
+if (state.gameMode === 'endless') {
+  background = new PIXI.TilingSprite(backgroundTexture, 50000, app.screen.height);
+} else {
+  background = new PIXI.Sprite(backgroundTexture);
+  background.width = 2800;
+  background.height = app.screen.height;
+}
 background.anchor.set(0, 0);
 background.position.set(0, 0);
 app.stage.addChild(background);
@@ -1095,6 +1104,19 @@ foreground.height = foreground.texture.height * 1;
 foreground.anchor.set(0, 1);
 foreground.x = 0;
 foreground.y = Math.max(app.screen.height);
+
+// Endless mode: procedural ground that extends beyond the foreground sprite
+let endlessGround = null;
+const endlessGroundColors = { sun: 0x4a8c3f, rain: 0x3b6b35, wind: 0x5a9a4f, snow: 0xd4dce6 };
+let endlessGroundCurrentWeather = null;
+if (state.gameMode === 'endless') {
+  endlessGround = new PIXI.Graphics();
+  endlessGround.rect(0, 0, 50000, foreground.height);
+  endlessGround.fill({ color: endlessGroundColors.sun });
+  endlessGround.position.set(0, app.screen.height - foreground.height);
+  endlessGround.zIndex = 5;
+  endlessGroundCurrentWeather = 'sun';
+}
 
 
 const frogGhostTextures = textures.frog_ghost;
@@ -1708,6 +1730,17 @@ let cantGainEXP = false;
           const mins = Math.floor(state.endlessElapsed / 60);
           const secs = state.endlessElapsed % 60;
           document.getElementById('endless-timer').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+          // Cycle weather every 60s and update ground color + weather effects
+          const currentWeather = getWeatherType();
+          if (endlessGround && currentWeather !== endlessGroundCurrentWeather) {
+            endlessGroundCurrentWeather = currentWeather;
+            endlessGround.clear();
+            endlessGround.rect(0, 0, 50000, foreground.height);
+            endlessGround.fill({ color: endlessGroundColors[currentWeather] || 0x4a8c3f });
+            updateWeatherIcon();
+            createWeatherEffects();
+          }
         }
 
         if (isTimerFinished()) {
@@ -2100,8 +2133,7 @@ state.demiSpawned = 0;
 
 
           }
-          // Spawn near the left side of the visible screen so the player can see the action
-          critter.position.x = -app.stage.x + app.screen.width * 0.15;
+          // Character swap: keep critter at their current position (no teleport)
           updateEXP(getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter));
           document.getElementById('spawn-text').style.visibility = 'hidden';
           updateVelocity();
@@ -2163,7 +2195,8 @@ state.demiSpawned = 0;
           }
 
 
-          if (critter.position.x > maxX - 100) {
+          // Only clamp player position in story mode
+          if (state.gameMode !== 'endless' && critter.position.x > maxX - 100) {
             critter.position.x = maxX - 100;
           }
           if (state.gameMode !== 'endless' && critter.position.x > 1500) {
@@ -2188,7 +2221,12 @@ state.demiSpawned = 0;
         }
         if (!getAreResetting()) {
           // Adjust app stage position
-          app.stage.x = Math.min(0, Math.max(-foreground.width + app.screen.width, -critter.position.x + app.screen.width / 2));
+          if (state.gameMode === 'endless') {
+            // Endless: camera follows player infinitely to the right
+            app.stage.x = Math.min(0, -critter.position.x + app.screen.width / 2);
+          } else {
+            app.stage.x = Math.min(0, Math.max(-foreground.width + app.screen.width, -critter.position.x + app.screen.width / 2));
+          }
           app.stage.y = Math.min(0, Math.max(-foreground.height + app.screen.height, -critter.position.y + app.screen.height / 2));
         }
         else { }
@@ -2249,7 +2287,7 @@ state.demiSpawned = 0;
 
       }
       if (state.gameMode === 'endless') {
-        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, critter, clouds, clouds2, state.enemyDeath, castlePlayer);
+        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, foreground, critter, clouds, clouds2, state.enemyDeath, castlePlayer);
       } else {
         app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
       }
@@ -2298,6 +2336,9 @@ state.demiSpawned = 0;
         // Reposition elements that depend on screen dimensions
         background.height = app.screen.height;
         foreground.y = app.screen.height;
+        if (endlessGround) {
+          endlessGround.position.y = app.screen.height - foreground.height;
+        }
         castle.position.y = app.screen.height - castle.height * 0.25;
         castlePlayer.position.y = app.screen.height - castle.height * 0.25;
         state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;

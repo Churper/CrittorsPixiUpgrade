@@ -38,7 +38,7 @@ export function getEnemyPortraitUrl(enemyName) {
 
 
 export function spawnEnemyDemi(critter, critterAttackTextures, critterWalkTextures, enemyName) {
-  const enemy = createSpawnDemi(critterWalkTextures, enemyName);
+  const enemy = createSpawnDemi(critterWalkTextures, enemyName, critter);
 
   addEnemies(enemy); // add the already created enemy
   if (enemy.isAlive) {
@@ -62,7 +62,7 @@ export function spawnEnemyDemi(critter, critterAttackTextures, critterWalkTextur
 }
 
 
-export function createSpawnDemi(critterWalkTextures, enemyName) {
+export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
   const enemy = new PIXI.AnimatedSprite(critterWalkTextures);
   enemy.scale.set(determineEnemyScale(enemyName) * 1.4);
   enemy.anchor.set(0.5, 0.5);
@@ -71,7 +71,10 @@ export function createSpawnDemi(critterWalkTextures, enemyName) {
   enemy.tint = Math.floor(Math.random() * 0xFFFFFF);
   enemy.isAttacking = false;
   enemy.enemyAdded = false;
-  enemy.position.set(2800, state.app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 60 + (Math.random() * 60 - 30));
+  const spawnX = (state.gameMode === 'endless' && critter)
+    ? critter.position.x + state.app.screen.width + 200
+    : 2800;
+  enemy.position.set(spawnX, state.app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 60 + (Math.random() * 60 - 30));
   enemy.zIndex = enemy.position.y + 10000;
   enemy.animationSpeed = enemyName === "pig" ? 0.23 : enemyName === "scorp" ? 0.15 : 0.25;
   enemy.loop = true;
@@ -98,7 +101,7 @@ export function createSpawnDemi(critterWalkTextures, enemyName) {
 
 
 export function spawnEnemy(critter, critterAttackTextures, critterWalkTextures, enemyName) {
-  const enemy = createSpawnEnemy(critterWalkTextures, enemyName);
+  const enemy = createSpawnEnemy(critterWalkTextures, enemyName, critter);
 
   addEnemies(enemy); // add the already created enemy
   if (enemy.isAlive) {
@@ -122,7 +125,7 @@ export function spawnEnemy(critter, critterAttackTextures, critterWalkTextures, 
 }
 
 
-export function createSpawnEnemy(critterWalkTextures, enemyName) {
+export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
   const enemy = new PIXI.AnimatedSprite(critterWalkTextures);
   enemy.scale.set(determineEnemyScale(enemyName));
   enemy.anchor.set(0.5, 0.5);
@@ -130,7 +133,10 @@ export function createSpawnEnemy(critterWalkTextures, enemyName) {
   enemy.type = enemyName;
   enemy.isAttacking = false;
   enemy.enemyAdded = false;
-  enemy.position.set(2800, state.app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 120 + (Math.random() * 60 - 30));
+  const spawnX = (state.gameMode === 'endless' && critter)
+    ? critter.position.x + state.app.screen.width + 200
+    : 2800;
+  enemy.position.set(spawnX, state.app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 120 + (Math.random() * 60 - 30));
   enemy.zIndex = enemy.position.y + 10000;
   enemy.animationSpeed = enemyName === "pig" ? 0.23 : enemyName === "scorp" ? 0.15 : 0.25;
   enemy.loop = true;

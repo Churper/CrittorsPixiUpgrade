@@ -4209,8 +4209,9 @@ state.demiSpawned = 0;
       const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
       const selectedEnemy = state.enemyTypes[randomIndex];
 
-      // Spawn demi boss every 5 kills
-      if (state.endlessKillCount > 0 && state.endlessKillCount % 5 === 0 && state.demiSpawned < Math.floor(state.endlessKillCount / 5)) {
+      // Spawn demi boss every 5 kills (use demiSpawned tracking instead of
+      // exact % 5 check — kills can jump past a multiple between spawn checks)
+      if (state.endlessKillCount >= 5 && state.demiSpawned < Math.floor(state.endlessKillCount / 5)) {
         spawnEnemyDemi(
           critter,
           selectedEnemy.attackTextures,

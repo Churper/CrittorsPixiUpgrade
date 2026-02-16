@@ -1491,8 +1491,46 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         app.stage.removeChild(state.reviveDialogContainer);
         state.reviveDialogContainer = null;
         const wasDead = getisDead();
+        const revivingSelf = characterType === state.selectedCharacter;
         setIsDead(false);
-        handleCharacterClick(characterType);
+
+        if (revivingSelf) {
+          // Reviving the same character — re-add critter directly
+          // (handleCharacterClick would bail on same-character guard)
+          document.getElementById('spawn-text').style.visibility = 'hidden';
+          const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+          characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
+          state.isCharacterMenuOpen = false;
+
+          // Clean up ghost
+          if (state.ghostFlyInterval) {
+            clearInterval(state.ghostFlyInterval);
+            state.ghostFlyInterval = null;
+          }
+          if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
+            state.app.stage.removeChild(state.frogGhostPlayer);
+          }
+
+          stopFlashing();
+          if (!app.stage.children.includes(critter)) {
+            app.stage.addChild(critter);
+          }
+          critter.visible = true;
+          critter.textures = state.frogWalkTextures;
+          critter.loop = true;
+          critter.play();
+          critter.tint = 0xffffff;
+          updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+          updateEXP(getCharEXP(getCurrentCharacter()));
+
+          // Spawn protection
+          if (Date.now() - state.lastInvulnTime >= 15000) {
+            state.spawnProtectionEnd = Date.now() + 2000;
+            state.lastInvulnTime = Date.now();
+          }
+        } else {
+          handleCharacterClick(characterType);
+        }
 
         // Resume enemies when reviving FROM the ghost/dead state.
         if (wasDead) {

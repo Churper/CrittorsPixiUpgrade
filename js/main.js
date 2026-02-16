@@ -1266,8 +1266,55 @@ const texturesPromise = PIXI.Assets.load([
 ]);
 
 // When the promise resolves, we have the textures!
-texturesPromise.then((texturesPromise) => {
- setup(texturesPromise);
+// Detect GPU max texture size and downscale oversized textures
+const textureScaleFactors = {};
+
+function getMaxTextureSize() {
+  try {
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2') || c.getContext('webgl');
+    if (gl) {
+      const max = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+      c.width = 0; c.height = 0;
+      return max;
+    }
+  } catch (e) {}
+  return 4096;
+}
+
+function downscaleTextures(textures, maxSize) {
+  for (const key in textures) {
+    const tex = textures[key];
+    if (!tex || !tex.source) continue;
+    const src = tex.source;
+    const resource = src.resource;
+    if (!resource) continue;
+    const w = resource.naturalWidth || resource.width;
+    const h = resource.naturalHeight || resource.height;
+    if (w <= maxSize && h <= maxSize) continue;
+
+    const scale = Math.min(maxSize / w, maxSize / h);
+    const nw = Math.floor(w * scale);
+    const nh = Math.floor(h * scale);
+    console.log(`Downscaling ${key}: ${w}x${h} -> ${nw}x${nh} (max=${maxSize})`);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = nw;
+    canvas.height = nh;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(resource, 0, 0, nw, nh);
+
+    const newTex = PIXI.Texture.from(canvas);
+    textures[key] = newTex;
+    textureScaleFactors[key] = scale;
+  }
+}
+
+texturesPromise.then((loadedTextures) => {
+ const maxTex = getMaxTextureSize();
+ console.log('GPU max texture size:', maxTex);
+ downscaleTextures(loadedTextures, maxTex);
+ setup(loadedTextures);
 });
 
     function setup(textures) {
@@ -2078,10 +2125,12 @@ backgroundTexture = textures.background;
 
       function createAnimationTextures(resourceName, frameCount, frameHeight) {
         const textures1 = [];
+        const scale = textureScaleFactors[resourceName] || 1;
         const textureWidth = textures[resourceName].width / frameCount;
+        const scaledFrameHeight = Math.floor(frameHeight * scale);
 
         for (let i = 0; i < frameCount; i++) {
-          const rect = new PIXI.Rectangle(i * textureWidth, 0, textureWidth, frameHeight);
+          const rect = new PIXI.Rectangle(i * textureWidth, 0, textureWidth, scaledFrameHeight);
           const texture1 = new PIXI.Texture({ source: textures[resourceName].source, frame: rect });
           textures1.push(texture1);
         }
@@ -2091,12 +2140,16 @@ backgroundTexture = textures.background;
 
       function createAnimationTextures2(resourceName, frameCount, frameHeight, sheetWidth, sheetHeight) {
         const textures1 = [];
-        const frameWidth = sheetWidth / Math.ceil(frameCount / (sheetHeight / frameHeight));
+        const scale = textureScaleFactors[resourceName] || 1;
+        const sFrameHeight = Math.floor(frameHeight * scale);
+        const sSheetWidth = Math.floor(sheetWidth * scale);
+        const sSheetHeight = Math.floor(sheetHeight * scale);
+        const frameWidth = sSheetWidth / Math.ceil(frameCount / (sSheetHeight / sFrameHeight));
 
         for (let i = 0; i < frameCount; i++) {
-          const row = Math.floor(i / (sheetWidth / frameWidth));
-          const col = i % (sheetWidth / frameWidth);
-          const rect = new PIXI.Rectangle(col * frameWidth, row * frameHeight, frameWidth, frameHeight);
+          const row = Math.floor(i / (sSheetWidth / frameWidth));
+          const col = i % (sSheetWidth / frameWidth);
+          const rect = new PIXI.Rectangle(col * frameWidth, row * sFrameHeight, frameWidth, sFrameHeight);
           const texture1 = new PIXI.Texture({ source: textures[resourceName].source, frame: rect });
           textures1.push(texture1);
         }

@@ -1022,7 +1022,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     yesButton.on('pointerdown', () => {
       // Check if the player has enough coins to revive the character
       if (getCoffee() >= 50) {
-        // Perform the revive logic
+        // Perform the revive logic — restore health
         if (characterType === 'character-snail') {
           setCurrentSnailHealth(getSnailHealth());
         } else if (characterType === 'character-bird') {
@@ -1035,19 +1035,23 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         addCoffee(-50);
         // Remove the dialog box from the PIXI stage
         app.stage.removeChild(state.reviveDialogContainer);
-        setisPaused(false);
+        state.reviveDialogContainer = null;
+        // Switch to the revived character so player doesn't stay on dead one
+        setIsDead(false);
+        handleCharacterClick(characterType);
       } else {
-        // Player doesn't have enough coins
+        // Player doesn't have enough coins — still need to pick an alive character
         console.log('Not enough coins to revive');
         app.stage.removeChild(state.reviveDialogContainer);
+        state.reviveDialogContainer = null;
         setisPaused(false);
-        // You can display an error message or perform other actions as needed
       }
     });
-  
+
     noButton.on('pointerdown', () => {
-      // Remove the dialog box from the PIXI stage
+      // Remove the dialog box — player must pick an alive character from the menu
       app.stage.removeChild(state.reviveDialogContainer);
+      state.reviveDialogContainer = null;
       setisPaused(false);
     });
   }

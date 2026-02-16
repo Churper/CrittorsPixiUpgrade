@@ -176,6 +176,36 @@ export function createPauseMenuContainer() {
   garbageButton.position.set(backgroundSprite.width - garbageButton.width - 10, backgroundSprite.height);
   state.pauseMenuContainer.addChild(garbageButton);
 
+  // Main Menu button
+  const menuBtnStyle = new PIXI.TextStyle({
+    fontFamily: 'Luckiest Guy',
+    fontSize: 28,
+    fill: '#FFFFFF',
+    stroke: '#000000',
+    strokeThickness: 4,
+  });
+  const menuBtn = new PIXI.Text('Main Menu', menuBtnStyle);
+  menuBtn.anchor.set(0.5);
+  menuBtn.position.set(backgroundSprite.width / 2, backgroundSprite.height * 0.62);
+  menuBtn.eventMode = 'static';
+  menuBtn.cursor = 'pointer';
+
+  // Background pill for the button
+  const btnBg = new PIXI.Graphics();
+  const btnW = 180, btnH = 44;
+  btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10)
+    .fill({ color: 0x000000, alpha: 0.5 })
+    .stroke({ width: 2, color: 0xFFC832 });
+  btnBg.position.set(menuBtn.x, menuBtn.y);
+  btnBg.eventMode = 'static';
+  btnBg.cursor = 'pointer';
+
+  btnBg.on('pointerdown', () => { window.location.reload(); });
+  menuBtn.on('pointerdown', () => { window.location.reload(); });
+
+  state.pauseMenuContainer.addChild(btnBg);
+  state.pauseMenuContainer.addChild(menuBtn);
+
   let pauseX = -state.app.stage.position.x + (state.app.screen.width / 2) - (state.pauseMenuContainer.width / 2);
   let pauseY = -state.app.stage.position.y + (state.app.screen.width / 2) - (state.pauseMenuContainer.height / 2);
   state.pauseMenuContainer.position.set(pauseX, pauseY);

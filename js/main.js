@@ -70,6 +70,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     startFromMenu('endless');
   });
 
+  document.getElementById('info-btn').addEventListener('click', function() {
+    document.getElementById('info-panel').style.display = 'block';
+  });
+
+  document.getElementById('info-close-btn').addEventListener('click', function() {
+    document.getElementById('info-panel').style.display = 'none';
+  });
+
   async function mainAppFunction() {
   const app = new PIXI.Application();
   await app.init({
@@ -128,6 +136,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     { name: 'rain', emoji: '\uD83C\uDF27\uFE0F' },
     { name: 'wind', emoji: '\uD83D\uDCA8' },
     { name: 'snow', emoji: '\u2744\uFE0F' },
+    { name: 'night', emoji: '\uD83C\uDF19' },
   ];
 
   function updateWeatherIcon() {
@@ -140,9 +149,12 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   // --- Weather particle effects ---
   let weatherContainer = null;
   let weatherSun = null;
+  let weatherMoon = null;
   let weatherTicker = null;
   let sunLightOverlay = null;
+  let nightOverlay = null;
   let playerShadow = null;
+  let moonStars = null;
 
   function getWeatherType() {
     if (state.gameMode === 'endless') {
@@ -163,12 +175,23 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       sunLightOverlay.destroy();
       sunLightOverlay = null;
     }
+    if (nightOverlay && state.app) {
+      state.app.stage.removeChild(nightOverlay);
+      nightOverlay.destroy();
+      nightOverlay = null;
+    }
     if (playerShadow && state.app) {
       state.app.stage.removeChild(playerShadow);
       playerShadow.destroy();
       playerShadow = null;
     }
+    if (moonStars && state.app) {
+      state.app.stage.removeChild(moonStars);
+      moonStars.destroy({ children: true });
+      moonStars = null;
+    }
     weatherSun = null;
+    weatherMoon = null;
   }
 
   function createWeatherEffects() {
@@ -297,6 +320,70 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         flake.flakeSize = size;
         weatherContainer.addChild(flake);
       }
+
+    } else if (type === 'night') {
+      // Moon — renders behind mountains like the sun
+      weatherContainer.zIndex = 0.5;
+
+      weatherMoon = new PIXI.Container();
+
+      // Outer glow — soft, layered halo
+      const outerGlow = new PIXI.Graphics();
+      outerGlow.circle(0, 0, 70).fill({ color: 0xCCDDFF, alpha: 0.06 });
+      outerGlow.circle(0, 0, 52).fill({ color: 0xCCDDFF, alpha: 0.08 });
+      outerGlow.circle(0, 0, 38).fill({ color: 0xDDEEFF, alpha: 0.1 });
+      weatherMoon.addChild(outerGlow);
+
+      // Moon body — gradient-like concentric fills
+      const moonBody = new PIXI.Graphics();
+      moonBody.circle(0, 0, 26).fill({ color: 0xE8E8F0 });
+      moonBody.circle(0, 0, 25).fill({ color: 0xEEEEF4 });
+      // Surface texture — subtle craters
+      moonBody.circle(-8, -6, 5).fill({ color: 0xD0D0DA, alpha: 0.4 });
+      moonBody.circle(6, -10, 3.5).fill({ color: 0xD4D4DE, alpha: 0.35 });
+      moonBody.circle(3, 8, 4).fill({ color: 0xCCCCD6, alpha: 0.3 });
+      moonBody.circle(-12, 5, 2.5).fill({ color: 0xD8D8E2, alpha: 0.25 });
+      moonBody.circle(10, 2, 2).fill({ color: 0xD0D0DA, alpha: 0.2 });
+      // Terminator shadow — dark edge for crescent effect
+      moonBody.circle(8, 0, 22).fill({ color: 0x667788, alpha: 0.15 });
+      // Bright highlight — upper left lit edge
+      moonBody.circle(-6, -8, 12).fill({ color: 0xFFFFFF, alpha: 0.12 });
+      weatherMoon.addChild(moonBody);
+
+      weatherMoon.startTime = Date.now();
+      weatherMoon.totalPaused = 0;
+      weatherContainer.addChild(weatherMoon);
+
+      // Stars container — twinkle behind the moon
+      moonStars = new PIXI.Container();
+      moonStars.zIndex = 0.3;
+      moonStars.eventMode = 'none';
+      for (let i = 0; i < 50; i++) {
+        const star = new PIXI.Graphics();
+        const sz = 0.5 + Math.random() * 1.5;
+        star.circle(0, 0, sz).fill({ color: 0xFFFFFF, alpha: 0.3 + Math.random() * 0.5 });
+        star.position.set(Math.random() * w, Math.random() * h * 0.6);
+        star.twinkleSpeed = 0.02 + Math.random() * 0.04;
+        star.twinklePhase = Math.random() * Math.PI * 2;
+        star.baseAlpha = star.alpha;
+        moonStars.addChild(star);
+      }
+      app.stage.addChild(moonStars);
+
+      // Night overlay — dark blue-black tint over entire scene
+      nightOverlay = new PIXI.Graphics();
+      nightOverlay.rect(0, 0, 8000, 8000).fill({ color: 0x0a0a2a });
+      nightOverlay.zIndex = 49999;
+      nightOverlay.alpha = 0.35;
+      nightOverlay.eventMode = 'none';
+      app.stage.addChild(nightOverlay);
+
+      // Player shadow from moonlight
+      playerShadow = new PIXI.Graphics();
+      playerShadow.ellipse(0, 0, 30, 8).fill({ color: 0x000000, alpha: 0.3 });
+      playerShadow.zIndex = 9;
+      playerShadow.eventMode = 'none';
+      app.stage.addChild(playerShadow);
     }
   }
 
@@ -422,6 +509,66 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         }
         if (flake.position.x < -30) flake.position.x = w + 20;
         if (flake.position.x > w + 30) flake.position.x = -20;
+      }
+
+    } else if (type === 'night' && weatherMoon) {
+      // Track paused time
+      if (getisPaused()) {
+        if (!weatherMoon.pauseStart) weatherMoon.pauseStart = Date.now();
+        return;
+      } else if (weatherMoon.pauseStart) {
+        weatherMoon.totalPaused = (weatherMoon.totalPaused || 0) + (Date.now() - weatherMoon.pauseStart);
+        weatherMoon.pauseStart = null;
+      }
+
+      const elapsed = Date.now() - weatherMoon.startTime - (weatherMoon.totalPaused || 0);
+      const duration = 60000;
+      const progress = elapsed / duration;
+
+      // Parallax — distant feel
+      const parallaxX = app.stage.x * 0.03;
+      const parallaxY = app.stage.y * 0.015;
+
+      // Moon arc — rises from right, peaks, sets left (opposite of sun for variety)
+      const arcX = w * 0.9 - Math.min(progress, 1.3) * w * 0.8 + parallaxX;
+      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
+      weatherMoon.position.set(arcX, arcY);
+
+      // Slow rotation for subtle liveliness
+      weatherMoon.rotation = Math.sin(elapsed * 0.0001) * 0.05;
+      // Gentle pulse
+      const pulse = 1 + Math.sin(elapsed * 0.002) * 0.03;
+      weatherMoon.scale.set(pulse);
+
+      const moonBrightness = Math.max(0, Math.sin(progress * Math.PI));
+
+      // Night overlay — darker when moon is low, slightly lighter at peak
+      if (nightOverlay) {
+        nightOverlay.position.set(-app.stage.x - 2000, -app.stage.y - 2000);
+        nightOverlay.alpha = 0.3 + 0.15 * (1 - moonBrightness);
+      }
+
+      // Star twinkle
+      if (moonStars) {
+        moonStars.position.set(-app.stage.x, -app.stage.y);
+        for (const star of moonStars.children) {
+          star.twinklePhase += star.twinkleSpeed;
+          star.alpha = star.baseAlpha * (0.5 + Math.sin(star.twinklePhase) * 0.5);
+        }
+      }
+
+      // Player shadow from moonlight
+      if (playerShadow && critter) {
+        const moonScreenX = arcX;
+        const critterScreenX = critter.position.x + app.stage.x;
+        const moonDir = moonScreenX < critterScreenX ? 1 : -1;
+        const stretchX = 1 + (1 - moonBrightness) * 2;
+        playerShadow.position.set(
+          critter.position.x + moonDir * stretchX * 10,
+          state.stored + critter.height * 0.42
+        );
+        playerShadow.scale.set(stretchX, 1);
+        playerShadow.alpha = 0.12 + moonBrightness * 0.18;
       }
     }
   }
@@ -1098,6 +1245,8 @@ const endlessGroundPalettes = {
           rock: 0x9a9088, rockShade: 0x7a7068, trunk: 0x7a5530, canopy: [0x50a848, 0x60b858, 0x3a8a30, 0xe8a820], flower: 0xd0d840 },
   snow: { base: 0xd4dce6, dirt: 0x8a8a90, path: 0xb0b5bc, grass: 0xe8eef5, variation: 0xc0c8d4,
           rock: 0xa8aab0, rockShade: 0x8a8c92, trunk: 0x5a4a3a, canopy: [0x2a5a3a, 0x1a4a2a, 0xc8d8e0], flower: 0xd0dae0 },
+  night: { base: 0x1a2e1a, dirt: 0x2a2218, path: 0x3a3528, grass: 0x1e3a1e, variation: 0x162a16,
+           rock: 0x4a4a50, rockShade: 0x3a3a40, trunk: 0x3a2a18, canopy: [0x142a14, 0x1a3a1a, 0x0e200e], flower: 0x3a3a50 },
 };
 let endlessGroundCurrentWeather = null;
 const endlessGroundHeight = foreground.height * 0.65;
@@ -1279,17 +1428,38 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       continue;
     }
 
+    // Ground shadow for all trees in sun weather
+    if (weather === 'sun') {
+      d.ellipse(tx + canopyR * 0.4, treeY + 3, canopyR * 1.3, 5).fill({ color: 0x000000, alpha: 0.15 });
+    }
+
     // Trunk
     d.rect(tx - trunkW / 2, treeY - trunkH, trunkW, trunkH).fill({ color: palette.trunk });
     d.rect(tx - 1, treeY - trunkH + 4, 2, trunkH - 8).fill({ color: palette.trunk, alpha: 0.4 });
 
     if (weather === 'sun' && treeType < 0.5) {
-      // Maple tree
+      // Maple tree — rich multi-layered canopy with maple-leaf style lobes
       const cx = tx, cy = treeY - trunkH;
-      d.circle(cx, cy - canopyR * 0.3, canopyR * 1.1).fill({ color: canopyColor, alpha: 0.9 });
-      d.circle(cx - canopyR * 0.5, cy, canopyR * 0.7).fill({ color: canopyColor, alpha: 0.8 });
-      d.circle(cx + canopyR * 0.5, cy, canopyR * 0.7).fill({ color: canopyColor, alpha: 0.8 });
-      d.circle(cx - canopyR * 0.2, cy - canopyR * 0.5, canopyR * 0.4).fill({ color: 0xffffff, alpha: 0.1 });
+      const r = canopyR;
+      // Main body — cluster of overlapping circles for organic look
+      const darkCanopy = palette.canopy[Math.min(3, palette.canopy.length - 1)];
+      d.circle(cx, cy - r * 0.4, r * 1.15).fill({ color: canopyColor, alpha: 0.85 });
+      d.circle(cx - r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor, alpha: 0.8 });
+      d.circle(cx + r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor, alpha: 0.8 });
+      // Upper lobes for maple crown shape
+      d.circle(cx - r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor, alpha: 0.9 });
+      d.circle(cx + r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor, alpha: 0.9 });
+      d.circle(cx, cy - r * 1.1, r * 0.5).fill({ color: canopyColor, alpha: 0.85 });
+      // Darker depth layer underneath
+      d.circle(cx, cy + r * 0.1, r * 0.8).fill({ color: darkCanopy, alpha: 0.35 });
+      // Highlight — sunlit top
+      d.circle(cx - r * 0.15, cy - r * 0.7, r * 0.4).fill({ color: 0xffffff, alpha: 0.12 });
+      // Fallen leaves at base
+      for (let fl = 0; fl < 4; fl++) {
+        const lx = cx - r + endlessGroundRandom() * r * 2;
+        const ly = treeY - 1 + endlessGroundRandom() * 3;
+        d.circle(lx, ly, 1.5 + endlessGroundRandom()).fill({ color: canopyColor, alpha: 0.5 });
+      }
     } else if (weather === 'snow' && treeType < 0.6) {
       // Pine with snow caps
       const cx = tx, cy = treeY - trunkH;

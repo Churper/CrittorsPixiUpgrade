@@ -210,12 +210,11 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
   if (enemy.isAlive && enemy.position.x - critter.position.x > 100 && enemy.position.x > 250) {
     // Queue gate: hold position when an enemy is already engaged and this one is close
     if (getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250) {
-      // Stand still — don't animate in place
-      if (enemy.textures !== critterWalkTextures) {
-        enemy.textures = critterWalkTextures;
-        enemy.loop = false;
+      // Stand still — freeze on current frame
+      if (enemy.playing) {
+        enemy.stop();
       }
-      enemy.gotoAndStop(0);
+      enemy.isQueued = true;
       return;
     }
     handleEnemyMoving(critterWalkTextures, enemy);
@@ -231,6 +230,14 @@ export function handleEnemyMoving(critterWalkTextures, enemy) {
     enemy.textures = critterWalkTextures;
     enemy.loop = true;
     enemy.play();
+  }
+  // Restart walk animation if enemy was queued and is now free to move
+  if (enemy.isQueued) {
+    enemy.isQueued = false;
+    if (!enemy.playing) {
+      enemy.loop = true;
+      enemy.play();
+    }
   }
   enemy.position.x += enemy.vx;
 }

@@ -184,9 +184,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const h = app.screen.height;
     const type = getWeatherType();
 
-    // Sun renders behind foreground (zIndex 3, between mountains=1 and foreground=5)
+    // Sun renders behind mountains (zIndex 0.5) so it sets behind them
     // Other weather renders in front of everything
-    weatherContainer.zIndex = (type === 'sun') ? 3 : 50000;
+    weatherContainer.zIndex = (type === 'sun') ? 0.5 : 50000;
 
     if (type === 'sun') {
       // Sun glow orb — larger with layered glow
@@ -1133,13 +1133,45 @@ function drawEndlessGround(weather) {
   g.rect(0, h * 0.55, w, bandH).fill({ color: palette.variation, alpha: 0.3 });
   g.rect(0, h * 0.72, w, bandH * 0.8).fill({ color: palette.variation, alpha: 0.4 });
 
-  // 4. Walking path — wider, with borders for definition
-  const pathY = h * 0.38;
-  const pathH = 24;
-  g.rect(0, pathY - 2, w, pathH + 4).fill({ color: palette.variation, alpha: 0.5 }); // border
-  g.rect(0, pathY, w, pathH).fill({ color: palette.path, alpha: 0.7 });
-  // Path highlight stripe
-  g.rect(0, pathY + 4, w, 3).fill({ color: palette.path, alpha: 0.3 });
+  // 4. Walking path — wide, gently winding
+  const pathCenterY = h * 0.38;
+  const pathH = 34;
+  const pathStep = 40; // draw in segments for the curve
+  const pathWaveAmp = 8; // how much it undulates up/down
+  const pathWaveFreq = 0.0008; // how quickly it undulates
+  // Border pass (slightly bigger)
+  g.moveTo(0, pathCenterY + Math.sin(0) * pathWaveAmp - 3);
+  for (let px = 0; px <= w; px += pathStep) {
+    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
+    g.lineTo(px, pathCenterY + offset - 3);
+  }
+  for (let px = w; px >= 0; px -= pathStep) {
+    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
+    g.lineTo(px, pathCenterY + offset + pathH + 3);
+  }
+  g.closePath().fill({ color: palette.variation, alpha: 0.5 });
+  // Main path fill
+  g.moveTo(0, pathCenterY + Math.sin(0) * pathWaveAmp);
+  for (let px = 0; px <= w; px += pathStep) {
+    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
+    g.lineTo(px, pathCenterY + offset);
+  }
+  for (let px = w; px >= 0; px -= pathStep) {
+    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
+    g.lineTo(px, pathCenterY + offset + pathH);
+  }
+  g.closePath().fill({ color: palette.path, alpha: 0.7 });
+  // Highlight stripe following the curve
+  g.moveTo(0, pathCenterY + Math.sin(0) * pathWaveAmp + 5);
+  for (let px = 0; px <= w; px += pathStep) {
+    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
+    g.lineTo(px, pathCenterY + offset + 5);
+  }
+  for (let px = w; px >= 0; px -= pathStep) {
+    const offset = Math.sin(px * pathWaveFreq) * pathWaveAmp + Math.sin(px * pathWaveFreq * 2.7) * pathWaveAmp * 0.4;
+    g.lineTo(px, pathCenterY + offset + 8);
+  }
+  g.closePath().fill({ color: palette.path, alpha: 0.3 });
 
   // 5. Scattered rocks embedded in the ground
   _endlessGroundSeed = 99999;
@@ -1196,6 +1228,24 @@ function drawEndlessGround(weather) {
       sgx + tuftW, sy,
     ]).fill({ color: palette.grass, alpha: 0.6 });
     sgx += 70 + endlessGroundRandom() * 140;
+  }
+
+  // 9. Individual grass blades — thin, slightly curved, scattered everywhere
+  _endlessGroundSeed = 11111;
+  let bx2 = 15;
+  while (bx2 < w) {
+    const bladeH = 8 + endlessGroundRandom() * 14;
+    const bladeY = h * 0.05 + endlessGroundRandom() * (h * 0.55);
+    const lean = (endlessGroundRandom() - 0.5) * 6; // slight lean left or right
+    const bladeColor = endlessGroundRandom() > 0.5 ? palette.grass : palette.variation;
+    const bladeAlpha = 0.4 + endlessGroundRandom() * 0.4;
+    // Single thin blade: base, leaning tip, base+1
+    g.poly([
+      bx2, bladeY,
+      bx2 + lean, bladeY - bladeH,
+      bx2 + 1.5, bladeY,
+    ]).fill({ color: bladeColor, alpha: bladeAlpha });
+    bx2 += 15 + endlessGroundRandom() * 35;
   }
 
   // -- Draw trees/rocks into the decor container (above ground line) --
@@ -1928,6 +1978,27 @@ let cantGainEXP = false;
       const mountain2Speed = 0.05;
       const mountain3Speed = .03;
       const mountain4Speed = .03;
+
+      // Wrap mountains so they reappear on the opposite side when scrolling off-screen
+      function wrapMountains() {
+        const cam = -app.stage.x; // current camera left edge in world coords
+        const screenW = app.screen.width;
+        const margin = 200; // buffer before recycling
+        [mountain1, mountain2, mountain3, mountain4].forEach(m => {
+          // anchor is (0,1): position.x = left edge
+          const mRight = m.position.x + m.width;
+          const mLeft = m.position.x;
+          // If entirely off the left side of the visible area
+          if (mRight < cam - margin) {
+            m.position.x = cam + screenW + margin + Math.random() * 300;
+          }
+          // If entirely off the right side of the visible area
+          else if (mLeft > cam + screenW + margin) {
+            m.position.x = cam - margin - m.width - Math.random() * 300;
+          }
+        });
+      }
+
       state.initialClouds = clouds.position.x;
       let once = 0;
       app.ticker.add(() => {
@@ -2023,6 +2094,7 @@ let cantGainEXP = false;
           mountain2.position.x += velocity.x * mountain2Speed;
           mountain3.position.x += velocity.x * mountain3Speed;
           mountain4.position.x += velocity.x * mountain4Speed;
+          wrapMountains();
 
           // Animate unlock character walking out of castle toward player's base
           if (unlockActive) {
@@ -2387,6 +2459,7 @@ state.demiSpawned = 0;
                   mountain2.position.x -= velocity.x * mountain2Speed;
                   mountain3.position.x -= velocity.x * mountain3Speed;
                   mountain4.position.x -= velocity.x * mountain4Speed;
+                  wrapMountains();
                 }
                 else {
                   if (critter.textures != frogIdleTexture) {
@@ -2522,7 +2595,7 @@ state.demiSpawned = 0;
       mountain3.zIndex = 1;
       clouds.zIndex = 2;
       clouds2.zIndex = 2;
-      // Sun weather goes at zIndex 3 (between mountains and foreground)
+      // Sun weather goes at zIndex 0.5 (behind mountains so it sets behind them)
       foreground.zIndex = 5;
       castle.zIndex = 6;
       castlePlayer.zIndex = 6;

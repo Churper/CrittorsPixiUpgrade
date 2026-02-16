@@ -2497,8 +2497,10 @@ function transitionWeather(newWeather) {
 
   updateWeatherIcon();
 
+  const oldWasSun = !!weatherSun;
   state.biomeTransition = {
     oldWeather, oldGround, oldGroundDecor, oldOverlays,
+    oldWasSun,
     progress: 0,
     newWeather: weatherContainer,
     newSunLight: sunLightOverlay,
@@ -2536,8 +2538,18 @@ function updateBiomeTransition() {
   if (t.newGround) t.newGround.alpha = p;
   if (t.newGroundDecor) t.newGroundDecor.alpha = p;
 
-  // Crossfade old weather/overlays out
-  if (t.oldWeather) t.oldWeather.alpha = 1 - p;
+  // Transition old weather out — sun sinks below horizon instead of just fading
+  if (t.oldWeather) {
+    if (t.oldWasSun) {
+      // Push the sun container down below the ground during transition
+      if (t.oldWeatherStartY === undefined) t.oldWeatherStartY = t.oldWeather.position.y;
+      const sinkDistance = app.screen.height * 0.3;
+      t.oldWeather.position.y = t.oldWeatherStartY + p * sinkDistance;
+      t.oldWeather.alpha = Math.max(0, 1 - p * 1.5);
+    } else {
+      t.oldWeather.alpha = 1 - p;
+    }
+  }
   for (const o of (t.oldOverlays || [])) {
     if (o && o.parent) o.alpha *= (1 - p * 0.05);
   }

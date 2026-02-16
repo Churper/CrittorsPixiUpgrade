@@ -487,13 +487,12 @@ export function playGhostFly() {
   state.app.stage.addChild(state.frogGhostPlayer);
   state.frogGhostPlayer.zIndex = 99999;
 
-  // Open character menu immediately so player can swap without waiting
+  // Open character menu immediately — show ALL unlocked characters including
+  // the dead one so the player can revive their own character if they want
   const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
   characterBoxes.forEach((box) => {
     const charClass = box.classList[1];
     if (!state.unlockedCharacters.includes(charClass)) {
-      box.style.visibility = 'hidden';
-    } else if (box.classList.contains(state.selectedCharacter)) {
       box.style.visibility = 'hidden';
     } else {
       box.style.visibility = 'visible';

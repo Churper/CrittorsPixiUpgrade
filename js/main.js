@@ -687,7 +687,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     shop.classList.remove('cant-afford', 'maxed');
     if (doses >= max) {
       shop.classList.add('maxed');
-    } else if (getCoffee() < 50) {
+    } else if (getCoffee() < 20) {
       shop.classList.add('cant-afford');
     }
   }
@@ -1536,14 +1536,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           clearInterval(pointerHoldInterval);
           pointerHoldInterval = null;
         }
-        // Restart spawner
-        if (state.enemySpawnTimeout) {
-          clearTimeout(state.enemySpawnTimeout);
-          state.enemySpawnTimeout = null;
-        }
-        state.isSpawning = false;
-        state.timeOfLastSpawn = Date.now();
-
         if (revivingSelf) {
           // Same character — put them back on stage
           document.getElementById('spawn-text').style.visibility = 'hidden';
@@ -1573,6 +1565,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           // Different character — use normal swap flow
           handleCharacterClick(characterType);
         }
+        // Reset spawner AFTER setisPaused — setisPaused adjusts timeOfLastSpawn
+        // by adding pause duration, which can push it into the future and stall spawns
+        if (state.enemySpawnTimeout) {
+          clearTimeout(state.enemySpawnTimeout);
+          state.enemySpawnTimeout = null;
+        }
+        state.isSpawning = false;
+        state.timeOfLastSpawn = Date.now();
         spawnEnemies();
       } else {
         // Can't afford — shake dialog
@@ -3331,7 +3331,7 @@ let cantGainEXP = false;
           // --- Spawn chain safety net ---
           // If the setTimeout chain stalled (e.g. browser throttled background tab),
           // detect the gap and restart spawning.
-          if (state.isSpawning && !getisDead() && !getisPaused()) {
+          if (!getisDead() && !getisPaused()) {
             const spawnGap = Date.now() - state.timeOfLastSpawn;
             const maxAllowedGap = 15000; // 15s — well above any normal interval
             if (spawnGap > maxAllowedGap) {
@@ -3357,6 +3357,60 @@ let cantGainEXP = false;
         if (state.pauseMenuContainer) {
           updateDialogPositions();
         }
+        // Wipe detection — all characters dead and can't afford revive
+        // Runs before pause check so it triggers even while revive dialog is open
+        if (getisDead() && !state.isWiped
+            && state.currentSnailHealth + state.currentBeeHealth + state.currentBirdHealth + state.currentFrogHealth <= 0
+            && getCoffee() < 50) {
+          // Clean up ghost fly
+          if (state.ghostFlyInterval) {
+            clearInterval(state.ghostFlyInterval);
+            state.ghostFlyInterval = null;
+          }
+          if (state.frogGhostPlayer && app.stage.children.includes(state.frogGhostPlayer)) {
+            app.stage.removeChild(state.frogGhostPlayer);
+          }
+          // Clean up revive dialog if present
+          if (state.reviveDialogContainer && app.stage.children.includes(state.reviveDialogContainer)) {
+            app.stage.removeChild(state.reviveDialogContainer);
+            state.reviveDialogContainer = null;
+          }
+          // Stop flashing character portraits
+          stopFlashing();
+
+          // Show wipe screen
+          setisWiped(true);
+          document.getElementById('spawn-text').style.visibility = 'hidden';
+          const wipeCharBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+          wipeCharBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
+          state.isCharacterMenuOpen = false;
+
+          const wipeEl = document.getElementById('wipe-text');
+          const isEndless = state.gameMode === 'endless';
+          const score = isEndless ? state.endlessKillCount : state.currentRound;
+          const mode = isEndless ? 'endless' : 'story';
+
+          wipeEl.innerHTML = '';
+          const wipeTitle = document.createElement('div');
+          wipeTitle.className = 'wipe-title';
+          wipeTitle.textContent = 'GAME OVER';
+          wipeEl.appendChild(wipeTitle);
+
+          const wipeSubtitle = document.createElement('div');
+          wipeSubtitle.className = 'wipe-subtitle';
+          wipeSubtitle.textContent = isEndless
+            ? state.endlessKillCount + ' kills'
+            : 'Round ' + state.currentRound;
+          wipeEl.appendChild(wipeSubtitle);
+
+          wipeEl.style.visibility = 'visible';
+
+          setTimeout(() => {
+            showScoreSubmitOverlay(mode, score);
+          }, 2500);
+          return;
+        }
+
         if (getisPaused()) {
 
 

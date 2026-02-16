@@ -440,8 +440,9 @@ touch-action: manipulation;
   width: 64px;
   height: 56px;
   border-radius: 12px;
-  background: rgba(0, 0, 0, 0.4);
-  border: 2px solid rgba(100, 160, 200, 0.4);
+  background: linear-gradient(135deg, rgba(20, 60, 90, 0.85), rgba(10, 30, 50, 0.9));
+  border: 2px solid rgba(100, 200, 255, 0.6);
+  box-shadow: 0 0 8px rgba(80, 160, 240, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1);
   cursor: pointer;
   user-select: none;
   touch-action: manipulation;
@@ -451,13 +452,13 @@ touch-action: manipulation;
   align-items: center;
   justify-content: center;
   z-index: 99999999999999999999999;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, border-color 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease, background 0.3s ease;
 }
 
 #potion-shop:hover {
   transform: scale(1.1);
-  border-color: rgba(140, 200, 255, 0.7);
-  box-shadow: 0 0 10px rgba(100, 180, 255, 0.3);
+  border-color: rgba(140, 220, 255, 0.85);
+  box-shadow: 0 0 14px rgba(100, 180, 255, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 #potion-shop:active {
@@ -465,13 +466,17 @@ touch-action: manipulation;
 }
 
 #potion-shop.cant-afford {
-  opacity: 0.4;
-  border-color: rgba(255, 255, 255, 0.2);
+  opacity: 0.35;
+  background: rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
 }
 
 #potion-shop.maxed {
-  opacity: 0.3;
+  opacity: 0.25;
+  background: rgba(0, 0, 0, 0.2);
   border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
 }
 
 #shop-icon {
@@ -482,7 +487,7 @@ touch-action: manipulation;
 #shop-cost {
   font-family: 'Luckiest Guy';
   font-size: 10px;
-  color: #fff;
+  color: #cce8ff;
   text-shadow: 1px 1px 2px black;
   margin-top: -2px;
 }

@@ -1078,11 +1078,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   async function startGame() {
 
-    window.addEventListener('blur', () => {
-      if (getPlayerCurrentHealth() > 0) {
-        setisPaused(true);
-      }
-    });
+    // No auto-pause on focus loss — let the game keep running
     
 
     const loadingTexture = await PIXI.Assets.load('./assets/loading.png');

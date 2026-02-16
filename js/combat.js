@@ -226,18 +226,17 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
 }
 
 export function handleEnemyMoving(critterWalkTextures, enemy) {
-  if (enemy.textures !== critterWalkTextures && getEnemiesInRange() === 0) {
+  // Ensure walk animation is playing — set textures if needed
+  if (enemy.textures !== critterWalkTextures) {
     enemy.textures = critterWalkTextures;
     enemy.loop = true;
     enemy.play();
   }
   // Restart walk animation if enemy was queued and is now free to move
-  if (enemy.isQueued) {
+  if (enemy.isQueued || !enemy.playing) {
     enemy.isQueued = false;
-    if (!enemy.playing) {
-      enemy.loop = true;
-      enemy.play();
-    }
+    enemy.loop = true;
+    enemy.play();
   }
   enemy.position.x += enemy.vx;
 }

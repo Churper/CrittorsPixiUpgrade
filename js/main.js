@@ -772,7 +772,21 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.endlessStartTime += pausedMs;
         // Adjust spawn timer so pause duration doesn't count
         state.timeOfLastSpawn += pausedMs;
+        // Adjust demi cooldown so pause doesn't skip it
+        if (state.lastDemiKillTime) state.lastDemiKillTime += pausedMs;
         state._endlessPauseTime = null;
+
+        // If no enemies are alive, force a fast spawn (max 2s wait)
+        const aliveCount = state.enemies.filter(e => e.isAlive).length;
+        if (aliveCount === 0) {
+          const elapsed = state.endlessElapsed || 0;
+          const currentInterval = Math.max(2000, 12000 - Math.floor(elapsed / 5) * 50);
+          const maxWait = 2000;
+          const earliest = Date.now() - (currentInterval - maxWait);
+          if (state.timeOfLastSpawn < earliest) {
+            state.timeOfLastSpawn = earliest;
+          }
+        }
       }
 
       spawnEnemies();

@@ -854,6 +854,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // --- Guard: prevent rapid double-clicks ---
     if (_swapLock) return;
 
+    // --- Guard: block swap while ghost fly animation is still playing ---
+    if (state.ghostFlyInterval) return;
+
     // --- Guard: prevent swapping to same character while alive ---
     if (characterType === state.selectedCharacter && !getisDead()) {
       return;
@@ -998,57 +1001,28 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         if (rageBtnEl) rageBtnEl.classList.remove('rage-active-glow');
       }
 
-      // Cancel ghost fly interval on swap to living character
-      if (state.ghostFlyInterval) {
-        clearInterval(state.ghostFlyInterval);
-        state.ghostFlyInterval = null;
-        // Remove ghost sprite if still on stage
-        if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
-          state.app.stage.removeChild(state.frogGhostPlayer);
-        }
-      }
-
-      // Full combat cleanup when swapping away from a dead character
+      // Clean up ghost state when swapping away from a dead character
       if (getisDead()) {
         setIsDead(false);
 
-        // Remove all frozen enemies from stage
-        for (let i = state.enemies.length - 1; i >= 0; i--) {
-          const enemy = state.enemies[i];
-          if (app.stage.children.includes(enemy)) app.stage.removeChild(enemy);
-          if (enemy.hpBarBackground && app.stage.children.includes(enemy.hpBarBackground))
-            app.stage.removeChild(enemy.hpBarBackground);
-          if (enemy.hpBar && app.stage.children.includes(enemy.hpBar))
-            app.stage.removeChild(enemy.hpBar);
-          enemy.onFrameChange = null;
-          enemy.onComplete = null;
+        // Remove ghost sprite
+        if (state.ghostFlyInterval) {
+          clearInterval(state.ghostFlyInterval);
+          state.ghostFlyInterval = null;
         }
-        state.enemies.length = 0;
-
-        // Reset combat flags
-        state.isCombat = false;
-        state.isAttackingChar = false;
-        setEnemiesInRange(0);
-        state.roundOver = false;
-        state.isPointerDown = false;
-
-        // Hide enemy portrait
-        const ep = document.getElementById('enemy-portrait');
-        if (ep) ep.style.display = 'none';
-
-        // Remove ghost sprite if still on stage (ghost may have finished flying)
         if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
           state.app.stage.removeChild(state.frogGhostPlayer);
         }
 
-        // Restart spawning
-        if (state.enemySpawnTimeout) {
-          clearTimeout(state.enemySpawnTimeout);
-          state.enemySpawnTimeout = null;
+        // Resume frozen enemies — don't kill them
+        for (const enemy of state.enemies) {
+          enemy.play();
         }
-        state.isSpawning = false;
-        state.timeOfLastSpawn = Date.now();
-        spawnEnemies();
+
+        // Reset combat flags so enemies can fight again
+        state.roundOver = false;
+        setEnemiesInRange(0);
+        state.isPointerDown = false;
       }
 
       // Spawn protection — 2s invincibility, but only once per 15s
@@ -1493,45 +1467,17 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         setIsDead(false);
         handleCharacterClick(characterType);
 
-        // Full combat cleanup — only when reviving FROM the ghost/dead state.
-        // If the player is alive and just reviving a teammate, skip this.
+        // Resume enemies when reviving FROM the ghost/dead state.
         if (wasDead) {
-          for (let i = state.enemies.length - 1; i >= 0; i--) {
-            const enemy = state.enemies[i];
-            if (app.stage.children.includes(enemy)) app.stage.removeChild(enemy);
-            if (enemy.hpBarBackground && app.stage.children.includes(enemy.hpBarBackground))
-              app.stage.removeChild(enemy.hpBarBackground);
-            if (enemy.hpBar && app.stage.children.includes(enemy.hpBar))
-              app.stage.removeChild(enemy.hpBar);
-            enemy.onFrameChange = null;
-            enemy.onComplete = null;
+          // Resume frozen enemies — don't kill them
+          for (const enemy of state.enemies) {
+            enemy.play();
           }
-          state.enemies.length = 0;
 
-          // Reset combat flags
-          state.isCombat = false;
-          state.isAttackingChar = false;
-          setEnemiesInRange(0);
+          // Reset combat flags so enemies can fight again
           state.roundOver = false;
+          setEnemiesInRange(0);
           state.isPointerDown = false;
-
-          // Hide enemy portrait
-          const enemyPortrait = document.getElementById('enemy-portrait');
-          if (enemyPortrait) enemyPortrait.style.display = 'none';
-
-          // Reset critter to walking
-          critter.loop = true;
-          critter.textures = state.frogWalkTextures;
-          critter.play();
-
-          // Restart spawning
-          if (state.enemySpawnTimeout) {
-            clearTimeout(state.enemySpawnTimeout);
-            state.enemySpawnTimeout = null;
-          }
-          state.isSpawning = false;
-          state.timeOfLastSpawn = Date.now();
-          spawnEnemies();
         }
       } else {
         // Can't afford — shake dialog

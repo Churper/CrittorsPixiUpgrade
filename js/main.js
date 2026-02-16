@@ -1832,8 +1832,9 @@ function transitionWeather(newWeather) {
   const app = state.app;
   if (!app) return;
 
-  // Biome boundary: new biome starts 500px ahead of the player
-  const boundaryX = critter.position.x + 500;
+  // Sweep: new biome starts far ahead and the boundary sweeps back past the player
+  const sweepStart = critter.position.x + 800;
+  const sweepEnd = critter.position.x - 1200;
 
   // Save references to old elements
   const oldWeather = weatherContainer;
@@ -1845,7 +1846,7 @@ function transitionWeather(newWeather) {
   const oldBgTint = background.tint ?? 0xFFFFFF;
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
 
-  // Create new ground — full width, but masked to only show from boundary forward
+  // Create new ground — full width, masked with a sweep boundary
   const newGround = new PIXI.Graphics();
   newGround.position.set(0, app.screen.height - endlessGroundHeight);
   newGround.zIndex = 5;
@@ -1856,15 +1857,15 @@ function transitionWeather(newWeather) {
   newGroundDecor.zIndex = 6;
   app.stage.addChild(newGroundDecor);
 
-  // Mask: only reveal new ground from boundaryX onward
+  // Mask starts at sweepStart — will shift left each frame via position.x
   const groundMask = new PIXI.Graphics();
-  groundMask.rect(boundaryX, 0, 50000, endlessGroundHeight + 200).fill({ color: 0xffffff });
+  groundMask.rect(sweepStart, 0, 50000, endlessGroundHeight + 200).fill({ color: 0xffffff });
   groundMask.position.set(0, app.screen.height - endlessGroundHeight);
   app.stage.addChild(groundMask);
   newGround.mask = groundMask;
 
   const decorMask = new PIXI.Graphics();
-  decorMask.rect(boundaryX, -200, 50000, endlessGroundHeight + 400).fill({ color: 0xffffff });
+  decorMask.rect(sweepStart, -200, 50000, endlessGroundHeight + 400).fill({ color: 0xffffff });
   decorMask.position.set(0, app.screen.height - endlessGroundHeight);
   app.stage.addChild(decorMask);
   newGroundDecor.mask = decorMask;
@@ -1928,7 +1929,8 @@ function transitionWeather(newWeather) {
     newGroundDecor,
     groundMask,
     decorMask,
-    boundaryX,
+    sweepStart,
+    sweepEnd,
     newWeather: weatherContainer,
     newSunLight: sunLightOverlay,
     newNightOverlay: nightOverlay,
@@ -1965,6 +1967,11 @@ function updateBiomeTransition() {
   mountain3.tint = mtnTint;
   mountain4.tint = mtnTint;
 
+  // Sweep the mask boundary from ahead to behind the player
+  const sweepOffset = (t.sweepEnd - t.sweepStart) * p;
+  if (t.groundMask) t.groundMask.position.x = sweepOffset;
+  if (t.decorMask) t.decorMask.position.x = sweepOffset;
+
   // Sun setting animation — moves from top to horizon
   if (t.settingSun) {
     const startY = state.app.screen.height * 0.15;
@@ -1974,7 +1981,6 @@ function updateBiomeTransition() {
     t.settingSun.position.x = -state.app.stage.position.x + state.app.screen.width / 2;
   }
 
-  // Old ground stays solid — no fade! Player walks past the boundary into new biome
   // Old weather particles + overlays crossfade out
   if (t.oldWeather) t.oldWeather.alpha = 1 - p;
   for (const o of (t.oldOverlays || [])) {

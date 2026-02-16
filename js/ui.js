@@ -314,7 +314,7 @@ export function updateEnemyGrayscale(hpPercentage) {
 export function updateExpText(elementId, labelText, value, expToLevel) {
   const barText = document.getElementById(elementId);
   const roundedEXPValue = Math.round(value).toFixed();
-  const roundedEnder = Math.round(state.expToLevel).toFixed();
+  const roundedEnder = Math.round(expToLevel).toFixed();
   barText.innerText = `${labelText}: ${roundedEXPValue}\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\u00A0\/${roundedEnder}`;
 }
 

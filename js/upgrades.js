@@ -18,7 +18,7 @@ export function updateEXP(exp, expToLevel1) {
   if (exp >= getEXPtoLevel(getCurrentCharacter())) {
     leftover = exp - expToLevel1;
     setCharEXP(getCurrentCharacter(), leftover);
-    setEXPtoLevel(getCurrentCharacter(), getEXPtoLevel(getCurrentCharacter() + expToLevel1) * 1.1);
+    setEXPtoLevel(getCurrentCharacter(), getEXPtoLevel(getCurrentCharacter()) * 1.1);
     levelUp();
 
   }

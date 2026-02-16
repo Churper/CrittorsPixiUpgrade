@@ -405,6 +405,7 @@ export function playGhostFly() {
   }
 
   state.app.stage.addChild(state.frogGhostPlayer);
+  state.frogGhostPlayer.zIndex = 99999;
 
   let startY = state.frogGhostPlayer.y; // starting position
   let targetY = startY - 400; // target position
@@ -528,6 +529,9 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
               // console.log("playerhp", playerHP);
               hasDied = true;
               state.frogGhostPlayer.position.set(critter.position.x, critter.position.y);
+              if (state.gameMode === 'endless') {
+                state.endlessDeathX = critter.position.x;
+              }
               critter.tint = 0xffffff;
               state.app.stage.removeChild(critter);
               for (let i = 0; i < state.enemies.length; i++) {

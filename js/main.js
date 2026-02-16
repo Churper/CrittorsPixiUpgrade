@@ -1107,15 +1107,69 @@ foreground.y = Math.max(app.screen.height);
 
 // Endless mode: procedural ground that extends beyond the foreground sprite
 let endlessGround = null;
-const endlessGroundColors = { sun: 0x4a8c3f, rain: 0x3b6b35, wind: 0x5a9a4f, snow: 0xd4dce6 };
+const endlessGroundPalettes = {
+  sun:  { base: 0x4a8c3f, dirt: 0x6b5234, path: 0xc4a66a, grass: 0x5cb350, variation: 0x3f7a35 },
+  rain: { base: 0x3b6b35, dirt: 0x4a3d2a, path: 0x7a6b50, grass: 0x2d5a28, variation: 0x335e2e },
+  wind: { base: 0x5a9a4f, dirt: 0x6b5234, path: 0xc4a66a, grass: 0x6db85f, variation: 0x4e8a43 },
+  snow: { base: 0xd4dce6, dirt: 0x8a8a90, path: 0xb0b5bc, grass: 0xe8eef5, variation: 0xc0c8d4 },
+};
 let endlessGroundCurrentWeather = null;
+const endlessGroundHeight = foreground.height * 0.85;
+
+// Seeded random for consistent grass tuft positions
+let _endlessGroundSeed = 12345;
+function endlessGroundRandom() {
+  _endlessGroundSeed = (_endlessGroundSeed * 16807 + 0) % 2147483647;
+  return (_endlessGroundSeed & 0x7fffffff) / 2147483647;
+}
+
+function drawEndlessGround(weather) {
+  const palette = endlessGroundPalettes[weather] || endlessGroundPalettes.sun;
+  const w = 50000;
+  const h = endlessGroundHeight;
+  endlessGround.clear();
+
+  // 1. Base fill
+  endlessGround.rect(0, 0, w, h).fill({ color: palette.base });
+
+  // 2. Dirt/subsoil strip at the bottom (15% of height)
+  const dirtH = h * 0.15;
+  endlessGround.rect(0, h - dirtH, w, dirtH).fill({ color: palette.dirt });
+
+  // 3. Two variation bands across the middle
+  const bandH = h * 0.08;
+  endlessGround.rect(0, h * 0.35, w, bandH).fill({ color: palette.variation, alpha: 0.5 });
+  endlessGround.rect(0, h * 0.6, w, bandH).fill({ color: palette.variation, alpha: 0.35 });
+
+  // 4. Horizontal path/trail where the critter walks
+  const pathY = h * 0.4;
+  const pathH = 20;
+  endlessGround.rect(0, pathY, w, pathH).fill({ color: palette.path, alpha: 0.6 });
+
+  // 5. Grass tufts along the top edge
+  _endlessGroundSeed = 12345; // Reset seed for consistency
+  let x = 10;
+  while (x < w) {
+    const tuftH = 6 + endlessGroundRandom() * 8;
+    const tuftW = 4 + endlessGroundRandom() * 4;
+    // Small triangle
+    endlessGround.poly([
+      x, 0,
+      x + tuftW / 2, -tuftH,
+      x + tuftW, 0,
+    ]).fill({ color: palette.grass });
+    x += 30 + endlessGroundRandom() * 50;
+  }
+}
+
 if (state.gameMode === 'endless') {
   endlessGround = new PIXI.Graphics();
-  endlessGround.rect(0, 0, 50000, foreground.height);
-  endlessGround.fill({ color: endlessGroundColors.sun });
-  endlessGround.position.set(0, app.screen.height - foreground.height);
+  endlessGround.position.set(0, app.screen.height - endlessGroundHeight);
   endlessGround.zIndex = 5;
+  drawEndlessGround('sun');
   endlessGroundCurrentWeather = 'sun';
+  // Hide the original foreground sprite in endless mode
+  foreground.visible = false;
 }
 
 
@@ -1735,9 +1789,7 @@ let cantGainEXP = false;
           const currentWeather = getWeatherType();
           if (endlessGround && currentWeather !== endlessGroundCurrentWeather) {
             endlessGroundCurrentWeather = currentWeather;
-            endlessGround.clear();
-            endlessGround.rect(0, 0, 50000, foreground.height);
-            endlessGround.fill({ color: endlessGroundColors[currentWeather] || 0x4a8c3f });
+            drawEndlessGround(currentWeather);
             updateWeatherIcon();
             createWeatherEffects();
           }
@@ -1797,9 +1849,9 @@ let cantGainEXP = false;
           const cameraAtTarget = Math.abs(app.stage.x) < 2 && Math.abs(app.stage.y) < 2;
           const cameraSpeed = (celebrating && cameraAtTarget) ? 0 : (unlockActive ? 6 : 6);
 
-          // Calculate the target position (start position)
-          const targetX = 0;
-          const targetY = 0;
+          // Calculate the target position (start position, or stay in place for endless)
+          const targetX = (state.gameMode === 'endless') ? app.stage.x : 0;
+          const targetY = (state.gameMode === 'endless') ? app.stage.y : 0;
 
           // Calculate the distance between the current position and the target position
           const distanceX = targetX - app.stage.x;
@@ -2011,7 +2063,11 @@ state.demiSpawned = 0;
             setCharAttackAnimating(false);
             setIsCharAttacking(false);
             app.stage.removeChild(state.frogGhostPlayer);
-            critter.position.set(app.screen.width / 20, state.stored);
+            if (state.gameMode === 'endless') {
+              critter.position.set(state.endlessDeathX || app.screen.width / 20, state.stored);
+            } else {
+              critter.position.set(app.screen.width / 20, state.stored);
+            }
             if (state.fullReset) {
               setPlayerCurrentHealth(getPlayerHealth());
               updatePlayerHealthBar(getPlayerHealth() / getPlayerHealth() * 100);
@@ -2134,7 +2190,7 @@ state.demiSpawned = 0;
 
           }
           // Character swap: keep critter at their current position (no teleport)
-          updateEXP(getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter));
+          updateEXP(getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter()));
           document.getElementById('spawn-text').style.visibility = 'hidden';
           updateVelocity();
           setCharSwap(false);
@@ -2240,7 +2296,18 @@ state.demiSpawned = 0;
       document.getElementById("ui-overlay").style.visibility = "visible";
       document.getElementById("pause-button").style.visibility = "visible";
       document.getElementById("coffee-button").style.visibility = "visible";
-      document.getElementById("weather-icon").style.visibility = "visible";
+      const weatherIconEl = document.getElementById("weather-icon");
+      weatherIconEl.style.visibility = "visible";
+      if (state.gameMode !== 'endless') {
+        // In story mode, position at the right end of the progress bar
+        weatherIconEl.style.position = 'absolute';
+        weatherIconEl.style.left = '';
+        weatherIconEl.style.right = '-10px';
+        weatherIconEl.style.top = '50%';
+        weatherIconEl.style.transform = 'translateY(-50%)';
+        weatherIconEl.style.zIndex = '4';
+        document.getElementById('progress').appendChild(weatherIconEl);
+      }
       updateWeatherIcon();
       createWeatherEffects();
       document.getElementById("potion-button").style.visibility = "visible";
@@ -2251,7 +2318,7 @@ state.demiSpawned = 0;
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       console.log("STORED", state.stored);
       critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
-      updateEXP(0, state.expToLevel);
+      updateEXP(0, getEXPtoLevel(getCurrentCharacter()));
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
       // Start the state.timer animation
       if (getPlayerCurrentHealth() <= 0) {
@@ -2337,7 +2404,7 @@ state.demiSpawned = 0;
         background.height = app.screen.height;
         foreground.y = app.screen.height;
         if (endlessGround) {
-          endlessGround.position.y = app.screen.height - foreground.height;
+          endlessGround.position.y = app.screen.height - endlessGroundHeight;
         }
         castle.position.y = app.screen.height - castle.height * 0.25;
         castlePlayer.position.y = app.screen.height - castle.height * 0.25;

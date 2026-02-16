@@ -184,7 +184,7 @@ const state = {
   chooseSound: null,
   levelSound: null,
   hitSound: null,
-  musicVolume: 0.42,
+  musicVolume: 0,
   effectsVolume: 0.25,
   themeMusic: null,
 

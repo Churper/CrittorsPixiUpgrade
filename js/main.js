@@ -739,7 +739,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
       // Resume endless timer — adjust start time for paused duration
       if (state.gameMode === 'endless' && state._endlessPauseTime) {
-        state.endlessStartTime += (Date.now() - state._endlessPauseTime);
+        const pausedMs = Date.now() - state._endlessPauseTime;
+        state.endlessStartTime += pausedMs;
+        // Adjust spawn timer so pause duration doesn't count
+        state.timeOfLastSpawn += pausedMs;
         state._endlessPauseTime = null;
       }
 
@@ -2707,8 +2710,11 @@ let cantGainEXP = false;
         }
         if (unPauser === 1) {
           critter.play();
+          // Only resume enemies that are actively engaged — queued ones stay idle
           getEnemies().forEach(enemy => {
-            enemy.play();
+            if (enemy.isAlive && enemy.position.x - critter.position.x <= 100) {
+              enemy.play();
+            }
           });
           unPauser = 0;
           return;

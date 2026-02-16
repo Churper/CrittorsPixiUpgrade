@@ -1061,21 +1061,35 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   // Called whenever an item count changes.
   function repositionItemButtons() {
     const btnIds = ['shield-btn', 'bomb-btn', 'rage-btn', 'feather-btn', 'golden-bean-btn'];
-    const baseBottom = 35; // percent matching #auto-attack-btn bottom
-    const btnHeight = 56;
-    const gap = 10;
-    let slot = 0;
+    const visibleBtns = [];
     for (const id of btnIds) {
       const btn = document.getElementById(id);
       if (!btn) continue;
-      if (btn.style.display === 'none' || btn.style.display === '') {
-        // hidden — no position needed
-        continue;
+      if (btn.style.display !== 'none' && btn.style.display !== '') {
+        visibleBtns.push(btn);
       }
-      // Position below auto-attack: first slot is 66px below 35%, then stack down
-      btn.style.bottom = `calc(${baseBottom}% - ${66 + slot * (btnHeight + gap)}px)`;
-      slot++;
     }
+
+    // Scale buttons to fit between auto-attack btn (bottom 35%) and screen edge
+    const screenH = window.innerHeight;
+    const anchorPx = screenH * 0.35; // auto-attack btn bottom in px
+    const topMargin = 66; // gap below auto-attack btn
+    const available = anchorPx - topMargin - 8; // 8px safety margin at bottom
+    const count = visibleBtns.length;
+    if (count === 0) return;
+
+    const maxBtnSize = 56;
+    const minGap = 4;
+    const totalNeeded = count * maxBtnSize + (count - 1) * minGap;
+    const scale = totalNeeded > available ? available / totalNeeded : 1;
+    const btnSize = Math.floor(maxBtnSize * scale);
+    const gap = Math.max(minGap, Math.floor((available - count * btnSize) / Math.max(count - 1, 1)));
+
+    visibleBtns.forEach((btn, i) => {
+      btn.style.width = btnSize + 'px';
+      btn.style.height = btnSize + 'px';
+      btn.style.bottom = `calc(35% - ${topMargin + i * (btnSize + gap)}px)`;
+    });
   }
 
   // Re-layout whenever combat.js dispatches an item-count change (e.g. pickup)

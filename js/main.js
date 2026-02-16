@@ -1020,6 +1020,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         // Resume frozen enemies — don't kill them
         for (const enemy of state.enemies) {
           enemy.play();
+          enemy.enemyAdded = false;
+          enemy.isAttacking = false;
         }
 
         // Reset combat flags so enemies can fight again
@@ -1489,6 +1491,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           // Resume frozen enemies — don't kill them
           for (const enemy of state.enemies) {
             enemy.play();
+            enemy.enemyAdded = false;
+            enemy.isAttacking = false;
           }
 
           // Reset combat flags so enemies can fight again
@@ -1592,9 +1596,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.autoAttack = !state.autoAttack;
         autoBtn.classList.toggle('active', state.autoAttack);
       });
-      // Set endless start time
+      // Set endless start time + reset kill count
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
+      state.endlessKillCount = 0;
 
       // Start with 1 of each item for testing
       setShieldCount(1);
@@ -3228,12 +3233,10 @@ let cantGainEXP = false;
         updateWeatherEffects();
         updateBiomeTransition();
 
-        // Endless mode: update survival timer
+        // Endless mode: update kill counter + track elapsed for weather cycling
         if (state.gameMode === 'endless' && state.endlessStartTime && !getisPaused()) {
           state.endlessElapsed = Math.floor((Date.now() - state.endlessStartTime) / 1000);
-          const mins = Math.floor(state.endlessElapsed / 60);
-          const secs = state.endlessElapsed % 60;
-          document.getElementById('endless-timer').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+          document.getElementById('endless-timer').textContent = state.endlessKillCount + ' kills';
 
           // Cycle weather every 60s — crossfade ground + weather effects
           const currentWeather = getWeatherType();
@@ -3465,15 +3468,12 @@ let cantGainEXP = false;
               console.log("BANG");
               if (state.gameMode === 'endless' && !state.isWiped) {
                 setisWiped(true);
-                // Show final survival time
-                const mins = Math.floor(state.endlessElapsed / 60);
-                const secs = state.endlessElapsed % 60;
-                const timeStr = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                // Show final kill count
                 const wipeEl = document.getElementById('wipe-text');
-                wipeEl.textContent = 'YOU WIPED!! ' + timeStr;
+                wipeEl.textContent = 'YOU WIPED!! ' + state.endlessKillCount + ' kills';
                 // Show score submission after a short delay
                 setTimeout(() => {
-                  showScoreSubmitOverlay('endless', state.endlessElapsed);
+                  showScoreSubmitOverlay('endless', state.endlessKillCount);
                 }, 2000);
               } else if (!state.isWiped) {
                 setisWiped(true);
@@ -4246,7 +4246,7 @@ function showScoreSubmitOverlay(mode, score, fromPause = false) {
 
 window._crittorsShowPauseScore = function() {
   const mode = state.gameMode;
-  const score = mode === 'endless' ? state.endlessElapsed : state.currentRound;
+  const score = mode === 'endless' ? state.endlessKillCount : state.currentRound;
   showScoreSubmitOverlay(mode, score, true);
 };
 

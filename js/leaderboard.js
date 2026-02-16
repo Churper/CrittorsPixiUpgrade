@@ -24,9 +24,7 @@ export function savePlayerName(name) {
 // ── Score formatting ────────────────────────────────────────
 export function formatScore(score, mode) {
   if (mode === 'endless') {
-    const mins = Math.floor(score / 60);
-    const secs = score % 60;
-    return mins + ':' + (secs < 10 ? '0' : '') + secs;
+    return score + ' kills';
   }
   return 'Round ' + score;
 }

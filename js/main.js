@@ -994,6 +994,49 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         }
       }
 
+      // Full combat cleanup when swapping away from a dead character
+      if (getisDead()) {
+        setIsDead(false);
+
+        // Remove all frozen enemies from stage
+        for (let i = state.enemies.length - 1; i >= 0; i--) {
+          const enemy = state.enemies[i];
+          if (app.stage.children.includes(enemy)) app.stage.removeChild(enemy);
+          if (enemy.hpBarBackground && app.stage.children.includes(enemy.hpBarBackground))
+            app.stage.removeChild(enemy.hpBarBackground);
+          if (enemy.hpBar && app.stage.children.includes(enemy.hpBar))
+            app.stage.removeChild(enemy.hpBar);
+          enemy.onFrameChange = null;
+          enemy.onComplete = null;
+        }
+        state.enemies.length = 0;
+
+        // Reset combat flags
+        state.isCombat = false;
+        state.isAttackingChar = false;
+        setEnemiesInRange(0);
+        state.roundOver = false;
+        state.isPointerDown = false;
+
+        // Hide enemy portrait
+        const ep = document.getElementById('enemy-portrait');
+        if (ep) ep.style.display = 'none';
+
+        // Remove ghost sprite if still on stage (ghost may have finished flying)
+        if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
+          state.app.stage.removeChild(state.frogGhostPlayer);
+        }
+
+        // Restart spawning
+        if (state.enemySpawnTimeout) {
+          clearTimeout(state.enemySpawnTimeout);
+          state.enemySpawnTimeout = null;
+        }
+        state.isSpawning = false;
+        state.timeOfLastSpawn = Date.now();
+        spawnEnemies();
+      }
+
       // Spawn protection — 2s invincibility, but only once per 15s
       if (Date.now() - state.lastInvulnTime >= 15000) {
         state.spawnProtectionEnd = Date.now() + 2000;

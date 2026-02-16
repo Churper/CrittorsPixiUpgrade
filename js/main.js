@@ -1415,9 +1415,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
 
-      // Wire item buttons (hidden until first pickup)
+      // Start with 1 of each item
+      setShieldCount(1);
+      setBombCount(1);
+
+      // Wire item buttons
       const shieldBtn = document.getElementById('shield-btn');
       const bombBtn = document.getElementById('bomb-btn');
+      shieldBtn.style.display = 'flex';
+      bombBtn.style.display = 'flex';
+      document.getElementById('shield-count').textContent = '1';
+      document.getElementById('bomb-count').textContent = '1';
+      shieldBtn.classList.add('active');
+      bombBtn.classList.add('active');
 
       // Shield button handler
       shieldBtn.addEventListener('click', () => {
@@ -1430,12 +1440,16 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           state.shieldActive = true;
           state.shieldHP = 100;
 
-          // Create shield visual
+          // Create shield visual — rendered in front of critter (zIndex 10)
           const shield = new PIXI.Graphics();
-          shield.circle(0, 0, 50);
-          shield.fill({ color: 0x00ffff, alpha: 0.2 });
-          shield.stroke({ width: 2, color: 0x00ffff, alpha: 0.5 });
-          shield.zIndex = 14;
+          // Outer glow ring
+          shield.circle(0, 0, 55);
+          shield.fill({ color: 0x00ffff, alpha: 0.08 });
+          // Main bubble
+          shield.circle(0, 0, 45);
+          shield.fill({ color: 0x00ffff, alpha: 0.15 });
+          shield.stroke({ width: 3, color: 0x00ffff, alpha: 0.6 });
+          shield.zIndex = 50;
           shield.position.set(critter.position.x, critter.position.y);
           state.app.stage.addChild(shield);
           state.shieldSprite = shield;
@@ -3409,11 +3423,11 @@ state.demiSpawned = 0;
         // --- Shield visual update ---
         if (state.shieldActive && state.shieldSprite && critter) {
           state.shieldSprite.position.set(critter.position.x, critter.position.y);
-          // Pulse alpha
-          const pulse = 0.225 + Math.sin(Date.now() * 0.004) * 0.075;
+          // Pulse alpha — visible enough to see the bubble
+          const pulse = 0.55 + Math.sin(Date.now() * 0.005) * 0.2;
           state.shieldSprite.alpha = pulse;
           // Scale based on remaining HP
-          const s = 0.7 + (state.shieldHP / 100) * 0.3;
+          const s = 0.8 + (state.shieldHP / 100) * 0.2;
           state.shieldSprite.scale.set(s);
         }
 

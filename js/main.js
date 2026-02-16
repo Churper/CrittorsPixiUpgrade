@@ -1596,12 +1596,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.endlessElapsed = 0;
       state.endlessKillCount = 0;
 
-      // Start with 1 of each item for testing
-      setShieldCount(1);
+      // Start with 1 bomb and 1 rage potion
       setBombCount(1);
       setRageCount(1);
-      setFeatherCount(1);
-      setGoldenBeanCount(1);
 
       // Wire item buttons
       const shieldBtn = document.getElementById('shield-btn');
@@ -1611,12 +1608,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const goldenBeanBtn = document.getElementById('golden-bean-btn');
 
       // Show buttons + counts for starting items
-      [shieldBtn, bombBtn, rageBtn, featherBtn, goldenBeanBtn].forEach(b => { if (b) b.style.display = 'flex'; });
-      document.getElementById('shield-count').textContent = getShieldCount();
+      bombBtn.style.display = 'flex';
+      rageBtn.style.display = 'flex';
       document.getElementById('bomb-count').textContent = getBombCount();
       document.getElementById('rage-count').textContent = getRageCount();
-      document.getElementById('feather-count').textContent = getFeatherCount();
-      document.getElementById('golden-bean-count').textContent = getGoldenBeanCount();
       repositionItemButtons();
 
       // Shield button handler
@@ -3474,20 +3469,41 @@ let cantGainEXP = false;
 
             if (state.currentSnailHealth + state.currentBeeHealth + state.currentBirdHealth + state.currentFrogHealth <= 0) {
               console.log("BANG");
-              if (state.gameMode === 'endless' && !state.isWiped) {
+              if (!state.isWiped) {
                 setisWiped(true);
-                // Show final kill count
+
+                // Hide character selection text
+                document.getElementById('spawn-text').style.visibility = 'hidden';
+
+                // Hide character menu boxes
+                const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+                characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
+                state.isCharacterMenuOpen = false;
+
                 const wipeEl = document.getElementById('wipe-text');
-                wipeEl.textContent = 'YOU WIPED!! ' + state.endlessKillCount + ' kills';
-                // Show score submission after a short delay
+                const isEndless = state.gameMode === 'endless';
+                const score = isEndless ? state.endlessKillCount : state.currentRound;
+                const mode = isEndless ? 'endless' : 'story';
+
+                // Build styled wipe screen
+                wipeEl.innerHTML = '';
+                const title = document.createElement('div');
+                title.className = 'wipe-title';
+                title.textContent = 'GAME OVER';
+                wipeEl.appendChild(title);
+
+                const subtitle = document.createElement('div');
+                subtitle.className = 'wipe-subtitle';
+                subtitle.textContent = isEndless
+                  ? state.endlessKillCount + ' kills'
+                  : 'Round ' + state.currentRound;
+                wipeEl.appendChild(subtitle);
+
+                wipeEl.style.visibility = 'visible';
+
                 setTimeout(() => {
-                  showScoreSubmitOverlay('endless', state.endlessKillCount);
-                }, 2000);
-              } else if (!state.isWiped) {
-                setisWiped(true);
-                setTimeout(() => {
-                  showScoreSubmitOverlay('story', state.currentRound);
-                }, 2000);
+                  showScoreSubmitOverlay(mode, score);
+                }, 2500);
               }
             }
 

@@ -14,7 +14,7 @@ import {
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
 } from './state.js';
-import { pauseTimer, isTimerFinished } from './timer.js';
+import { isTimerFinished } from './timer.js';
 import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCharacterDamage } from './characters.js';
 import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
 import { updateEXP } from './upgrades.js';
@@ -465,12 +465,9 @@ export function resetEnemiesState() {
 }
 export function playGhostFly() {
 
-  pauseTimer();
   setEnemiesInRange(0);
   setIsDead(true);
   state.frogGhostPlayer.alpha = 0.5;
-
-  var currentCharacter = getCurrentCharacter();
 
   switch (state.currentCharacter) {
     case "character-snail":
@@ -482,9 +479,7 @@ export function playGhostFly() {
     case "character-bird":
       state.frogGhostPlayer.texture = PIXI.Assets.get("bird_ghost");
       break;
-
     default:
-      // Use a default texture if the character is not recognized
       state.frogGhostPlayer.texture = PIXI.Assets.get("frog_ghost");
       break;
   }
@@ -492,52 +487,42 @@ export function playGhostFly() {
   state.app.stage.addChild(state.frogGhostPlayer);
   state.frogGhostPlayer.zIndex = 99999;
 
-  let startY = state.frogGhostPlayer.y; // starting position
-  let targetY = startY - 400; // target position
-  let speed = 1.5; // speed of the movement
-  let wobbleSpeed = 0.05; // speed of the wobble
-  let wobbleAmplitude = 7.5; // initial amplitude of the wobble
-  let wobbleDamping = 0.99; // damping factor of the wobble
+  // Open character menu immediately so player can swap without waiting
+  const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+  characterBoxes.forEach((box) => {
+    const charClass = box.classList[1];
+    if (!state.unlockedCharacters.includes(charClass)) {
+      box.style.visibility = 'hidden';
+    } else if (box.classList.contains(state.selectedCharacter)) {
+      box.style.visibility = 'hidden';
+    } else {
+      box.style.visibility = 'visible';
+    }
+  });
+  state.isCharacterMenuOpen = true;
+  document.getElementById('spawn-text').style.visibility = 'visible';
+
+  // Ghost fly is purely cosmetic — just animates and removes itself
+  let startY = state.frogGhostPlayer.y;
+  let targetY = startY - 400;
+  let speed = 1.5;
+  let wobbleSpeed = 0.05;
+  let wobbleAmplitude = 7.5;
+  let wobbleDamping = 0.99;
   state.ghostFlyInterval = setInterval(() => {
+    if (getisPaused()) return; // freeze ghost when paused
     state.frogGhostPlayer.y -= speed;
     let wobbleOffset = Math.sin(state.frogGhostPlayer.y * wobbleSpeed) * wobbleAmplitude;
     state.frogGhostPlayer.x += wobbleOffset;
     wobbleAmplitude *= wobbleDamping;
     if (state.frogGhostPlayer.y <= targetY) {
-      state.frogGhostPlayer.y = targetY; // Ensure the frog reaches the exact target position
-
-      // Stop the frog's movement temporarily until character is selected
       clearInterval(state.ghostFlyInterval);
       state.ghostFlyInterval = null;
-      console.log("LEVELING",state.leveling);
-      if (state.leveling == false) {
-        // Check if character is selected
-        if (state.selectedCharacter !== "") {
-          // Hide the character info boxes
-          const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
-          characterBoxes.forEach((box) => {
-            const charClass = box.classList[1];
-            if (!state.unlockedCharacters.includes(charClass)) {
-              box.style.visibility = 'hidden';
-            } else if (box.classList.contains(state.selectedCharacter)) {
-              box.style.visibility = 'hidden';
-            } else {
-              box.style.visibility = 'visible';
-            }
-          });
-          state.isCharacterMenuOpen = true;
-
-        }
-
-
+      if (state.app.stage.children.includes(state.frogGhostPlayer)) {
+        state.app.stage.removeChild(state.frogGhostPlayer);
       }
-      state.app.stage.removeChild(state.frogGhostPlayer);
-      state.roundOver = true;
-
-      // Continue with the game logic here
-      // ...
     }
-  }, 16); // (16ms = 60fps)
+  }, 16);
 }
 
 
@@ -688,27 +673,8 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
               }
               critter.tint = 0xffffff;
               state.app.stage.removeChild(critter);
-              for (let i = 0; i < state.enemies.length; i++) {
-                const enemy = state.enemies[i];
-
-                if (state.app.stage.children.includes(enemy.hpBarBackground)) {
-                  state.app.stage.removeChild(enemy.hpBarBackground);
-                }
-
-                if (state.app.stage.children.includes(enemy.hpBar)) {
-                  state.app.stage.removeChild(enemy.hpBar);
-                }
-              }
               playGhostFly();
               startFlashing();
-
-              for (let i = 0; i < getEnemies().length; i++) {
-                let enemy = getEnemies()[i];
-                // console.log(i);
-                enemy.stop();
-                // Destroy the enemy object to free up memory
-              }
-              //enemy.play();
 
             }
             return;
@@ -1685,18 +1651,23 @@ export function playDeathAnimation(enemy, critter) {
   state.enemyDeath.gotoAndPlay(0);
 
   // Remove the death animation after it completes
+  // Capture the character who made the kill so EXP goes to the right one
+  const killingChar = getCurrentCharacter();
   state.enemyDeath.onComplete = () => {
-    setCharEXP(getCurrentCharacter(), getCharEXP(getCurrentCharacter()) + enemy.exp);
-    //ox setPlayerEXP(getPlayerEXP() + 100);
-    console.log("YEP", getCharEXP(getCurrentCharacter()));
-    console.log("YEPX", getEXPtoLevel(getCurrentCharacter()));
-    updateEXP(getCharEXP(getCurrentCharacter()) + enemy.exp, getEXPtoLevel(getCurrentCharacter()));
+    // Skip EXP if the killing character is dead (HP <= 0)
+    if (getisDead()) {
+      state.app.stage.removeChild(state.enemyDeath);
+      return;
+    }
+    // Award EXP to the character who made the kill (not whoever is current now)
+    const newEXP = getCharEXP(killingChar) + enemy.exp;
+    setCharEXP(killingChar, newEXP);
+    // Only update bar/level-up if this character is still active
+    if (getCurrentCharacter() === killingChar) {
+      updateEXP(newEXP);
+    }
 
-    // Create the EXP drop text
-
-    // Remove the death animation sprite after it completes
     state.app.stage.removeChild(state.enemyDeath);
-    //state.isCombat=false;
   };
 }
 

@@ -805,13 +805,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   });
 
   function togglePause() {
-    if (getisDead() == false) {
-      if (getPlayerCurrentHealth() > 0) {
-        if(state.roundOver == false){
-        setisPaused(!getisPaused());
-        console.log("PAUSED");
-        }
-      }
+    if (state.roundOver === false) {
+      setisPaused(!getisPaused());
+      console.log("PAUSED");
     }
   }
 
@@ -1306,9 +1302,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
             const idx = enemies.indexOf(enemy);
             if (idx !== -1) enemies.splice(idx, 1);
             const expGain = enemy.exp || 32;
-            const currentChar = getCurrentCharacter();
-            setCharEXP(currentChar, getCharEXP(currentChar) + expGain);
-            updateEXP(getCharEXP(currentChar), getEXPtoLevel(currentChar));
+            updateEXP(getCharEXP(getCurrentCharacter()) + expGain);
           }
         });
 
@@ -3028,11 +3022,7 @@ let unlockAnimSprite = null;
         });
 
     
-        setCharEXP(getCurrentCharacter(), getCharEXP(getCurrentCharacter()) + expToGive);
-        //ox setPlayerEXP(getPlayerEXP() + 100);
-        console.log("YEP", getCharEXP(getCurrentCharacter()));
-        console.log("YEPX", getEXPtoLevel(getCurrentCharacter()));
-        updateEXP(getCharEXP(getCurrentCharacter()) + expToGive, getEXPtoLevel(getCurrentCharacter()));
+        updateEXP(getCharEXP(getCurrentCharacter()) + expToGive);
         expDrop.position.set(critter.position.x + 20, critter.position.y - 20);
         expDrop.zIndex = 9999999999;
         app.stage.addChild(expDrop);
@@ -3683,7 +3673,7 @@ state.demiSpawned = 0;
           critter.textures = state.frogWalkTextures;
           critter.loop = true;
           critter.play();
-          updateEXP(getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter()));
+          updateEXP(getCharEXP(getCurrentCharacter()));
           document.getElementById('spawn-text').style.visibility = 'hidden';
           updateVelocity();
           setCharSwap(false);
@@ -3876,7 +3866,7 @@ state.demiSpawned = 0;
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       console.log("STORED", state.stored);
       critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
-      updateEXP(0, getEXPtoLevel(getCurrentCharacter()));
+      updateEXP(getCharEXP(getCurrentCharacter()));
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
       // Start the state.timer animation
       if (getPlayerCurrentHealth() <= 0) {

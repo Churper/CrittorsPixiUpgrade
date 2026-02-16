@@ -13,18 +13,17 @@ import {
 import { setCharEXP, setEXPtoLevel, setPlayerCurrentHealth } from './characters.js';
 import { updatePlayerHealthBar, updateExpText } from './ui.js';
 
-export function updateEXP(exp, expToLevel1) {
-  let leftover = 0;
-  if (exp >= getEXPtoLevel(getCurrentCharacter())) {
-    leftover = exp - expToLevel1;
-    setCharEXP(getCurrentCharacter(), leftover);
+export function updateEXP(exp) {
+  // Level up as many times as needed
+  while (exp >= getEXPtoLevel(getCurrentCharacter())) {
+    exp -= getEXPtoLevel(getCurrentCharacter());
     setEXPtoLevel(getCurrentCharacter(), getEXPtoLevel(getCurrentCharacter()) * 1.1);
     levelUp();
-
   }
+  setCharEXP(getCurrentCharacter(), exp);
   const playerEXPBarFill = document.getElementById('exp-bar-fill');
-  playerEXPBarFill.style.width = getCharEXP(getCurrentCharacter()) / getEXPtoLevel(getCurrentCharacter()) * 100 + '%';
-  updateExpText('exp-text', 'exp', getCharEXP(getCurrentCharacter()), getEXPtoLevel(getCurrentCharacter()));
+  playerEXPBarFill.style.width = exp / getEXPtoLevel(getCurrentCharacter()) * 100 + '%';
+  updateExpText('exp-text', 'exp', exp, getEXPtoLevel(getCurrentCharacter()));
 }
 
 export function setCharacterSpeed(currentCharacter, speed) {

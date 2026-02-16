@@ -89,7 +89,7 @@ export function loadGame() {
     setEXPtoLevel("character-snail", gameData.snailEXPToLevel);
     setEXPtoLevel("character-bee", gameData.beeEXPToLevel);
     setEXPtoLevel("character-bird", gameData.birdEXPToLevel);
-    updateEXP(gameData.frogEXP, gameData.frogEXPToLevel);
+    updateEXP(gameData.frogEXP);
 
 
     state.expToLevel = gameData.expToLevel;

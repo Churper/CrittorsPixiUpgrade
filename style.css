@@ -216,9 +216,9 @@ touch-action: manipulation;
 #potion-shop {
   visibility: hidden;
   position: fixed;
-  bottom: 40%;
-  left: 16px;
-  width: 56px;
+  bottom: calc(35% - 66px);
+  right: 16px;
+  width: 64px;
   height: 56px;
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.4);
@@ -260,7 +260,7 @@ touch-action: manipulation;
 #potion-button {
   visibility: hidden;
   position: fixed;
-  bottom: 40%;
+  bottom: 35%;
   right: 16px;
   width: 64px;
   height: 80px;

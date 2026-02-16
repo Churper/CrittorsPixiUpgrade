@@ -208,8 +208,8 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
   }
 
   if (enemy.isAlive && enemy.position.x - critter.position.x > 100 && enemy.position.x > 250) {
-    // Queue gate: hold position when 2 enemies are already engaged and this one is close
-    if (getEnemiesInRange() >= 2 && enemy.position.x - critter.position.x < 250) {
+    // Queue gate: hold position when an enemy is already engaged and this one is close
+    if (getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250) {
       if (enemy.textures !== critterWalkTextures) {
         enemy.textures = critterWalkTextures;
         enemy.loop = true;

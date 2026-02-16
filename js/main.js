@@ -622,7 +622,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       // Animate fire glows — flicker
       if (nightFireGlows) {
         // Position container on the ground layer
-        nightFireGlows.position.set(0, app.screen.height - (endlessGroundHeight || 0));
+        nightFireGlows.position.set(0, app.screen.height - foreground.height * 0.65);
         for (const glow of nightFireGlows.children) {
           glow.flickerPhase += glow.flickerSpeed;
           const flicker = 0.7 + Math.sin(glow.flickerPhase) * 0.2
@@ -890,19 +890,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
       // Spawn protection — 2s invincibility after swapping in
       state.spawnProtectionEnd = Date.now() + 2000;
-
-      // Push nearby enemies away to give breathing room
-      const pushRadius = 200;
-      const pushForce = 250;
-      for (const enemy of state.enemies) {
-        if (!enemy.isAlive) continue;
-        const dx = enemy.position.x - critter.position.x;
-        const dist = Math.abs(dx);
-        if (dist < pushRadius) {
-          const dir = dx >= 0 ? 1 : -1;
-          enemy.position.x += dir * pushForce * (1 - dist / pushRadius);
-        }
-      }
 
       updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
       characterLevelElement.textContent = 'Lvl. ' + level;

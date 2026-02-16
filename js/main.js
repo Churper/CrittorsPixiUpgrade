@@ -1545,22 +1545,25 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.timeOfLastSpawn = Date.now();
 
         if (revivingSelf) {
-          // Same character — just put them back on stage
+          // Same character — put them back on stage
           document.getElementById('spawn-text').style.visibility = 'hidden';
           const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
           characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
           state.isCharacterMenuOpen = false;
           stopFlashing();
-          if (!app.stage.children.includes(critter)) {
-            app.stage.addChild(critter);
-          }
+          // Always re-add to ensure critter is on stage and properly layered
+          app.stage.addChild(critter);
           critter.visible = true;
+          critter.alpha = 1;
           critter.textures = state.frogWalkTextures;
           critter.loop = true;
           critter.play();
           critter.tint = 0xffffff;
           updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
           updateEXP(getCharEXP(getCurrentCharacter()));
+          updateVelocity();
+          // Properly unpause (revive dialog pauses via setisPaused(true))
+          setisPaused(false);
           // Spawn protection
           if (Date.now() - state.lastInvulnTime >= 15000) {
             state.spawnProtectionEnd = Date.now() + 2000;

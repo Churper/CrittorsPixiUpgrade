@@ -1829,28 +1829,42 @@ function transitionWeather(newWeather) {
   const app = state.app;
   if (!app) return;
 
-  // Save references to old elements that will fade out
+  // Biome boundary: new biome starts 500px ahead of the player
+  const boundaryX = critter.position.x + 500;
+
+  // Save references to old elements
   const oldWeather = weatherContainer;
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
   const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars, nightFireGlows];
 
-  // Capture current background tint as the "from" color
+  // Capture current tints
   const oldBgTint = background.tint ?? 0xFFFFFF;
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
 
-  // Create new ground Graphics and draw with new palette
+  // Create new ground — full width, but masked to only show from boundary forward
   const newGround = new PIXI.Graphics();
   newGround.position.set(0, app.screen.height - endlessGroundHeight);
   newGround.zIndex = 5;
-  newGround.alpha = 0;
   app.stage.addChild(newGround);
 
   const newGroundDecor = new PIXI.Container();
   newGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
   newGroundDecor.zIndex = 6;
-  newGroundDecor.alpha = 0;
   app.stage.addChild(newGroundDecor);
+
+  // Mask: only reveal new ground from boundaryX onward
+  const groundMask = new PIXI.Graphics();
+  groundMask.rect(boundaryX, 0, 50000, endlessGroundHeight + 200).fill({ color: 0xffffff });
+  groundMask.position.set(0, app.screen.height - endlessGroundHeight);
+  app.stage.addChild(groundMask);
+  newGround.mask = groundMask;
+
+  const decorMask = new PIXI.Graphics();
+  decorMask.rect(boundaryX, -200, 50000, endlessGroundHeight + 400).fill({ color: 0xffffff });
+  decorMask.position.set(0, app.screen.height - endlessGroundHeight);
+  app.stage.addChild(decorMask);
+  newGroundDecor.mask = decorMask;
 
   // Swap references so drawEndlessGround draws onto the new objects
   endlessGround = newGround;
@@ -1858,7 +1872,7 @@ function transitionWeather(newWeather) {
   drawEndlessGround(newWeather);
   endlessGroundCurrentWeather = newWeather;
 
-  // Detach old overlays from active vars so clearWeatherEffects creates fresh ones
+  // Detach old overlays so clearWeatherEffects creates fresh ones
   sunLightOverlay = null;
   nightOverlay = null;
   playerShadow = null;
@@ -1866,9 +1880,9 @@ function transitionWeather(newWeather) {
   nightFireGlows = null;
   weatherContainer = null;
 
-  // Create new weather effects (rain/snow/sun/night particles + overlays)
+  // Create new weather effects
   createWeatherEffects();
-  // Start new weather container at alpha 0
+  // Start new weather/overlay at alpha 0 — they crossfade in
   if (weatherContainer) weatherContainer.alpha = 0;
   if (sunLightOverlay) sunLightOverlay.alpha = 0;
   if (nightOverlay) nightOverlay.alpha = 0;
@@ -1876,19 +1890,32 @@ function transitionWeather(newWeather) {
   if (moonStars) moonStars.alpha = 0;
   if (nightFireGlows) nightFireGlows.alpha = 0;
 
-  // Store target alphas for new overlays (they vary by type)
+  // Store target alphas
   const targetNightAlpha = nightOverlay ? 0.35 : 0;
   const targetSunLightAlpha = sunLightOverlay ? 0.12 : 0;
   const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
   const targetMoonStarsAlpha = moonStars ? 1 : 0;
   const targetFireGlowsAlpha = nightFireGlows ? 1 : 0;
 
-  // Target tints for the new biome
   const newTints = biomeTints[newWeather] || biomeTints.sun;
+
+  // Sun setting animation for night transition
+  let settingSun = null;
+  if (newWeather === 'night') {
+    settingSun = new PIXI.Graphics();
+    // Orange sun disc
+    settingSun.circle(0, 0, 30).fill({ color: 0xff8833 });
+    settingSun.circle(0, 0, 22).fill({ color: 0xffcc44, alpha: 0.7 });
+    settingSun.circle(0, 0, 12).fill({ color: 0xffeeaa, alpha: 0.5 });
+    // Position at top-center of screen in world coords
+    const screenCenterX = -app.stage.position.x + app.screen.width / 2;
+    settingSun.position.set(screenCenterX, app.screen.height * 0.15);
+    settingSun.zIndex = 999;
+    app.stage.addChild(settingSun);
+  }
 
   updateWeatherIcon();
 
-  // Initialize crossfade transition
   state.biomeTransition = {
     oldWeather,
     oldGround,
@@ -1896,6 +1923,9 @@ function transitionWeather(newWeather) {
     oldOverlays,
     newGround,
     newGroundDecor,
+    groundMask,
+    decorMask,
+    boundaryX,
     newWeather: weatherContainer,
     newSunLight: sunLightOverlay,
     newNightOverlay: nightOverlay,
@@ -1907,7 +1937,8 @@ function transitionWeather(newWeather) {
     targetMoonStarsAlpha,
     newFireGlows: nightFireGlows,
     targetFireGlowsAlpha,
-    // Background/mountain color lerp
+    settingSun,
+    sunHorizonY: app.screen.height - endlessGroundHeight,
     oldBgTint,
     newBgTint: newTints.bg,
     oldMtnTint,
@@ -1931,19 +1962,23 @@ function updateBiomeTransition() {
   mountain3.tint = mtnTint;
   mountain4.tint = mtnTint;
 
-  // Fade old out
-  if (t.oldWeather) t.oldWeather.alpha = 1 - p;
-  if (t.oldGround) t.oldGround.alpha = 1 - p;
-  if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1 - p;
-
-  // Fade old overlays out
-  for (const o of (t.oldOverlays || [])) {
-    if (o && o.parent) o.alpha *= (1 - 0.04); // gradual per-frame fade
+  // Sun setting animation — moves from top to horizon
+  if (t.settingSun) {
+    const startY = state.app.screen.height * 0.15;
+    t.settingSun.position.y = startY + (t.sunHorizonY - startY) * p;
+    t.settingSun.alpha = p < 0.85 ? 1 : Math.max(0, 1 - (p - 0.85) / 0.15);
+    // Keep sun centered on screen as camera moves
+    t.settingSun.position.x = -state.app.stage.position.x + state.app.screen.width / 2;
   }
 
-  // Fade new in
-  if (t.newGround) t.newGround.alpha = p;
-  if (t.newGroundDecor) t.newGroundDecor.alpha = p;
+  // Old ground stays solid — no fade! Player walks past the boundary into new biome
+  // Old weather particles + overlays crossfade out
+  if (t.oldWeather) t.oldWeather.alpha = 1 - p;
+  for (const o of (t.oldOverlays || [])) {
+    if (o && o.parent) o.alpha *= (1 - 0.04);
+  }
+
+  // Fade new weather/overlays in
   if (t.newWeather) t.newWeather.alpha = p;
   if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha * p;
   if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
@@ -1952,7 +1987,7 @@ function updateBiomeTransition() {
   if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha * p;
 
   if (p >= 1) {
-    // Cleanup: destroy old elements
+    // Cleanup old elements
     if (t.oldWeather && t.oldWeather.parent) {
       state.app.stage.removeChild(t.oldWeather);
       t.oldWeather.destroy({ children: true });
@@ -1970,6 +2005,22 @@ function updateBiomeTransition() {
         state.app.stage.removeChild(o);
         o.destroy({ children: true });
       }
+    }
+    // Remove sun
+    if (t.settingSun && t.settingSun.parent) {
+      state.app.stage.removeChild(t.settingSun);
+      t.settingSun.destroy({ children: true });
+    }
+    // Remove masks — new ground is now fully visible
+    if (t.groundMask && t.groundMask.parent) {
+      endlessGround.mask = null;
+      state.app.stage.removeChild(t.groundMask);
+      t.groundMask.destroy({ children: true });
+    }
+    if (t.decorMask && t.decorMask.parent) {
+      endlessGroundDecor.mask = null;
+      state.app.stage.removeChild(t.decorMask);
+      t.decorMask.destroy({ children: true });
     }
     state.biomeTransition = null;
   }
@@ -3285,6 +3336,17 @@ state.demiSpawned = 0;
     }
 
     if (state.gameMode === 'endless') {
+      // Cap: don't spawn if 2+ enemies are already alive — prevents pileup
+      const aliveCount = state.enemies.filter(e => e.isAlive).length;
+      if (aliveCount >= 2) {
+        state.isSpawning = true;
+        state.enemySpawnTimeout = setTimeout(() => {
+          state.isSpawning = false;
+          spawnEnemies();
+        }, 2000);
+        return;
+      }
+
       // Post-demi cooldown: 8s breathing room after killing a demi boss
       if (state.lastDemiKillTime && Date.now() - state.lastDemiKillTime < 8000) {
         state.isSpawning = true;

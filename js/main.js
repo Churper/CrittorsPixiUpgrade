@@ -155,6 +155,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let nightOverlay = null;
   let playerShadow = null;
   let moonStars = null;
+  let nightFireGlows = null; // Animated glow circles for campfires/lanterns
 
   function getWeatherType() {
     if (state.gameMode === 'endless') {
@@ -192,6 +193,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
     weatherSun = null;
     weatherMoon = null;
+    if (nightFireGlows && state.app) {
+      state.app.stage.removeChild(nightFireGlows);
+      nightFireGlows.destroy({ children: true });
+      nightFireGlows = null;
+    }
   }
 
   function createWeatherEffects() {
@@ -384,6 +390,48 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       playerShadow.zIndex = 9;
       playerShadow.eventMode = 'none';
       app.stage.addChild(playerShadow);
+
+      // Animated fire glows — world-positioned, flicker each frame
+      nightFireGlows = new PIXI.Container();
+      nightFireGlows.zIndex = 7; // above decor (6), below critter (10)
+      nightFireGlows.eventMode = 'none';
+      // Place glows at campfire and lantern positions (must match seeds from drawEndlessGroundDecor)
+      let _s = 99222;
+      function _r() { _s = (_s * 16807) % 2147483647; return (_s & 0x7fffffff) / 2147483647; }
+      let cfx = 200;
+      while (cfx < 50000) {
+        const sc = 0.8 + _r() * 0.4;
+        const glow = new PIXI.Graphics();
+        glow.circle(0, 0, 28 * sc).fill({ color: 0xff8833, alpha: 0.12 });
+        glow.circle(0, 0, 16 * sc).fill({ color: 0xffaa44, alpha: 0.15 });
+        glow.circle(0, 0, 6 * sc).fill({ color: 0xffcc66, alpha: 0.2 });
+        const groundY = Math.sin(cfx * 0.0004) * 14 + Math.sin(cfx * 0.0011) * 7;
+        glow.position.set(cfx, groundY - 8 * sc);
+        glow.baseAlpha = glow.alpha;
+        glow.flickerPhase = Math.random() * Math.PI * 2;
+        glow.flickerSpeed = 0.08 + Math.random() * 0.06;
+        glow.isCampfire = true;
+        nightFireGlows.addChild(glow);
+        cfx += 600 + _r() * 1000;
+      }
+      // Lantern glows
+      _s = 99333;
+      let lnx = 500;
+      while (lnx < 50000) {
+        const sc = 0.8 + _r() * 0.3;
+        const glow = new PIXI.Graphics();
+        glow.circle(0, 0, 20 * sc).fill({ color: 0xffaa33, alpha: 0.1 });
+        glow.circle(0, 0, 10 * sc).fill({ color: 0xffcc44, alpha: 0.14 });
+        const groundY = Math.sin(lnx * 0.0004) * 14 + Math.sin(lnx * 0.0011) * 7;
+        glow.position.set(lnx, groundY - 30 * sc);
+        glow.baseAlpha = glow.alpha;
+        glow.flickerPhase = Math.random() * Math.PI * 2;
+        glow.flickerSpeed = 0.05 + Math.random() * 0.04;
+        glow.isCampfire = false;
+        nightFireGlows.addChild(glow);
+        lnx += 900 + _r() * 1400;
+      }
+      app.stage.addChild(nightFireGlows);
     }
   }
 
@@ -569,6 +617,22 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         );
         playerShadow.scale.set(stretchX, 1);
         playerShadow.alpha = 0.12 + moonBrightness * 0.18;
+      }
+
+      // Animate fire glows — flicker
+      if (nightFireGlows) {
+        // Position container on the ground layer
+        nightFireGlows.position.set(0, app.screen.height - (endlessGroundHeight || 0));
+        for (const glow of nightFireGlows.children) {
+          glow.flickerPhase += glow.flickerSpeed;
+          const flicker = 0.7 + Math.sin(glow.flickerPhase) * 0.2
+            + Math.sin(glow.flickerPhase * 2.3) * 0.1;
+          glow.alpha = glow.baseAlpha * flicker;
+          // Slight scale pulse for campfires
+          if (glow.isCampfire) {
+            glow.scale.set(0.9 + Math.sin(glow.flickerPhase * 0.7) * 0.15);
+          }
+        }
       }
     }
   }
@@ -1587,6 +1651,111 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     }
   }
 
+  // Snowmen (snow only)
+  if (weather === 'snow') {
+    _endlessGroundSeed = 99111;
+    let smx = 300;
+    while (smx < w) {
+      const smY = terrainTopY(smx);
+      const sc = 0.7 + endlessGroundRandom() * 0.5;
+      // Bottom ball
+      d.circle(smx, smY - 10 * sc, 10 * sc).fill({ color: 0xf0f4fa });
+      d.circle(smx - 3 * sc, smY - 13 * sc, 3 * sc).fill({ color: 0xffffff, alpha: 0.3 });
+      // Middle ball
+      d.circle(smx, smY - 24 * sc, 7.5 * sc).fill({ color: 0xeaeff5 });
+      d.circle(smx - 2 * sc, smY - 26 * sc, 2 * sc).fill({ color: 0xffffff, alpha: 0.25 });
+      // Head
+      d.circle(smx, smY - 36 * sc, 5.5 * sc).fill({ color: 0xf0f4fa });
+      // Eyes — coal
+      d.circle(smx - 2 * sc, smY - 38 * sc, 1 * sc).fill({ color: 0x111111 });
+      d.circle(smx + 2 * sc, smY - 38 * sc, 1 * sc).fill({ color: 0x111111 });
+      // Carrot nose
+      d.poly([smx, smY - 36 * sc, smx + 6 * sc, smY - 35.5 * sc, smx, smY - 35 * sc])
+        .fill({ color: 0xe87830 });
+      // Stick arms
+      d.moveTo(smx - 7.5 * sc, smY - 24 * sc)
+        .lineTo(smx - 18 * sc, smY - 30 * sc)
+        .stroke({ width: 1.5, color: 0x5a3a18 });
+      d.moveTo(smx - 15 * sc, smY - 28 * sc)
+        .lineTo(smx - 18 * sc, smY - 33 * sc)
+        .stroke({ width: 1, color: 0x5a3a18 });
+      d.moveTo(smx + 7.5 * sc, smY - 24 * sc)
+        .lineTo(smx + 18 * sc, smY - 30 * sc)
+        .stroke({ width: 1.5, color: 0x5a3a18 });
+      d.moveTo(smx + 15 * sc, smY - 28 * sc)
+        .lineTo(smx + 20 * sc, smY - 33 * sc)
+        .stroke({ width: 1, color: 0x5a3a18 });
+      // Buttons
+      d.circle(smx, smY - 21 * sc, 1 * sc).fill({ color: 0x111111 });
+      d.circle(smx, smY - 25 * sc, 1 * sc).fill({ color: 0x111111 });
+      smx += 800 + endlessGroundRandom() * 1200;
+    }
+  }
+
+  // Campfires with warm glow (night only)
+  if (weather === 'night') {
+    _endlessGroundSeed = 99222;
+    let cfx = 200;
+    while (cfx < w) {
+      const cfY = terrainTopY(cfx);
+      const sc = 0.8 + endlessGroundRandom() * 0.4;
+      // Stone ring
+      for (let i = 0; i < 7; i++) {
+        const angle = (i / 7) * Math.PI * 2;
+        const rx = cfx + Math.cos(angle) * 8 * sc;
+        const ry = cfY - 2 + Math.sin(angle) * 3 * sc;
+        d.circle(rx, ry, 2 * sc).fill({ color: 0x5a5a5a });
+        d.circle(rx - 0.5, ry - 0.5, 1 * sc).fill({ color: 0x7a7a7a, alpha: 0.4 });
+      }
+      // Logs
+      d.roundRect(cfx - 6 * sc, cfY - 3 * sc, 12 * sc, 3 * sc, 1)
+        .fill({ color: 0x3a2210 });
+      d.roundRect(cfx - 4 * sc, cfY - 5 * sc, 10 * sc, 3 * sc, 1)
+        .fill({ color: 0x4a3018, alpha: 0.8 });
+      // Fire — layered triangles/circles for flame shape
+      d.poly([cfx - 5 * sc, cfY - 4 * sc, cfx, cfY - 18 * sc, cfx + 5 * sc, cfY - 4 * sc])
+        .fill({ color: 0xff4400, alpha: 0.8 });
+      d.poly([cfx - 3 * sc, cfY - 5 * sc, cfx + 1 * sc, cfY - 15 * sc, cfx + 4 * sc, cfY - 5 * sc])
+        .fill({ color: 0xff8800, alpha: 0.85 });
+      d.poly([cfx - 2 * sc, cfY - 5 * sc, cfx, cfY - 12 * sc, cfx + 2 * sc, cfY - 5 * sc])
+        .fill({ color: 0xffcc22, alpha: 0.9 });
+      // Inner bright core
+      d.circle(cfx, cfY - 8 * sc, 2.5 * sc).fill({ color: 0xffeeaa, alpha: 0.7 });
+      // Ground glow — warm circle of light on the ground
+      d.circle(cfx, cfY, 30 * sc).fill({ color: 0xff8833, alpha: 0.06 });
+      d.circle(cfx, cfY, 18 * sc).fill({ color: 0xffaa44, alpha: 0.08 });
+      cfx += 600 + endlessGroundRandom() * 1000;
+    }
+  }
+
+  // Lanterns on posts (night only)
+  if (weather === 'night') {
+    _endlessGroundSeed = 99333;
+    let lnx = 500;
+    while (lnx < w) {
+      const lnY = terrainTopY(lnx);
+      const sc = 0.8 + endlessGroundRandom() * 0.3;
+      // Post
+      d.rect(lnx - 1.5 * sc, lnY - 28 * sc, 3 * sc, 28 * sc)
+        .fill({ color: 0x4a3a2a });
+      // Lantern body — glass housing
+      d.roundRect(lnx - 4 * sc, lnY - 34 * sc, 8 * sc, 8 * sc, 2)
+        .fill({ color: 0x222222 });
+      // Light inside
+      d.roundRect(lnx - 3 * sc, lnY - 33 * sc, 6 * sc, 6 * sc, 1.5)
+        .fill({ color: 0xffcc44, alpha: 0.85 });
+      d.circle(lnx, lnY - 30 * sc, 2 * sc)
+        .fill({ color: 0xffeedd, alpha: 0.7 });
+      // Top cap
+      d.rect(lnx - 5 * sc, lnY - 35 * sc, 10 * sc, 2 * sc)
+        .fill({ color: 0x333333 });
+      // Ground glow
+      d.circle(lnx, lnY, 22 * sc).fill({ color: 0xffaa33, alpha: 0.05 });
+      d.circle(lnx, lnY, 12 * sc).fill({ color: 0xffcc44, alpha: 0.07 });
+      lnx += 900 + endlessGroundRandom() * 1400;
+    }
+  }
+
   endlessGroundDecor.addChild(d);
 }
 
@@ -1630,7 +1799,7 @@ function transitionWeather(newWeather) {
   const oldWeather = weatherContainer;
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
-  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars];
+  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars, nightFireGlows];
 
   // Capture current background tint as the "from" color
   const oldBgTint = background.tint ?? 0xFFFFFF;
@@ -1660,6 +1829,7 @@ function transitionWeather(newWeather) {
   nightOverlay = null;
   playerShadow = null;
   moonStars = null;
+  nightFireGlows = null;
   weatherContainer = null;
 
   // Create new weather effects (rain/snow/sun/night particles + overlays)
@@ -1670,12 +1840,14 @@ function transitionWeather(newWeather) {
   if (nightOverlay) nightOverlay.alpha = 0;
   if (playerShadow) playerShadow.alpha = 0;
   if (moonStars) moonStars.alpha = 0;
+  if (nightFireGlows) nightFireGlows.alpha = 0;
 
   // Store target alphas for new overlays (they vary by type)
   const targetNightAlpha = nightOverlay ? 0.35 : 0;
   const targetSunLightAlpha = sunLightOverlay ? 0.12 : 0;
   const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
   const targetMoonStarsAlpha = moonStars ? 1 : 0;
+  const targetFireGlowsAlpha = nightFireGlows ? 1 : 0;
 
   // Target tints for the new biome
   const newTints = biomeTints[newWeather] || biomeTints.sun;
@@ -1699,6 +1871,8 @@ function transitionWeather(newWeather) {
     targetSunLightAlpha,
     targetPlayerShadowAlpha,
     targetMoonStarsAlpha,
+    newFireGlows: nightFireGlows,
+    targetFireGlowsAlpha,
     // Background/mountain color lerp
     oldBgTint,
     newBgTint: newTints.bg,
@@ -1712,7 +1886,7 @@ function updateBiomeTransition() {
   const t = state.biomeTransition;
   if (!t) return;
 
-  t.progress += 0.02; // ~50 frames = ~2s at 60fps
+  t.progress += 0.005; // ~200 frames = ~8s at 60fps
   const p = Math.min(1, t.progress);
 
   // Lerp background and mountain tints
@@ -1741,6 +1915,7 @@ function updateBiomeTransition() {
   if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
   if (t.newPlayerShadow) t.newPlayerShadow.alpha = t.targetPlayerShadowAlpha * p;
   if (t.newMoonStars) t.newMoonStars.alpha = t.targetMoonStarsAlpha * p;
+  if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha * p;
 
   if (p >= 1) {
     // Cleanup: destroy old elements

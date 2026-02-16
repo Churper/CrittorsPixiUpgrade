@@ -691,14 +691,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
   }
 
-  // Shop button — BUY a dose (50 coffee)
+  // Shop button — BUY a dose (20 coffee)
   document.getElementById('potion-shop').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     const doses = state.potionDoses || 0;
     if (doses >= state.potionMaxDoses) return;
-    if (getCoffee() < 50) return;
+    if (getCoffee() < 20) return;
 
-    addCoffee(-50);
+    addCoffee(-20);
     state.potionDoses = doses + 1;
     updatePotionUI();
 
@@ -709,7 +709,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
   });
 
-  // Potion button — USE a dose (heal 50 HP)
+  // Potion button — USE a dose (heal 70 HP)
   document.getElementById('potion-button').addEventListener('pointerdown', (e) => {
     e.stopPropagation();
     if (getisDead()) return; // Can't heal a dead character
@@ -717,7 +717,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const isHurt = getPlayerCurrentHealth() < getPlayerHealth();
     if (doses <= 0 || !isHurt) return;
 
-    setPlayerCurrentHealth(Math.min(getPlayerCurrentHealth() + 50, getPlayerHealth()));
+    setPlayerCurrentHealth(Math.min(getPlayerCurrentHealth() + 70, getPlayerHealth()));
     updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
     state.potionDoses--;
     updatePotionUI();

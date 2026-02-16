@@ -808,7 +808,7 @@ export function drawHitSplat(enemy) {
     case 'character-snail':
       if (enemyType === 'imp' || enemyType === 'toofer') {
         damage = Math.round(getSnailDamage() * 1.75);
-      } else if (enemyType === 'scorp' || enemyType === 'shark') {
+      } else if (enemyType === 'scorp') {
         damage = Math.round(getSnailDamage() * .75);
       } else {
         damage = Math.round(getSnailDamage());

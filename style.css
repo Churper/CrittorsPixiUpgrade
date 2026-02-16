@@ -77,13 +77,14 @@ body {
   user-select: none;
 }
 #ui-overlay {
-  
+
   visibility: hidden;
   /* Initially hidden */
   position: fixed;
   bottom: 0;
   left: 55%;
   transform: translateX(-50%);
+  z-index: 100;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 touch-action: manipulation;

@@ -1,5 +1,5 @@
 import state from './state.js';
-import { getPlayerCurrentHealth, getPlayerHealth, getCurrentCharacter, getEXPtoLevel, getSelectLevel, getCoffee } from './state.js';
+import { getPlayerCurrentHealth, getPlayerHealth, getCurrentCharacter, getEXPtoLevel, getSelectLevel, getCoffee, getisPaused } from './state.js';
 import { pauseTimer, startTimer } from './timer.js';
 
 // --- Pause menu helpers ---
@@ -266,7 +266,10 @@ export function openCharacterMenu() {
 
   const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
 
-  if (state.isCharacterMenuOpen) {
+  // If paused waiting for character selection (dead), always show menu — don't toggle close
+  const forceOpen = getisPaused() && getPlayerCurrentHealth() <= 0;
+
+  if (state.isCharacterMenuOpen && !forceOpen) {
     characterBoxes.forEach((box) => {
       box.style.visibility = 'hidden';
     });

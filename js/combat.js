@@ -622,8 +622,11 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
                 state.shieldActive = false;
                 state.shieldHP = 0;
                 // Remove shield sprite
-                if (state.shieldSprite && state.app.stage.children.includes(state.shieldSprite)) {
-                  state.app.stage.removeChild(state.shieldSprite);
+                if (state.shieldSprite) {
+                  if (state.app.stage.children.includes(state.shieldSprite)) {
+                    state.app.stage.removeChild(state.shieldSprite);
+                  }
+                  state.shieldSprite.destroy();
                 }
                 state.shieldSprite = null;
                 playShieldBreakSound();
@@ -1215,7 +1218,11 @@ function updateItemButtonState(itemType) {
   const btn = document.getElementById(btnId);
   const countEl = document.getElementById(countId);
   if (countEl) countEl.textContent = count;
-  if (btn) btn.classList.toggle('active', count > 0);
+  if (btn) {
+    // Only show button when count > 0, hide when empty
+    btn.style.display = count > 0 ? 'flex' : 'none';
+    btn.classList.toggle('active', count > 0);
+  }
 }
 
 export function createItemDrop(x, y, itemType) {

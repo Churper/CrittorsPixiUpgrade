@@ -928,8 +928,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       if (state.shieldActive) {
         state.shieldActive = false;
         state.shieldHP = 0;
-        if (state.shieldSprite && state.app.stage.children.includes(state.shieldSprite)) {
-          state.app.stage.removeChild(state.shieldSprite);
+        if (state.shieldSprite) {
+          if (state.app.stage.children.includes(state.shieldSprite)) {
+            state.app.stage.removeChild(state.shieldSprite);
+          }
+          state.shieldSprite.destroy();
         }
         state.shieldSprite = null;
         const shieldBarFill = document.getElementById('shield-bar-fill');
@@ -1281,9 +1284,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       document.getElementById('progress-filled').style.display = 'none';
       // Show endless timer
       document.getElementById('endless-timer').style.display = 'block';
-      // Show auto-attack button
+      // Wire auto-attack button (shown after loading finishes)
       const autoBtn = document.getElementById('auto-attack-btn');
-      autoBtn.style.display = 'flex';
       autoBtn.addEventListener('click', () => {
         state.autoAttack = !state.autoAttack;
         autoBtn.classList.toggle('active', state.autoAttack);
@@ -1292,11 +1294,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
 
-      // Show item buttons
+      // Wire item buttons (hidden until first pickup)
       const shieldBtn = document.getElementById('shield-btn');
       const bombBtn = document.getElementById('bomb-btn');
-      shieldBtn.style.display = 'flex';
-      bombBtn.style.display = 'flex';
 
       // Shield button handler
       shieldBtn.addEventListener('click', () => {
@@ -1304,6 +1304,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setShieldCount(getShieldCount() - 1);
           document.getElementById('shield-count').textContent = getShieldCount();
           shieldBtn.classList.toggle('active', getShieldCount() > 0);
+          if (getShieldCount() <= 0) shieldBtn.style.display = 'none';
 
           state.shieldActive = true;
           state.shieldHP = 100;
@@ -1335,6 +1336,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           setBombCount(getBombCount() - 1);
           document.getElementById('bomb-count').textContent = getBombCount();
           bombBtn.classList.toggle('active', getBombCount() > 0);
+          if (getBombCount() <= 0) bombBtn.style.display = 'none';
           triggerAirstrike(app, critter);
         }
       });
@@ -3391,6 +3393,10 @@ state.demiSpawned = 0;
       document.getElementById("ui-overlay").style.visibility = "visible";
       document.getElementById("pause-button").style.visibility = "visible";
       document.getElementById("coffee-button").style.visibility = "visible";
+      // Show auto-attack button after loading (endless only)
+      if (state.gameMode === 'endless') {
+        document.getElementById('auto-attack-btn').style.display = 'flex';
+      }
       const weatherIconEl = document.getElementById("weather-icon");
       weatherIconEl.style.visibility = "visible";
       if (state.gameMode !== 'endless') {

@@ -1611,15 +1611,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // No auto-pause on focus loss — let the game keep running
     
 
-    const loadingTexture = await PIXI.Assets.load('./assets/loading.png');
-    const loadingSprite = new PIXI.Sprite(loadingTexture);
-    loadingSprite.anchor.set(0.5);
-    loadingSprite.width = app.screen.width;
-    loadingSprite.height = app.screen.height;
-    loadingSprite.position.set(app.screen.width / 2, app.screen.height / 2);
-    loadingSprite.alpha = 1; // Start fully opaque
     app.stage.removeChild(menuSprite);
-    app.stage.addChild(loadingSprite);
 
 
     // Game elements and logic
@@ -3940,7 +3932,6 @@ state.demiSpawned = 0;
         }
         else { }
       });
-      app.stage.removeChild(loadingSprite);
       // Hide HTML loading overlay
       const loadingOverlay = document.getElementById('loading-overlay');
       if (loadingOverlay) loadingOverlay.style.display = 'none';

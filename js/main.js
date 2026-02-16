@@ -3937,16 +3937,26 @@ state.demiSpawned = 0;
           });
           state.isCharacterMenuOpen = false;
         } else {
+          const visibleBoxes = [];
           characterBoxes.forEach((box) => {
             const charClass = box.classList[1];
             if (!state.unlockedCharacters.includes(charClass)) {
               box.style.visibility = 'hidden';
-            } else if (state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
+            } else if (!getisDead() && state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
               box.style.visibility = 'hidden';
             } else {
               box.style.visibility = 'visible';
+              visibleBoxes.push(box);
             }
           });
+          // Re-space boxes when dead so nothing overlaps
+          if (getisDead() && visibleBoxes.length > 0) {
+            const totalWidth = visibleBoxes.length * 60;
+            const startOffset = -totalWidth / 2;
+            visibleBoxes.forEach((box, i) => {
+              box.style.left = 'calc(45% + ' + (startOffset + i * 60) + 'px)';
+            });
+          }
           state.isCharacterMenuOpen = true;
         }
 

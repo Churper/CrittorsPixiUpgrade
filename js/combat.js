@@ -1330,6 +1330,69 @@ export function playGoldenBeanSound() {
   });
 }
 
+export function playGoldenBeanFlyEffect(critter, totalCoffee) {
+  const beanTexture = PIXI.Assets.get('bean');
+  const numBeans = 20;
+  const coffeePerBean = totalCoffee / numBeans;
+  const flyDuration = 700;
+  const stagger = 30;
+
+  for (let i = 0; i < numBeans; i++) {
+    const bean = new PIXI.Sprite(beanTexture);
+    bean.anchor.set(0.5);
+    bean.scale.set(0.12 + Math.random() * 0.08);
+    bean.tint = 0xFFD700;
+    bean.zIndex = 15;
+    bean.position.set(
+      critter.position.x + (Math.random() * 60 - 30),
+      critter.position.y + (Math.random() * 40 - 20)
+    );
+    bean.rotation = Math.random() * Math.PI * 2;
+    state.app.stage.addChild(bean);
+
+    const startX = bean.position.x;
+    const startY = bean.position.y;
+    const startScale = bean.scale.x;
+    const arcHeight = 80 + Math.random() * 40;
+    const flyStart = Date.now() + i * stagger;
+
+    const flyUpdate = () => {
+      const elapsed = Date.now() - flyStart;
+      if (elapsed < 0) { requestAnimationFrame(flyUpdate); return; }
+      const progress = Math.min(elapsed / flyDuration, 1);
+
+      const screenTargetX = state.app.screen.width - 30;
+      const screenTargetY = 30;
+      const stageTargetX = -state.app.stage.position.x + screenTargetX;
+      const stageTargetY = -state.app.stage.position.y + screenTargetY;
+      const cpX = startX + (stageTargetX - startX) * 0.5;
+      const cpY = startY - arcHeight;
+
+      const t = progress < 0.5
+        ? 2 * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+
+      const oneMinusT = 1 - t;
+      bean.x = oneMinusT * oneMinusT * startX + 2 * oneMinusT * t * cpX + t * t * stageTargetX;
+      bean.y = oneMinusT * oneMinusT * startY + 2 * oneMinusT * t * cpY + t * t * stageTargetY;
+      bean.scale.set(startScale * (1 - t * 0.7));
+      bean.rotation += 0.2;
+      bean.alpha = t < 0.8 ? 1 : 1 - (t - 0.8) * 5;
+
+      if (progress >= 1) {
+        addCoffee(coffeePerBean);
+        if (state.app.stage.children.includes(bean)) {
+          state.app.stage.removeChild(bean);
+        }
+        bean.destroy();
+        return;
+      }
+      requestAnimationFrame(flyUpdate);
+    };
+    requestAnimationFrame(flyUpdate);
+  }
+}
+
 function updateItemButtonState(itemType) {
   const btnMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn' };
   const countMap = { 'shield': 'shield-count', 'bomb': 'bomb-count', 'rage': 'rage-count', 'feather': 'feather-count', 'goldenBean': 'golden-bean-count' };
@@ -1349,13 +1412,22 @@ function updateItemButtonState(itemType) {
 }
 
 export function createItemDrop(x, y, itemType) {
-  const emojiMap = { 'shield': '🛡️', 'bomb': '💣', 'rage': '🧃', 'feather': '🪶', 'goldenBean': '✨' };
-  const emoji = emojiMap[itemType] || '❓';
-  const itemText = new PIXI.Text({ text: emoji, style: { fontSize: 32 } });
-  itemText.anchor.set(0.5);
-  itemText.position.set(x, y - 30);
-  itemText.zIndex = 16;
-  state.app.stage.addChild(itemText);
+  let itemSprite;
+  if (itemType === 'goldenBean') {
+    const beanTexture = PIXI.Assets.get('bean');
+    itemSprite = new PIXI.Sprite(beanTexture);
+    itemSprite.anchor.set(0.5);
+    itemSprite.scale.set(0.2);
+    itemSprite.tint = 0xFFD700;
+  } else {
+    const emojiMap = { 'shield': '🛡️', 'bomb': '💣', 'rage': '🧃', 'feather': '🪶' };
+    const emoji = emojiMap[itemType] || '❓';
+    itemSprite = new PIXI.Text({ text: emoji, style: { fontSize: 32 } });
+    itemSprite.anchor.set(0.5);
+  }
+  itemSprite.position.set(x, y - 30);
+  itemSprite.zIndex = 16;
+  state.app.stage.addChild(itemSprite);
 
   // Phase 1 — Fall to ground with bounce
   const groundY = y + 40;
@@ -1373,15 +1445,15 @@ export function createItemDrop(x, y, itemType) {
       : t < 0.8
         ? 1 - (1 - ((t - 0.6) / 0.2)) * 0.3
         : 1 - (1 - ((t - 0.8) / 0.2)) * 0.1 * (1 - ((t - 0.8) / 0.2));
-    itemText.position.y = startY + (groundY - startY) * Math.min(bounce, 1);
-    itemText.rotation = Math.sin(t * Math.PI * 4) * 0.2 * (1 - t);
+    itemSprite.position.y = startY + (groundY - startY) * Math.min(bounce, 1);
+    itemSprite.rotation = Math.sin(t * Math.PI * 4) * 0.2 * (1 - t);
     if (progress < 1) {
       requestAnimationFrame(fallUpdate);
     } else {
       // Item is on the ground — add to ground items
-      itemText.position.y = groundY;
+      itemSprite.position.y = groundY;
       const groundItem = {
-        sprite: itemText,
+        sprite: itemSprite,
         type: itemType,
         x: x,
         y: groundY,
@@ -1415,6 +1487,7 @@ export function collectGroundItem(groundItem) {
 
   const startX = sprite.position.x;
   const startY = sprite.position.y;
+  const startScale = sprite.scale.x;
   const flyDuration = 600;
   const flyStart = Date.now();
 
@@ -1429,7 +1502,7 @@ export function collectGroundItem(groundItem) {
 
     sprite.position.x = startX + (curTargetX - startX) * t;
     sprite.position.y = startY + (curTargetY - startY) * t;
-    sprite.scale.set(1 - t * 0.5);
+    sprite.scale.set(startScale * (1 - t * 0.5));
     sprite.alpha = t < 0.7 ? 1 : 1 - (t - 0.7) * 3.33;
 
     if (progress >= 1) {

@@ -30,6 +30,7 @@
       <button id="endless-mode-btn" class="menu-btn">Endless Mode</button>
       <button id="info-btn" class="menu-info-btn">i</button>
       <button id="leaderboard-btn" class="menu-info-btn">&#127942;</button>
+      <button id="guide-btn" class="menu-info-btn">&#128214;</button>
       <div id="info-panel">
         <h2>Crittors</h2>
         <p>A side-scrolling combat adventure!</p>
@@ -45,6 +46,48 @@
         </div>
         <div id="leaderboard-list"></div>
         <button id="leaderboard-close-btn" class="menu-btn">Close</button>
+      </div>
+      <div id="guide-panel">
+        <h2>Items Guide</h2>
+        <div class="guide-items">
+          <div class="guide-item"><span class="guide-item-icon">🛡️</span><strong>Shield</strong> — Absorbs 100 damage</div>
+          <div class="guide-item"><span class="guide-item-icon">💣</span><strong>Bomb</strong> — Drops an airstrike ahead of you</div>
+          <div class="guide-item"><span class="guide-item-icon">🧃</span><strong>Rage Potion</strong> — Double damage + attack speed for 30s</div>
+          <div class="guide-item"><span class="guide-item-icon">🪶</span><strong>Phoenix Feather</strong> — Auto-revive at 30% HP on death</div>
+          <div class="guide-item"><img src="./assets/bean.png" class="golden-bean-icon"><strong>Golden Bean</strong> — Instantly adds 100 coffee</div>
+        </div>
+        <h2>Character Strengths</h2>
+        <div class="guide-matchups">
+          <div class="matchup-row">
+            <img src="./assets/frogportrait.png" class="matchup-portrait">
+            <div class="matchup-info">
+              <div class="matchup-strong">Strong vs <img src="./assets/pigportrait.png" class="matchup-enemy-portrait"><img src="./assets/scorpportrait.png" class="matchup-enemy-portrait"></div>
+              <div class="matchup-weak">Weak vs <img src="./assets/pufferportrait.png" class="matchup-enemy-portrait"></div>
+            </div>
+          </div>
+          <div class="matchup-row">
+            <img src="./assets/snailportrait.png" class="matchup-portrait">
+            <div class="matchup-info">
+              <div class="matchup-strong">Strong vs <img src="./assets/impportrait.png" class="matchup-enemy-portrait"><img src="./assets/tooferportrait.png" class="matchup-enemy-portrait"></div>
+              <div class="matchup-weak">Weak vs <img src="./assets/scorpportrait.png" class="matchup-enemy-portrait"><img src="./assets/sharkportrait.png" class="matchup-enemy-portrait"></div>
+            </div>
+          </div>
+          <div class="matchup-row">
+            <img src="./assets/birdportrait.png" class="matchup-portrait">
+            <div class="matchup-info">
+              <div class="matchup-strong">Strong vs <img src="./assets/sharkportrait.png" class="matchup-enemy-portrait"><img src="./assets/pufferportrait.png" class="matchup-enemy-portrait"></div>
+              <div class="matchup-weak">Weak vs <img src="./assets/impportrait.png" class="matchup-enemy-portrait"><img src="./assets/tooferportrait.png" class="matchup-enemy-portrait"></div>
+            </div>
+          </div>
+          <div class="matchup-row">
+            <img src="./assets/beeportrait.png" class="matchup-portrait">
+            <div class="matchup-info">
+              <div class="matchup-strong">Strong vs <img src="./assets/eleportrait.png" class="matchup-enemy-portrait"><img src="./assets/octoportrait.png" class="matchup-enemy-portrait"></div>
+              <div class="matchup-weak">Weak vs <img src="./assets/sharkportrait.png" class="matchup-enemy-portrait"></div>
+            </div>
+          </div>
+        </div>
+        <button id="guide-close-btn" class="menu-btn">Close</button>
       </div>
     </div>
   </div>
@@ -160,7 +203,7 @@
     <div id="bomb-btn" class="item-btn" style="display:none;">💣<span id="bomb-count" class="item-count">0</span></div>
     <div id="rage-btn" class="item-btn" style="display:none;">🧃<span id="rage-count" class="item-count">0</span></div>
     <div id="feather-btn" class="item-btn" style="display:none;">🪶<span id="feather-count" class="item-count">0</span></div>
-    <div id="golden-bean-btn" class="item-btn" style="display:none;">✨<span id="golden-bean-count" class="item-count">0</span></div>
+    <div id="golden-bean-btn" class="item-btn" style="display:none;"><img src="./assets/bean.png" class="golden-bean-btn-icon"><span id="golden-bean-count" class="item-count">0</span></div>
     <div id="potion-shop">
       <div id="shop-icon">⬆️</div>
       <div id="shop-cost">50☕</div>

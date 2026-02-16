@@ -42,6 +42,7 @@ import {
   playBombDropSound, playExplosionSound,
   createItemDrop,
   playRageSound, playFeatherReviveSound, playGoldenBeanSound,
+  playGoldenBeanFlyEffect,
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';
@@ -96,6 +97,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   document.getElementById('leaderboard-close-btn').addEventListener('click', function() {
     document.getElementById('leaderboard-panel').style.display = 'none';
+  });
+
+  document.getElementById('guide-btn').addEventListener('click', function() {
+    document.getElementById('guide-panel').style.display = 'block';
+  });
+
+  document.getElementById('guide-close-btn').addEventListener('click', function() {
+    document.getElementById('guide-panel').style.display = 'none';
   });
 
   async function mainAppFunction() {
@@ -882,6 +891,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     state.isPointerDown = false;
     setCharAttackAnimating(false);
     critter.onComplete = null;
+    critter.onFrameChange = null;
+    critter.stop();
 
     // Swap character portraits
     const characterPortrait = document.getElementById("character-portrait");
@@ -1423,6 +1434,44 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state.reviveDialogContainer = null;
         setIsDead(false);
         handleCharacterClick(characterType);
+
+        // Full combat cleanup — fixes ghost revive breaking combat
+        for (let i = state.enemies.length - 1; i >= 0; i--) {
+          const enemy = state.enemies[i];
+          if (app.stage.children.includes(enemy)) app.stage.removeChild(enemy);
+          if (enemy.hpBarBackground && app.stage.children.includes(enemy.hpBarBackground))
+            app.stage.removeChild(enemy.hpBarBackground);
+          if (enemy.hpBar && app.stage.children.includes(enemy.hpBar))
+            app.stage.removeChild(enemy.hpBar);
+          enemy.onFrameChange = null;
+          enemy.onComplete = null;
+        }
+        state.enemies.length = 0;
+
+        // Reset combat flags
+        state.isCombat = false;
+        state.isAttackingChar = false;
+        setEnemiesInRange(0);
+        state.roundOver = false;
+        state.isPointerDown = false;
+
+        // Hide enemy portrait
+        const enemyPortrait = document.getElementById('enemy-portrait');
+        if (enemyPortrait) enemyPortrait.style.display = 'none';
+
+        // Reset critter to walking
+        critter.loop = true;
+        critter.textures = state.frogWalkTextures;
+        critter.play();
+
+        // Restart spawning
+        if (state.enemySpawnTimeout) {
+          clearTimeout(state.enemySpawnTimeout);
+          state.enemySpawnTimeout = null;
+        }
+        state.isSpawning = false;
+        state.timeOfLastSpawn = Date.now();
+        spawnEnemies();
       } else {
         // Can't afford — shake dialog
         state.hitSound.volume = state.effectsVolume;
@@ -1629,7 +1678,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           document.getElementById('golden-bean-count').textContent = getGoldenBeanCount();
           goldenBeanBtn.classList.toggle('active', getGoldenBeanCount() > 0);
           if (getGoldenBeanCount() <= 0) { goldenBeanBtn.style.display = 'none'; repositionItemButtons(); }
-          addCoffee(100);
+          playGoldenBeanFlyEffect(critter, 100);
           playGoldenBeanSound();
         }
       });
@@ -2727,6 +2776,7 @@ backgroundTexture = textures.background;
         if (!state.isAttackingChar) {
           if (!getisDead()) {
             state.isAttackingChar = true;
+            const attackingChar = getCurrentCharacter();
             critter.textures = state.frogAttackTextures;
             setCharAttackAnimating(true);
             critter.loop = false;
@@ -2738,7 +2788,7 @@ backgroundTexture = textures.background;
                 attackAnimationPlayed = true;
                 state.attackSound.volume = state.effectsVolume;
                 state.attackSound.play();
-                if (getCurrentCharacter() === "character-bird") {
+                if (attackingChar === "character-bird") {
                   const birdProjectile = new PIXI.Sprite(textures.bird_egg);
                   birdProjectile.position.set(
                     critter.position.x,
@@ -2788,7 +2838,7 @@ backgroundTexture = textures.background;
 
                   castle.filters = [greyscaleFilter];
 
-                  castleTakeDamage(getCharacterDamage(getCurrentCharacter()));
+                  castleTakeDamage(getCharacterDamage(attackingChar));
                 }
                 state.isAttackingChar = false;
                 isMoving = false;

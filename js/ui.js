@@ -10,8 +10,8 @@ export function createBackgroundSprite() {
   const backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
   backgroundSprite.width = Math.min(sw * 0.7, 520);
   backgroundSprite.height = Math.min(sh * 0.55, 380);
-  backgroundSprite.tint = 0x1a1a2e;
-  backgroundSprite.alpha = 0.92;
+  backgroundSprite.tint = 0x000000;
+  backgroundSprite.alpha = 0.8;
   return backgroundSprite;
 }
 
@@ -20,7 +20,7 @@ export function createBorder(backgroundSprite) {
   const bw = backgroundSprite.width;
   const bh = backgroundSprite.height;
   const r = 14;
-  border.roundRect(0, 0, bw, bh, r).stroke({ width: 3, color: 0xFFC832 });
+  border.roundRect(0, 0, bw, bh, r).stroke({ width: 3, color: 0xFFFFFF });
   return border;
 }
 
@@ -100,7 +100,7 @@ export function createSliderBall(backgroundSprite, type, trackWidth) {
   const ballRadius = Math.max(8, Math.min(14, backgroundSprite.width * 0.028));
 
   const sliderBall = new PIXI.Graphics();
-  sliderBall.circle(0, 0, ballRadius).fill({ color: 0xFFFFFF }).stroke({ width: 2, color: 0xFFC832 });
+  sliderBall.circle(0, 0, ballRadius).fill({ color: 0xFFFFFF }).stroke({ width: 2, color: 0x000000 });
   sliderBall.position.set(currentVolume * trackWidth, 0);
 
   let isDragging = false;
@@ -208,7 +208,7 @@ export function createPauseMenuContainer() {
   const btnBg = new PIXI.Graphics();
   btnBg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 10)
     .fill({ color: 0x000000, alpha: 0.5 })
-    .stroke({ width: 2, color: 0xFFC832 });
+    .stroke({ width: 2, color: 0xFFFFFF });
   btnBg.position.set(menuBtn.x, menuBtn.y);
   btnBg.eventMode = 'static';
   btnBg.cursor = 'pointer';

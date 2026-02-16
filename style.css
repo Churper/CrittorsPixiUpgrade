@@ -271,6 +271,18 @@ touch-action: manipulation;
   bottom: calc(35% - 132px);
 }
 
+#rage-btn {
+  bottom: calc(35% - 198px);
+}
+
+#feather-btn {
+  bottom: calc(35% - 264px);
+}
+
+#golden-bean-btn {
+  bottom: calc(35% - 330px);
+}
+
 .item-count {
   position: absolute;
   bottom: 2px;
@@ -300,6 +312,36 @@ touch-action: manipulation;
   50% {
     box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
     border-color: rgba(0, 255, 255, 1);
+  }
+}
+
+.item-btn.rage-active-glow {
+  animation: ragePulse 1.2s ease-in-out infinite;
+}
+
+@keyframes ragePulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 50, 50, 0.4);
+    border-color: rgba(255, 50, 50, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 50, 50, 0.8);
+    border-color: rgba(255, 50, 50, 1);
+  }
+}
+
+.item-btn.feather-active-glow {
+  animation: featherPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes featherPulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 200, 50, 0.4);
+    border-color: rgba(255, 200, 50, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 200, 50, 0.8);
+    border-color: rgba(255, 200, 50, 1);
   }
 }
 

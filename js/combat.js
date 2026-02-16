@@ -11,6 +11,8 @@ import {
   getFrogTintColor, getCoffee, setCoffee,
   getCharEXP, getEXPtoLevel,
   getShieldCount, setShieldCount, getBombCount, setBombCount,
+  getRageCount, setRageCount, getFeatherCount, setFeatherCount,
+  getGoldenBeanCount, setGoldenBeanCount,
 } from './state.js';
 import { pauseTimer, isTimerFinished } from './timer.js';
 import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCharacterDamage } from './characters.js';
@@ -426,11 +428,22 @@ export function rangedAttack(critter, enemy) {
           createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
           // Item drop (endless mode only)
           if (state.gameMode === 'endless') {
-            const roll = Math.random();
-            if (roll < 0.025) {
-              createItemDrop(enemy.position.x, enemy.position.y, 'shield');
-            } else if (roll < 0.05) {
-              createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+            if (enemy.isDemi) {
+              const items = ['shield','bomb','rage','feather','goldenBean'];
+              createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
+            } else {
+              const roll = Math.random();
+              if (roll < 0.01) {
+                createItemDrop(enemy.position.x, enemy.position.y, 'shield');
+              } else if (roll < 0.02) {
+                createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+              } else if (roll < 0.03) {
+                createItemDrop(enemy.position.x, enemy.position.y, 'rage');
+              } else if (roll < 0.04) {
+                createItemDrop(enemy.position.x, enemy.position.y, 'feather');
+              } else if (roll < 0.05) {
+                createItemDrop(enemy.position.x, enemy.position.y, 'goldenBean');
+              }
             }
           }
           state.app.stage.removeChild(enemy);
@@ -499,9 +512,7 @@ export function playGhostFly() {
   let wobbleSpeed = 0.05; // speed of the wobble
   let wobbleAmplitude = 7.5; // initial amplitude of the wobble
   let wobbleDamping = 0.99; // damping factor of the wobble
-  let moveInterval;
-
-  moveInterval = setInterval(() => {
+  state.ghostFlyInterval = setInterval(() => {
     state.frogGhostPlayer.y -= speed;
     let wobbleOffset = Math.sin(state.frogGhostPlayer.y * wobbleSpeed) * wobbleAmplitude;
     state.frogGhostPlayer.x += wobbleOffset;
@@ -510,7 +521,8 @@ export function playGhostFly() {
       state.frogGhostPlayer.y = targetY; // Ensure the frog reaches the exact target position
 
       // Stop the frog's movement temporarily until character is selected
-      clearInterval(moveInterval);
+      clearInterval(state.ghostFlyInterval);
+      state.ghostFlyInterval = null;
       console.log("LEVELING",state.leveling);
       if (state.leveling == false) {
         // Check if character is selected
@@ -658,7 +670,28 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
 
 
             if (!hasDied) {
-              // console.log("playerhp", playerHP);
+              // Phoenix feather death interception
+              if (state.featherActive) {
+                state.featherActive = false;
+                setPlayerCurrentHealth(Math.round(getPlayerHealth() * 0.3));
+                updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
+                // Remove feather sprite
+                if (state.featherSprite) {
+                  if (state.app.stage.children.includes(state.featherSprite)) {
+                    state.app.stage.removeChild(state.featherSprite);
+                  }
+                  state.featherSprite.destroy();
+                  state.featherSprite = null;
+                }
+                playFeatherReviveSound();
+                // Gold flash on critter
+                critter.tint = 0xffd700;
+                setTimeout(() => { critter.tint = state.rageActive ? 0xff4444 : 0xffffff; }, 300);
+                // Remove feather glow from button
+                const featherBtn = document.getElementById('feather-btn');
+                if (featherBtn) featherBtn.classList.remove('feather-active-glow');
+                return; // skip death entirely
+              }
               hasDied = true;
               state.frogGhostPlayer.position.set(critter.position.x, critter.position.y);
               if (state.gameMode === 'endless') {
@@ -1000,11 +1033,23 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
       // Item drop (endless mode only)
       if (state.gameMode === 'endless') {
-        const roll = Math.random();
-        if (roll < 0.025) {
-          createItemDrop(enemy.position.x, enemy.position.y, 'shield');
-        } else if (roll < 0.05) {
-          createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+        if (enemy.isDemi) {
+          // Demi-boss: guaranteed random item drop
+          const items = ['shield','bomb','rage','feather','goldenBean'];
+          createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
+        } else {
+          const roll = Math.random();
+          if (roll < 0.01) {
+            createItemDrop(enemy.position.x, enemy.position.y, 'shield');
+          } else if (roll < 0.02) {
+            createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+          } else if (roll < 0.03) {
+            createItemDrop(enemy.position.x, enemy.position.y, 'rage');
+          } else if (roll < 0.04) {
+            createItemDrop(enemy.position.x, enemy.position.y, 'feather');
+          } else if (roll < 0.05) {
+            createItemDrop(enemy.position.x, enemy.position.y, 'goldenBean');
+          }
         }
       }
       state.app.stage.removeChild(enemy);
@@ -1130,7 +1175,11 @@ export function playItemPickupSound(itemType) {
   gain.connect(ctx.destination);
   gain.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
-  const freqs = itemType === 'shield' ? [600, 500, 400] : [400, 600, 800];
+  const freqMap = {
+    'shield': [600, 500, 400], 'bomb': [400, 600, 800],
+    'rage': [500, 700, 900], 'feather': [700, 900, 1100], 'goldenBean': [300, 500, 700]
+  };
+  const freqs = freqMap[itemType] || [400, 600, 800];
   freqs.forEach((freq, i) => {
     const osc = ctx.createOscillator();
     osc.type = 'triangle';
@@ -1253,22 +1302,82 @@ export function playExplosionSound() {
   crunch.stop(ctx.currentTime + 0.4);
 }
 
+export function playRageSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+  // Aggressive rising tone
+  [300, 500, 800].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.08);
+    osc.connect(gain);
+    osc.start(ctx.currentTime + i * 0.08);
+    osc.stop(ctx.currentTime + i * 0.08 + 0.12);
+  });
+}
+
+export function playFeatherReviveSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.3, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
+  // Ascending magical chime
+  [500, 700, 900, 1200].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
+    osc.connect(gain);
+    osc.start(ctx.currentTime + i * 0.1);
+    osc.stop(ctx.currentTime + i * 0.1 + 0.15);
+  });
+}
+
+export function playGoldenBeanSound() {
+  const ctx = getAudioCtx();
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const gain = ctx.createGain();
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(vol * 0.35, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
+  // Deep coffee chime — lower frequencies than regular coin sound
+  [300, 400, 600].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.1);
+    osc.connect(gain);
+    osc.start(ctx.currentTime + i * 0.1);
+    osc.stop(ctx.currentTime + i * 0.1 + 0.18);
+  });
+}
+
 function updateItemButtonState(itemType) {
-  const btnId = itemType === 'shield' ? 'shield-btn' : 'bomb-btn';
-  const countId = itemType === 'shield' ? 'shield-count' : 'bomb-count';
-  const count = itemType === 'shield' ? getShieldCount() : getBombCount();
+  const btnMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn' };
+  const countMap = { 'shield': 'shield-count', 'bomb': 'bomb-count', 'rage': 'rage-count', 'feather': 'feather-count', 'goldenBean': 'golden-bean-count' };
+  const getCountMap = { 'shield': getShieldCount, 'bomb': getBombCount, 'rage': getRageCount, 'feather': getFeatherCount, 'goldenBean': getGoldenBeanCount };
+  const btnId = btnMap[itemType];
+  const countId = countMap[itemType];
+  const count = getCountMap[itemType] ? getCountMap[itemType]() : 0;
   const btn = document.getElementById(btnId);
   const countEl = document.getElementById(countId);
   if (countEl) countEl.textContent = count;
   if (btn) {
-    // Only show button when count > 0, hide when empty
     btn.style.display = count > 0 ? 'flex' : 'none';
     btn.classList.toggle('active', count > 0);
   }
 }
 
 export function createItemDrop(x, y, itemType) {
-  const emoji = itemType === 'shield' ? '🛡️' : '💣';
+  const emojiMap = { 'shield': '🛡️', 'bomb': '💣', 'rage': '🧃', 'feather': '🪶', 'goldenBean': '✨' };
+  const emoji = emojiMap[itemType] || '❓';
   const itemText = new PIXI.Text({ text: emoji, style: { fontSize: 32 } });
   itemText.anchor.set(0.5);
   itemText.position.set(x, y - 30);
@@ -1322,7 +1431,8 @@ export function collectGroundItem(groundItem) {
   playItemPickupSound(itemType);
 
   // Fly to UI button position
-  const btnId = itemType === 'shield' ? 'shield-btn' : 'bomb-btn';
+  const btnIdMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn' };
+  const btnId = btnIdMap[itemType] || 'shield-btn';
   const btn = document.getElementById(btnId);
   const btnRect = btn ? btn.getBoundingClientRect() : { left: 16, top: window.innerHeight * 0.65 };
   const screenTargetX = btnRect.left + 28;
@@ -1353,8 +1463,14 @@ export function collectGroundItem(groundItem) {
       // Increment count
       if (itemType === 'shield') {
         setShieldCount(getShieldCount() + 1);
-      } else {
+      } else if (itemType === 'bomb') {
         setBombCount(getBombCount() + 1);
+      } else if (itemType === 'rage') {
+        setRageCount(getRageCount() + 1);
+      } else if (itemType === 'feather') {
+        setFeatherCount(getFeatherCount() + 1);
+      } else if (itemType === 'goldenBean') {
+        setGoldenBeanCount(getGoldenBeanCount() + 1);
       }
       updateItemButtonState(itemType);
 

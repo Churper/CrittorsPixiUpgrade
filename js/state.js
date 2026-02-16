@@ -118,6 +118,10 @@ const state = {
   shieldHP: 0,
   groundItems: [],
   shieldSprite: null,
+  rageCount: 0, rageActive: false, rageEndTime: 0,
+  featherCount: 0, featherActive: false, featherSprite: null,
+  goldenBeanCount: 0,
+  ghostFlyInterval: null,
 
   // Config
   characterPositions: {
@@ -282,6 +286,12 @@ export function getShieldCount() { return state.shieldCount; }
 export function setShieldCount(v) { state.shieldCount = v; }
 export function getBombCount() { return state.bombCount; }
 export function setBombCount(v) { state.bombCount = v; }
+export function getRageCount() { return state.rageCount; }
+export function setRageCount(v) { state.rageCount = v; }
+export function getFeatherCount() { return state.featherCount; }
+export function setFeatherCount(v) { state.featherCount = v; }
+export function getGoldenBeanCount() { return state.goldenBeanCount; }
+export function setGoldenBeanCount(v) { state.goldenBeanCount = v; }
 
 // Misc getters/setters
 export function getFrogSize() { return state.frogSize; }

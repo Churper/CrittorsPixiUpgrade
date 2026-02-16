@@ -16,6 +16,8 @@ import {
   getCharLevel, getCharEXP, getEXPtoLevel,
   getPlayerHealth, getPlayerCurrentHealth, getisPaused,
   getShieldCount, setShieldCount, getBombCount, setBombCount,
+  getRageCount, setRageCount, getFeatherCount, setFeatherCount,
+  getGoldenBeanCount, setGoldenBeanCount,
 } from './state.js';
 import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
 import { getRandomColor, getRandomColor3 } from './utils.js';
@@ -39,6 +41,7 @@ import {
   playShieldActivateSound, playShieldBreakSound,
   playBombDropSound, playExplosionSound,
   createItemDrop,
+  playRageSound, playFeatherReviveSound, playGoldenBeanSound,
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame } from './save.js';
@@ -822,7 +825,17 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 });
   
 
+  let _swapLock = false; // debounce guard for swap clicks
+
   function handleCharacterClick(characterType) {
+    // --- Guard: prevent rapid double-clicks ---
+    if (_swapLock) return;
+
+    // --- Guard: prevent swapping to same character while alive ---
+    if (characterType === state.selectedCharacter && !getisDead()) {
+      return;
+    }
+
     let characterHealth;
 
     switch (characterType) {
@@ -856,6 +869,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       createReviveDialog(characterType);
       return;
     }
+
+    // Lock swap for a short debounce window
+    _swapLock = true;
+    setTimeout(() => { _swapLock = false; }, 300);
 
     app.stage.addChild(critter);
     stopFlashing();
@@ -943,6 +960,29 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         playShieldBreakSound();
       }
 
+      // Break rage on character swap
+      if (state.rageActive) {
+        state.rageActive = false;
+        state.rageEndTime = 0;
+        critter.tint = 0xffffff;
+        if (state.originalAnimSpeed) {
+          critter.animationSpeed = state.originalAnimSpeed;
+          state.originalAnimSpeed = null;
+        }
+        const rageBtnEl = document.getElementById('rage-btn');
+        if (rageBtnEl) rageBtnEl.classList.remove('rage-active-glow');
+      }
+
+      // Cancel ghost fly interval on swap to living character
+      if (state.ghostFlyInterval) {
+        clearInterval(state.ghostFlyInterval);
+        state.ghostFlyInterval = null;
+        // Remove ghost sprite if still on stage
+        if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
+          state.app.stage.removeChild(state.frogGhostPlayer);
+        }
+      }
+
       // Spawn protection — 2s invincibility, but only once per 15s
       if (Date.now() - state.lastInvulnTime >= 15000) {
         state.spawnProtectionEnd = Date.now() + 2000;
@@ -973,8 +1013,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   // --- Airstrike (bomb item) ---
   function triggerAirstrike(app, critter) {
-    // Drop target = center of visible screen in stage coords
-    const dropX = -app.stage.x + app.screen.width / 2;
+    // Drop target = ahead of player (shifted ~2 character lengths to the right)
+    const dropX = critter.position.x + 140;
     const dropY = -app.stage.y + app.screen.height / 2;
     const groundY = critter.position.y;
 
@@ -1203,109 +1243,147 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     if (state.reviveDialogContainer && app.stage.children.includes(state.reviveDialogContainer)) {
       return;
     }
-  
+
     state.reviveDialogContainer = new PIXI.Container();
     state.reviveDialogContainer.zIndex = 999999;
 
-    // Create a semi-transparent black background sprite for the dialog box
-    backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
-    backgroundSprite.width = app.screen.width * 0.6;
-    backgroundSprite.height = app.screen.height / 2;
-    backgroundSprite.tint = 0x000000; // Black color
-    backgroundSprite.alpha = 0.5; // Make it semi-transparent
-    state.reviveDialogContainer.addChild(backgroundSprite);
-  
-    // Create a brown border around the background
-    const border = new PIXI.Graphics();
-    border.rect(0, 0, backgroundSprite.width, backgroundSprite.height).stroke({ width: 4, color: 0x8B4513 });
-    state.reviveDialogContainer.addChild(border);
-  
-    // Create the text for the dialog box
+    const dialogW = Math.min(app.screen.width * 0.55, 320);
+    const dialogH = Math.min(app.screen.height * 0.35, 200);
+    const cornerRadius = 16;
+    const canAfford = getCoffee() >= 50;
     const characterName = getCharacterName(characterType);
 
-    const reviveText2 = `Spend 50 to revive ${characterName}?`;
-  
-    const textStyle = getTextStyle( backgroundSprite.width );
-  
-    const text = new PIXI.Text(reviveText2, textStyle);
-    text.anchor.set(.5);
-    text.position.set(backgroundSprite.width / 2, backgroundSprite.height * 0.25);
-  
-  
-  
-    // Add state.coffee bean image
-    let beanSprite = new PIXI.Sprite(PIXI.Assets.get('bean'))
+    // --- Background panel with rounded corners ---
+    const panel = new PIXI.Graphics();
+    panel.roundRect(0, 0, dialogW, dialogH, cornerRadius);
+    panel.fill({ color: 0x0a0f19, alpha: 0.92 });
+    panel.roundRect(0, 0, dialogW, dialogH, cornerRadius);
+    panel.stroke({ width: 2, color: 0x64a0c8, alpha: 0.6 });
+    state.reviveDialogContainer.addChild(panel);
+
+    // --- Title text ---
+    const titleStyle = new PIXI.TextStyle({
+      fontFamily: 'Luckiest Guy',
+      fontSize: Math.max(16, Math.min(24, dialogW * 0.07)),
+      fill: '#e0e8f0',
+      stroke: '#000000',
+      strokeThickness: 3,
+      dropShadow: true,
+      dropShadowColor: '#000000',
+      dropShadowBlur: 4,
+      dropShadowDistance: 1,
+    });
+    const title = new PIXI.Text(`Revive ${characterName}?`, titleStyle);
+    title.anchor.set(0.5, 0);
+    title.position.set(dialogW / 2, 14);
+    state.reviveDialogContainer.addChild(title);
+
+    // --- Cost line: bean icon + "50" ---
+    const costStyle = new PIXI.TextStyle({
+      fontFamily: 'Patrick Hand',
+      fontSize: Math.max(14, Math.min(20, dialogW * 0.055)),
+      fill: canAfford ? '#aaddaa' : '#ff8888',
+      stroke: '#000000',
+      strokeThickness: 2,
+    });
+    const costText = new PIXI.Text(`Cost: 50`, costStyle);
+    costText.anchor.set(0.5, 0);
+    costText.position.set(dialogW / 2 + 12, title.position.y + title.height + 6);
+    state.reviveDialogContainer.addChild(costText);
+
+    const beanSprite = new PIXI.Sprite(PIXI.Assets.get('bean'));
     beanSprite.anchor.set(0.5);
-    beanSprite.scale.set(0.85);
-    beanSprite.position.set(text.position.x - text.width / 5.5, text.position.y);
-    
+    beanSprite.scale.set(0.5);
+    beanSprite.position.set(costText.position.x - costText.width / 2 - 14, costText.position.y + costText.height / 2);
     state.reviveDialogContainer.addChild(beanSprite);
-    state.reviveDialogContainer.addChild(text);
-  
-    // Create the 'Yes' button with emoji
-    const playerCoins = getCoffee(); // Assuming getCoffee() is the function that returns the player's current coin amount
-    const yesButtonStyle = new PIXI.TextStyle({
-      fontSize: app.screen.width * 0.26,
-      fill: playerCoins >= 50 ? '#008000' : '#808080',
-      backgroundColor: '#000000',
-      fontFamily: 'Marker Felt',
+
+    if (!canAfford) {
+      const warnStyle = new PIXI.TextStyle({
+        fontFamily: 'Patrick Hand',
+        fontSize: Math.max(11, Math.min(15, dialogW * 0.04)),
+        fill: '#ff6666',
+        stroke: '#000000',
+        strokeThickness: 2,
+      });
+      const warnText = new PIXI.Text(`(Not enough coffee!)`, warnStyle);
+      warnText.anchor.set(0.5, 0);
+      warnText.position.set(dialogW / 2, costText.position.y + costText.height + 2);
+      state.reviveDialogContainer.addChild(warnText);
+    }
+
+    // --- Buttons ---
+    const btnW = dialogW * 0.35;
+    const btnH = 40;
+    const btnY = dialogH - btnH - 16;
+    const btnGap = 16;
+
+    // Yes button
+    const yesBg = new PIXI.Graphics();
+    yesBg.roundRect(0, 0, btnW, btnH, 8);
+    yesBg.fill({ color: canAfford ? 0x1a6630 : 0x333333, alpha: 0.85 });
+    yesBg.roundRect(0, 0, btnW, btnH, 8);
+    yesBg.stroke({ width: 2, color: canAfford ? 0x44cc66 : 0x666666, alpha: 0.7 });
+    yesBg.position.set(dialogW / 2 - btnW - btnGap / 2, btnY);
+    state.reviveDialogContainer.addChild(yesBg);
+
+    const yesBtnStyle = new PIXI.TextStyle({
+      fontFamily: 'Luckiest Guy',
+      fontSize: Math.max(14, Math.min(18, dialogW * 0.05)),
+      fill: canAfford ? '#88ff88' : '#888888',
       stroke: '#000000',
-      strokeThickness: -6,
-      dropShadow: true,
-      dropShadowColor: '#000000',
-      dropShadowBlur: 4,
-      dropShadowAngle: Math.PI / 6,
-      dropShadowDistance: 2,
-      wordWrap: true,
-      wordWrapWidth: app.screen.width / 3,
+      strokeThickness: 2,
     });
-  
-    const yesButton = new PIXI.Text('☑', yesButtonStyle);
-    yesButton.anchor.set(0.5);
-    yesButton.position.set(backgroundSprite.width * 0.3, backgroundSprite.height * 0.75);
-    state.reviveDialogContainer.addChild(yesButton);
-  
-    // Create the 'No' button with emoji and red tint
-    const noButtonStyle = new PIXI.TextStyle({
-      fontSize: app.screen.width * 0.26,
-      fill: '#FF0000',
-      backgroundColor: '#000000',
-      fontFamily: 'Marker Felt',
+    const yesLabel = new PIXI.Text('Revive', yesBtnStyle);
+    yesLabel.anchor.set(0.5);
+    yesLabel.position.set(yesBg.position.x + btnW / 2, btnY + btnH / 2);
+    state.reviveDialogContainer.addChild(yesLabel);
+
+    // No button
+    const noBg = new PIXI.Graphics();
+    noBg.roundRect(0, 0, btnW, btnH, 8);
+    noBg.fill({ color: 0x661a1a, alpha: 0.85 });
+    noBg.roundRect(0, 0, btnW, btnH, 8);
+    noBg.stroke({ width: 2, color: 0xcc4444, alpha: 0.7 });
+    noBg.position.set(dialogW / 2 + btnGap / 2, btnY);
+    state.reviveDialogContainer.addChild(noBg);
+
+    const noBtnStyle = new PIXI.TextStyle({
+      fontFamily: 'Luckiest Guy',
+      fontSize: Math.max(14, Math.min(18, dialogW * 0.05)),
+      fill: '#ff8888',
       stroke: '#000000',
-      strokeThickness: -6,
-      dropShadow: true,
-      dropShadowColor: '#000000',
-      dropShadowBlur: 4,
-      dropShadowAngle: Math.PI / 6,
-      dropShadowDistance: 2,
-      wordWrap: true,
-      wordWrapWidth: app.screen.width / 3,
+      strokeThickness: 2,
     });
-  
-    const noButton = new PIXI.Text('☒', noButtonStyle);
-    noButton.anchor.set(0.5);
-    noButton.position.set(backgroundSprite.width * 0.7, backgroundSprite.height * 0.75);
-    state.reviveDialogContainer.addChild(noButton);
-  
-    // Calculate the position of the dialog box based on the current stage position
-    const dialogX = (app.screen.width / 2) - (backgroundSprite.width / 2);
-    const dialogY = (app.screen.height / 2) - (backgroundSprite.height / 2);
+    const noLabel = new PIXI.Text('Cancel', noBtnStyle);
+    noLabel.anchor.set(0.5);
+    noLabel.position.set(noBg.position.x + btnW / 2, btnY + btnH / 2);
+    state.reviveDialogContainer.addChild(noLabel);
+
+    // Position dialog centered on screen (in stage coords)
+    const dialogX = -app.stage.x + (app.screen.width - dialogW) / 2;
+    const dialogY = -app.stage.y + (app.screen.height - dialogH) / 2;
     state.reviveDialogContainer.position.set(dialogX, dialogY);
-  
-    // Add the dialog box to the PIXI stage
+
     app.stage.addChild(state.reviveDialogContainer);
     setisPaused(true);
-  
-    // Listen for click events on the 'Yes' button
-    yesButton.eventMode = 'static';
-    yesButton.cursor = 'pointer';
-    noButton.eventMode = 'static';
-    noButton.cursor = 'pointer';
-  
-    yesButton.on('pointerdown', () => {
-      // Check if the player has enough coins to revive the character
+
+    // --- Button interactivity ---
+    yesBg.eventMode = 'static';
+    yesBg.cursor = 'pointer';
+    yesLabel.eventMode = 'static';
+    yesLabel.cursor = 'pointer';
+    noBg.eventMode = 'static';
+    noBg.cursor = 'pointer';
+    noLabel.eventMode = 'static';
+    noLabel.cursor = 'pointer';
+
+    let reviveProcessing = false; // prevent double-click
+
+    const doRevive = () => {
+      if (reviveProcessing) return;
       if (getCoffee() >= 50) {
-        // Perform the revive logic — restore health
+        reviveProcessing = true;
+        // Restore health
         if (characterType === 'character-snail') {
           setCurrentSnailHealth(getSnailHealth());
         } else if (characterType === 'character-bird') {
@@ -1318,33 +1396,38 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         addCoffee(-50);
         app.stage.removeChild(state.reviveDialogContainer);
         state.reviveDialogContainer = null;
-        // Switch to the revived character
         setIsDead(false);
         handleCharacterClick(characterType);
       } else {
-        // Can't afford — play dud sound and shake the dialog, don't dismiss
+        // Can't afford — shake dialog
         state.hitSound.volume = state.effectsVolume;
         state.hitSound.play();
-        // Quick shake effect
+        if (!state.reviveDialogContainer) return;
         const origX = state.reviveDialogContainer.position.x;
         let shakeCount = 0;
         const shakeInterval = setInterval(() => {
+          if (!state.reviveDialogContainer) { clearInterval(shakeInterval); return; }
           state.reviveDialogContainer.position.x = origX + (shakeCount % 2 === 0 ? 8 : -8);
           shakeCount++;
           if (shakeCount >= 6) {
             clearInterval(shakeInterval);
-            state.reviveDialogContainer.position.x = origX;
+            if (state.reviveDialogContainer) state.reviveDialogContainer.position.x = origX;
           }
         }, 50);
       }
-    });
+    };
 
-    noButton.on('pointerdown', () => {
-      // Dismiss dialog — reopen character menu so player picks an alive one
+    const doCancel = () => {
+      if (!state.reviveDialogContainer) return;
       app.stage.removeChild(state.reviveDialogContainer);
       state.reviveDialogContainer = null;
       openCharacterMenu();
-    });
+    };
+
+    yesBg.on('pointerdown', doRevive);
+    yesLabel.on('pointerdown', doRevive);
+    noBg.on('pointerdown', doCancel);
+    noLabel.on('pointerdown', doCancel);
   }
 
 
@@ -1418,16 +1501,31 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       // Start with 1 of each item
       setShieldCount(1);
       setBombCount(1);
+      setRageCount(1);
+      setFeatherCount(1);
+      setGoldenBeanCount(1);
 
       // Wire item buttons
       const shieldBtn = document.getElementById('shield-btn');
       const bombBtn = document.getElementById('bomb-btn');
+      const rageBtn = document.getElementById('rage-btn');
+      const featherBtn = document.getElementById('feather-btn');
+      const goldenBeanBtn = document.getElementById('golden-bean-btn');
       shieldBtn.style.display = 'flex';
       bombBtn.style.display = 'flex';
+      rageBtn.style.display = 'flex';
+      featherBtn.style.display = 'flex';
+      goldenBeanBtn.style.display = 'flex';
       document.getElementById('shield-count').textContent = '1';
       document.getElementById('bomb-count').textContent = '1';
+      document.getElementById('rage-count').textContent = '1';
+      document.getElementById('feather-count').textContent = '1';
+      document.getElementById('golden-bean-count').textContent = '1';
       shieldBtn.classList.add('active');
       bombBtn.classList.add('active');
+      rageBtn.classList.add('active');
+      featherBtn.classList.add('active');
+      goldenBeanBtn.classList.add('active');
 
       // Shield button handler
       shieldBtn.addEventListener('click', () => {
@@ -1473,6 +1571,56 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           bombBtn.classList.toggle('active', getBombCount() > 0);
           if (getBombCount() <= 0) bombBtn.style.display = 'none';
           triggerAirstrike(app, critter);
+        }
+      });
+
+      // Rage Potion button handler
+      rageBtn.addEventListener('click', () => {
+        if (getRageCount() > 0 && !state.rageActive) {
+          setRageCount(getRageCount() - 1);
+          document.getElementById('rage-count').textContent = getRageCount();
+          rageBtn.classList.toggle('active', getRageCount() > 0);
+          if (getRageCount() <= 0) rageBtn.style.display = 'none';
+
+          state.rageActive = true;
+          state.rageEndTime = Date.now() + 30000;
+          state.originalAnimSpeed = critter.animationSpeed;
+          critter.animationSpeed *= 2;
+          critter.tint = 0xff4444;
+          rageBtn.classList.add('rage-active-glow');
+          playRageSound();
+        }
+      });
+
+      // Feather button handler
+      featherBtn.addEventListener('click', () => {
+        if (getFeatherCount() > 0 && !state.featherActive) {
+          setFeatherCount(getFeatherCount() - 1);
+          document.getElementById('feather-count').textContent = getFeatherCount();
+          featherBtn.classList.toggle('active', getFeatherCount() > 0);
+          if (getFeatherCount() <= 0) featherBtn.style.display = 'none';
+
+          state.featherActive = true;
+          // Create feather sprite above critter
+          const featherSprite = new PIXI.Text({ text: '🪶', style: { fontSize: 28 } });
+          featherSprite.anchor.set(0.5);
+          featherSprite.position.set(critter.position.x, critter.position.y - 50);
+          featherSprite.zIndex = 51;
+          state.app.stage.addChild(featherSprite);
+          state.featherSprite = featherSprite;
+          featherBtn.classList.add('feather-active-glow');
+        }
+      });
+
+      // Golden Bean button handler (instant use)
+      goldenBeanBtn.addEventListener('click', () => {
+        if (getGoldenBeanCount() > 0) {
+          setGoldenBeanCount(getGoldenBeanCount() - 1);
+          document.getElementById('golden-bean-count').textContent = getGoldenBeanCount();
+          goldenBeanBtn.classList.toggle('active', getGoldenBeanCount() > 0);
+          if (getGoldenBeanCount() <= 0) goldenBeanBtn.style.display = 'none';
+          addCoffee(100);
+          playGoldenBeanSound();
         }
       });
     }
@@ -3429,6 +3577,33 @@ state.demiSpawned = 0;
           // Scale based on remaining HP
           const s = 0.8 + (state.shieldHP / 100) * 0.2;
           state.shieldSprite.scale.set(s);
+        }
+
+        // --- Rage timer update ---
+        if (state.rageActive) {
+          if (Date.now() > state.rageEndTime) {
+            state.rageActive = false;
+            critter.tint = 0xffffff;
+            if (state.originalAnimSpeed) {
+              critter.animationSpeed = state.originalAnimSpeed;
+              state.originalAnimSpeed = null;
+            }
+            const rageBtnEl = document.getElementById('rage-btn');
+            if (rageBtnEl) rageBtnEl.classList.remove('rage-active-glow');
+          } else {
+            // Pulse tint between red shades while active
+            const t = Math.sin(Date.now() * 0.008) * 0.5 + 0.5;
+            const r = 0xff;
+            const g = Math.floor(0x22 + t * 0x22);
+            const b = Math.floor(0x22 + t * 0x22);
+            critter.tint = (r << 16) | (g << 8) | b;
+          }
+        }
+
+        // --- Feather sprite follows critter ---
+        if (state.featherActive && state.featherSprite && critter) {
+          const bob = Math.sin(Date.now() * 0.004) * 5;
+          state.featherSprite.position.set(critter.position.x, critter.position.y - 50 + bob);
         }
 
         if (getSpeedChanged()) { updateVelocity(); setSpeedChanged(false); }

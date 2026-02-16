@@ -236,18 +236,21 @@ export function updateCharacterStats() {
 // --- Character routing helpers ---
 
 export function getCharacterDamage(currentCharacter) {
+  let baseDmg;
   switch (state.currentCharacter) {
     case 'character-snail':
-      return getSnailDamage();
+      baseDmg = getSnailDamage(); break;
     case 'character-bird':
-      return getBirdDamage();
+      baseDmg = getBirdDamage(); break;
     case 'character-frog':
-      return getFrogDamage();
+      baseDmg = getFrogDamage(); break;
     case 'character-bee':
-      return getBeeDamage();
+      baseDmg = getBeeDamage(); break;
     default:
       console.log('Invalid character', state.currentCharacter);
+      return 0;
   }
+  return state.rageActive ? baseDmg * 2 : baseDmg;
 }
 
 export function updateCurrentLevels() {

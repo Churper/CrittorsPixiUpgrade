@@ -1950,7 +1950,7 @@ function updateBiomeTransition() {
   const t = state.biomeTransition;
   if (!t) return;
 
-  t.progress += 0.005; // ~200 frames = ~8s at 60fps
+  t.progress += 0.003; // ~333 frames = ~14s at 60fps
   const p = Math.min(1, t.progress);
 
   // Lerp background and mountain tints

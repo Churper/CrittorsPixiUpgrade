@@ -1860,16 +1860,13 @@ function transitionWeather(newWeather) {
   const app = state.app;
   if (!app) return;
 
-  // Force-complete any existing transition so elements don't pile up
+  // Force-complete any existing transition
   if (state.biomeTransition) {
     const t = state.biomeTransition;
     if (t.oldWeather && t.oldWeather.parent) { app.stage.removeChild(t.oldWeather); t.oldWeather.destroy({ children: true }); }
     if (t.oldGround && t.oldGround.parent) { app.stage.removeChild(t.oldGround); t.oldGround.destroy({ children: true }); }
     if (t.oldGroundDecor && t.oldGroundDecor.parent) { app.stage.removeChild(t.oldGroundDecor); t.oldGroundDecor.destroy({ children: true }); }
     for (const o of (t.oldOverlays || [])) { if (o && o.parent) { app.stage.removeChild(o); o.destroy({ children: true }); } }
-    if (t.groundMask && t.groundMask.parent) { endlessGround.mask = null; app.stage.removeChild(t.groundMask); t.groundMask.destroy({ children: true }); }
-    if (t.decorMask && t.decorMask.parent) { endlessGroundDecor.mask = null; app.stage.removeChild(t.decorMask); t.decorMask.destroy({ children: true }); }
-    // Snap new elements to full alpha
     if (t.newWeather) t.newWeather.alpha = 1;
     if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha;
     if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha;
@@ -1882,52 +1879,34 @@ function transitionWeather(newWeather) {
     state.biomeTransition = null;
   }
 
-  // Fixed boundary in world space — player walks into the new biome
-  const boundaryX = critter.position.x + 500;
-  // Sky/weather fully transitions over this distance past the boundary
-  const transitionDist = 600;
-
-  // Save references to old elements
+  // Save old elements
   const oldWeather = weatherContainer;
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
   const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars, nightFireGlows];
-
-  // Capture current tints
   const oldBgTint = background.tint ?? 0xFFFFFF;
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
 
-  // Create new ground — full width, masked from boundary forward
+  // Create new ground on top — no masks, just alpha crossfade
   const newGround = new PIXI.Graphics();
   newGround.position.set(0, app.screen.height - endlessGroundHeight);
   newGround.zIndex = 5;
+  newGround.alpha = 0;
   app.stage.addChild(newGround);
 
   const newGroundDecor = new PIXI.Container();
   newGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
   newGroundDecor.zIndex = 6;
+  newGroundDecor.alpha = 0;
   app.stage.addChild(newGroundDecor);
 
-  // Mask at fixed boundary — stays in world space, player walks past it
-  const groundMask = new PIXI.Graphics();
-  groundMask.rect(boundaryX, 0, 50000, endlessGroundHeight + 200).fill({ color: 0xffffff });
-  groundMask.position.set(0, app.screen.height - endlessGroundHeight);
-  app.stage.addChild(groundMask);
-  newGround.mask = groundMask;
-
-  const decorMask = new PIXI.Graphics();
-  decorMask.rect(boundaryX, -200, 50000, endlessGroundHeight + 400).fill({ color: 0xffffff });
-  decorMask.position.set(0, app.screen.height - endlessGroundHeight);
-  app.stage.addChild(decorMask);
-  newGroundDecor.mask = decorMask;
-
-  // Swap references so drawEndlessGround draws onto the new objects
+  // Draw new biome ground
   endlessGround = newGround;
   endlessGroundDecor = newGroundDecor;
   drawEndlessGround(newWeather);
   endlessGroundCurrentWeather = newWeather;
 
-  // Detach old overlays so clearWeatherEffects creates fresh ones
+  // Detach old overlays so createWeatherEffects makes fresh ones
   sunLightOverlay = null;
   nightOverlay = null;
   playerShadow = null;
@@ -1935,9 +1914,8 @@ function transitionWeather(newWeather) {
   nightFireGlows = null;
   weatherContainer = null;
 
-  // Create new weather effects
+  // Create new weather at alpha 0
   createWeatherEffects();
-  // Start new weather/overlay at alpha 0 — they crossfade as player crosses
   if (weatherContainer) weatherContainer.alpha = 0;
   if (sunLightOverlay) sunLightOverlay.alpha = 0;
   if (nightOverlay) nightOverlay.alpha = 0;
@@ -1945,44 +1923,29 @@ function transitionWeather(newWeather) {
   if (moonStars) moonStars.alpha = 0;
   if (nightFireGlows) nightFireGlows.alpha = 0;
 
-  // Store target alphas
   const targetNightAlpha = nightOverlay ? 0.35 : 0;
   const targetSunLightAlpha = sunLightOverlay ? 0.12 : 0;
   const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
   const targetMoonStarsAlpha = moonStars ? 1 : 0;
   const targetFireGlowsAlpha = nightFireGlows ? 1 : 0;
-
   const newTints = biomeTints[newWeather] || biomeTints.sun;
 
   updateWeatherIcon();
 
   state.biomeTransition = {
-    oldWeather,
-    oldGround,
-    oldGroundDecor,
-    oldOverlays,
-    newGround,
-    newGroundDecor,
-    groundMask,
-    decorMask,
-    boundaryX,
-    transitionDist,
-    timeProgress: 0,
+    oldWeather, oldGround, oldGroundDecor, oldOverlays,
+    progress: 0,
     newWeather: weatherContainer,
     newSunLight: sunLightOverlay,
     newNightOverlay: nightOverlay,
     newPlayerShadow: playerShadow,
     newMoonStars: moonStars,
-    targetNightAlpha,
-    targetSunLightAlpha,
-    targetPlayerShadowAlpha,
-    targetMoonStarsAlpha,
     newFireGlows: nightFireGlows,
-    targetFireGlowsAlpha,
-    oldBgTint,
-    newBgTint: newTints.bg,
-    oldMtnTint,
-    newMtnTint: newTints.mountain,
+    newGround, newGroundDecor,
+    targetNightAlpha, targetSunLightAlpha, targetPlayerShadowAlpha,
+    targetMoonStarsAlpha, targetFireGlowsAlpha,
+    oldBgTint, newBgTint: newTints.bg,
+    oldMtnTint, newMtnTint: newTints.mountain,
   };
 }
 
@@ -1990,12 +1953,11 @@ function updateBiomeTransition() {
   const t = state.biomeTransition;
   if (!t) return;
 
-  // Hybrid: movement-driven with time fallback so it always completes
-  const movementP = Math.max(0, (critter.position.x - t.boundaryX) / t.transitionDist);
-  t.timeProgress += 0.003; // fallback: ~14s at 60fps
-  const p = Math.min(1, Math.max(movementP, t.timeProgress));
+  // Simple time-based crossfade (~3s at 60fps)
+  t.progress += 0.005;
+  const p = Math.min(1, t.progress);
 
-  // Lerp background and mountain tints
+  // Lerp background + mountain tints
   background.tint = lerpColor(t.oldBgTint, t.newBgTint, p);
   const mtnTint = lerpColor(t.oldMtnTint, t.newMtnTint, p);
   mountain1.tint = mtnTint;
@@ -2003,21 +1965,19 @@ function updateBiomeTransition() {
   mountain3.tint = mtnTint;
   mountain4.tint = mtnTint;
 
-  // Sweep ground mask: if time fallback is driving, shift mask to match
-  if (t.timeProgress > movementP) {
-    const sweepDist = t.boundaryX - (critter.position.x - t.transitionDist);
-    const maskShift = -sweepDist * p;
-    if (t.groundMask) t.groundMask.position.x = maskShift;
-    if (t.decorMask) t.decorMask.position.x = maskShift;
-  }
+  // Crossfade ground
+  if (t.oldGround) t.oldGround.alpha = 1 - p;
+  if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1 - p;
+  if (t.newGround) t.newGround.alpha = p;
+  if (t.newGroundDecor) t.newGroundDecor.alpha = p;
 
-  // Old weather particles + overlays crossfade out
+  // Crossfade old weather/overlays out
   if (t.oldWeather) t.oldWeather.alpha = 1 - p;
   for (const o of (t.oldOverlays || [])) {
-    if (o && o.parent) o.alpha = (1 - p) * 1;
+    if (o && o.parent) o.alpha *= (1 - p * 0.05);
   }
 
-  // Fade new weather/overlays in
+  // Crossfade new weather/overlays in
   if (t.newWeather) t.newWeather.alpha = p;
   if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha * p;
   if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
@@ -2026,36 +1986,11 @@ function updateBiomeTransition() {
   if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha * p;
 
   if (p >= 1) {
-    // Cleanup old elements
-    if (t.oldWeather && t.oldWeather.parent) {
-      state.app.stage.removeChild(t.oldWeather);
-      t.oldWeather.destroy({ children: true });
-    }
-    if (t.oldGround && t.oldGround.parent) {
-      state.app.stage.removeChild(t.oldGround);
-      t.oldGround.destroy({ children: true });
-    }
-    if (t.oldGroundDecor && t.oldGroundDecor.parent) {
-      state.app.stage.removeChild(t.oldGroundDecor);
-      t.oldGroundDecor.destroy({ children: true });
-    }
-    for (const o of (t.oldOverlays || [])) {
-      if (o && o.parent) {
-        state.app.stage.removeChild(o);
-        o.destroy({ children: true });
-      }
-    }
-    // Remove masks — new ground is now fully visible
-    if (t.groundMask && t.groundMask.parent) {
-      endlessGround.mask = null;
-      state.app.stage.removeChild(t.groundMask);
-      t.groundMask.destroy({ children: true });
-    }
-    if (t.decorMask && t.decorMask.parent) {
-      endlessGroundDecor.mask = null;
-      state.app.stage.removeChild(t.decorMask);
-      t.decorMask.destroy({ children: true });
-    }
+    // Destroy old elements
+    if (t.oldWeather && t.oldWeather.parent) { state.app.stage.removeChild(t.oldWeather); t.oldWeather.destroy({ children: true }); }
+    if (t.oldGround && t.oldGround.parent) { state.app.stage.removeChild(t.oldGround); t.oldGround.destroy({ children: true }); }
+    if (t.oldGroundDecor && t.oldGroundDecor.parent) { state.app.stage.removeChild(t.oldGroundDecor); t.oldGroundDecor.destroy({ children: true }); }
+    for (const o of (t.oldOverlays || [])) { if (o && o.parent) { state.app.stage.removeChild(o); o.destroy({ children: true }); } }
     state.biomeTransition = null;
   }
 }

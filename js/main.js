@@ -761,16 +761,22 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     event.preventDefault();
   });
 
-  pauseButton.addEventListener("click", function () {
+  function togglePause() {
     if (getisDead() == false) {
       if (getPlayerCurrentHealth() > 0) {
         if(state.roundOver == false){
-          
         setisPaused(!getisPaused());
         console.log("PAUSED");
         }
       }
+    }
+  }
 
+  pauseButton.addEventListener("click", togglePause);
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      togglePause();
     }
   });
 

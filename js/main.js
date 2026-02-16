@@ -837,6 +837,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
     stopFlashing();
 
+    // Interrupt any in-progress attack animation
+    state.isAttackingChar = false;
+    state.isPointerDown = false;
+    setCharAttackAnimating(false);
+    critter.onComplete = null;
 
     // Swap character portraits
     const characterPortrait = document.getElementById("character-portrait");

@@ -1582,19 +1582,28 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
 
-      // Start with 0 items — drops come from demi-bosses only
-      setShieldCount(0);
-      setBombCount(0);
-      setRageCount(0);
-      setFeatherCount(0);
-      setGoldenBeanCount(0);
+      // Start with 1 of each item for testing
+      setShieldCount(1);
+      setBombCount(1);
+      setRageCount(1);
+      setFeatherCount(1);
+      setGoldenBeanCount(1);
 
-      // Wire item buttons (all hidden until items are picked up)
+      // Wire item buttons
       const shieldBtn = document.getElementById('shield-btn');
       const bombBtn = document.getElementById('bomb-btn');
       const rageBtn = document.getElementById('rage-btn');
       const featherBtn = document.getElementById('feather-btn');
       const goldenBeanBtn = document.getElementById('golden-bean-btn');
+
+      // Show buttons + counts for starting items
+      [shieldBtn, bombBtn, rageBtn, featherBtn, goldenBeanBtn].forEach(b => { if (b) b.style.display = 'flex'; });
+      document.getElementById('shield-count').textContent = getShieldCount();
+      document.getElementById('bomb-count').textContent = getBombCount();
+      document.getElementById('rage-count').textContent = getRageCount();
+      document.getElementById('feather-count').textContent = getFeatherCount();
+      document.getElementById('golden-bean-count').textContent = getGoldenBeanCount();
+      repositionItemButtons();
 
       // Shield button handler
       shieldBtn.addEventListener('click', () => {

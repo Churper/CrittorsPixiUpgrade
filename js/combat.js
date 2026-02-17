@@ -1111,6 +1111,7 @@ export function addCoffee(amount) {
   const coffeeAmount = getCoffee();
   coffeeAmountElement.textContent = `${coffeeAmount}`;
   playCoinSound();
+  document.dispatchEvent(new Event('coffeeChanged'));
 }
 
 // --- Item Drop System (Shield + Bomb) ---

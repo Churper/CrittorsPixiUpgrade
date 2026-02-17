@@ -1139,6 +1139,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   // Re-layout whenever combat.js dispatches an item-count change (e.g. pickup)
   document.addEventListener('itemButtonsChanged', repositionItemButtons);
+  // Update shop affordability whenever coffee changes
+  document.addEventListener('coffeeChanged', updatePotionUI);
 
   // --- Airstrike (bomb item) ---
   function triggerAirstrike(app, critter) {

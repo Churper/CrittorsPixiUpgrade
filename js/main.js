@@ -1546,18 +1546,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
           state.app.stage.removeChild(state.frogGhostPlayer);
         }
-        // Remove all enemies cleanly so revived character starts fresh
-        for (let i = state.enemies.length - 1; i >= 0; i--) {
-          const enemy = state.enemies[i];
-          if (app.stage.children.includes(enemy)) app.stage.removeChild(enemy);
-          if (enemy.hpBarBackground && app.stage.children.includes(enemy.hpBarBackground))
-            app.stage.removeChild(enemy.hpBarBackground);
-          if (enemy.hpBar && app.stage.children.includes(enemy.hpBar))
-            app.stage.removeChild(enemy.hpBar);
+        // Reset enemies so they re-engage cleanly (keep them on the field)
+        for (const enemy of state.enemies) {
+          enemy.play();
+          enemy.enemyAdded = false;
+          enemy.isAttacking = false;
           enemy.onFrameChange = null;
-          enemy.onComplete = null;
         }
-        state.enemies.length = 0;
 
         // Reset combat flags
         state.roundOver = false;

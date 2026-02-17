@@ -137,8 +137,106 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let isAttacking = false;
   let enemyPortrait;
   let handleTouchEnd;
-  const menuTexture = await PIXI.Assets.load('./assets/mainmenu.png');
-  const menuSprite = new PIXI.Sprite(menuTexture);
+  // Procedural main menu scene
+  const menuScene = new PIXI.Container();
+  menuScene.eventMode = 'none';
+  (function buildMenuScene() {
+    const sw = app.screen.width, sh = app.screen.height;
+    // 1. Sky gradient (twilight)
+    const menuBg = new PIXI.Graphics();
+    const BANDS = 32;
+    const bandH = Math.ceil(sh / BANDS);
+    for (let i = 0; i < BANDS; i++) {
+      const t = i / (BANDS - 1);
+      const tr = Math.round(10 + (26 - 10) * t);
+      const tg = Math.round(22 + (58 - 22) * t);
+      const tb = Math.round(40 + (90 - 40) * t);
+      const c = (tr << 16) | (tg << 8) | tb;
+      menuBg.rect(0, i * bandH, sw, bandH + 1).fill({ color: c });
+    }
+    menuScene.addChild(menuBg);
+
+    // 2. Stars
+    const menuStars = new PIXI.Graphics();
+    for (let i = 0; i < 60; i++) {
+      const sx = Math.random() * sw;
+      const sy = Math.random() * sh * 0.55;
+      const sr = 0.5 + Math.random() * 1.5;
+      menuStars.circle(sx, sy, sr).fill({ color: 0xffffff, alpha: 0.2 + Math.random() * 0.5 });
+    }
+    menuScene.addChild(menuStars);
+
+    // 3. Far mountain silhouette (type 2 shape, dark)
+    const farMtn = new PIXI.Graphics();
+    const fmw = sw * 1.2, fmh = sh * 0.25;
+    farMtn.moveTo(0, 0);
+    farMtn.quadraticCurveTo(fmw * 0.12, -fmh * 0.5, fmw * 0.22, -fmh * 0.65);
+    farMtn.quadraticCurveTo(fmw * 0.3, -fmh * 0.4, fmw * 0.38, -fmh * 0.8);
+    farMtn.quadraticCurveTo(fmw * 0.45, -fmh, fmw * 0.5, -fmh * 0.85);
+    farMtn.quadraticCurveTo(fmw * 0.6, -fmh * 0.5, fmw * 0.7, -fmh * 0.6);
+    farMtn.quadraticCurveTo(fmw * 0.8, -fmh * 0.45, fmw * 0.9, -fmh * 0.3);
+    farMtn.quadraticCurveTo(fmw * 0.95, -fmh * 0.15, fmw, 0);
+    farMtn.lineTo(0, 0);
+    farMtn.closePath();
+    farMtn.fill({ color: 0x1a2a3a, alpha: 0.6 });
+    farMtn.position.set(-sw * 0.1, sh * 0.7);
+    menuScene.addChild(farMtn);
+
+    // 4. Near mountain silhouette (type 1 shape, darker, larger)
+    const nearMtn = new PIXI.Graphics();
+    const nmw = sw * 0.9, nmh = sh * 0.35;
+    nearMtn.moveTo(0, 0);
+    nearMtn.quadraticCurveTo(nmw * 0.1, -nmh * 0.25, nmw * 0.25, -nmh * 0.55);
+    nearMtn.quadraticCurveTo(nmw * 0.35, -nmh * 0.85, nmw * 0.45, -nmh);
+    nearMtn.quadraticCurveTo(nmw * 0.55, -nmh * 0.82, nmw * 0.65, -nmh * 0.5);
+    nearMtn.quadraticCurveTo(nmw * 0.8, -nmh * 0.2, nmw, 0);
+    nearMtn.lineTo(0, 0);
+    nearMtn.closePath();
+    nearMtn.fill({ color: 0x0e1a28, alpha: 0.8 });
+    nearMtn.position.set(sw * 0.1, sh * 0.75);
+    menuScene.addChild(nearMtn);
+
+    // 5. Ground strip
+    const menuGround = new PIXI.Graphics();
+    menuGround.rect(0, sh * 0.82, sw, sh * 0.2).fill({ color: 0x0a1218 });
+    menuGround.rect(0, sh * 0.82, sw, 3).fill({ color: 0x1a3020, alpha: 0.5 });
+    menuScene.addChild(menuGround);
+
+    // 6. Cloud wisps
+    const menuCloudContainer = new PIXI.Container();
+    menuCloudContainer.eventMode = 'none';
+    for (let i = 0; i < 3; i++) {
+      const cg = new PIXI.Graphics();
+      const cw = 80 + i * 30, ch = 20 + i * 5;
+      cg.ellipse(0, 0, cw * 0.35, ch * 0.3).fill({ color: 0xffffff, alpha: 0.15 });
+      for (let j = 0; j < 3; j++) {
+        const bx = -cw * 0.25 + j * cw * 0.25;
+        const by = -ch * 0.2;
+        cg.circle(bx, by, ch * 0.25).fill({ color: 0xffffff, alpha: 0.12 });
+      }
+      cg.position.set(sw * 0.2 + i * sw * 0.25, sh * 0.2 + i * 25);
+      menuCloudContainer.addChild(cg);
+    }
+    menuScene.addChild(menuCloudContainer);
+
+    // 7. Vignette (dark edges)
+    const vignette = new PIXI.Graphics();
+    vignette.rect(0, 0, sw, sh * 0.15).fill({ color: 0x000000, alpha: 0.3 });
+    vignette.rect(0, sh * 0.88, sw, sh * 0.12).fill({ color: 0x000000, alpha: 0.4 });
+    menuScene.addChild(vignette);
+
+    // Animate cloud drift on menu
+    menuScene._cloudContainer = menuCloudContainer;
+    menuScene._animTicker = (ticker) => {
+      for (const c of menuCloudContainer.children) {
+        c.position.x -= 0.15 * ticker.deltaTime;
+        if (c.position.x < -150) c.position.x = sw + 100;
+      }
+      // Stars are static on menu (drawn as Graphics paths)
+    };
+    app.ticker.add(menuScene._animTicker);
+  })();
+  app.stage.addChild(menuScene);
 
   // Start Timer
 
@@ -1609,7 +1707,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // No auto-pause on focus loss — let the game keep running
     
 
-    app.stage.removeChild(menuSprite);
+    // Remove procedural menu scene and stop its animation
+    if (menuScene._animTicker) app.ticker.remove(menuScene._animTicker);
+    app.stage.removeChild(menuScene);
+    menuScene.destroy({ children: true });
 
 
     // Game elements and logic
@@ -1862,8 +1963,7 @@ PIXI.Assets.add({ alias: 'frog_walk', src: './assets/frog_walk.png' });
 PIXI.Assets.add({ alias: 'frog_attack', src: './assets/frog_attack.png' });
 PIXI.Assets.add({ alias: 'enemy_death', src: './assets/enemy_death.png' });
 PIXI.Assets.add({ alias: 'castle', src: './assets/castle.png' });
-PIXI.Assets.add({ alias: 'clouds', src: './assets/clouds.png' });
-PIXI.Assets.add({ alias: 'clouds2', src: './assets/clouds2.png' });
+// Clouds are now procedural — no sprite assets needed
 
 // Load the assets with progress tracking
 const assetList = [
@@ -1878,7 +1978,7 @@ const assetList = [
   'snail_idle', 'snail_walk', 'snail_attack',
   'frog', 'frog_walk', 'frog_attack',
   'enemy_death',
-  'castle', 'clouds', 'clouds2'
+  'castle'
 ];
 const texturesPromise = PIXI.Assets.load(assetList, (progress) => {
   const fill = document.getElementById('loading-bar-fill');
@@ -2145,86 +2245,179 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
   let tx = 120;
   while (tx < w) {
     const treeType = endlessGroundRandom();
-    const treeScale = 0.6 + endlessGroundRandom() * 0.6;
+    const treeScale = 0.5 + endlessGroundRandom() * 0.9; // wider range: 0.5x to 1.4x
     const trunkH = (30 + endlessGroundRandom() * 25) * treeScale;
     const trunkW = (6 + endlessGroundRandom() * 4) * treeScale;
     const canopyR = (18 + endlessGroundRandom() * 14) * treeScale;
-    const treeY = terrainTopY(tx); // follow terrain curve
+    const depthOffset = endlessGroundRandom() * 12 * treeScale; // slight Y offset for depth
+    const treeY = terrainTopY(tx) - depthOffset; // follow terrain curve + depth
     const canopyColor = palette.canopy[Math.floor(endlessGroundRandom() * palette.canopy.length)];
+    const darkCanopy = palette.canopy[Math.min(3, palette.canopy.length - 1)];
+    const darkTrunk = 0x2a1a0a;
 
     if (weather === 'wind' && treeType < 0.35) {
-      // Cactus for wind biome — no trunk/canopy, just a cactus shape
+      // Cactus — smoother rounded shapes
       const cH = (20 + endlessGroundRandom() * 30) * treeScale;
       const cW = 8 * treeScale;
-      // Main body
-      d.roundRect(tx - cW / 2, treeY - cH, cW, cH, cW * 0.4).fill({ color: 0x3a7a30 });
+      const hasFlower = endlessGroundRandom() > 0.6;
+      // Ground shadow
+      d.ellipse(tx, treeY + 2, cW * 1.5, 3).fill({ color: 0x000000, alpha: 0.1 });
+      // Main body — rounded
+      d.circle(tx, treeY - cH * 0.5, cW * 0.5).fill({ color: 0x3a7a30 });
+      d.ellipse(tx, treeY - cH * 0.5, cW * 0.48, cH * 0.5).fill({ color: 0x3a7a30 });
       // Left arm
       const armY = treeY - cH * 0.6;
-      d.roundRect(tx - cW / 2 - cW * 0.8, armY, cW * 0.8, cW, cW * 0.3).fill({ color: 0x3a7a30 });
-      d.roundRect(tx - cW / 2 - cW * 0.8, armY - cH * 0.25, cW, cH * 0.25 + cW, cW * 0.3).fill({ color: 0x3a7a30 });
+      d.ellipse(tx - cW * 0.9, armY, cW * 0.35, cW * 0.45).fill({ color: 0x3a7a30 });
+      d.ellipse(tx - cW * 0.9, armY - cH * 0.15, cW * 0.35, cH * 0.18).fill({ color: 0x3a7a30 });
       // Right arm
       const armY2 = treeY - cH * 0.45;
-      d.roundRect(tx + cW / 2, armY2, cW * 0.7, cW, cW * 0.3).fill({ color: 0x3a7a30 });
-      d.roundRect(tx + cW / 2 + cW * 0.7 - cW, armY2 - cH * 0.2, cW, cH * 0.2 + cW, cW * 0.3).fill({ color: 0x3a7a30 });
-      // Highlight
+      d.ellipse(tx + cW * 0.85, armY2, cW * 0.3, cW * 0.4).fill({ color: 0x3a7a30 });
+      d.ellipse(tx + cW * 0.85, armY2 - cH * 0.12, cW * 0.3, cH * 0.15).fill({ color: 0x3a7a30 });
+      // Vertical highlight stripe
       d.rect(tx - 1, treeY - cH + 3, 2, cH - 6).fill({ color: 0x5aaa50, alpha: 0.3 });
+      // Flower on top
+      if (hasFlower) {
+        d.circle(tx, treeY - cH - 2, cW * 0.25).fill({ color: 0xff6688, alpha: 0.85 });
+        d.circle(tx - 1, treeY - cH - 3, cW * 0.15).fill({ color: 0xffaacc, alpha: 0.5 });
+      }
       tx += 300 + endlessGroundRandom() * 500;
       continue;
     }
 
-    // Ground shadow for all trees in sun weather
-    if (weather === 'sun') {
-      d.ellipse(tx + canopyR * 0.4, treeY + 3, canopyR * 1.3, 5).fill({ color: 0x000000, alpha: 0.15 });
-    }
+    // Ground shadow — larger, softer
+    d.ellipse(tx + canopyR * 0.3, treeY + 3, canopyR * 1.5, 6).fill({ color: 0x000000, alpha: weather === 'sun' ? 0.18 : 0.08 });
 
-    // Trunk
-    d.rect(tx - trunkW / 2, treeY - trunkH, trunkW, trunkH).fill({ color: palette.trunk });
-    d.rect(tx - 1, treeY - trunkH + 4, 2, trunkH - 8).fill({ color: palette.trunk, alpha: 0.4 });
+    // Trunk — tapered (wider at base) with bark texture
+    const trunkTopW = trunkW * 0.7;
+    d.moveTo(tx - trunkW / 2, treeY);
+    d.lineTo(tx - trunkTopW / 2, treeY - trunkH);
+    d.lineTo(tx + trunkTopW / 2, treeY - trunkH);
+    d.lineTo(tx + trunkW / 2, treeY);
+    d.closePath();
+    d.fill({ color: palette.trunk });
+    // Bark texture lines
+    d.moveTo(tx - 1, treeY - trunkH * 0.15);
+    d.lineTo(tx - 1.5, treeY - trunkH * 0.7);
+    d.stroke({ width: 1, color: darkTrunk, alpha: 0.3 });
+    d.moveTo(tx + 1.5, treeY - trunkH * 0.1);
+    d.lineTo(tx + 1, treeY - trunkH * 0.55);
+    d.stroke({ width: 1, color: darkTrunk, alpha: 0.25 });
+    // Branch stubs
+    if (treeScale > 0.7) {
+      d.moveTo(tx - trunkTopW * 0.4, treeY - trunkH * 0.7);
+      d.lineTo(tx - trunkW * 1.2, treeY - trunkH * 0.8);
+      d.stroke({ width: 2 * treeScale, color: palette.trunk, alpha: 0.7 });
+      d.moveTo(tx + trunkTopW * 0.4, treeY - trunkH * 0.55);
+      d.lineTo(tx + trunkW * 1.0, treeY - trunkH * 0.62);
+      d.stroke({ width: 1.5 * treeScale, color: palette.trunk, alpha: 0.6 });
+    }
+    // Trunk shadow
+    d.moveTo(tx + trunkTopW * 0.1, treeY - trunkH);
+    d.lineTo(tx + trunkW * 0.3, treeY);
+    d.lineTo(tx + trunkW / 2, treeY);
+    d.lineTo(tx + trunkTopW / 2, treeY - trunkH);
+    d.closePath();
+    d.fill({ color: 0x000000, alpha: 0.12 });
 
     if (weather === 'sun' && treeType < 0.5) {
-      // Maple tree — rich multi-layered canopy with maple-leaf style lobes
+      // Maple tree — rich multi-layered canopy
       const cx = tx, cy = treeY - trunkH;
       const r = canopyR;
-      // Main body — cluster of overlapping circles for organic look
-      const darkCanopy = palette.canopy[Math.min(3, palette.canopy.length - 1)];
+      // Dark inner base layer
+      d.circle(cx, cy + r * 0.1, r * 0.85).fill({ color: darkCanopy, alpha: 0.4 });
+      // Main body — cluster of overlapping circles
       d.circle(cx, cy - r * 0.4, r * 1.15).fill({ color: canopyColor, alpha: 0.85 });
       d.circle(cx - r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor, alpha: 0.8 });
       d.circle(cx + r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor, alpha: 0.8 });
-      // Upper lobes for maple crown shape
+      // Upper lobes
       d.circle(cx - r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor, alpha: 0.9 });
       d.circle(cx + r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor, alpha: 0.9 });
       d.circle(cx, cy - r * 1.1, r * 0.5).fill({ color: canopyColor, alpha: 0.85 });
-      // Darker depth layer underneath
-      d.circle(cx, cy + r * 0.1, r * 0.8).fill({ color: darkCanopy, alpha: 0.35 });
-      // Highlight — sunlit top
-      d.circle(cx - r * 0.15, cy - r * 0.7, r * 0.4).fill({ color: 0xffffff, alpha: 0.12 });
+      // Extra lobes for fullness
+      d.circle(cx - r * 0.5, cy - r * 0.55, r * 0.5).fill({ color: canopyColor, alpha: 0.75 });
+      d.circle(cx + r * 0.5, cy - r * 0.55, r * 0.5).fill({ color: canopyColor, alpha: 0.75 });
+      d.circle(cx - r * 0.15, cy - r * 0.2, r * 0.65).fill({ color: canopyColor, alpha: 0.7 });
+      d.circle(cx + r * 0.15, cy - r * 0.25, r * 0.6).fill({ color: canopyColor, alpha: 0.7 });
+      // Highlight — sunlit top-left
+      d.circle(cx - r * 0.2, cy - r * 0.75, r * 0.45).fill({ color: 0xffffff, alpha: 0.12 });
+      d.circle(cx - r * 0.05, cy - r * 1.0, r * 0.3).fill({ color: 0xffffff, alpha: 0.1 });
+      // Leaf scatter around canopy edge
+      for (let fl = 0; fl < 7; fl++) {
+        const angle = endlessGroundRandom() * Math.PI * 2;
+        const dist = r * 0.9 + endlessGroundRandom() * r * 0.4;
+        const lx = cx + Math.cos(angle) * dist;
+        const ly = cy - r * 0.4 + Math.sin(angle) * dist * 0.6;
+        const lc = palette.canopy[Math.floor(endlessGroundRandom() * palette.canopy.length)];
+        d.circle(lx, ly, 1.5 + endlessGroundRandom() * 1.5).fill({ color: lc, alpha: 0.5 + endlessGroundRandom() * 0.3 });
+      }
       // Fallen leaves at base
-      for (let fl = 0; fl < 4; fl++) {
+      for (let fl = 0; fl < 5; fl++) {
         const lx = cx - r + endlessGroundRandom() * r * 2;
         const ly = treeY - 1 + endlessGroundRandom() * 3;
         d.circle(lx, ly, 1.5 + endlessGroundRandom()).fill({ color: canopyColor, alpha: 0.5 });
       }
     } else if (weather === 'snow' && treeType < 0.6) {
-      // Pine with snow caps
+      // Pine tree — 4 tiers with curved snow caps
       const cx = tx, cy = treeY - trunkH;
       const pineH = canopyR * 2.2, pineW = canopyR * 1.4;
-      for (let tier = 0; tier < 3; tier++) {
-        const ty = cy - tier * pineH * 0.28;
-        const tw = pineW * (1 - tier * 0.22), th = pineH * 0.45;
+      for (let tier = 0; tier < 4; tier++) {
+        const ty = cy - tier * pineH * 0.24;
+        const tw = pineW * (1 - tier * 0.18), th = pineH * 0.4;
+        // Tier foliage — triangle with curved bottom (ellipse clip effect)
         d.poly([cx - tw / 2, ty, cx, ty - th, cx + tw / 2, ty]).fill({ color: canopyColor });
-        d.poly([cx - tw * 0.3, ty, cx, ty - th * 0.3, cx + tw * 0.3, ty]).fill({ color: 0xe8eef5, alpha: 0.7 });
+        // Curved bottom edge
+        d.ellipse(cx, ty + 2, tw * 0.5, 4).fill({ color: canopyColor, alpha: 0.6 });
+        // Snow draping over tier edges
+        d.ellipse(cx, ty - th * 0.15, tw * 0.42, th * 0.18).fill({ color: 0xe8eef5, alpha: 0.75 });
+        d.ellipse(cx - tw * 0.2, ty - th * 0.05, tw * 0.2, 4).fill({ color: 0xdde8f0, alpha: 0.5 });
+        d.ellipse(cx + tw * 0.2, ty - th * 0.05, tw * 0.2, 4).fill({ color: 0xdde8f0, alpha: 0.5 });
+        // Tiny trunk visible between tiers
+        if (tier < 3) {
+          d.rect(cx - trunkTopW * 0.3, ty, trunkTopW * 0.6, pineH * 0.04).fill({ color: palette.trunk, alpha: 0.5 });
+        }
       }
     } else if (weather === 'rain') {
-      // Dark droopy canopy
+      // Droopy tree — wind-swept with moss
       const cx = tx, cy = treeY - trunkH - canopyR * 0.4;
-      d.ellipse(cx, cy, canopyR * 1.0, canopyR * 1.3).fill({ color: canopyColor, alpha: 0.85 });
-      d.ellipse(cx, cy + canopyR * 0.3, canopyR * 0.6, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.5 });
-    } else {
-      // Default round tree
+      const lean = canopyR * 0.15;
+      // Main canopy — ellipse
+      d.ellipse(cx + lean, cy, canopyR * 1.05, canopyR * 1.3).fill({ color: canopyColor, alpha: 0.85 });
+      // Drooping sub-ellipses
+      d.ellipse(cx + lean - canopyR * 0.4, cy + canopyR * 0.6, canopyR * 0.4, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.65 });
+      d.ellipse(cx + lean + canopyR * 0.35, cy + canopyR * 0.5, canopyR * 0.35, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.6 });
+      d.ellipse(cx + lean, cy + canopyR * 0.7, canopyR * 0.3, canopyR * 0.4).fill({ color: canopyColor, alpha: 0.5 });
+      // Darker depth underneath
+      d.ellipse(cx + lean, cy + canopyR * 0.3, canopyR * 0.65, canopyR * 0.5).fill({ color: darkCanopy, alpha: 0.3 });
+      // Moss dots on trunk
+      d.circle(tx - trunkW * 0.3, treeY - trunkH * 0.4, 2.5 * treeScale).fill({ color: 0x446644, alpha: 0.5 });
+      d.circle(tx + trunkW * 0.2, treeY - trunkH * 0.6, 2 * treeScale).fill({ color: 0x446644, alpha: 0.4 });
+      // Drip detail below canopy
+      d.circle(cx + lean - canopyR * 0.2, cy + canopyR * 1.1, 1.5).fill({ color: 0x6688bb, alpha: 0.4 });
+      d.circle(cx + lean + canopyR * 0.15, cy + canopyR * 1.0, 1.2).fill({ color: 0x6688bb, alpha: 0.35 });
+    } else if (weather === 'night') {
+      // Silhouette tree with warm glow at base
       const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
       d.circle(cx, cy, canopyR).fill({ color: canopyColor, alpha: 0.85 });
       d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor, alpha: 0.6 });
       d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.6 });
+      d.circle(cx + canopyR * 0.1, cy - canopyR * 0.3, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.7 });
+      // Warm lantern glow at base
+      d.circle(tx, treeY - 2, canopyR * 0.6).fill({ color: 0xffaa44, alpha: 0.06 });
+      d.circle(tx, treeY - 4, canopyR * 0.35).fill({ color: 0xffcc66, alpha: 0.08 });
+    } else {
+      // Default round tree — enhanced
+      const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
+      // Dark underside for volume
+      d.ellipse(cx, cy + canopyR * 0.35, canopyR * 0.9, canopyR * 0.5).fill({ color: darkCanopy, alpha: 0.3 });
+      // Main circle
+      d.circle(cx, cy, canopyR).fill({ color: canopyColor, alpha: 0.85 });
+      // Side clusters — 4 overlapping
+      d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor, alpha: 0.6 });
+      d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.6 });
+      d.circle(cx - canopyR * 0.5, cy - canopyR * 0.15, canopyR * 0.45).fill({ color: canopyColor, alpha: 0.65 });
+      d.circle(cx + canopyR * 0.45, cy - canopyR * 0.2, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.65 });
+      // Highlight on top-left
+      d.circle(cx - canopyR * 0.15, cy - canopyR * 0.35, canopyR * 0.4).fill({ color: 0xffffff, alpha: 0.1 });
     }
 
     tx += 300 + endlessGroundRandom() * 500;
@@ -2658,10 +2851,10 @@ state.frogGhostPlayer = new PIXI.Sprite(frogGhostTextures);
 state.frogGhostPlayer.anchor.set(0, 0);
 state.frogGhostPlayer.scale.set(0.28);
 
-      const mountain1 = createMountainGraphics(1, -100, mountainVelocity1, foreground);
-      const mountain2 = createMountainGraphics(2, app.screen.width * 0.45, mountainVelocity2, foreground);
-      const mountain3 = createMountainGraphics(2, -200, mountainVelocity3, foreground);
-      const mountain4 = createMountainGraphics(1, app.screen.width * 1.2, mountainVelocity4, foreground);
+      const mountain1 = createMountainGraphics(1, -100, mountainVelocity1, foreground, 0);
+      const mountain2 = createMountainGraphics(2, app.screen.width * 0.45, mountainVelocity2, foreground, 0);
+      const mountain3 = createMountainGraphics(2, -200, mountainVelocity3, foreground, 0.7);
+      const mountain4 = createMountainGraphics(1, app.screen.width * 1.2, mountainVelocity4, foreground, 0.85);
 
       // Apply initial sky gradient so the first round starts with correct colors
       const _initGrad = skyGradients[initialWeather] || skyGradients.sun;
@@ -2674,98 +2867,292 @@ state.frogGhostPlayer.scale.set(0.28);
       mountain3.tint = _initGrad.mountain;
       mountain4.tint = _initGrad.mountain;
 
-      function drawMountainType1(g, w, h) {
-        // Layer 1: Base silhouette
-        g.poly([0, 0, w * 0.5, -h, w, 0]).fill({ color: 0x4a4a5a, alpha: 1.0 });
-        // Layer 2: Shadow face (right side)
-        g.poly([w * 0.5, -h, w * 0.75, -h * 0.35, w, 0, w * 0.5, 0]).fill({ color: 0x2a2a3a, alpha: 0.35 });
-        // Layer 3: Lit face (upper left)
-        g.poly([w * 0.5, -h, w * 0.35, -h * 0.55, w * 0.2, -h * 0.25]).fill({ color: 0x7a7a8a, alpha: 0.2 });
-        // Layer 4: Snow cap
-        g.poly([w * 0.43, -h * 0.88, w * 0.5, -h, w * 0.57, -h * 0.88]).fill({ color: 0xd8dde4, alpha: 0.85 });
-        // Layer 5: Snow highlight
-        g.poly([w * 0.45, -h * 0.92, w * 0.5, -h, w * 0.48, -h * 0.93]).fill({ color: 0xffffff, alpha: 0.3 });
-        // Layer 6: Rock ledge 1
-        g.poly([w * 0.25, -h * 0.4, w * 0.32, -h * 0.42, w * 0.33, -h * 0.37, w * 0.27, -h * 0.35]).fill({ color: 0x3a3a4a, alpha: 0.25 });
-        // Layer 7: Rock ledge 2
-        g.poly([w * 0.6, -h * 0.55, w * 0.67, -h * 0.58, w * 0.69, -h * 0.52, w * 0.63, -h * 0.5]).fill({ color: 0x2a2a3a, alpha: 0.3 });
-        // Layer 8: Rock ledge 3
-        g.poly([w * 0.38, -h * 0.6, w * 0.44, -h * 0.63, w * 0.45, -h * 0.58, w * 0.4, -h * 0.56]).fill({ color: 0x3a3a4a, alpha: 0.2 });
-        // Layer 9: Rock ledge 4
-        g.poly([w * 0.7, -h * 0.3, w * 0.76, -h * 0.33, w * 0.78, -h * 0.28, w * 0.73, -h * 0.26]).fill({ color: 0x2a2a3a, alpha: 0.2 });
-        // Layer 10: Ridge highlight (peak edge)
-        g.poly([w * 0.48, -h * 0.98, w * 0.5, -h, w * 0.38, -h * 0.65, w * 0.36, -h * 0.63]).fill({ color: 0x8a8a9a, alpha: 0.25 });
-        // Layer 11: Ridge highlight (shoulder)
-        g.poly([w * 0.3, -h * 0.5, w * 0.32, -h * 0.52, w * 0.22, -h * 0.3, w * 0.2, -h * 0.28]).fill({ color: 0x7a7a8a, alpha: 0.15 });
-        // Layer 12: Base haze
-        g.rect(0, -h * 0.08, w, h * 0.08).fill({ color: 0x8899aa, alpha: 0.15 });
+      function drawMountainType1(g, w, h, depth) {
+        const haze = 0x8899aa;
+        const d = depth || 0;
+        function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
+
+        // Layer 1: Base silhouette — organic curved outline
+        g.moveTo(0, 0);
+        g.quadraticCurveTo(w * 0.08, -h * 0.18, w * 0.18, -h * 0.35);
+        g.quadraticCurveTo(w * 0.25, -h * 0.55, w * 0.33, -h * 0.72);
+        g.quadraticCurveTo(w * 0.4, -h * 0.9, w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.6, -h * 0.88, w * 0.68, -h * 0.65);
+        g.quadraticCurveTo(w * 0.78, -h * 0.38, w * 0.88, -h * 0.18);
+        g.quadraticCurveTo(w * 0.95, -h * 0.06, w, 0);
+        g.lineTo(0, 0);
+        g.closePath();
+        g.fill(dc(0x4a4a5a, 1.0));
+
+        // Layer 2: Right shadow face
+        g.moveTo(w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.58, -h * 0.85, w * 0.66, -h * 0.6);
+        g.quadraticCurveTo(w * 0.76, -h * 0.32, w * 0.88, -h * 0.12);
+        g.quadraticCurveTo(w * 0.95, -h * 0.04, w, 0);
+        g.lineTo(w * 0.5, 0);
+        g.closePath();
+        g.fill(dc(0x2a2a3a, 0.4));
+
+        // Layer 3: Left lit face
+        g.moveTo(w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.42, -h * 0.88, w * 0.32, -h * 0.65);
+        g.quadraticCurveTo(w * 0.24, -h * 0.45, w * 0.18, -h * 0.3);
+        g.lineTo(w * 0.22, -h * 0.28);
+        g.quadraticCurveTo(w * 0.3, -h * 0.5, w * 0.38, -h * 0.7);
+        g.closePath();
+        g.fill(dc(0x7a7a8a, 0.2));
+
+        // Layer 4: Mid-slope color band
+        g.moveTo(w * 0.12, -h * 0.4);
+        g.quadraticCurveTo(w * 0.3, -h * 0.48, w * 0.5, -h * 0.55);
+        g.quadraticCurveTo(w * 0.7, -h * 0.48, w * 0.88, -h * 0.38);
+        g.lineTo(w * 0.88, -h * 0.32);
+        g.quadraticCurveTo(w * 0.7, -h * 0.42, w * 0.5, -h * 0.48);
+        g.quadraticCurveTo(w * 0.3, -h * 0.42, w * 0.12, -h * 0.34);
+        g.closePath();
+        g.fill(dc(0x555568, 0.3));
+
+        // Layer 5: Lower slope band
+        g.moveTo(w * 0.05, -h * 0.2);
+        g.quadraticCurveTo(w * 0.3, -h * 0.28, w * 0.55, -h * 0.32);
+        g.quadraticCurveTo(w * 0.78, -h * 0.27, w * 0.95, -h * 0.18);
+        g.lineTo(w * 0.95, -h * 0.13);
+        g.quadraticCurveTo(w * 0.78, -h * 0.22, w * 0.55, -h * 0.26);
+        g.quadraticCurveTo(w * 0.3, -h * 0.22, w * 0.05, -h * 0.14);
+        g.closePath();
+        g.fill(dc(0x3a3a4a, 0.2));
+
+        // Layer 6: Snow cap — follows peak contour
+        g.moveTo(w * 0.35, -h * 0.78);
+        g.quadraticCurveTo(w * 0.4, -h * 0.88, w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.6, -h * 0.88, w * 0.65, -h * 0.78);
+        g.quadraticCurveTo(w * 0.58, -h * 0.82, w * 0.5, -h * 0.84);
+        g.quadraticCurveTo(w * 0.42, -h * 0.82, w * 0.35, -h * 0.78);
+        g.closePath();
+        g.fill(dc(0xd8dde4, 0.85));
+
+        // Layer 7: Snow highlight — sunlit left side
+        g.moveTo(w * 0.38, -h * 0.8);
+        g.quadraticCurveTo(w * 0.43, -h * 0.9, w * 0.48, -h * 0.97);
+        g.quadraticCurveTo(w * 0.45, -h * 0.92, w * 0.42, -h * 0.85);
+        g.closePath();
+        g.fill(dc(0xeef2f8, 0.4));
+
+        // Layer 8: Snow shadow — right side
+        g.moveTo(w * 0.55, -h * 0.92);
+        g.quadraticCurveTo(w * 0.58, -h * 0.86, w * 0.62, -h * 0.8);
+        g.quadraticCurveTo(w * 0.6, -h * 0.83, w * 0.56, -h * 0.88);
+        g.closePath();
+        g.fill(dc(0xb0b8c4, 0.3));
+
+        // Layer 9: Rock outcrop 1 — left side
+        g.moveTo(w * 0.22, -h * 0.52);
+        g.quadraticCurveTo(w * 0.26, -h * 0.56, w * 0.3, -h * 0.54);
+        g.quadraticCurveTo(w * 0.28, -h * 0.5, w * 0.24, -h * 0.48);
+        g.closePath();
+        g.fill(dc(0x3a3a4a, 0.3));
+
+        // Layer 10: Rock outcrop 2 — right side
+        g.moveTo(w * 0.7, -h * 0.38);
+        g.quadraticCurveTo(w * 0.74, -h * 0.42, w * 0.78, -h * 0.39);
+        g.quadraticCurveTo(w * 0.76, -h * 0.35, w * 0.72, -h * 0.34);
+        g.closePath();
+        g.fill(dc(0x2a2a3a, 0.25));
+
+        // Layer 11: Ridge highlight — peak down left
+        g.moveTo(w * 0.48, -h * 0.98);
+        g.quadraticCurveTo(w * 0.44, -h * 0.85, w * 0.36, -h * 0.65);
+        g.lineTo(w * 0.38, -h * 0.66);
+        g.quadraticCurveTo(w * 0.45, -h * 0.86, w * 0.49, -h * 0.97);
+        g.closePath();
+        g.fill(dc(0x8a8a9a, 0.2));
+
+        // Layer 12: Ridge highlight 2 — right shoulder
+        g.moveTo(w * 0.52, -h * 0.96);
+        g.quadraticCurveTo(w * 0.6, -h * 0.82, w * 0.66, -h * 0.62);
+        g.lineTo(w * 0.68, -h * 0.63);
+        g.quadraticCurveTo(w * 0.62, -h * 0.83, w * 0.53, -h * 0.95);
+        g.closePath();
+        g.fill(dc(0x7a7a8a, 0.15));
+
+        // Layer 13: Scree/talus at base
+        for (let i = 0; i < 8; i++) {
+          const sx = w * 0.1 + (w * 0.8) * (i / 8) + (i % 3) * w * 0.02;
+          const sy = -3 - (i % 2) * 4;
+          g.ellipse(sx, sy, 4 + (i % 3) * 2, 2 + (i % 2)).fill(dc(0x5a5a6a, 0.2));
+        }
+
+        // Layer 14: Base atmospheric haze
+        g.moveTo(0, 0);
+        g.lineTo(w, 0);
+        g.lineTo(w, -h * 0.1);
+        g.quadraticCurveTo(w * 0.5, -h * 0.12, 0, -h * 0.1);
+        g.closePath();
+        g.fill(dc(0x8899aa, 0.18));
+
+        // Layer 15: Summit detail — thin crack lines
+        g.moveTo(w * 0.49, -h * 0.96);
+        g.lineTo(w * 0.47, -h * 0.88);
+        g.stroke({ width: 1, color: d > 0 ? lerpColor(0x6a6a7a, haze, d * 0.45) : 0x6a6a7a, alpha: 0.15 });
+        g.moveTo(w * 0.51, -h * 0.94);
+        g.lineTo(w * 0.54, -h * 0.86);
+        g.stroke({ width: 1, color: d > 0 ? lerpColor(0x6a6a7a, haze, d * 0.45) : 0x6a6a7a, alpha: 0.15 });
       }
 
-      function drawMountainType2(g, w, h) {
-        // Layer 1: Base silhouette — three-peak ridgeline
-        g.poly([
-          0, 0,
-          w * 0.15, -h * 0.45,
-          w * 0.25, -h * 0.65,
-          w * 0.32, -h * 0.35,
-          w * 0.45, -h * 0.8,
-          w * 0.5, -h,
-          w * 0.55, -h * 0.8,
-          w * 0.68, -h * 0.3,
-          w * 0.78, -h * 0.6,
-          w * 0.88, -h * 0.35,
-          w, 0
-        ]).fill({ color: 0x4a4a5a, alpha: 1.0 });
-        // Layer 2: Shadow face (right half from center summit)
-        g.poly([
-          w * 0.5, -h,
-          w * 0.55, -h * 0.8,
-          w * 0.68, -h * 0.3,
-          w * 0.78, -h * 0.6,
-          w * 0.88, -h * 0.35,
-          w, 0,
-          w * 0.5, 0
-        ]).fill({ color: 0x2a2a3a, alpha: 0.3 });
-        // Layer 3: Left peak shadow (right side of left sub-peak)
-        g.poly([
-          w * 0.25, -h * 0.65,
-          w * 0.32, -h * 0.35,
-          w * 0.3, 0,
-          w * 0.22, 0
-        ]).fill({ color: 0x2a2a3a, alpha: 0.2 });
-        // Layer 4: Lit face (center-left slope)
-        g.poly([
-          w * 0.5, -h,
-          w * 0.45, -h * 0.8,
-          w * 0.38, -h * 0.5,
-          w * 0.42, -h * 0.55
-        ]).fill({ color: 0x7a7a8a, alpha: 0.18 });
-        // Layer 5: Snow cap (center peak — largest)
-        g.poly([w * 0.46, -h * 0.88, w * 0.5, -h, w * 0.54, -h * 0.88]).fill({ color: 0xd8dde4, alpha: 0.85 });
-        // Layer 6: Snow cap (left peak)
-        g.poly([w * 0.22, -h * 0.58, w * 0.25, -h * 0.65, w * 0.28, -h * 0.58]).fill({ color: 0xd8dde4, alpha: 0.7 });
-        // Layer 7: Snow cap (right peak)
-        g.poly([w * 0.75, -h * 0.53, w * 0.78, -h * 0.6, w * 0.81, -h * 0.53]).fill({ color: 0xd8dde4, alpha: 0.65 });
-        // Layer 8: Rock ledge (center-left slope)
-        g.poly([w * 0.4, -h * 0.55, w * 0.45, -h * 0.58, w * 0.46, -h * 0.53, w * 0.42, -h * 0.5]).fill({ color: 0x3a3a4a, alpha: 0.25 });
-        // Layer 9: Rock ledge (right peak)
-        g.poly([w * 0.72, -h * 0.4, w * 0.77, -h * 0.43, w * 0.78, -h * 0.38, w * 0.74, -h * 0.36]).fill({ color: 0x2a2a3a, alpha: 0.2 });
-        // Layer 10: Rock ledge (valley area)
-        g.poly([w * 0.6, -h * 0.25, w * 0.65, -h * 0.28, w * 0.66, -h * 0.23, w * 0.62, -h * 0.21]).fill({ color: 0x3a3a4a, alpha: 0.2 });
-        // Layer 11: Ridge highlight (center peak edge)
-        g.poly([w * 0.48, -h * 0.95, w * 0.5, -h, w * 0.44, -h * 0.75, w * 0.43, -h * 0.73]).fill({ color: 0x8a8a9a, alpha: 0.2 });
-        // Layer 12: Base haze
-        g.rect(0, -h * 0.08, w, h * 0.08).fill({ color: 0x8899aa, alpha: 0.15 });
+      function drawMountainType2(g, w, h, depth) {
+        const haze = 0x8899aa;
+        const d = depth || 0;
+        function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
+
+        // Layer 1: Base silhouette — three-peak curved ridgeline
+        g.moveTo(0, 0);
+        g.quadraticCurveTo(w * 0.08, -h * 0.2, w * 0.15, -h * 0.45);
+        g.quadraticCurveTo(w * 0.2, -h * 0.58, w * 0.25, -h * 0.65);
+        g.quadraticCurveTo(w * 0.29, -h * 0.48, w * 0.32, -h * 0.35);
+        g.quadraticCurveTo(w * 0.38, -h * 0.55, w * 0.45, -h * 0.8);
+        g.quadraticCurveTo(w * 0.48, -h * 0.95, w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.52, -h * 0.95, w * 0.55, -h * 0.8);
+        g.quadraticCurveTo(w * 0.62, -h * 0.48, w * 0.68, -h * 0.3);
+        g.quadraticCurveTo(w * 0.73, -h * 0.45, w * 0.78, -h * 0.6);
+        g.quadraticCurveTo(w * 0.84, -h * 0.45, w * 0.88, -h * 0.35);
+        g.quadraticCurveTo(w * 0.94, -h * 0.15, w, 0);
+        g.lineTo(0, 0);
+        g.closePath();
+        g.fill(dc(0x4a4a5a, 1.0));
+
+        // Layer 2: Right shadow from center peak
+        g.moveTo(w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.52, -h * 0.92, w * 0.55, -h * 0.78);
+        g.quadraticCurveTo(w * 0.62, -h * 0.46, w * 0.68, -h * 0.28);
+        g.quadraticCurveTo(w * 0.73, -h * 0.42, w * 0.78, -h * 0.58);
+        g.quadraticCurveTo(w * 0.84, -h * 0.42, w * 0.88, -h * 0.32);
+        g.quadraticCurveTo(w * 0.94, -h * 0.14, w, 0);
+        g.lineTo(w * 0.5, 0);
+        g.closePath();
+        g.fill(dc(0x2a2a3a, 0.35));
+
+        // Layer 3: Left peak shadow
+        g.moveTo(w * 0.25, -h * 0.65);
+        g.quadraticCurveTo(w * 0.29, -h * 0.46, w * 0.32, -h * 0.33);
+        g.lineTo(w * 0.3, 0);
+        g.lineTo(w * 0.22, 0);
+        g.closePath();
+        g.fill(dc(0x2a2a3a, 0.2));
+
+        // Layer 4: Center-left lit slope
+        g.moveTo(w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.47, -h * 0.88, w * 0.44, -h * 0.75);
+        g.quadraticCurveTo(w * 0.4, -h * 0.58, w * 0.38, -h * 0.5);
+        g.lineTo(w * 0.42, -h * 0.52);
+        g.quadraticCurveTo(w * 0.45, -h * 0.65, w * 0.48, -h * 0.85);
+        g.closePath();
+        g.fill(dc(0x7a7a8a, 0.18));
+
+        // Layer 5: Mid-range geological band
+        g.moveTo(w * 0.08, -h * 0.25);
+        g.quadraticCurveTo(w * 0.25, -h * 0.38, w * 0.5, -h * 0.42);
+        g.quadraticCurveTo(w * 0.75, -h * 0.36, w * 0.92, -h * 0.22);
+        g.lineTo(w * 0.92, -h * 0.17);
+        g.quadraticCurveTo(w * 0.75, -h * 0.3, w * 0.5, -h * 0.36);
+        g.quadraticCurveTo(w * 0.25, -h * 0.32, w * 0.08, -h * 0.2);
+        g.closePath();
+        g.fill(dc(0x555568, 0.2));
+
+        // Layer 6: Snow cap (center peak)
+        g.moveTo(w * 0.42, -h * 0.85);
+        g.quadraticCurveTo(w * 0.45, -h * 0.92, w * 0.5, -h);
+        g.quadraticCurveTo(w * 0.55, -h * 0.92, w * 0.58, -h * 0.85);
+        g.quadraticCurveTo(w * 0.54, -h * 0.87, w * 0.5, -h * 0.88);
+        g.quadraticCurveTo(w * 0.46, -h * 0.87, w * 0.42, -h * 0.85);
+        g.closePath();
+        g.fill(dc(0xd8dde4, 0.85));
+
+        // Layer 7: Snow cap (left peak)
+        g.moveTo(w * 0.21, -h * 0.56);
+        g.quadraticCurveTo(w * 0.23, -h * 0.62, w * 0.25, -h * 0.65);
+        g.quadraticCurveTo(w * 0.27, -h * 0.62, w * 0.29, -h * 0.56);
+        g.quadraticCurveTo(w * 0.26, -h * 0.58, w * 0.24, -h * 0.58);
+        g.closePath();
+        g.fill(dc(0xd8dde4, 0.7));
+
+        // Layer 8: Snow cap (right peak)
+        g.moveTo(w * 0.74, -h * 0.5);
+        g.quadraticCurveTo(w * 0.76, -h * 0.56, w * 0.78, -h * 0.6);
+        g.quadraticCurveTo(w * 0.8, -h * 0.56, w * 0.82, -h * 0.5);
+        g.quadraticCurveTo(w * 0.79, -h * 0.52, w * 0.77, -h * 0.52);
+        g.closePath();
+        g.fill(dc(0xd8dde4, 0.65));
+
+        // Layer 9: Snow highlights on sunlit sides
+        g.moveTo(w * 0.44, -h * 0.87);
+        g.quadraticCurveTo(w * 0.47, -h * 0.94, w * 0.49, -h * 0.98);
+        g.quadraticCurveTo(w * 0.47, -h * 0.93, w * 0.45, -h * 0.88);
+        g.closePath();
+        g.fill(dc(0xeef2f8, 0.35));
+        g.moveTo(w * 0.22, -h * 0.58);
+        g.quadraticCurveTo(w * 0.235, -h * 0.63, w * 0.245, -h * 0.645);
+        g.quadraticCurveTo(w * 0.235, -h * 0.62, w * 0.225, -h * 0.59);
+        g.closePath();
+        g.fill(dc(0xeef2f8, 0.3));
+
+        // Layer 10: Rock outcrop center-left
+        g.moveTo(w * 0.38, -h * 0.52);
+        g.quadraticCurveTo(w * 0.42, -h * 0.56, w * 0.44, -h * 0.53);
+        g.quadraticCurveTo(w * 0.42, -h * 0.5, w * 0.39, -h * 0.48);
+        g.closePath();
+        g.fill(dc(0x3a3a4a, 0.25));
+
+        // Layer 11: Rock outcrop right peak
+        g.moveTo(w * 0.73, -h * 0.38);
+        g.quadraticCurveTo(w * 0.76, -h * 0.42, w * 0.78, -h * 0.39);
+        g.quadraticCurveTo(w * 0.76, -h * 0.36, w * 0.74, -h * 0.35);
+        g.closePath();
+        g.fill(dc(0x2a2a3a, 0.2));
+
+        // Layer 12: Valley shadows
+        g.moveTo(w * 0.3, -h * 0.2);
+        g.quadraticCurveTo(w * 0.32, -h * 0.3, w * 0.35, -h * 0.25);
+        g.quadraticCurveTo(w * 0.33, -h * 0.15, w * 0.3, -h * 0.1);
+        g.closePath();
+        g.fill(dc(0x2a2a3a, 0.15));
+        g.moveTo(w * 0.64, -h * 0.15);
+        g.quadraticCurveTo(w * 0.67, -h * 0.25, w * 0.7, -h * 0.2);
+        g.quadraticCurveTo(w * 0.68, -h * 0.1, w * 0.65, -h * 0.08);
+        g.closePath();
+        g.fill(dc(0x2a2a3a, 0.12));
+
+        // Layer 13: Ridge highlight center peak
+        g.moveTo(w * 0.48, -h * 0.95);
+        g.quadraticCurveTo(w * 0.45, -h * 0.82, w * 0.42, -h * 0.7);
+        g.lineTo(w * 0.44, -h * 0.71);
+        g.quadraticCurveTo(w * 0.47, -h * 0.83, w * 0.49, -h * 0.94);
+        g.closePath();
+        g.fill(dc(0x8a8a9a, 0.2));
+
+        // Layer 14: Base atmospheric haze
+        g.moveTo(0, 0);
+        g.lineTo(w, 0);
+        g.lineTo(w, -h * 0.08);
+        g.quadraticCurveTo(w * 0.5, -h * 0.1, 0, -h * 0.08);
+        g.closePath();
+        g.fill(dc(0x8899aa, 0.15));
+
+        // Layer 15: Scree at base
+        for (let i = 0; i < 10; i++) {
+          const sx = w * 0.05 + (w * 0.9) * (i / 10) + (i % 3) * w * 0.015;
+          const sy = -2 - (i % 2) * 3;
+          g.ellipse(sx, sy, 3 + (i % 3) * 2, 1.5 + (i % 2)).fill(dc(0x5a5a6a, 0.15));
+        }
       }
 
-      function createMountainGraphics(type, xPos, velocity, foreground) {
+      function createMountainGraphics(type, xPos, velocity, foreground, depth) {
         const g = new PIXI.Graphics();
         g.eventMode = 'none';
         const w = (type === 1) ? 600 : 1000;
         const h = (type === 1) ? 400 : 350;
 
-        if (type === 1) drawMountainType1(g, w, h);
-        else drawMountainType2(g, w, h);
+        if (type === 1) drawMountainType1(g, w, h, depth || 0);
+        else drawMountainType2(g, w, h, depth || 0);
 
         const scaleFactor = Math.min(
           app.screen.height * 0.6 / h,
@@ -2832,8 +3219,7 @@ state.frogGhostPlayer.scale.set(0.28);
       const beeAttackTextures = createAnimationTextures2('bee_attack', 18, 256, 1950, 1024);
       const birdWalkTextures = createAnimationTextures2('bird_walk', 13, 403, 2541, 806);
       const birdAttackTextures = createAnimationTextures2('bird_attack', 13, 403, 2541, 806);
-      const cloudsTexture = textures.clouds;
-      const clouds2Texture = textures.clouds2;
+      // Clouds are procedural — no textures needed
       const scorpWalkTextures = createAnimationTextures2('scorp_walk', 6, 499, 2202, 499);
       const scorpAttackTextures = createAnimationTextures2('scorp_attack', 9, 499, 3303, 499);
       const tooferWalkTextures = createAnimationTextures2('toofer_walk', 6, 377, 2412, 377);
@@ -2847,11 +3233,54 @@ state.frogGhostPlayer.scale.set(0.28);
       const sharkWalkTextures = createAnimationTextures2('shark_walk', 10, 398, 1398, 1990);
       const sharkAttackTextures = createAnimationTextures2('shark_attack', 21, 398, 3495, 1990);
       state.sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
-      const CLOUD_TILE_WIDTH = 50000;
-      const clouds = createTilingSprite(cloudsTexture, CLOUD_TILE_WIDTH, 200);
-      const clouds2 = createTilingSprite(clouds2Texture, CLOUD_TILE_WIDTH, 200);
-      clouds2.position.y += 100;
-      clouds2.alpha = .3;
+      // Procedural cloud generation
+      function drawCloud(g, cw, ch, complexity) {
+        // Flat bottom rect
+        g.rect(-cw * 0.5, 0, cw, ch * 0.25).fill({ color: 0xffffff, alpha: 0.7 });
+        // Central ellipse
+        g.ellipse(0, -ch * 0.05, cw * 0.4, ch * 0.35).fill({ color: 0xffffff, alpha: 0.75 });
+        // Top bumps
+        const bumps = complexity;
+        const spacing = cw / (bumps + 1);
+        for (let i = 0; i < bumps; i++) {
+          const bx = -cw * 0.4 + spacing * (i + 0.5);
+          const by = -ch * 0.1 - Math.sin((i + 0.5) / bumps * Math.PI) * ch * 0.35;
+          const br = ch * (0.2 + Math.sin((i + 0.5) / bumps * Math.PI) * 0.25);
+          const alpha = 0.6 + Math.sin((i + 0.5) / bumps * Math.PI) * 0.3;
+          g.circle(bx, by, br).fill({ color: 0xffffff, alpha });
+        }
+        // Highlight — top-left
+        g.circle(-cw * 0.15, -ch * 0.35, ch * 0.2).fill({ color: 0xffffff, alpha: 0.95 });
+        // Shadow — bottom-right
+        g.ellipse(cw * 0.15, ch * 0.05, cw * 0.3, ch * 0.15).fill({ color: 0xd8e0ea, alpha: 0.3 });
+      }
+
+      const clouds = new PIXI.Container();
+      clouds.eventMode = 'none';
+      const clouds2 = new PIXI.Container();
+      clouds2.eventMode = 'none';
+      const CLOUD_SPREAD = 8000;
+      // Layer 1: foreground clouds
+      const cloud1Seeds = [0.12, 0.28, 0.42, 0.55, 0.68, 0.82, 0.95];
+      for (let i = 0; i < cloud1Seeds.length; i++) {
+        const cg = new PIXI.Graphics();
+        const cw = 120 + (i % 3) * 40;
+        const ch = 40 + (i % 2) * 15;
+        drawCloud(cg, cw, ch, 5 + (i % 3));
+        cg.position.set(cloud1Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.08 + (i % 3) * 30);
+        clouds.addChild(cg);
+      }
+      // Layer 2: background clouds — smaller, translucent
+      const cloud2Seeds = [0.05, 0.15, 0.27, 0.38, 0.48, 0.6, 0.72, 0.83, 0.93];
+      for (let i = 0; i < cloud2Seeds.length; i++) {
+        const cg = new PIXI.Graphics();
+        const cw = 70 + (i % 3) * 25;
+        const ch = 25 + (i % 2) * 10;
+        drawCloud(cg, cw, ch, 4 + (i % 2));
+        cg.position.set(cloud2Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.2 + (i % 3) * 25);
+        clouds2.addChild(cg);
+      }
+      clouds2.alpha = 0.35;
       const enemyDeathTextures = createAnimationTextures('enemy_death', 8, 317);
       state.enemyDeath = createAnimatedSprite(enemyDeathTextures);
       const castleDeathTextures = createAnimationTextures('enemy_death', 8, 317);
@@ -3372,7 +3801,7 @@ let cantGainEXP = false;
         });
       }
 
-      state.initialClouds = clouds.position.x;
+      // Procedural clouds don't need initialClouds tracking
       let once = 0;
       app.ticker.add((ticker) => {
         state.dt = ticker.deltaTime;
@@ -4056,15 +4485,18 @@ state.demiSpawned = 0;
 
         }
 
-        // Update cloud position
-        clouds.position.x -= cloudSpeed * state.dt;
-        clouds2.position.x -= cloud2Speed * state.dt;
-        // Check if cloud has gone offscreen and move it to the right side
-        if (clouds.x + clouds.width / 2 < -3000) {
-          clouds.x = state.initialClouds;
+        // Update procedural cloud positions — scroll each child and wrap
+        for (const c of clouds.children) {
+          c.position.x -= cloudSpeed * state.dt;
+          if (c.position.x < -app.stage.x - 300) {
+            c.position.x = -app.stage.x + app.screen.width + 200 + Math.random() * 400;
+          }
         }
-        if (clouds2.x + clouds2.width / 2 < -3000) {
-          clouds2.x = state.initialClouds;
+        for (const c of clouds2.children) {
+          c.position.x -= cloud2Speed * state.dt;
+          if (c.position.x < -app.stage.x - 300) {
+            c.position.x = -app.stage.x + app.screen.width + 200 + Math.random() * 400;
+          }
         }
         if (!getAreResetting()) {
           // Adjust app stage position

@@ -2527,6 +2527,12 @@ function transitionWeather(newWeather) {
   drawEndlessGround(newWeather);
   endlessGroundCurrentWeather = newWeather;
 
+  // Capture old sun/moon BEFORE creating new effects (createWeatherEffects resets them)
+  const oldWasSun = !!weatherSun;
+  const oldSun = weatherSun;
+  const oldWasMoon = !!weatherMoon;
+  const oldMoon = weatherMoon;
+
   // Detach old overlays so createWeatherEffects makes fresh ones
   sunLightOverlay = null;
   nightOverlay = null;
@@ -2553,10 +2559,9 @@ function transitionWeather(newWeather) {
 
   updateWeatherIcon();
 
-  const oldWasSun = !!weatherSun;
   state.biomeTransition = {
     oldWeather, oldGround, oldGroundDecor, oldOverlays,
-    oldWasSun,
+    oldWasSun, oldSun, oldWasMoon, oldMoon,
     progress: 0,
     newWeather: weatherContainer,
     newSunLight: sunLightOverlay,
@@ -2594,14 +2599,46 @@ function updateBiomeTransition() {
   if (t.newGround) t.newGround.alpha = p;
   if (t.newGroundDecor) t.newGroundDecor.alpha = p;
 
-  // Transition old weather out — sun sinks below horizon instead of just fading
+  // Transition old weather out
   if (t.oldWeather) {
-    if (t.oldWasSun) {
-      // Push the sun container down below the ground during transition
-      if (t.oldWeatherStartY === undefined) t.oldWeatherStartY = t.oldWeather.position.y;
-      const sinkDistance = app.screen.height * 0.3;
-      t.oldWeather.position.y = t.oldWeatherStartY + p * sinkDistance;
-      t.oldWeather.alpha = Math.max(0, 1 - p * 1.5);
+    // Keep old weather container tracking the camera
+    t.oldWeather.position.set(-app.stage.x, -app.stage.y);
+
+    if (t.oldWasSun && t.oldSun) {
+      // Sun: sink behind the ground naturally (foreground occludes it at zIndex 5)
+      const w = app.screen.width;
+      const h = app.screen.height;
+      // Continue the sun's arc — advance elapsed time so it keeps moving
+      if (t.sunSinkStart === undefined) {
+        t.sunSinkStart = Date.now();
+        t.sunBaseElapsed = Date.now() - t.oldSun.startTime - (t.oldSun.totalPaused || 0);
+      }
+      const sinkElapsed = t.sunBaseElapsed + (Date.now() - t.sunSinkStart) * 1.5; // 1.5x speed for snappy sink
+      const progress = sinkElapsed / 60000;
+      const parallaxX = app.stage.x * 0.04;
+      const parallaxY = app.stage.y * 0.02;
+      const arcX = w * 0.1 + Math.min(progress, 1.3) * w * 0.8 + parallaxX;
+      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
+      t.oldSun.position.set(arcX, arcY);
+      t.oldSun.rotation = sinkElapsed * 0.0003;
+      // No alpha fade — foreground naturally hides it
+      t.oldWeather.alpha = 1;
+    } else if (t.oldWasMoon && t.oldMoon) {
+      // Moon: sink behind the ground the same way
+      const w = app.screen.width;
+      const h = app.screen.height;
+      if (t.moonSinkStart === undefined) {
+        t.moonSinkStart = Date.now();
+        t.moonBaseElapsed = Date.now() - t.oldMoon.startTime - (t.oldMoon.totalPaused || 0);
+      }
+      const sinkElapsed = t.moonBaseElapsed + (Date.now() - t.moonSinkStart) * 1.5;
+      const progress = sinkElapsed / 60000;
+      const parallaxX = app.stage.x * 0.04;
+      const parallaxY = app.stage.y * 0.02;
+      const arcX = w * 0.9 - Math.min(progress, 1.3) * w * 0.8 + parallaxX;
+      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
+      t.oldMoon.position.set(arcX, arcY);
+      t.oldWeather.alpha = 1;
     } else {
       t.oldWeather.alpha = 1 - p;
     }

@@ -930,10 +930,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     state.isCharacterMenuOpen = false;
     setCharSwap(true);
 
+    // Save old selected character and update both tracking vars together
+    // so they can never desync if later code throws
+    const prevSelected = state.selectedCharacter;
     setCurrentCharacter(characterType);
+    state.selectedCharacter = characterType;
 
     // Swap positions of the current character box and the previously selected character box
-    if (state.selectedCharacter !== characterType) {
+    if (prevSelected !== characterType) {
       const characterLevelElement = document.getElementById("character-level");
       var updateLightning = document.getElementById("lightning-level");
       var updateHP = document.getElementById("heart-level");
@@ -1070,20 +1074,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
       characterLevelElement.textContent = 'Lvl. ' + level;
 
-      // Swap box positions (skip if selectedCharacter is empty, e.g. self-revive)
-      if (state.selectedCharacter) {
-        const currentCharacterBox = document.querySelector('.upgrade-box.' + state.selectedCharacter);
+      // Swap box positions (skip if prevSelected is empty, e.g. self-revive)
+      if (prevSelected) {
+        const currentCharacterBox = document.querySelector('.upgrade-box.' + prevSelected);
         const prevCharacterBox = document.querySelector('.upgrade-box.' + characterType);
-        const tempPosition = { ...state.characterPositions[state.selectedCharacter] };
+        const tempPosition = { ...state.characterPositions[prevSelected] };
 
         currentCharacterBox.style.top = state.characterPositions[characterType].top;
         currentCharacterBox.style.left = state.characterPositions[characterType].left;
-        state.characterPositions[state.selectedCharacter] = state.characterPositions[characterType];
+        state.characterPositions[prevSelected] = state.characterPositions[characterType];
         state.characterPositions[characterType] = tempPosition;
       }
 
-      previousCharacter = state.selectedCharacter;
-      state.selectedCharacter = characterType;
+      previousCharacter = prevSelected;
     } else {
       previousCharacter = ""; // Set previousCharacter to an empty string if the same character is selected again
     }
@@ -1564,7 +1567,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         if (enemyPortrait) enemyPortrait.style.display = 'none';
         // Unify both self-revive and cross-revive through handleCharacterClick.
         // For self-revive, clear selectedCharacter so handleCharacterClick runs
-        // the full swap path (line 933 check: selectedCharacter !== characterType).
+        // the full swap path (prevSelected !== characterType).
         if (revivingSelf) {
           state.selectedCharacter = '';
         }

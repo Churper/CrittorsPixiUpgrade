@@ -912,6 +912,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     critter.onFrameChange = null;
     critter.stop();
 
+    // Remove any lingering bird egg projectiles so they can't hit enemies after swap
+    for (let i = app.stage.children.length - 1; i >= 0; i--) {
+      if (app.stage.children[i].name === 'birdProjectile') {
+        app.stage.removeChild(app.stage.children[i]);
+      }
+    }
+
     // Hide critter until the ticker swaps textures to the new character
     critter.visible = false;
 

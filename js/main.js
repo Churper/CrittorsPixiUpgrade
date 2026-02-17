@@ -1614,10 +1614,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       openCharacterMenu();
     };
 
-    yesBg.on('pointerdown', doRevive);
-    yesLabel.on('pointerdown', doRevive);
-    noBg.on('pointerdown', doCancel);
-    noLabel.on('pointerdown', doCancel);
+    yesBg.on('pointerdown', (e) => { e.stopPropagation(); doRevive(); });
+    yesLabel.on('pointerdown', (e) => { e.stopPropagation(); doRevive(); });
+    noBg.on('pointerdown', (e) => { e.stopPropagation(); doCancel(); });
+    noLabel.on('pointerdown', (e) => { e.stopPropagation(); doCancel(); });
   }
 
 

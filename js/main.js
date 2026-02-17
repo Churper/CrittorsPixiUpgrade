@@ -4442,11 +4442,7 @@ state.demiSpawned = 0;
                     critter.play();
                   }
                   critter.loop = true;
-                  mountain1.position.x -= velocity.x * mountain1Speed * state.dt;
-                  mountain2.position.x -= velocity.x * mountain2Speed * state.dt;
-                  mountain3.position.x -= velocity.x * mountain3Speed * state.dt;
-                  mountain4.position.x -= velocity.x * mountain4Speed * state.dt;
-                  wrapMountains();
+                  updateMountainParallax();
                 }
                 else {
                   if (critter.textures != frogIdleTexture) {

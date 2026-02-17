@@ -318,7 +318,7 @@ touch-action: manipulation;
 #auto-attack-btn {
   display: none;
   position: fixed;
-  bottom: 42%;
+  top: 35%;
   left: 16px;
   width: 56px;
   height: 56px;
@@ -329,7 +329,6 @@ touch-action: manipulation;
   user-select: none;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  display: none;
   align-items: center;
   justify-content: center;
   font-size: 24px;

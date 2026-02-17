@@ -1105,24 +1105,35 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         visibleBtns.push(btn);
       }
     }
-    if (visibleBtns.length === 0) return;
 
+    const screenH = window.innerHeight;
     const btnSize = 56;
     const gap = 6;
-    // Stack below auto-attack btn (bottom 42%), work downward
-    const screenH = window.innerHeight;
-    const autoAtkBottom = screenH * 0.42;
-    const startBottom = autoAtkBottom - 66; // gap below auto-attack btn
-    // Max items per column before wrapping to a second column
-    const maxPerCol = Math.floor((startBottom - 8) / (btnSize + gap));
+    const leftEdge = 16;
+
+    // Position auto-attack button: always at top of the left button stack
+    const autoAtkBtn = document.getElementById('auto-attack-btn');
+    const autoAtkTop = Math.max(screenH * 0.35, 80);
+    if (autoAtkBtn) {
+      autoAtkBtn.style.bottom = 'auto';
+      autoAtkBtn.style.top = autoAtkTop + 'px';
+    }
+
+    if (visibleBtns.length === 0) return;
+
+    // Items stack below the auto-attack button
+    const startTop = autoAtkTop + btnSize + gap + 4;
+    // Max items per column before we'd go off-screen
+    const maxPerCol = Math.max(1, Math.floor((screenH - startTop - 8) / (btnSize + gap)));
 
     visibleBtns.forEach((btn, i) => {
       const col = Math.floor(i / maxPerCol);
       const row = i % maxPerCol;
+      btn.style.bottom = 'auto';
       btn.style.width = btnSize + 'px';
       btn.style.height = btnSize + 'px';
-      btn.style.bottom = (startBottom - row * (btnSize + gap)) + 'px';
-      btn.style.left = (16 + col * (btnSize + gap)) + 'px';
+      btn.style.top = (startTop + row * (btnSize + gap)) + 'px';
+      btn.style.left = (leftEdge + col * (btnSize + gap)) + 'px';
     });
   }
 

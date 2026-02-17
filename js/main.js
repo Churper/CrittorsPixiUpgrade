@@ -548,8 +548,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
     } else if (type === 'rain') {
       for (const drop of weatherContainer.children) {
-        drop.position.x += drop.vx;
-        drop.position.y += drop.vy;
+        drop.position.x += drop.vx * state.dt;
+        drop.position.y += drop.vy * state.dt;
         // Wrap around
         if (drop.position.y > h + 20) {
           drop.position.y = -drop.dropLength;
@@ -562,11 +562,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
     } else if (type === 'wind') {
       for (const p of weatherContainer.children) {
-        p.position.x += p.vx;
-        p.position.y += p.vy;
+        p.position.x += p.vx * state.dt;
+        p.position.y += p.vy * state.dt;
         if (p.isLeaf) {
-          p.wobble += 0.05;
-          p.position.y += Math.sin(p.wobble) * 1.2;
+          p.wobble += 0.05 * state.dt;
+          p.position.y += Math.sin(p.wobble) * 1.2 * state.dt;
           p.rotation += p.spinSpeed;
         }
         // Wrap around right edge
@@ -580,9 +580,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
     } else if (type === 'snow') {
       for (const flake of weatherContainer.children) {
-        flake.wobblePhase += flake.drift;
-        flake.position.x += Math.sin(flake.wobblePhase) * flake.wobbleAmp;
-        flake.position.y += flake.vy;
+        flake.wobblePhase += flake.drift * state.dt;
+        flake.position.x += Math.sin(flake.wobblePhase) * flake.wobbleAmp * state.dt;
+        flake.position.y += flake.vy * state.dt;
         // Wrap around
         if (flake.position.y > h + 10) {
           flake.position.y = -10;
@@ -2912,12 +2912,12 @@ backgroundTexture = textures.background;
                   let verticalSpeed = -3; // This is the initial vertical speed. A negative value means the projectile will move up at first.
 
                   function updateProjectile() {
-                    birdProjectile.x += projectileSpeed;
+                    birdProjectile.x += projectileSpeed * state.dt;
 
                     // Apply the "gravity" to the vertical speed
-                    verticalSpeed += gravity;
+                    verticalSpeed += gravity * state.dt;
                     // Apply the vertical speed to the projectile's position
-                    birdProjectile.y += verticalSpeed;
+                    birdProjectile.y += verticalSpeed * state.dt;
 
                     if (Math.abs(birdProjectile.x - startingX) > maxDistance) {
                       // If the projectile has travelled more than the maximum distance, remove it
@@ -3274,7 +3274,8 @@ let cantGainEXP = false;
 
       state.initialClouds = clouds.position.x;
       let once = 0;
-      app.ticker.add(() => {
+      app.ticker.add((ticker) => {
+        state.dt = ticker.deltaTime;
         // Spawn protection / feather revive visual effect
         if (Date.now() < state.spawnProtectionEnd && critter) {
           if (state.featherReviveEnd && Date.now() < state.featherReviveEnd) {
@@ -3441,16 +3442,16 @@ let cantGainEXP = false;
           const distanceY = targetY - app.stage.y;
 
           // Calculate the movement for this frame
-          const movementX = Math.sign(distanceX) * Math.min(Math.abs(distanceX), cameraSpeed);
-          const movementY = Math.sign(distanceY) * Math.min(Math.abs(distanceY), cameraSpeed);
+          const movementX = Math.sign(distanceX) * Math.min(Math.abs(distanceX), cameraSpeed) * state.dt;
+          const movementY = Math.sign(distanceY) * Math.min(Math.abs(distanceY), cameraSpeed) * state.dt;
 
           // Update the camera position
           app.stage.x += movementX;
           app.stage.y += movementY;
-          mountain1.position.x -= velocity.x * mountain1Speed;
-          mountain2.position.x += velocity.x * mountain2Speed;
-          mountain3.position.x += velocity.x * mountain3Speed;
-          mountain4.position.x += velocity.x * mountain4Speed;
+          mountain1.position.x -= velocity.x * mountain1Speed * state.dt;
+          mountain2.position.x += velocity.x * mountain2Speed * state.dt;
+          mountain3.position.x += velocity.x * mountain3Speed * state.dt;
+          mountain4.position.x += velocity.x * mountain4Speed * state.dt;
           wrapMountains();
 
           // Animate unlock character walking out of castle toward player's base
@@ -3469,7 +3470,7 @@ let cantGainEXP = false;
                 unlockAnimSprite.scale.x *= -1; // Keep facing left
               }
               // Walk left toward the player's castle
-              unlockAnimSprite.position.x -= 6;
+              unlockAnimSprite.position.x -= 6 * state.dt;
               unlockAnimSprite.position.y = state.stored + Math.sin(Date.now() * 0.008) * 3;
 
               // Reached the player's castle — start celebration!
@@ -3528,7 +3529,7 @@ let cantGainEXP = false;
               // Animate 🥳 emoji — float up and bob
               if (unlockAnimSprite.partyEmoji) {
                 const pe = unlockAnimSprite.partyEmoji;
-                pe.position.y -= 0.3;
+                pe.position.y -= 0.3 * state.dt;
                 pe.rotation = Math.sin(elapsed * 0.005) * 0.2;
                 pe.scale.set(1 + Math.sin(elapsed * 0.008) * 0.1);
               }
@@ -3536,10 +3537,10 @@ let cantGainEXP = false;
               // Animate confetti — fall, tumble, drift
               if (unlockAnimSprite.confettiContainer) {
                 for (const p of unlockAnimSprite.confettiContainer.children) {
-                  p.vy += p.gravity;
-                  p.vx += p.drift * 0.02;
-                  p.position.x += p.vx;
-                  p.position.y += p.vy;
+                  p.vy += p.gravity * state.dt;
+                  p.vx += p.drift * 0.02 * state.dt;
+                  p.position.x += p.vx * state.dt;
+                  p.position.y += p.vy * state.dt;
                   p.rotation += p.spin;
                   // Slow down sideways drift for flutter effect
                   p.vx *= 0.995;
@@ -3893,12 +3894,12 @@ state.demiSpawned = 0;
                 if (getEnemiesInRange() <= 0) {
 
                   if (getCurrentCharacter() != "character-snail") {
-                    critter.position.x += velocity.x;
+                    critter.position.x += velocity.x * state.dt;
 
                   }
                   else {
                     if (critter.currentFrame > critter.totalFrames / 2) {
-                      critter.position.x += velocity.x * 2;
+                      critter.position.x += velocity.x * 2 * state.dt;
 
                     }
                   }
@@ -3908,10 +3909,10 @@ state.demiSpawned = 0;
                     critter.play();
                   }
                   critter.loop = true;
-                  mountain1.position.x -= velocity.x * mountain1Speed;
-                  mountain2.position.x -= velocity.x * mountain2Speed;
-                  mountain3.position.x -= velocity.x * mountain3Speed;
-                  mountain4.position.x -= velocity.x * mountain4Speed;
+                  mountain1.position.x -= velocity.x * mountain1Speed * state.dt;
+                  mountain2.position.x -= velocity.x * mountain2Speed * state.dt;
+                  mountain3.position.x -= velocity.x * mountain3Speed * state.dt;
+                  mountain4.position.x -= velocity.x * mountain4Speed * state.dt;
                   wrapMountains();
                 }
                 else {
@@ -3947,8 +3948,8 @@ state.demiSpawned = 0;
         }
 
         // Update cloud position
-        clouds.position.x -= cloudSpeed;
-        clouds2.position.x -= cloud2Speed;
+        clouds.position.x -= cloudSpeed * state.dt;
+        clouds2.position.x -= cloud2Speed * state.dt;
         // Check if cloud has gone offscreen and move it to the right side
         if (clouds.x + clouds.width / 2 < -3000) {
           clouds.x = state.initialClouds;

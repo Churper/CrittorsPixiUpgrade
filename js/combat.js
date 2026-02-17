@@ -297,7 +297,7 @@ export function handleEnemyMoving(critterWalkTextures, enemy) {
     enemy.loop = true;
     enemy.play();
   }
-  enemy.position.x += enemy.vx;
+  enemy.position.x += enemy.vx * state.dt;
 }
 
 export function handleEnemyCombat(critter, critterAttackTextures, critterWalkTextures, enemy, enemyName) {
@@ -949,9 +949,9 @@ export function drawHitSplat(enemy) {
       // Animate sparks
       if (critSparks) {
         for (const spark of critSparks.children) {
-          spark.vy += spark.gravity;
-          spark.position.x += spark.vx;
-          spark.position.y += spark.vy;
+          spark.vy += spark.gravity * state.dt;
+          spark.position.x += spark.vx * state.dt;
+          spark.position.y += spark.vy * state.dt;
           spark.alpha = 1 - progress;
           spark.vx *= 0.97;
         }
@@ -1400,9 +1400,9 @@ function playFeatherReviveBurst(critter) {
       return;
     }
     for (const p of particles) {
-      p.position.x += p.vx;
-      p.position.y += p.vy;
-      p.vy += 0.03;
+      p.position.x += p.vx * state.dt;
+      p.position.y += p.vy * state.dt;
+      p.vy += 0.03 * state.dt;
       p.alpha = 1 - t;
       p.scale.set(1 - t * 0.5);
     }

@@ -204,6 +204,9 @@ const state = {
   effectsVolume: 0.25,
   themeMusic: null,
 
+  // Delta time (set each frame by main ticker; 1.0 at 60fps, 2.0 at 30fps)
+  dt: 1,
+
   // PIXI app reference (set after creation)
   app: null,
 };

@@ -187,7 +187,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let sunLightOverlay = null;
   let nightOverlay = null;
   let playerShadow = null;
-  let moonStars = null;
   let nightFireGlows = null; // Animated glow circles for campfires/lanterns
 
   function getWeatherType() {
@@ -218,11 +217,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.app.stage.removeChild(playerShadow);
       playerShadow.destroy();
       playerShadow = null;
-    }
-    if (moonStars && state.app) {
-      state.app.stage.removeChild(moonStars);
-      moonStars.destroy({ children: true });
-      moonStars = null;
     }
     weatherSun = null;
     weatherMoon = null;
@@ -392,22 +386,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       weatherMoon.startTime = Date.now();
       weatherMoon.totalPaused = 0;
       weatherContainer.addChild(weatherMoon);
-
-      // Stars container — twinkle behind the moon
-      moonStars = new PIXI.Container();
-      moonStars.zIndex = 0.3;
-      moonStars.eventMode = 'none';
-      for (let i = 0; i < 50; i++) {
-        const star = new PIXI.Graphics();
-        const sz = 0.5 + Math.random() * 1.5;
-        star.circle(0, 0, sz).fill({ color: 0xFFFFFF, alpha: 0.3 + Math.random() * 0.5 });
-        star.position.set(Math.random() * w, Math.random() * h * 0.6);
-        star.twinkleSpeed = 0.02 + Math.random() * 0.04;
-        star.twinklePhase = Math.random() * Math.PI * 2;
-        star.baseAlpha = star.alpha;
-        moonStars.addChild(star);
-      }
-      app.stage.addChild(moonStars);
 
       // Night overlay — dark blue-black tint over entire scene
       nightOverlay = new PIXI.Graphics();
@@ -627,15 +605,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       if (nightOverlay) {
         nightOverlay.position.set(-app.stage.x - 2000, -app.stage.y - 2000);
         nightOverlay.alpha = 0.3 + 0.15 * (1 - moonBrightness);
-      }
-
-      // Star twinkle
-      if (moonStars) {
-        moonStars.position.set(-app.stage.x, -app.stage.y);
-        for (const star of moonStars.children) {
-          star.twinklePhase += star.twinkleSpeed;
-          star.alpha = star.baseAlpha * (0.5 + Math.sin(star.twinklePhase) * 0.5);
-        }
       }
 
       // Player shadow from moonlight
@@ -1880,7 +1849,6 @@ PIXI.Assets.add({ alias: 'bee_attack', src: './assets/bee_attack.png' });
 PIXI.Assets.add({ alias: 'puffer_walk', src: './assets/puffer_walk.png' });
 PIXI.Assets.add({ alias: 'puffer_attack', src: './assets/puffer_attack.png' });
 PIXI.Assets.add({ alias: 'bean', src: './assets/bean.png' });
-PIXI.Assets.add({ alias: 'background', src: './assets/background.png' });
 PIXI.Assets.add({ alias: 'frog_ghost', src: './assets/frog_ghost.png' });
 PIXI.Assets.add({ alias: 'foreground', src: './assets/foreground.png' });
 PIXI.Assets.add({ alias: 'critter', src: './assets/critter.png' });
@@ -1893,12 +1861,9 @@ PIXI.Assets.add({ alias: 'frog', src: './assets/frog.png' });
 PIXI.Assets.add({ alias: 'frog_walk', src: './assets/frog_walk.png' });
 PIXI.Assets.add({ alias: 'frog_attack', src: './assets/frog_attack.png' });
 PIXI.Assets.add({ alias: 'enemy_death', src: './assets/enemy_death.png' });
-PIXI.Assets.add({ alias: 'mountain1', src: './assets/mountain1.png' });
-PIXI.Assets.add({ alias: 'mountain2', src: './assets/mountain2.png' });
 PIXI.Assets.add({ alias: 'castle', src: './assets/castle.png' });
 PIXI.Assets.add({ alias: 'clouds', src: './assets/clouds.png' });
 PIXI.Assets.add({ alias: 'clouds2', src: './assets/clouds2.png' });
-PIXI.Assets.add({ alias: 'clouds3', src: './assets/clouds3.png' });
 
 // Load the assets with progress tracking
 const assetList = [
@@ -1908,12 +1873,12 @@ const assetList = [
   'toofer_walk', 'toofer_attack', 'bird_egg', 'bird_ghost',
   'bird_walk', 'bird_attack', 'snail_ghost', 'bee_ghost',
   'bee_walk', 'bee_attack', 'puffer_walk', 'puffer_attack',
-  'bean', 'background', 'frog_ghost', 'foreground',
+  'bean', 'frog_ghost', 'foreground',
   'critter', 'critter_walk', 'critter_attack',
   'snail_idle', 'snail_walk', 'snail_attack',
   'frog', 'frog_walk', 'frog_attack',
-  'enemy_death', 'mountain1', 'mountain2',
-  'castle', 'clouds', 'clouds2', 'clouds3'
+  'enemy_death',
+  'castle', 'clouds', 'clouds2'
 ];
 const texturesPromise = PIXI.Assets.load(assetList, (progress) => {
   const fill = document.getElementById('loading-bar-fill');
@@ -1980,18 +1945,27 @@ texturesPromise.then((loadedTextures) => {
       // Add the state.timer animation to the stage
 
 
-      let backgroundTexture = textures.background;
-
-// Create background — TilingSprite for biome tint transitions in both modes
-let background;
-if (state.gameMode === 'endless') {
-  background = new PIXI.TilingSprite(backgroundTexture, 50000, app.screen.height);
-} else {
-  background = new PIXI.TilingSprite(backgroundTexture, 2800, app.screen.height);
-}
-background.anchor.set(0, 0);
-background.position.set(0, 0);
+let background = new PIXI.Graphics();
+background.eventMode = 'none';
 app.stage.addChild(background);
+let currentSkyTop = 0x3388CC;
+let currentSkyBottom = 0x99CCEE;
+
+const persistentStars = new PIXI.Container();
+persistentStars.zIndex = 0.3;
+persistentStars.eventMode = 'none';
+for (let i = 0; i < 80; i++) {
+  const star = new PIXI.Graphics();
+  const sz = 0.5 + Math.random() * 2.0;
+  const color = sz > 1.5 ? [0xFFFFFF, 0xFFEEDD, 0xDDEEFF][Math.floor(Math.random() * 3)] : 0xFFFFFF;
+  star.circle(0, 0, sz).fill({ color, alpha: 0.3 + Math.random() * 0.5 });
+  star.position.set(Math.random() * app.screen.width, Math.random() * app.screen.height * 0.55);
+  star.twinkleSpeed = 0.015 + Math.random() * 0.035;
+  star.twinklePhase = Math.random() * Math.PI * 2;
+  star.baseAlpha = star.alpha;
+  persistentStars.addChild(star);
+}
+app.stage.addChild(persistentStars);
 
 
 const foregroundTexture = textures.foreground;
@@ -2459,13 +2433,12 @@ drawEndlessGround(initialWeather);
 endlessGroundCurrentWeather = initialWeather;
 foreground.visible = false;
 
-// Per-biome tints for background and mountains
-const biomeTints = {
-  sun:   { bg: 0xFFFFFF, mountain: 0xFFFFFF },
-  night: { bg: 0x2a2a4a, mountain: 0x3a3a5a },
-  rain:  { bg: 0x8899aa, mountain: 0x7a8a9a },
-  wind:  { bg: 0xddeeff, mountain: 0xccddee },
-  snow:  { bg: 0xc8d8e8, mountain: 0xb8c8d8 },
+const skyGradients = {
+  sun:   { top: 0x3388CC, bottom: 0x99CCEE, starsAlpha: 0.0,  mountain: 0xFFFFFF },
+  night: { top: 0x0a0a2a, bottom: 0x1a1a3a, starsAlpha: 1.0,  mountain: 0x3a3a5a },
+  rain:  { top: 0x4a5a6a, bottom: 0x7a8a9a, starsAlpha: 0.0,  mountain: 0x7a8a9a },
+  wind:  { top: 0x6699BB, bottom: 0xAADDFF, starsAlpha: 0.05, mountain: 0xccddee },
+  snow:  { top: 0x8899AA, bottom: 0xCCDDEE, starsAlpha: 0.08, mountain: 0xb8c8d8 },
 };
 
 function lerpColor(a, b, t) {
@@ -2475,6 +2448,17 @@ function lerpColor(a, b, t) {
   const g = Math.round(ag + (bg - ag) * t);
   const bl = Math.round(ab + (bb - ab) * t);
   return (r << 16) | (g << 8) | bl;
+}
+
+function drawSkyGradient(gfx, topColor, bottomColor, width, height) {
+  gfx.clear();
+  const BANDS = 32;
+  const bandHeight = Math.ceil(height / BANDS);
+  for (let i = 0; i < BANDS; i++) {
+    const t = i / (BANDS - 1);
+    const color = lerpColor(topColor, bottomColor, t);
+    gfx.rect(0, i * bandHeight, width, bandHeight + 1).fill({ color });
+  }
 }
 
 function transitionWeather(newWeather) {
@@ -2492,9 +2476,11 @@ function transitionWeather(newWeather) {
     if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha;
     if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha;
     if (t.newPlayerShadow) t.newPlayerShadow.alpha = t.targetPlayerShadowAlpha;
-    if (t.newMoonStars) t.newMoonStars.alpha = t.targetMoonStarsAlpha;
     if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha;
-    background.tint = t.newBgTint;
+    currentSkyTop = t.newSkyTop;
+    currentSkyBottom = t.newSkyBottom;
+    drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);
+    persistentStars.alpha = t.newStarsAlpha;
     mountain1.tint = t.newMtnTint; mountain2.tint = t.newMtnTint;
     mountain3.tint = t.newMtnTint; mountain4.tint = t.newMtnTint;
     state.biomeTransition = null;
@@ -2504,8 +2490,10 @@ function transitionWeather(newWeather) {
   const oldWeather = weatherContainer;
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
-  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, moonStars, nightFireGlows];
-  const oldBgTint = background.tint ?? 0xFFFFFF;
+  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, nightFireGlows];
+  const oldSkyTop = currentSkyTop;
+  const oldSkyBottom = currentSkyBottom;
+  const oldStarsAlpha = persistentStars.alpha;
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
 
   // Create new ground on top — no masks, just alpha crossfade
@@ -2537,7 +2525,6 @@ function transitionWeather(newWeather) {
   sunLightOverlay = null;
   nightOverlay = null;
   playerShadow = null;
-  moonStars = null;
   nightFireGlows = null;
   weatherContainer = null;
 
@@ -2547,15 +2534,13 @@ function transitionWeather(newWeather) {
   if (sunLightOverlay) sunLightOverlay.alpha = 0;
   if (nightOverlay) nightOverlay.alpha = 0;
   if (playerShadow) playerShadow.alpha = 0;
-  if (moonStars) moonStars.alpha = 0;
   if (nightFireGlows) nightFireGlows.alpha = 0;
 
   const targetNightAlpha = nightOverlay ? 0.35 : 0;
   const targetSunLightAlpha = sunLightOverlay ? 0.12 : 0;
   const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
-  const targetMoonStarsAlpha = moonStars ? 1 : 0;
   const targetFireGlowsAlpha = nightFireGlows ? 1 : 0;
-  const newTints = biomeTints[newWeather] || biomeTints.sun;
+  const newGrad = skyGradients[newWeather] || skyGradients.sun;
 
   updateWeatherIcon();
 
@@ -2567,13 +2552,13 @@ function transitionWeather(newWeather) {
     newSunLight: sunLightOverlay,
     newNightOverlay: nightOverlay,
     newPlayerShadow: playerShadow,
-    newMoonStars: moonStars,
     newFireGlows: nightFireGlows,
     newGround, newGroundDecor,
     targetNightAlpha, targetSunLightAlpha, targetPlayerShadowAlpha,
-    targetMoonStarsAlpha, targetFireGlowsAlpha,
-    oldBgTint, newBgTint: newTints.bg,
-    oldMtnTint, newMtnTint: newTints.mountain,
+    targetFireGlowsAlpha,
+    oldSkyTop, oldSkyBottom, oldStarsAlpha,
+    newSkyTop: newGrad.top, newSkyBottom: newGrad.bottom, newStarsAlpha: newGrad.starsAlpha,
+    oldMtnTint, newMtnTint: newGrad.mountain,
   };
 }
 
@@ -2585,8 +2570,11 @@ function updateBiomeTransition() {
   t.progress += 0.002;
   const p = Math.min(1, t.progress);
 
-  // Lerp background + mountain tints
-  background.tint = lerpColor(t.oldBgTint, t.newBgTint, p);
+  // Lerp sky gradient + mountain tints
+  currentSkyTop = lerpColor(t.oldSkyTop, t.newSkyTop, p);
+  currentSkyBottom = lerpColor(t.oldSkyBottom, t.newSkyBottom, p);
+  drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);
+  persistentStars.alpha = t.oldStarsAlpha + (t.newStarsAlpha - t.oldStarsAlpha) * p;
   const mtnTint = lerpColor(t.oldMtnTint, t.newMtnTint, p);
   mountain1.tint = mtnTint;
   mountain2.tint = mtnTint;
@@ -2652,7 +2640,6 @@ function updateBiomeTransition() {
   if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha * p;
   if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
   if (t.newPlayerShadow) t.newPlayerShadow.alpha = t.targetPlayerShadowAlpha * p;
-  if (t.newMoonStars) t.newMoonStars.alpha = t.targetMoonStarsAlpha * p;
   if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha * p;
 
   if (p >= 1) {
@@ -2670,55 +2657,136 @@ state.frogGhostPlayer = new PIXI.Sprite(frogGhostTextures);
 
 state.frogGhostPlayer.anchor.set(0, 0);
 state.frogGhostPlayer.scale.set(0.28);
-backgroundTexture = textures.background;
 
-      // Create a new tiling sprite with the background texture, specifying the width and height
- 
-      
-      // No need to set the width and height again, since it's set in the TilingSprite constructor
-      // background.width = app.screen.width * 2.75;
-      // background.height = app.screen.height;
-   
-      const mountain1 = createMountainSprite('mountain1', -100, mountainVelocity1, foreground);
-      const mountain2 = createMountainSprite('mountain2', app.screen.width * 0.45, mountainVelocity2, foreground);
-      const mountain3 = createMountainSprite('mountain2', -200, mountainVelocity3, foreground); // Adjust the position as needed
-      const mountain4 = createMountainSprite('mountain1', app.screen.width * 1.2, mountainVelocity4, foreground); // Adjust the position as needed
+      const mountain1 = createMountainGraphics(1, -100, mountainVelocity1, foreground);
+      const mountain2 = createMountainGraphics(2, app.screen.width * 0.45, mountainVelocity2, foreground);
+      const mountain3 = createMountainGraphics(2, -200, mountainVelocity3, foreground);
+      const mountain4 = createMountainGraphics(1, app.screen.width * 1.2, mountainVelocity4, foreground);
 
-      // Apply initial biome tints so the first round starts with correct colors
-      const _initTints = biomeTints[initialWeather] || biomeTints.sun;
-      background.tint = _initTints.bg;
-      mountain1.tint = _initTints.mountain;
-      mountain2.tint = _initTints.mountain;
-      mountain3.tint = _initTints.mountain;
-      mountain4.tint = _initTints.mountain;
+      // Apply initial sky gradient so the first round starts with correct colors
+      const _initGrad = skyGradients[initialWeather] || skyGradients.sun;
+      currentSkyTop = _initGrad.top;
+      currentSkyBottom = _initGrad.bottom;
+      drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);
+      persistentStars.alpha = _initGrad.starsAlpha;
+      mountain1.tint = _initGrad.mountain;
+      mountain2.tint = _initGrad.mountain;
+      mountain3.tint = _initGrad.mountain;
+      mountain4.tint = _initGrad.mountain;
 
-      function createMountainSprite(resourceName, xPos, velocity, foreground) {
-        const sprite = new PIXI.Sprite(textures[resourceName]);
+      function drawMountainType1(g, w, h) {
+        // Layer 1: Base silhouette
+        g.poly([0, 0, w * 0.5, -h, w, 0]).fill({ color: 0x4a4a5a, alpha: 1.0 });
+        // Layer 2: Shadow face (right side)
+        g.poly([w * 0.5, -h, w * 0.75, -h * 0.35, w, 0, w * 0.5, 0]).fill({ color: 0x2a2a3a, alpha: 0.35 });
+        // Layer 3: Lit face (upper left)
+        g.poly([w * 0.5, -h, w * 0.35, -h * 0.55, w * 0.2, -h * 0.25]).fill({ color: 0x7a7a8a, alpha: 0.2 });
+        // Layer 4: Snow cap
+        g.poly([w * 0.43, -h * 0.88, w * 0.5, -h, w * 0.57, -h * 0.88]).fill({ color: 0xd8dde4, alpha: 0.85 });
+        // Layer 5: Snow highlight
+        g.poly([w * 0.45, -h * 0.92, w * 0.5, -h, w * 0.48, -h * 0.93]).fill({ color: 0xffffff, alpha: 0.3 });
+        // Layer 6: Rock ledge 1
+        g.poly([w * 0.25, -h * 0.4, w * 0.32, -h * 0.42, w * 0.33, -h * 0.37, w * 0.27, -h * 0.35]).fill({ color: 0x3a3a4a, alpha: 0.25 });
+        // Layer 7: Rock ledge 2
+        g.poly([w * 0.6, -h * 0.55, w * 0.67, -h * 0.58, w * 0.69, -h * 0.52, w * 0.63, -h * 0.5]).fill({ color: 0x2a2a3a, alpha: 0.3 });
+        // Layer 8: Rock ledge 3
+        g.poly([w * 0.38, -h * 0.6, w * 0.44, -h * 0.63, w * 0.45, -h * 0.58, w * 0.4, -h * 0.56]).fill({ color: 0x3a3a4a, alpha: 0.2 });
+        // Layer 9: Rock ledge 4
+        g.poly([w * 0.7, -h * 0.3, w * 0.76, -h * 0.33, w * 0.78, -h * 0.28, w * 0.73, -h * 0.26]).fill({ color: 0x2a2a3a, alpha: 0.2 });
+        // Layer 10: Ridge highlight (peak edge)
+        g.poly([w * 0.48, -h * 0.98, w * 0.5, -h, w * 0.38, -h * 0.65, w * 0.36, -h * 0.63]).fill({ color: 0x8a8a9a, alpha: 0.25 });
+        // Layer 11: Ridge highlight (shoulder)
+        g.poly([w * 0.3, -h * 0.5, w * 0.32, -h * 0.52, w * 0.22, -h * 0.3, w * 0.2, -h * 0.28]).fill({ color: 0x7a7a8a, alpha: 0.15 });
+        // Layer 12: Base haze
+        g.rect(0, -h * 0.08, w, h * 0.08).fill({ color: 0x8899aa, alpha: 0.15 });
+      }
+
+      function drawMountainType2(g, w, h) {
+        // Layer 1: Base silhouette — three-peak ridgeline
+        g.poly([
+          0, 0,
+          w * 0.15, -h * 0.45,
+          w * 0.25, -h * 0.65,
+          w * 0.32, -h * 0.35,
+          w * 0.45, -h * 0.8,
+          w * 0.5, -h,
+          w * 0.55, -h * 0.8,
+          w * 0.68, -h * 0.3,
+          w * 0.78, -h * 0.6,
+          w * 0.88, -h * 0.35,
+          w, 0
+        ]).fill({ color: 0x4a4a5a, alpha: 1.0 });
+        // Layer 2: Shadow face (right half from center summit)
+        g.poly([
+          w * 0.5, -h,
+          w * 0.55, -h * 0.8,
+          w * 0.68, -h * 0.3,
+          w * 0.78, -h * 0.6,
+          w * 0.88, -h * 0.35,
+          w, 0,
+          w * 0.5, 0
+        ]).fill({ color: 0x2a2a3a, alpha: 0.3 });
+        // Layer 3: Left peak shadow (right side of left sub-peak)
+        g.poly([
+          w * 0.25, -h * 0.65,
+          w * 0.32, -h * 0.35,
+          w * 0.3, 0,
+          w * 0.22, 0
+        ]).fill({ color: 0x2a2a3a, alpha: 0.2 });
+        // Layer 4: Lit face (center-left slope)
+        g.poly([
+          w * 0.5, -h,
+          w * 0.45, -h * 0.8,
+          w * 0.38, -h * 0.5,
+          w * 0.42, -h * 0.55
+        ]).fill({ color: 0x7a7a8a, alpha: 0.18 });
+        // Layer 5: Snow cap (center peak — largest)
+        g.poly([w * 0.46, -h * 0.88, w * 0.5, -h, w * 0.54, -h * 0.88]).fill({ color: 0xd8dde4, alpha: 0.85 });
+        // Layer 6: Snow cap (left peak)
+        g.poly([w * 0.22, -h * 0.58, w * 0.25, -h * 0.65, w * 0.28, -h * 0.58]).fill({ color: 0xd8dde4, alpha: 0.7 });
+        // Layer 7: Snow cap (right peak)
+        g.poly([w * 0.75, -h * 0.53, w * 0.78, -h * 0.6, w * 0.81, -h * 0.53]).fill({ color: 0xd8dde4, alpha: 0.65 });
+        // Layer 8: Rock ledge (center-left slope)
+        g.poly([w * 0.4, -h * 0.55, w * 0.45, -h * 0.58, w * 0.46, -h * 0.53, w * 0.42, -h * 0.5]).fill({ color: 0x3a3a4a, alpha: 0.25 });
+        // Layer 9: Rock ledge (right peak)
+        g.poly([w * 0.72, -h * 0.4, w * 0.77, -h * 0.43, w * 0.78, -h * 0.38, w * 0.74, -h * 0.36]).fill({ color: 0x2a2a3a, alpha: 0.2 });
+        // Layer 10: Rock ledge (valley area)
+        g.poly([w * 0.6, -h * 0.25, w * 0.65, -h * 0.28, w * 0.66, -h * 0.23, w * 0.62, -h * 0.21]).fill({ color: 0x3a3a4a, alpha: 0.2 });
+        // Layer 11: Ridge highlight (center peak edge)
+        g.poly([w * 0.48, -h * 0.95, w * 0.5, -h, w * 0.44, -h * 0.75, w * 0.43, -h * 0.73]).fill({ color: 0x8a8a9a, alpha: 0.2 });
+        // Layer 12: Base haze
+        g.rect(0, -h * 0.08, w, h * 0.08).fill({ color: 0x8899aa, alpha: 0.15 });
+      }
+
+      function createMountainGraphics(type, xPos, velocity, foreground) {
+        const g = new PIXI.Graphics();
+        g.eventMode = 'none';
+        const w = (type === 1) ? 600 : 1000;
+        const h = (type === 1) ? 400 : 350;
+
+        if (type === 1) drawMountainType1(g, w, h);
+        else drawMountainType2(g, w, h);
 
         const scaleFactor = Math.min(
-          app.screen.height * 0.6 / sprite.height,
-          app.screen.width * 1.5 / sprite.width
+          app.screen.height * 0.6 / h,
+          app.screen.width * 1.5 / w
         );
-
-        sprite.scale.set(scaleFactor);
-        sprite.anchor.set(0, 1);
+        g.scale.set(scaleFactor);
 
         const minHeightOffset = foreground ? foreground.height * 0.22 : 0;
-        const heightOffsetRatio = (1 - scaleFactor) * 0.3; // Adjust this ratio based on your preference
-
-        const foregroundHeightOffset = foreground ? minHeightOffset + sprite.height * heightOffsetRatio : 0; // Adjusted offset calculation
-        sprite.position.set(xPos, app.screen.height - foregroundHeightOffset);
-        sprite.zIndex = -1;
-        sprite.velocity = velocity;
-
-        return sprite;
+        const heightOffsetRatio = (1 - scaleFactor) * 0.3;
+        const scaledHeight = h * scaleFactor;
+        const foregroundHeightOffset = foreground
+          ? minHeightOffset + scaledHeight * heightOffsetRatio : 0;
+        g.position.set(xPos, app.screen.height - foregroundHeightOffset);
+        g.zIndex = -1;
+        g.velocity = velocity;
+        return g;
       }
       mountain3.scale.x = .6;
       mountain3.scale.y = .65;
       mountain4.scale.x = .5;
       mountain4.scale.y = .55;
-      console.log(mountain2);
-      console.log(mountain3);
       foreground.x = 0;
       // mountain3.scale.x = 100;
       const castleTexture = PIXI.Assets.get('castle');
@@ -2779,9 +2847,9 @@ backgroundTexture = textures.background;
       const sharkWalkTextures = createAnimationTextures2('shark_walk', 10, 398, 1398, 1990);
       const sharkAttackTextures = createAnimationTextures2('shark_attack', 21, 398, 3495, 1990);
       state.sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
-      const backgroundImage = new PIXI.Sprite(PIXI.Assets.get('background'));
-      const clouds = createTilingSprite(cloudsTexture, backgroundImage.width * 30, 200);
-      const clouds2 = createTilingSprite(clouds2Texture, backgroundImage.width * 30, 200);
+      const CLOUD_TILE_WIDTH = 50000;
+      const clouds = createTilingSprite(cloudsTexture, CLOUD_TILE_WIDTH, 200);
+      const clouds2 = createTilingSprite(clouds2Texture, CLOUD_TILE_WIDTH, 200);
       clouds2.position.y += 100;
       clouds2.alpha = .3;
       const enemyDeathTextures = createAnimationTextures('enemy_death', 8, 317);
@@ -3329,6 +3397,13 @@ let cantGainEXP = false;
 
         updateWeatherEffects();
         updateBiomeTransition();
+
+        background.position.set(-app.stage.x, -app.stage.y);
+        persistentStars.position.set(-app.stage.x, -app.stage.y);
+        for (const star of persistentStars.children) {
+          star.twinklePhase += star.twinkleSpeed;
+          star.alpha = star.baseAlpha * (0.5 + Math.sin(star.twinklePhase) * 0.5);
+        }
 
         // Endless mode: update kill counter + track elapsed for weather cycling
         if (state.gameMode === 'endless' && state.endlessStartTime && !getisPaused()) {
@@ -4136,7 +4211,7 @@ state.demiSpawned = 0;
         app.renderer.resize(window.innerWidth, window.innerHeight);
 
         // Reposition elements that depend on screen dimensions
-        background.height = app.screen.height;
+        drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);
         foreground.y = app.screen.height;
         if (endlessGround) {
           endlessGround.position.y = app.screen.height - endlessGroundHeight;

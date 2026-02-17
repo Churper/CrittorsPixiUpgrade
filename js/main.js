@@ -2054,15 +2054,27 @@ let currentSkyBottom = 0x99CCEE;
 const persistentStars = new PIXI.Container();
 persistentStars.zIndex = 0.3;
 persistentStars.eventMode = 'none';
+// Pick 4 random indices to be bright twinkler stars
+const brightTwinklerIndices = new Set();
+while (brightTwinklerIndices.size < 4) {
+  brightTwinklerIndices.add(Math.floor(Math.random() * 80));
+}
 for (let i = 0; i < 80; i++) {
   const star = new PIXI.Graphics();
-  const sz = 0.5 + Math.random() * 2.0;
+  const isBright = brightTwinklerIndices.has(i);
+  const sz = isBright ? (2.5 + Math.random() * 1.0) : (0.5 + Math.random() * 2.0);
   const color = sz > 1.5 ? [0xFFFFFF, 0xFFEEDD, 0xDDEEFF][Math.floor(Math.random() * 3)] : 0xFFFFFF;
-  star.circle(0, 0, sz).fill({ color, alpha: 0.3 + Math.random() * 0.5 });
+  if (isBright) {
+    // Glow circle behind the main dot
+    star.circle(0, 0, sz * 2.5).fill({ color, alpha: 0.08 });
+    star.circle(0, 0, sz * 1.6).fill({ color, alpha: 0.12 });
+  }
+  star.circle(0, 0, sz).fill({ color, alpha: isBright ? (0.7 + Math.random() * 0.2) : (0.3 + Math.random() * 0.5) });
   star.position.set(Math.random() * app.screen.width, Math.random() * app.screen.height * 0.55);
-  star.twinkleSpeed = 0.015 + Math.random() * 0.035;
+  star.twinkleSpeed = isBright ? (0.05 + Math.random() * 0.03) : (0.015 + Math.random() * 0.035);
   star.twinklePhase = Math.random() * Math.PI * 2;
   star.baseAlpha = star.alpha;
+  star.isBrightTwinkler = isBright;
   persistentStars.addChild(star);
 }
 app.stage.addChild(persistentStars);
@@ -2260,8 +2272,6 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       const cH = (20 + endlessGroundRandom() * 30) * treeScale;
       const cW = 8 * treeScale;
       const hasFlower = endlessGroundRandom() > 0.6;
-      // Ground shadow
-      d.ellipse(tx, treeY + 2, cW * 1.5, 3).fill({ color: 0x000000, alpha: 0.1 });
       // Main body — rounded
       d.circle(tx, treeY - cH * 0.5, cW * 0.5).fill({ color: 0x3a7a30 });
       d.ellipse(tx, treeY - cH * 0.5, cW * 0.48, cH * 0.5).fill({ color: 0x3a7a30 });
@@ -2283,9 +2293,6 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       tx += 300 + endlessGroundRandom() * 500;
       continue;
     }
-
-    // Ground shadow — larger, softer
-    d.ellipse(tx + canopyR * 0.3, treeY + 3, canopyR * 1.5, 6).fill({ color: 0x000000, alpha: weather === 'sun' ? 0.18 : 0.08 });
 
     // Trunk — tapered (wider at base) with bark texture
     const trunkTopW = trunkW * 0.7;
@@ -2311,14 +2318,6 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       d.lineTo(tx + trunkW * 1.0, treeY - trunkH * 0.62);
       d.stroke({ width: 1.5 * treeScale, color: palette.trunk, alpha: 0.6 });
     }
-    // Trunk shadow
-    d.moveTo(tx + trunkTopW * 0.1, treeY - trunkH);
-    d.lineTo(tx + trunkW * 0.3, treeY);
-    d.lineTo(tx + trunkW / 2, treeY);
-    d.lineTo(tx + trunkTopW / 2, treeY - trunkH);
-    d.closePath();
-    d.fill({ color: 0x000000, alpha: 0.12 });
-
     if (weather === 'sun' && treeType < 0.5) {
       // Maple tree — rich multi-layered canopy
       const cx = tx, cy = treeY - trunkH;
@@ -2627,11 +2626,11 @@ endlessGroundCurrentWeather = initialWeather;
 foreground.visible = false;
 
 const skyGradients = {
-  sun:   { top: 0x3388CC, bottom: 0x99CCEE, starsAlpha: 0.0,  mountain: 0xFFFFFF },
-  night: { top: 0x0a0a2a, bottom: 0x1a1a3a, starsAlpha: 1.0,  mountain: 0x3a3a5a },
-  rain:  { top: 0x4a5a6a, bottom: 0x7a8a9a, starsAlpha: 0.0,  mountain: 0x7a8a9a },
-  wind:  { top: 0x6699BB, bottom: 0xAADDFF, starsAlpha: 0.05, mountain: 0xccddee },
-  snow:  { top: 0x8899AA, bottom: 0xCCDDEE, starsAlpha: 0.08, mountain: 0xb8c8d8 },
+  sun:   { top: 0x3388CC, bottom: 0x99CCEE, starsAlpha: 0.0,  mountain: 0xFFFFFF, cloud: 0xFFFFFF },
+  night: { top: 0x0a0a2a, bottom: 0x1a1a3a, starsAlpha: 1.0,  mountain: 0x3a3a5a, cloud: 0x4a4a6a },
+  rain:  { top: 0x4a5a6a, bottom: 0x7a8a9a, starsAlpha: 0.0,  mountain: 0x7a8a9a, cloud: 0x8a8a9a },
+  wind:  { top: 0x6699BB, bottom: 0xAADDFF, starsAlpha: 0.05, mountain: 0xccddee, cloud: 0xeef4ff },
+  snow:  { top: 0x8899AA, bottom: 0xCCDDEE, starsAlpha: 0.08, mountain: 0xb8c8d8, cloud: 0xd8e4f0 },
 };
 
 function lerpColor(a, b, t) {
@@ -2676,6 +2675,7 @@ function transitionWeather(newWeather) {
     persistentStars.alpha = t.newStarsAlpha;
     mountain1.tint = t.newMtnTint; mountain2.tint = t.newMtnTint;
     mountain3.tint = t.newMtnTint; mountain4.tint = t.newMtnTint;
+    if (t.newCloudTint !== undefined) { clouds.tint = t.newCloudTint; clouds2.tint = t.newCloudTint; }
     state.biomeTransition = null;
   }
 
@@ -2688,6 +2688,7 @@ function transitionWeather(newWeather) {
   const oldSkyBottom = currentSkyBottom;
   const oldStarsAlpha = persistentStars.alpha;
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
+  const oldCloudTint = clouds.tint ?? 0xFFFFFF;
 
   // Create new ground on top — no masks, just alpha crossfade
   const newGround = new PIXI.Graphics();
@@ -2752,6 +2753,7 @@ function transitionWeather(newWeather) {
     oldSkyTop, oldSkyBottom, oldStarsAlpha,
     newSkyTop: newGrad.top, newSkyBottom: newGrad.bottom, newStarsAlpha: newGrad.starsAlpha,
     oldMtnTint, newMtnTint: newGrad.mountain,
+    oldCloudTint, newCloudTint: newGrad.cloud,
   };
 }
 
@@ -2773,6 +2775,9 @@ function updateBiomeTransition() {
   mountain2.tint = mtnTint;
   mountain3.tint = mtnTint;
   mountain4.tint = mtnTint;
+  const cloudTint = lerpColor(t.oldCloudTint, t.newCloudTint, p);
+  clouds.tint = cloudTint;
+  clouds2.tint = cloudTint;
 
   // Crossfade ground
   if (t.oldGround) t.oldGround.alpha = 1 - p;
@@ -2856,6 +2861,12 @@ state.frogGhostPlayer.scale.set(0.28);
       const mountain3 = createMountainGraphics(2, -200, mountainVelocity3, foreground, 0.7);
       const mountain4 = createMountainGraphics(1, app.screen.width * 1.2, mountainVelocity4, foreground, 0.85);
 
+      // Store base positions and parallax factors for camera-based parallax
+      mountain4.baseX = mountain4.position.x; mountain4.parallaxFactor = 0.15;
+      mountain3.baseX = mountain3.position.x; mountain3.parallaxFactor = 0.12;
+      mountain1.baseX = mountain1.position.x; mountain1.parallaxFactor = 0.08;
+      mountain2.baseX = mountain2.position.x; mountain2.parallaxFactor = 0.05;
+
       // Apply initial sky gradient so the first round starts with correct colors
       const _initGrad = skyGradients[initialWeather] || skyGradients.sun;
       currentSkyTop = _initGrad.top;
@@ -2872,98 +2883,72 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
-        // Layer 1: Base silhouette — smooth organic outline with extra control points
+        // Layer 1: Base silhouette — smooth organic outline with cubic beziers
         g.moveTo(0, 0);
-        g.quadraticCurveTo(w * 0.04, -h * 0.08, w * 0.09, -h * 0.18);
-        g.quadraticCurveTo(w * 0.13, -h * 0.27, w * 0.18, -h * 0.35);
-        g.quadraticCurveTo(w * 0.22, -h * 0.46, w * 0.26, -h * 0.55);
-        g.quadraticCurveTo(w * 0.29, -h * 0.64, w * 0.33, -h * 0.72);
-        g.quadraticCurveTo(w * 0.37, -h * 0.82, w * 0.41, -h * 0.9);
-        g.quadraticCurveTo(w * 0.45, -h * 0.96, w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.55, -h * 0.95, w * 0.6, -h * 0.88);
-        g.quadraticCurveTo(w * 0.64, -h * 0.78, w * 0.68, -h * 0.65);
-        g.quadraticCurveTo(w * 0.73, -h * 0.52, w * 0.78, -h * 0.38);
-        g.quadraticCurveTo(w * 0.83, -h * 0.28, w * 0.88, -h * 0.18);
-        g.quadraticCurveTo(w * 0.92, -h * 0.1, w * 0.96, -h * 0.04);
-        g.quadraticCurveTo(w * 0.98, -h * 0.02, w, 0);
+        g.bezierCurveTo(w * 0.05, -h * 0.02, w * 0.1, -h * 0.2, w * 0.2, -h * 0.45);
+        g.bezierCurveTo(w * 0.28, -h * 0.65, w * 0.38, -h * 0.88, w * 0.5, -h);
+        g.bezierCurveTo(w * 0.62, -h * 0.88, w * 0.72, -h * 0.65, w * 0.8, -h * 0.45);
+        g.bezierCurveTo(w * 0.9, -h * 0.2, w * 0.95, -h * 0.02, w, 0);
         g.lineTo(0, 0);
         g.closePath();
         g.fill(dc(0x4a4a5a, 1.0));
 
         // Layer 2: Right shadow face
         g.moveTo(w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.54, -h * 0.93, w * 0.58, -h * 0.85);
-        g.quadraticCurveTo(w * 0.62, -h * 0.74, w * 0.66, -h * 0.6);
-        g.quadraticCurveTo(w * 0.71, -h * 0.46, w * 0.76, -h * 0.32);
-        g.quadraticCurveTo(w * 0.82, -h * 0.2, w * 0.88, -h * 0.12);
-        g.quadraticCurveTo(w * 0.92, -h * 0.06, w * 0.96, -h * 0.02);
-        g.quadraticCurveTo(w * 0.98, -h * 0.01, w, 0);
+        g.bezierCurveTo(w * 0.62, -h * 0.88, w * 0.72, -h * 0.65, w * 0.8, -h * 0.45);
+        g.bezierCurveTo(w * 0.9, -h * 0.2, w * 0.95, -h * 0.02, w, 0);
         g.lineTo(w * 0.5, 0);
         g.closePath();
         g.fill(dc(0x2a2a3a, 0.35));
 
         // Layer 3: Left lit face
         g.moveTo(w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.46, -h * 0.92, w * 0.42, -h * 0.88);
-        g.quadraticCurveTo(w * 0.37, -h * 0.76, w * 0.32, -h * 0.65);
-        g.quadraticCurveTo(w * 0.28, -h * 0.55, w * 0.24, -h * 0.45);
-        g.quadraticCurveTo(w * 0.21, -h * 0.37, w * 0.18, -h * 0.3);
-        g.lineTo(w * 0.22, -h * 0.28);
-        g.quadraticCurveTo(w * 0.26, -h * 0.4, w * 0.3, -h * 0.5);
-        g.quadraticCurveTo(w * 0.34, -h * 0.62, w * 0.38, -h * 0.7);
+        g.bezierCurveTo(w * 0.42, -h * 0.9, w * 0.32, -h * 0.7, w * 0.22, -h * 0.4);
+        g.lineTo(w * 0.26, -h * 0.38);
+        g.bezierCurveTo(w * 0.34, -h * 0.62, w * 0.42, -h * 0.85, w * 0.5, -h);
         g.closePath();
         g.fill(dc(0x7a7a8a, 0.15));
 
         // Layer 4: Mid-slope color band
         g.moveTo(w * 0.12, -h * 0.4);
-        g.quadraticCurveTo(w * 0.2, -h * 0.44, w * 0.3, -h * 0.48);
-        g.quadraticCurveTo(w * 0.4, -h * 0.52, w * 0.5, -h * 0.55);
-        g.quadraticCurveTo(w * 0.6, -h * 0.52, w * 0.7, -h * 0.48);
-        g.quadraticCurveTo(w * 0.8, -h * 0.43, w * 0.88, -h * 0.38);
+        g.bezierCurveTo(w * 0.25, -h * 0.48, w * 0.4, -h * 0.54, w * 0.5, -h * 0.55);
+        g.bezierCurveTo(w * 0.6, -h * 0.54, w * 0.75, -h * 0.48, w * 0.88, -h * 0.38);
         g.lineTo(w * 0.88, -h * 0.32);
-        g.quadraticCurveTo(w * 0.8, -h * 0.37, w * 0.7, -h * 0.42);
-        g.quadraticCurveTo(w * 0.6, -h * 0.46, w * 0.5, -h * 0.48);
-        g.quadraticCurveTo(w * 0.4, -h * 0.46, w * 0.3, -h * 0.42);
-        g.quadraticCurveTo(w * 0.2, -h * 0.38, w * 0.12, -h * 0.34);
+        g.bezierCurveTo(w * 0.75, -h * 0.42, w * 0.6, -h * 0.48, w * 0.5, -h * 0.48);
+        g.bezierCurveTo(w * 0.4, -h * 0.48, w * 0.25, -h * 0.42, w * 0.12, -h * 0.34);
         g.closePath();
         g.fill(dc(0x555568, 0.2));
 
         // Layer 5: Lower slope band
         g.moveTo(w * 0.05, -h * 0.2);
-        g.quadraticCurveTo(w * 0.18, -h * 0.25, w * 0.3, -h * 0.28);
-        g.quadraticCurveTo(w * 0.42, -h * 0.31, w * 0.55, -h * 0.32);
-        g.quadraticCurveTo(w * 0.67, -h * 0.3, w * 0.78, -h * 0.27);
-        g.quadraticCurveTo(w * 0.87, -h * 0.22, w * 0.95, -h * 0.18);
+        g.bezierCurveTo(w * 0.2, -h * 0.27, w * 0.4, -h * 0.32, w * 0.55, -h * 0.32);
+        g.bezierCurveTo(w * 0.7, -h * 0.32, w * 0.85, -h * 0.25, w * 0.95, -h * 0.18);
         g.lineTo(w * 0.95, -h * 0.13);
-        g.quadraticCurveTo(w * 0.87, -h * 0.17, w * 0.78, -h * 0.22);
-        g.quadraticCurveTo(w * 0.67, -h * 0.25, w * 0.55, -h * 0.26);
-        g.quadraticCurveTo(w * 0.42, -h * 0.25, w * 0.3, -h * 0.22);
-        g.quadraticCurveTo(w * 0.18, -h * 0.19, w * 0.05, -h * 0.14);
+        g.bezierCurveTo(w * 0.85, -h * 0.2, w * 0.7, -h * 0.26, w * 0.55, -h * 0.26);
+        g.bezierCurveTo(w * 0.4, -h * 0.26, w * 0.2, -h * 0.21, w * 0.05, -h * 0.14);
         g.closePath();
         g.fill(dc(0x3a3a4a, 0.15));
 
-        // Layer 6: Snow cap — follows peak contour
+        // Layer 6: Snow cap — simple filled shape following the mountain slope
         g.moveTo(w * 0.35, -h * 0.78);
-        g.quadraticCurveTo(w * 0.38, -h * 0.84, w * 0.42, -h * 0.9);
-        g.quadraticCurveTo(w * 0.46, -h * 0.96, w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.54, -h * 0.96, w * 0.58, -h * 0.9);
-        g.quadraticCurveTo(w * 0.62, -h * 0.84, w * 0.65, -h * 0.78);
-        g.quadraticCurveTo(w * 0.58, -h * 0.82, w * 0.5, -h * 0.84);
-        g.quadraticCurveTo(w * 0.42, -h * 0.82, w * 0.35, -h * 0.78);
+        g.bezierCurveTo(w * 0.38, -h * 0.86, w * 0.44, -h * 0.96, w * 0.5, -h);
+        g.bezierCurveTo(w * 0.56, -h * 0.96, w * 0.62, -h * 0.86, w * 0.65, -h * 0.78);
         g.closePath();
         g.fill(dc(0xd8dde4, 0.85));
 
         // Layer 7: Snow highlight — sunlit left side
-        g.moveTo(w * 0.38, -h * 0.8);
-        g.quadraticCurveTo(w * 0.43, -h * 0.9, w * 0.48, -h * 0.97);
-        g.quadraticCurveTo(w * 0.45, -h * 0.92, w * 0.42, -h * 0.85);
+        g.moveTo(w * 0.38, -h * 0.82);
+        g.bezierCurveTo(w * 0.42, -h * 0.9, w * 0.46, -h * 0.97, w * 0.5, -h);
+        g.lineTo(w * 0.48, -h * 0.97);
+        g.bezierCurveTo(w * 0.44, -h * 0.92, w * 0.41, -h * 0.86, w * 0.38, -h * 0.82);
         g.closePath();
         g.fill(dc(0xeef2f8, 0.35));
 
         // Layer 8: Snow shadow — right side
-        g.moveTo(w * 0.55, -h * 0.92);
-        g.quadraticCurveTo(w * 0.58, -h * 0.86, w * 0.62, -h * 0.8);
-        g.quadraticCurveTo(w * 0.6, -h * 0.83, w * 0.56, -h * 0.88);
+        g.moveTo(w * 0.52, -h * 0.97);
+        g.bezierCurveTo(w * 0.56, -h * 0.92, w * 0.6, -h * 0.86, w * 0.63, -h * 0.8);
+        g.lineTo(w * 0.61, -h * 0.82);
+        g.bezierCurveTo(w * 0.58, -h * 0.88, w * 0.55, -h * 0.93, w * 0.52, -h * 0.97);
         g.closePath();
         g.fill(dc(0xb0b8c4, 0.25));
 
@@ -3008,8 +2993,7 @@ state.frogGhostPlayer.scale.set(0.28);
         g.moveTo(0, 0);
         g.lineTo(w, 0);
         g.lineTo(w, -h * 0.1);
-        g.quadraticCurveTo(w * 0.75, -h * 0.11, w * 0.5, -h * 0.12);
-        g.quadraticCurveTo(w * 0.25, -h * 0.11, 0, -h * 0.1);
+        g.bezierCurveTo(w * 0.7, -h * 0.12, w * 0.3, -h * 0.12, 0, -h * 0.1);
         g.closePath();
         g.fill(dc(0x8899aa, 0.15));
 
@@ -3027,52 +3011,32 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
-        // Layer 1: Base silhouette — three-peak curved ridgeline with extra control points
+        // Layer 1: Base silhouette — three-peak curved ridgeline with cubic beziers
         g.moveTo(0, 0);
-        g.quadraticCurveTo(w * 0.04, -h * 0.1, w * 0.08, -h * 0.2);
-        g.quadraticCurveTo(w * 0.11, -h * 0.33, w * 0.15, -h * 0.45);
-        g.quadraticCurveTo(w * 0.18, -h * 0.52, w * 0.2, -h * 0.58);
-        g.quadraticCurveTo(w * 0.22, -h * 0.62, w * 0.25, -h * 0.65);
-        g.quadraticCurveTo(w * 0.27, -h * 0.56, w * 0.29, -h * 0.48);
-        g.quadraticCurveTo(w * 0.3, -h * 0.42, w * 0.32, -h * 0.35);
-        g.quadraticCurveTo(w * 0.35, -h * 0.45, w * 0.38, -h * 0.55);
-        g.quadraticCurveTo(w * 0.41, -h * 0.68, w * 0.45, -h * 0.8);
-        g.quadraticCurveTo(w * 0.47, -h * 0.9, w * 0.48, -h * 0.95);
-        g.quadraticCurveTo(w * 0.49, -h * 0.98, w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.51, -h * 0.98, w * 0.52, -h * 0.95);
-        g.quadraticCurveTo(w * 0.53, -h * 0.9, w * 0.55, -h * 0.8);
-        g.quadraticCurveTo(w * 0.58, -h * 0.64, w * 0.62, -h * 0.48);
-        g.quadraticCurveTo(w * 0.65, -h * 0.38, w * 0.68, -h * 0.3);
-        g.quadraticCurveTo(w * 0.7, -h * 0.38, w * 0.73, -h * 0.45);
-        g.quadraticCurveTo(w * 0.75, -h * 0.52, w * 0.78, -h * 0.6);
-        g.quadraticCurveTo(w * 0.81, -h * 0.52, w * 0.84, -h * 0.45);
-        g.quadraticCurveTo(w * 0.86, -h * 0.4, w * 0.88, -h * 0.35);
-        g.quadraticCurveTo(w * 0.91, -h * 0.25, w * 0.94, -h * 0.15);
-        g.quadraticCurveTo(w * 0.97, -h * 0.06, w, 0);
+        g.bezierCurveTo(w * 0.04, -h * 0.05, w * 0.12, -h * 0.4, w * 0.25, -h * 0.65);
+        g.bezierCurveTo(w * 0.28, -h * 0.55, w * 0.3, -h * 0.38, w * 0.32, -h * 0.35);
+        g.bezierCurveTo(w * 0.35, -h * 0.45, w * 0.42, -h * 0.78, w * 0.5, -h);
+        g.bezierCurveTo(w * 0.58, -h * 0.78, w * 0.65, -h * 0.45, w * 0.68, -h * 0.3);
+        g.bezierCurveTo(w * 0.7, -h * 0.35, w * 0.72, -h * 0.48, w * 0.78, -h * 0.6);
+        g.bezierCurveTo(w * 0.82, -h * 0.5, w * 0.88, -h * 0.3, w * 0.92, -h * 0.15);
+        g.bezierCurveTo(w * 0.96, -h * 0.04, w * 0.98, -h * 0.01, w, 0);
         g.lineTo(0, 0);
         g.closePath();
         g.fill(dc(0x4a4a5a, 1.0));
 
         // Layer 2: Right shadow from center peak
         g.moveTo(w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.51, -h * 0.96, w * 0.52, -h * 0.92);
-        g.quadraticCurveTo(w * 0.53, -h * 0.86, w * 0.55, -h * 0.78);
-        g.quadraticCurveTo(w * 0.58, -h * 0.62, w * 0.62, -h * 0.46);
-        g.quadraticCurveTo(w * 0.65, -h * 0.36, w * 0.68, -h * 0.28);
-        g.quadraticCurveTo(w * 0.7, -h * 0.35, w * 0.73, -h * 0.42);
-        g.quadraticCurveTo(w * 0.75, -h * 0.5, w * 0.78, -h * 0.58);
-        g.quadraticCurveTo(w * 0.81, -h * 0.5, w * 0.84, -h * 0.42);
-        g.quadraticCurveTo(w * 0.86, -h * 0.37, w * 0.88, -h * 0.32);
-        g.quadraticCurveTo(w * 0.91, -h * 0.22, w * 0.94, -h * 0.14);
-        g.quadraticCurveTo(w * 0.97, -h * 0.05, w, 0);
+        g.bezierCurveTo(w * 0.58, -h * 0.78, w * 0.65, -h * 0.45, w * 0.68, -h * 0.3);
+        g.bezierCurveTo(w * 0.7, -h * 0.35, w * 0.72, -h * 0.48, w * 0.78, -h * 0.6);
+        g.bezierCurveTo(w * 0.82, -h * 0.5, w * 0.88, -h * 0.3, w * 0.92, -h * 0.15);
+        g.bezierCurveTo(w * 0.96, -h * 0.04, w * 0.98, -h * 0.01, w, 0);
         g.lineTo(w * 0.5, 0);
         g.closePath();
         g.fill(dc(0x2a2a3a, 0.3));
 
         // Layer 3: Left peak shadow
         g.moveTo(w * 0.25, -h * 0.65);
-        g.quadraticCurveTo(w * 0.27, -h * 0.56, w * 0.29, -h * 0.46);
-        g.quadraticCurveTo(w * 0.3, -h * 0.4, w * 0.32, -h * 0.33);
+        g.bezierCurveTo(w * 0.27, -h * 0.55, w * 0.3, -h * 0.42, w * 0.32, -h * 0.33);
         g.lineTo(w * 0.3, 0);
         g.lineTo(w * 0.22, 0);
         g.closePath();
@@ -3080,66 +3044,54 @@ state.frogGhostPlayer.scale.set(0.28);
 
         // Layer 4: Center-left lit slope
         g.moveTo(w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.48, -h * 0.94, w * 0.47, -h * 0.88);
-        g.quadraticCurveTo(w * 0.45, -h * 0.8, w * 0.44, -h * 0.75);
-        g.quadraticCurveTo(w * 0.42, -h * 0.66, w * 0.4, -h * 0.58);
-        g.quadraticCurveTo(w * 0.39, -h * 0.54, w * 0.38, -h * 0.5);
+        g.bezierCurveTo(w * 0.46, -h * 0.88, w * 0.42, -h * 0.7, w * 0.38, -h * 0.5);
         g.lineTo(w * 0.42, -h * 0.52);
-        g.quadraticCurveTo(w * 0.44, -h * 0.6, w * 0.45, -h * 0.65);
-        g.quadraticCurveTo(w * 0.46, -h * 0.75, w * 0.48, -h * 0.85);
+        g.bezierCurveTo(w * 0.45, -h * 0.68, w * 0.47, -h * 0.85, w * 0.5, -h);
         g.closePath();
         g.fill(dc(0x7a7a8a, 0.14));
 
         // Layer 5: Mid-range geological band
         g.moveTo(w * 0.08, -h * 0.25);
-        g.quadraticCurveTo(w * 0.16, -h * 0.32, w * 0.25, -h * 0.38);
-        g.quadraticCurveTo(w * 0.37, -h * 0.41, w * 0.5, -h * 0.42);
-        g.quadraticCurveTo(w * 0.63, -h * 0.4, w * 0.75, -h * 0.36);
-        g.quadraticCurveTo(w * 0.84, -h * 0.29, w * 0.92, -h * 0.22);
+        g.bezierCurveTo(w * 0.2, -h * 0.35, w * 0.38, -h * 0.42, w * 0.5, -h * 0.42);
+        g.bezierCurveTo(w * 0.62, -h * 0.42, w * 0.8, -h * 0.32, w * 0.92, -h * 0.22);
         g.lineTo(w * 0.92, -h * 0.17);
-        g.quadraticCurveTo(w * 0.84, -h * 0.24, w * 0.75, -h * 0.3);
-        g.quadraticCurveTo(w * 0.63, -h * 0.34, w * 0.5, -h * 0.36);
-        g.quadraticCurveTo(w * 0.37, -h * 0.35, w * 0.25, -h * 0.32);
-        g.quadraticCurveTo(w * 0.16, -h * 0.26, w * 0.08, -h * 0.2);
+        g.bezierCurveTo(w * 0.8, -h * 0.27, w * 0.62, -h * 0.36, w * 0.5, -h * 0.36);
+        g.bezierCurveTo(w * 0.38, -h * 0.36, w * 0.2, -h * 0.29, w * 0.08, -h * 0.2);
         g.closePath();
         g.fill(dc(0x555568, 0.15));
 
-        // Layer 6: Snow cap (center peak)
+        // Layer 6: Snow cap (center peak) — simple filled shape along slope
         g.moveTo(w * 0.42, -h * 0.85);
-        g.quadraticCurveTo(w * 0.44, -h * 0.89, w * 0.45, -h * 0.92);
-        g.quadraticCurveTo(w * 0.47, -h * 0.96, w * 0.5, -h);
-        g.quadraticCurveTo(w * 0.53, -h * 0.96, w * 0.55, -h * 0.92);
-        g.quadraticCurveTo(w * 0.56, -h * 0.89, w * 0.58, -h * 0.85);
-        g.quadraticCurveTo(w * 0.54, -h * 0.87, w * 0.5, -h * 0.88);
-        g.quadraticCurveTo(w * 0.46, -h * 0.87, w * 0.42, -h * 0.85);
+        g.bezierCurveTo(w * 0.44, -h * 0.92, w * 0.47, -h * 0.98, w * 0.5, -h);
+        g.bezierCurveTo(w * 0.53, -h * 0.98, w * 0.56, -h * 0.92, w * 0.58, -h * 0.85);
         g.closePath();
         g.fill(dc(0xd8dde4, 0.85));
 
         // Layer 7: Snow cap (left peak)
         g.moveTo(w * 0.21, -h * 0.56);
-        g.quadraticCurveTo(w * 0.23, -h * 0.62, w * 0.25, -h * 0.65);
-        g.quadraticCurveTo(w * 0.27, -h * 0.62, w * 0.29, -h * 0.56);
-        g.quadraticCurveTo(w * 0.26, -h * 0.58, w * 0.24, -h * 0.58);
+        g.bezierCurveTo(w * 0.22, -h * 0.6, w * 0.24, -h * 0.65, w * 0.25, -h * 0.65);
+        g.bezierCurveTo(w * 0.26, -h * 0.65, w * 0.28, -h * 0.6, w * 0.29, -h * 0.56);
         g.closePath();
         g.fill(dc(0xd8dde4, 0.7));
 
         // Layer 8: Snow cap (right peak)
         g.moveTo(w * 0.74, -h * 0.5);
-        g.quadraticCurveTo(w * 0.76, -h * 0.56, w * 0.78, -h * 0.6);
-        g.quadraticCurveTo(w * 0.8, -h * 0.56, w * 0.82, -h * 0.5);
-        g.quadraticCurveTo(w * 0.79, -h * 0.52, w * 0.77, -h * 0.52);
+        g.bezierCurveTo(w * 0.75, -h * 0.55, w * 0.77, -h * 0.6, w * 0.78, -h * 0.6);
+        g.bezierCurveTo(w * 0.79, -h * 0.6, w * 0.81, -h * 0.55, w * 0.82, -h * 0.5);
         g.closePath();
         g.fill(dc(0xd8dde4, 0.65));
 
         // Layer 9: Snow highlights on sunlit sides
-        g.moveTo(w * 0.44, -h * 0.87);
-        g.quadraticCurveTo(w * 0.47, -h * 0.94, w * 0.49, -h * 0.98);
-        g.quadraticCurveTo(w * 0.47, -h * 0.93, w * 0.45, -h * 0.88);
+        g.moveTo(w * 0.44, -h * 0.88);
+        g.bezierCurveTo(w * 0.46, -h * 0.94, w * 0.48, -h * 0.98, w * 0.5, -h);
+        g.lineTo(w * 0.48, -h * 0.97);
+        g.bezierCurveTo(w * 0.46, -h * 0.93, w * 0.45, -h * 0.9, w * 0.44, -h * 0.88);
         g.closePath();
         g.fill(dc(0xeef2f8, 0.3));
         g.moveTo(w * 0.22, -h * 0.58);
-        g.quadraticCurveTo(w * 0.235, -h * 0.63, w * 0.245, -h * 0.645);
-        g.quadraticCurveTo(w * 0.235, -h * 0.62, w * 0.225, -h * 0.59);
+        g.bezierCurveTo(w * 0.23, -h * 0.62, w * 0.24, -h * 0.645, w * 0.25, -h * 0.65);
+        g.lineTo(w * 0.245, -h * 0.64);
+        g.bezierCurveTo(w * 0.235, -h * 0.62, w * 0.225, -h * 0.6, w * 0.22, -h * 0.58);
         g.closePath();
         g.fill(dc(0xeef2f8, 0.25));
 
@@ -3181,8 +3133,7 @@ state.frogGhostPlayer.scale.set(0.28);
         g.moveTo(0, 0);
         g.lineTo(w, 0);
         g.lineTo(w, -h * 0.08);
-        g.quadraticCurveTo(w * 0.75, -h * 0.09, w * 0.5, -h * 0.1);
-        g.quadraticCurveTo(w * 0.25, -h * 0.09, 0, -h * 0.08);
+        g.bezierCurveTo(w * 0.7, -h * 0.1, w * 0.3, -h * 0.1, 0, -h * 0.08);
         g.closePath();
         g.fill(dc(0x8899aa, 0.12));
 
@@ -3284,19 +3235,16 @@ state.frogGhostPlayer.scale.set(0.28);
       state.sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
       // Procedural cloud generation
       function drawCloud(g, cw, ch, complexity) {
-        // Outer glow haze — soft diffused light around cloud (like moon outerGlow)
-        g.ellipse(0, -ch * 0.1, cw * 0.55, ch * 0.55).fill({ color: 0xffffff, alpha: 0.06 });
-        g.ellipse(0, -ch * 0.08, cw * 0.5, ch * 0.48).fill({ color: 0xffffff, alpha: 0.08 });
-        g.ellipse(0, -ch * 0.05, cw * 0.45, ch * 0.42).fill({ color: 0xffffff, alpha: 0.1 });
+        // Outer glow haze — subtle (2 layers only)
+        g.ellipse(0, -ch * 0.08, cw * 0.52, ch * 0.5).fill({ color: 0xffffff, alpha: 0.06 });
+        g.ellipse(0, -ch * 0.05, cw * 0.46, ch * 0.44).fill({ color: 0xffffff, alpha: 0.08 });
 
-        // Base body — wide overlapping ellipses forming soft mass
-        g.ellipse(-cw * 0.1, ch * 0.02, cw * 0.36, ch * 0.2).fill({ color: 0xffffff, alpha: 0.55 });
-        g.ellipse(cw * 0.08, ch * 0.03, cw * 0.33, ch * 0.19).fill({ color: 0xffffff, alpha: 0.5 });
-        g.ellipse(0, 0, cw * 0.38, ch * 0.24).fill({ color: 0xffffff, alpha: 0.6 });
-        g.ellipse(-cw * 0.15, -ch * 0.02, cw * 0.3, ch * 0.22).fill({ color: 0xffffff, alpha: 0.5 });
-        g.ellipse(cw * 0.12, -ch * 0.01, cw * 0.28, ch * 0.21).fill({ color: 0xffffff, alpha: 0.45 });
+        // Core body — 3 high-alpha ellipses for solid fluffy look
+        g.ellipse(-cw * 0.1, ch * 0.01, cw * 0.36, ch * 0.22).fill({ color: 0xffffff, alpha: 0.85 });
+        g.ellipse(0, 0, cw * 0.38, ch * 0.24).fill({ color: 0xffffff, alpha: 0.9 });
+        g.ellipse(cw * 0.1, ch * 0.01, cw * 0.34, ch * 0.21).fill({ color: 0xffffff, alpha: 0.8 });
 
-        // Upper billows — organic bumps from overlapping ellipses
+        // Upper billows — solid bumps (min alpha 0.6)
         const billows = complexity + 3;
         for (let i = 0; i < billows; i++) {
           const t = (i + 0.5) / billows;
@@ -3304,22 +3252,17 @@ state.frogGhostPlayer.scale.set(0.28);
           const by = -ch * 0.12 - Math.sin(t * Math.PI) * ch * 0.38;
           const rx = cw * (0.1 + Math.sin(t * Math.PI) * 0.14);
           const ry = ch * (0.16 + Math.sin(t * Math.PI) * 0.18);
-          const alpha = 0.4 + Math.sin(t * Math.PI) * 0.35;
+          const alpha = 0.6 + Math.sin(t * Math.PI) * 0.3;
           g.ellipse(bx, by, rx, ry).fill({ color: 0xffffff, alpha });
         }
 
-        // Concentric depth layers — central mass for 3D feel
-        g.ellipse(-cw * 0.02, -ch * 0.12, cw * 0.28, ch * 0.3).fill({ color: 0xffffff, alpha: 0.45 });
-        g.ellipse(-cw * 0.04, -ch * 0.18, cw * 0.2, ch * 0.22).fill({ color: 0xffffff, alpha: 0.55 });
-        g.ellipse(-cw * 0.03, -ch * 0.22, cw * 0.14, ch * 0.15).fill({ color: 0xffffff, alpha: 0.6 });
+        // Highlight — top-left sunlit area
+        g.ellipse(-cw * 0.12, -ch * 0.3, cw * 0.15, ch * 0.14).fill({ color: 0xffffff, alpha: 0.95 });
+        g.ellipse(-cw * 0.1, -ch * 0.26, cw * 0.1, ch * 0.1).fill({ color: 0xffffff, alpha: 0.95 });
 
-        // Highlight — top-left sunlit area (bright, soft)
-        g.ellipse(-cw * 0.12, -ch * 0.3, cw * 0.15, ch * 0.14).fill({ color: 0xffffff, alpha: 0.8 });
-        g.ellipse(-cw * 0.1, -ch * 0.26, cw * 0.1, ch * 0.1).fill({ color: 0xffffff, alpha: 0.9 });
-
-        // Bottom shadow — subtle dark underside for 3D
-        g.ellipse(cw * 0.05, ch * 0.06, cw * 0.34, ch * 0.1).fill({ color: 0xc8d0e0, alpha: 0.2 });
-        g.ellipse(cw * 0.08, ch * 0.08, cw * 0.24, ch * 0.07).fill({ color: 0xb8c0d4, alpha: 0.15 });
+        // Bottom shadow — slightly more visible for 3D
+        g.ellipse(cw * 0.05, ch * 0.06, cw * 0.34, ch * 0.1).fill({ color: 0xc8d0e0, alpha: 0.25 });
+        g.ellipse(cw * 0.08, ch * 0.08, cw * 0.24, ch * 0.07).fill({ color: 0xb8c0d4, alpha: 0.2 });
       }
 
       const clouds = new PIXI.Container();
@@ -3348,6 +3291,9 @@ state.frogGhostPlayer.scale.set(0.28);
         clouds2.addChild(cg);
       }
       clouds2.alpha = 0.35;
+      // Apply initial cloud tint from weather
+      clouds.tint = _initGrad.cloud;
+      clouds2.tint = _initGrad.cloud;
       const enemyDeathTextures = createAnimationTextures('enemy_death', 8, 317);
       state.enemyDeath = createAnimatedSprite(enemyDeathTextures);
       const castleDeathTextures = createAnimationTextures('enemy_death', 8, 317);
@@ -3843,28 +3789,10 @@ let cantGainEXP = false;
       const cloudSpeed = .5 / 3.5;
       const cloud2Speed = 1.1 / 3.5;
 
-      const mountain1Speed = 0.01;
-      const mountain2Speed = 0.05;
-      const mountain3Speed = .03;
-      const mountain4Speed = .03;
-
-      // Wrap mountains so they reappear on the opposite side when scrolling off-screen
-      function wrapMountains() {
-        const cam = -app.stage.x; // current camera left edge in world coords
-        const screenW = app.screen.width;
-        const margin = 200; // buffer before recycling
+      // Camera-based parallax — update mountain positions each frame
+      function updateMountainParallax() {
         [mountain1, mountain2, mountain3, mountain4].forEach(m => {
-          // anchor is (0,1): position.x = left edge
-          const mRight = m.position.x + m.width;
-          const mLeft = m.position.x;
-          // If entirely off the left side of the visible area
-          if (mRight < cam - margin) {
-            m.position.x = cam + screenW + margin + Math.random() * 300;
-          }
-          // If entirely off the right side of the visible area
-          else if (mLeft > cam + screenW + margin) {
-            m.position.x = cam - margin - m.width - Math.random() * 300;
-          }
+          m.position.x = m.baseX + app.stage.x * m.parallaxFactor;
         });
       }
 
@@ -3899,6 +3827,10 @@ let cantGainEXP = false;
         for (const star of persistentStars.children) {
           star.twinklePhase += star.twinkleSpeed;
           star.alpha = star.baseAlpha * (0.5 + Math.sin(star.twinklePhase) * 0.5);
+          if (star.isBrightTwinkler) {
+            const s = 1 + Math.sin(star.twinklePhase * 2) * 0.15;
+            star.scale.set(s);
+          }
         }
 
         // Endless mode: update kill counter + track elapsed for weather cycling
@@ -4051,11 +3983,7 @@ let cantGainEXP = false;
           // Update the camera position
           app.stage.x += movementX;
           app.stage.y += movementY;
-          mountain1.position.x -= velocity.x * mountain1Speed * state.dt;
-          mountain2.position.x += velocity.x * mountain2Speed * state.dt;
-          mountain3.position.x += velocity.x * mountain3Speed * state.dt;
-          mountain4.position.x += velocity.x * mountain4Speed * state.dt;
-          wrapMountains();
+          updateMountainParallax();
 
           // Animate unlock character walking out of castle toward player's base
           if (unlockActive) {

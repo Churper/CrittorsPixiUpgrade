@@ -3798,6 +3798,8 @@ state.demiSpawned = 0;
           // Character swap: apply correct textures before showing critter
           critter.textures = state.frogWalkTextures;
           critter.loop = true;
+          critter.onComplete = null;  // Clear stale attack callback
+          state.isAttackingChar = false;  // Reset attack state (revive dialog click can leave this stuck)
           critter.play();
           updateEXP(getCharEXP(getCurrentCharacter()));
           document.getElementById('spawn-text').style.visibility = 'hidden';

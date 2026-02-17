@@ -3795,6 +3795,8 @@ state.demiSpawned = 0;
           stopFlashing();
           critter.visible = true;
           app.stage.addChild(critter);
+          // Ensure health bar reflects the new character (fixes stale bar after dead→alive swap)
+          updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
           // Fall through to auto-attack check (no early return)
         }
         // Auto-attack: trigger attack when enemies are in range

@@ -1740,21 +1740,21 @@ touch-action: manipulation;
 }
 
 .layout-card-portrait {
-  width: clamp(56px, 18vmin, 90px);
-  height: clamp(56px, 18vmin, 90px);
+  width: clamp(48px, 14vmin, 72px);
+  height: clamp(48px, 14vmin, 72px);
   border-radius: clamp(8px, 2vmin, 12px);
   border: 2px solid rgba(100, 160, 200, 0.4);
-  margin-bottom: clamp(3px, 1vmin, 8px);
+  margin-bottom: clamp(1px, 0.4vmin, 4px);
   image-rendering: pixelated;
   flex-shrink: 0;
 }
 
 .layout-card-name {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(1.1em, 3.5vmin, 1.5em);
+  font-size: clamp(1em, 3vmin, 1.3em);
   color: #e0e8f0;
   text-shadow: 0 0 6px rgba(80, 160, 220, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.8);
-  margin-bottom: clamp(3px, 1vmin, 8px);
+  margin-bottom: clamp(1px, 0.4vmin, 4px);
   flex-shrink: 0;
 }
 
@@ -1767,7 +1767,7 @@ touch-action: manipulation;
 .layout-row {
   display: flex;
   align-items: center;
-  padding: clamp(5px, 1.4vmin, 8px) clamp(3px, 0.8vmin, 6px);
+  padding: clamp(2px, 0.7vmin, 4px) clamp(3px, 0.8vmin, 6px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -1820,7 +1820,7 @@ touch-action: manipulation;
 /* ── Cosmetics placeholder ────────────────────────────── */
 .layout-cosmetics {
   width: 100%;
-  margin-top: clamp(4px, 1.2vmin, 8px);
+  margin-top: clamp(2px, 0.6vmin, 4px);
   flex-shrink: 0;
 }
 
@@ -1873,11 +1873,6 @@ touch-action: manipulation;
   opacity: 0.4;
 }
 
-.cosmetic-lock {
-  font-size: clamp(10px, 2vmin, 13px);
-  opacity: 0.5;
-  margin-top: -2px;
-}
 
 /* ── Inventory button in header ───────────────────────── */
 #layout-inventory-btn {
@@ -2007,6 +2002,25 @@ touch-action: manipulation;
   font-size: clamp(0.9em, 2.6vmin, 1.1em);
   color: rgba(200, 200, 220, 0.5);
   padding: clamp(20px, 5vmin, 40px) 0;
+}
+
+.layout-subview-item {
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subview-cost {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(10px, 2.4vmin, 13px);
+  color: #f0e8d0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+
+.subview-count {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(11px, 2.6vmin, 14px);
+  color: #8cc8e8;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
 /* ── Layout landscape tweaks ─────────────────────────── */

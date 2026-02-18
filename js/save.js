@@ -189,6 +189,11 @@ export function saveBones() {
   const data = {
     bones: getBones(),
     layoutUpgrades: getLayoutUpgrades(),
+    startingItems: state.startingItems,
+    ownedHats: state.ownedHats,
+    ownedSkins: state.ownedSkins,
+    equippedHats: state.equippedHats,
+    equippedSkins: state.equippedSkins,
   };
   localStorage.setItem('crittorsBones', JSON.stringify(data));
 }
@@ -200,6 +205,11 @@ export function loadBones() {
       const data = JSON.parse(saved);
       if (data.bones !== undefined) setBones(data.bones);
       if (data.layoutUpgrades) setLayoutUpgrades(data.layoutUpgrades);
+      if (data.startingItems) state.startingItems = data.startingItems;
+      if (data.ownedHats) state.ownedHats = data.ownedHats;
+      if (data.ownedSkins) state.ownedSkins = data.ownedSkins;
+      if (data.equippedHats) state.equippedHats = data.equippedHats;
+      if (data.equippedSkins) state.equippedSkins = data.equippedSkins;
     } catch (e) {
       console.warn('Failed to load bones data:', e);
     }

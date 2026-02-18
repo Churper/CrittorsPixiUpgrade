@@ -133,6 +133,11 @@ const state = {
     bird:  { damage: 0, health: 0, speed: 0 },
     bee:   { damage: 0, health: 0, speed: 0 },
   },
+  startingItems: { shield: 0, bomb: 0, rage: 0, feather: 0, goldenBean: 0 },
+  ownedHats: [],
+  ownedSkins: [],
+  equippedHats: { frog: null, snail: null, bird: null, bee: null },
+  equippedSkins: { frog: null, snail: null, bird: null, bee: null },
 
   // Config
   characterPositions: {

@@ -659,18 +659,36 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   const layoutInventoryView = document.getElementById('layout-inventory-view');
   const hatsCharName = document.getElementById('hats-char-name');
   const skinsCharName = document.getElementById('skins-char-name');
+  let activeSubviewChar = null; // which character the hats/skins view is for
 
-  function showLayoutView(view, charLabel) {
-    // Hide deck + nav
+  // Available hats & skins catalog
+  const hatCatalog = [
+    { id: 'tophat', icon: '🎩', name: 'Top Hat', cost: 1 },
+  ];
+  const skinCatalog = [
+    { id: 'frog-blue', icon: '🐸', name: 'Blue Frog', cost: 1, charOnly: 'frog', tint: 0x5588ff },
+  ];
+  // Items that can have starting counts purchased
+  const inventoryItemCatalog = [
+    { id: 'shield',     icon: '🛡️', name: 'Shield',          costPer: 3 },
+    { id: 'bomb',       icon: '💣', name: 'Bomb',            costPer: 3 },
+    { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 5 },
+    { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 5 },
+    { id: 'goldenBean', icon: '☕', name: 'Golden Bean',     costPer: 4 },
+  ];
+
+  function showLayoutView(view, charLabel, charName) {
     layoutDeckArea.style.display = 'none';
     layoutHatsView.classList.remove('active');
     layoutSkinsView.classList.remove('active');
     layoutInventoryView.classList.remove('active');
     view.classList.add('active');
+    if (charName) activeSubviewChar = charName;
     if (charLabel) {
-      if (view === layoutHatsView) hatsCharName.textContent = charLabel;
-      if (view === layoutSkinsView) skinsCharName.textContent = charLabel;
+      if (view === layoutHatsView) { hatsCharName.textContent = charLabel; renderHatsGrid(); }
+      if (view === layoutSkinsView) { skinsCharName.textContent = charLabel; renderSkinsGrid(); }
     }
+    if (view === layoutInventoryView) renderInventoryGrid();
   }
 
   function showLayoutDeck() {
@@ -678,6 +696,98 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     layoutSkinsView.classList.remove('active');
     layoutInventoryView.classList.remove('active');
     layoutDeckArea.style.display = 'flex';
+    activeSubviewChar = null;
+  }
+
+  // --- Render hats grid ---
+  function renderHatsGrid() {
+    const grid = document.getElementById('hats-grid');
+    grid.innerHTML = '';
+    const ch = activeSubviewChar;
+    hatCatalog.forEach(hat => {
+      const owned = state.ownedHats.includes(hat.id);
+      const equipped = state.equippedHats[ch] === hat.id;
+      const el = document.createElement('div');
+      el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
+      el.innerHTML = owned
+        ? `<span>${hat.icon}</span>`
+        : `<span>${hat.icon}</span><span class="subview-cost">🦴${hat.cost}</span>`;
+      el.addEventListener('click', () => {
+        if (!owned) {
+          if (state.bones < hat.cost) return;
+          state.bones -= hat.cost;
+          state.ownedHats.push(hat.id);
+          saveBones();
+          updateLayoutUI();
+          renderHatsGrid();
+        } else {
+          // Toggle equip
+          state.equippedHats[ch] = equipped ? null : hat.id;
+          saveBones();
+          renderHatsGrid();
+        }
+      });
+      grid.appendChild(el);
+    });
+    if (hatCatalog.length === 0) {
+      grid.innerHTML = '<div class="layout-subview-empty">No hats available yet.</div>';
+    }
+  }
+
+  // --- Render skins grid ---
+  function renderSkinsGrid() {
+    const grid = document.getElementById('skins-grid');
+    grid.innerHTML = '';
+    const ch = activeSubviewChar;
+    const available = skinCatalog.filter(s => !s.charOnly || s.charOnly === ch);
+    available.forEach(skin => {
+      const owned = state.ownedSkins.includes(skin.id);
+      const equipped = state.equippedSkins[ch] === skin.id;
+      const el = document.createElement('div');
+      el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
+      el.innerHTML = owned
+        ? `<span>${skin.icon}</span>`
+        : `<span>${skin.icon}</span><span class="subview-cost">🦴${skin.cost}</span>`;
+      el.addEventListener('click', () => {
+        if (!owned) {
+          if (state.bones < skin.cost) return;
+          state.bones -= skin.cost;
+          state.ownedSkins.push(skin.id);
+          saveBones();
+          updateLayoutUI();
+          renderSkinsGrid();
+        } else {
+          state.equippedSkins[ch] = equipped ? null : skin.id;
+          saveBones();
+          renderSkinsGrid();
+        }
+      });
+      grid.appendChild(el);
+    });
+    if (available.length === 0) {
+      grid.innerHTML = '<div class="layout-subview-empty">No skins for this character yet.</div>';
+    }
+  }
+
+  // --- Render inventory grid ---
+  function renderInventoryGrid() {
+    const grid = document.getElementById('inventory-grid');
+    grid.innerHTML = '';
+    inventoryItemCatalog.forEach(item => {
+      const count = state.startingItems[item.id] || 0;
+      const el = document.createElement('div');
+      el.className = 'layout-subview-item';
+      el.innerHTML = `<span>${item.icon}</span><span class="subview-count">x${count}</span><span class="subview-cost">🦴${item.costPer}</span>`;
+      el.addEventListener('click', () => {
+        if (state.bones < item.costPer) return;
+        state.bones -= item.costPer;
+        state.startingItems[item.id] = (state.startingItems[item.id] || 0) + 1;
+        saveBones();
+        updateLayoutUI();
+        renderInventoryGrid();
+      });
+      grid.appendChild(el);
+    });
   }
 
   // Cosmetic slot click handlers
@@ -688,9 +798,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const charLabel = card.querySelector('.layout-card-name').textContent;
       const slotType = this.dataset.slot;
       if (slotType === 'hat') {
-        showLayoutView(layoutHatsView, charLabel);
+        showLayoutView(layoutHatsView, charLabel, charName);
       } else if (slotType === 'skin') {
-        showLayoutView(layoutSkinsView, charLabel);
+        showLayoutView(layoutSkinsView, charLabel, charName);
       }
     });
   });
@@ -1553,6 +1663,17 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   let _swapLock = false; // debounce guard for swap clicks
 
+  // Returns the base tint for the current character (skin color override or white)
+  function getCharBaseTint(charType) {
+    const charName = charType ? charType.replace('character-', '') : '';
+    const skinId = state.equippedSkins[charName];
+    if (skinId) {
+      const skin = [{ id: 'frog-blue', tint: 0x5588ff }].find(s => s.id === skinId);
+      if (skin) return skin.tint;
+    }
+    return 0xffffff;
+  }
+
   function handleCharacterClick(characterType) {
     // --- Guard: prevent rapid double-clicks ---
     if (_swapLock) return;
@@ -1706,7 +1827,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       if (state.rageActive) {
         state.rageActive = false;
         state.rageEndTime = 0;
-        critter.tint = 0xffffff;
+        critter.tint = getCharBaseTint(getCurrentCharacter());
         if (state.originalAnimSpeed) {
           critter.animationSpeed = state.originalAnimSpeed;
           state.originalAnimSpeed = null;
@@ -2378,9 +2499,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.endlessElapsed = 0;
       state.endlessKillCount = 0;
 
-      // Start with 1 bomb and 1 rage potion
-      setBombCount(1);
-      setRageCount(1);
+      // Start with base items + purchased starting items from layout
+      const si = state.startingItems || {};
+      setShieldCount(si.shield || 0);
+      setBombCount(1 + (si.bomb || 0));
+      setRageCount(1 + (si.rage || 0));
+      setFeatherCount(si.feather || 0);
+      setGoldenBeanCount(si.goldenBean || 0);
 
       // Wire item buttons
       const shieldBtn = document.getElementById('shield-btn');
@@ -2389,11 +2514,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const featherBtn = document.getElementById('feather-btn');
       const goldenBeanBtn = document.getElementById('golden-bean-btn');
 
-      // Show buttons + counts for starting items
+      // Show buttons + counts for all starting items
+      if (getShieldCount() > 0) { shieldBtn.style.display = 'flex'; document.getElementById('shield-count').textContent = getShieldCount(); }
       bombBtn.style.display = 'flex';
       rageBtn.style.display = 'flex';
       document.getElementById('bomb-count').textContent = getBombCount();
       document.getElementById('rage-count').textContent = getRageCount();
+      if (getFeatherCount() > 0) { featherBtn.style.display = 'flex'; document.getElementById('feather-count').textContent = getFeatherCount(); }
+      if (getGoldenBeanCount() > 0) { goldenBeanBtn.style.display = 'flex'; document.getElementById('golden-bean-count').textContent = getGoldenBeanCount(); }
       repositionItemButtons();
 
       // Shield button handler
@@ -4231,7 +4359,7 @@ let cantGainEXP = false;
         } else if (critter && (critter.alpha !== 1 || critter.tint === 0xffd700)) {
           critter.alpha = 1;
           if (state.featherReviveEnd) {
-            critter.tint = state.rageActive ? 0xff4444 : 0xffffff;
+            critter.tint = state.rageActive ? 0xff4444 : getCharBaseTint(getCurrentCharacter());
             state.featherReviveEnd = null;
           }
         }
@@ -4758,6 +4886,7 @@ state.demiSpawned = 0;
           updateVelocity();
           setCharSwap(false);
           stopFlashing();
+          critter.tint = getCharBaseTint(getCurrentCharacter());
           critter.visible = true;
           app.stage.addChild(critter);
           // Ensure health bar reflects the new character (fixes stale bar after dead→alive swap)
@@ -4799,7 +4928,7 @@ state.demiSpawned = 0;
         if (state.rageActive) {
           if (Date.now() > state.rageEndTime) {
             state.rageActive = false;
-            critter.tint = 0xffffff;
+            critter.tint = getCharBaseTint(getCurrentCharacter());
             if (state.originalAnimSpeed) {
               critter.animationSpeed = state.originalAnimSpeed;
               state.originalAnimSpeed = null;

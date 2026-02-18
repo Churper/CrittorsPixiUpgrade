@@ -109,9 +109,9 @@ body {
 
 .menu-bottom-row {
   margin-top: auto;
-  padding-bottom: clamp(10px, 3vmin, 20px);
+  padding-bottom: clamp(14px, 4vmin, 28px);
   display: flex;
-  gap: clamp(10px, 3vmin, 16px);
+  gap: clamp(14px, 4vmin, 22px);
 }
 
 .menu-info-btn:hover {

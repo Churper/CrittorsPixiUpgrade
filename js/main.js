@@ -63,7 +63,151 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   // Load persistent bones currency before menu shows
   loadBones();
 
+  // --- Menu background scene ---
+  const menuCanvas = document.getElementById('menu-scene');
+  const mctx = menuCanvas.getContext('2d');
+  let menuAnimId = null;
+
+  function initMenuScene() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    menuCanvas.width = w * dpr;
+    menuCanvas.height = h * dpr;
+    mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // Seed random for deterministic scenery
+    let seed = 42;
+    function srand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
+
+    // Stars
+    const stars = [];
+    for (let i = 0; i < 80; i++) stars.push({ x: srand() * w, y: srand() * h * 0.55, r: srand() * 1.4 + 0.3, b: srand() * 0.4 + 0.5 });
+
+    // Moon
+    const moonX = w * 0.78, moonY = h * 0.18, moonR = Math.min(w, h) * 0.05;
+
+    // Mountain layers (back to front)
+    function genMountain(count, baseY, minH, maxH) {
+      const pts = [];
+      for (let i = 0; i < count; i++) {
+        const cx = (i / (count - 1)) * (w + 200) - 100;
+        const peakH = minH + srand() * (maxH - minH);
+        pts.push({ x: cx, h: peakH });
+      }
+      return { pts, baseY };
+    }
+    const mtns = [
+      { layer: genMountain(5, h * 0.62, h * 0.18, h * 0.32), color: '#0d1520', speed: 0.3 },
+      { layer: genMountain(6, h * 0.68, h * 0.12, h * 0.24), color: '#111e2e', speed: 0.6 },
+      { layer: genMountain(7, h * 0.74, h * 0.06, h * 0.15), color: '#162636', speed: 1.0 },
+    ];
+
+    // Ground trees
+    const trees = [];
+    const groundY = h * 0.78;
+    for (let i = 0; i < 14; i++) {
+      trees.push({
+        x: srand() * w * 1.1 - w * 0.05,
+        h: 18 + srand() * 30,
+        w: 10 + srand() * 14,
+        trunk: 2 + srand() * 2,
+      });
+    }
+    trees.sort((a, b) => a.h - b.h); // smaller behind
+
+    // Clouds
+    const clouds = [];
+    for (let i = 0; i < 4; i++) {
+      clouds.push({
+        x: srand() * w,
+        y: h * 0.1 + srand() * h * 0.2,
+        w: 60 + srand() * 80,
+        h: 18 + srand() * 14,
+        speed: 6 + srand() * 10,
+      });
+    }
+
+    let t = 0;
+    function drawFrame() {
+      t += 0.016;
+      mctx.clearRect(0, 0, w, h);
+
+      // Stars with twinkle
+      stars.forEach(s => {
+        const a = s.b + Math.sin(t * 1.2 + s.x) * 0.2;
+        mctx.beginPath();
+        mctx.arc(s.x, s.y, s.r, 0, 6.28);
+        mctx.fillStyle = `rgba(200, 220, 255, ${a})`;
+        mctx.fill();
+      });
+
+      // Moon
+      const grd = mctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR * 3);
+      grd.addColorStop(0, 'rgba(180, 200, 230, 0.25)');
+      grd.addColorStop(1, 'rgba(180, 200, 230, 0)');
+      mctx.fillStyle = grd;
+      mctx.fillRect(moonX - moonR * 3, moonY - moonR * 3, moonR * 6, moonR * 6);
+      mctx.beginPath();
+      mctx.arc(moonX, moonY, moonR, 0, 6.28);
+      mctx.fillStyle = '#c8d8e8';
+      mctx.fill();
+
+      // Clouds
+      clouds.forEach(c => {
+        const cx = ((c.x + t * c.speed) % (w + c.w * 2)) - c.w;
+        mctx.beginPath();
+        mctx.ellipse(cx, c.y, c.w * 0.5, c.h * 0.5, 0, 0, 6.28);
+        mctx.ellipse(cx - c.w * 0.25, c.y + 2, c.w * 0.35, c.h * 0.4, 0, 0, 6.28);
+        mctx.ellipse(cx + c.w * 0.28, c.y + 1, c.w * 0.38, c.h * 0.42, 0, 0, 6.28);
+        mctx.fillStyle = 'rgba(30, 45, 65, 0.35)';
+        mctx.fill();
+      });
+
+      // Mountains
+      mtns.forEach(m => {
+        const offset = Math.sin(t * 0.15) * m.speed * 4;
+        mctx.beginPath();
+        mctx.moveTo(-20, m.layer.baseY);
+        m.layer.pts.forEach(p => {
+          mctx.lineTo(p.x + offset, m.layer.baseY - p.h);
+        });
+        mctx.lineTo(w + 20, m.layer.baseY);
+        mctx.closePath();
+        mctx.fillStyle = m.color;
+        mctx.fill();
+      });
+
+      // Ground
+      mctx.fillStyle = '#0e1a24';
+      mctx.fillRect(0, groundY, w, h - groundY);
+      // Ground top edge - subtle grass line
+      mctx.fillStyle = '#1a2e3c';
+      mctx.fillRect(0, groundY, w, 3);
+
+      // Trees
+      trees.forEach(tr => {
+        const tx = tr.x + Math.sin(t * 0.4 + tr.x * 0.01) * 0.5;
+        // Trunk
+        mctx.fillStyle = '#0a161e';
+        mctx.fillRect(tx - tr.trunk * 0.5, groundY - tr.h * 0.5, tr.trunk, tr.h * 0.5);
+        // Canopy
+        mctx.beginPath();
+        mctx.ellipse(tx, groundY - tr.h * 0.55, tr.w * 0.5, tr.h * 0.5, 0, 0, 6.28);
+        mctx.fillStyle = '#0f2030';
+        mctx.fill();
+      });
+
+      menuAnimId = requestAnimationFrame(drawFrame);
+    }
+    drawFrame();
+  }
+
+  initMenuScene();
+  window.addEventListener('resize', () => { if (menuAnimId) { cancelAnimationFrame(menuAnimId); initMenuScene(); } });
+
   function startFromMenu(mode) {
+    if (menuAnimId) { cancelAnimationFrame(menuAnimId); menuAnimId = null; }
     rotateMessage.style.display = 'none';
     // Show loading overlay
     const loadingOverlay = document.getElementById('loading-overlay');

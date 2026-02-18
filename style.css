@@ -1582,12 +1582,12 @@ touch-action: manipulation;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 90%;
-  max-width: 400px;
+  width: 92%;
+  max-width: 420px;
   background: rgba(8, 12, 20, 0.94);
   border: 2px solid rgba(100, 160, 200, 0.5);
-  border-radius: 16px;
-  padding: 16px 12px;
+  border-radius: clamp(10px, 3vmin, 16px);
+  padding: clamp(10px, 2.5vmin, 18px) clamp(8px, 2vmin, 14px);
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;
   text-align: center;
@@ -1598,12 +1598,12 @@ touch-action: manipulation;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  margin-bottom: clamp(6px, 1.5vmin, 12px);
 }
 
 #layout-bones {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 1.4em;
+  font-size: clamp(1em, 3.5vmin, 1.5em);
   color: #f0e8d0;
   text-shadow: 0 0 6px rgba(200, 180, 100, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.9);
 }
@@ -1613,17 +1613,17 @@ touch-action: manipulation;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: clamp(4px, 1.2vmin, 8px);
 }
 
 .layout-nav-btn {
-  width: 36px;
-  height: 36px;
+  width: clamp(30px, 8vmin, 40px);
+  height: clamp(30px, 8vmin, 40px);
   border-radius: 50%;
   border: 2px solid rgba(100, 160, 200, 0.5);
   background: rgba(10, 15, 25, 0.6);
   color: #ccd8e4;
-  font-size: 1.6em;
+  font-size: clamp(1.2em, 3.5vmin, 1.8em);
   line-height: 1;
   cursor: pointer;
   user-select: none;
@@ -1644,9 +1644,11 @@ touch-action: manipulation;
 
 .layout-deck {
   position: relative;
-  width: 240px;
-  height: 300px;
+  width: clamp(200px, 50vw, 280px);
+  height: clamp(280px, 55vh, 380px);
   perspective: 600px;
+  touch-action: pan-y;
+  user-select: none;
 }
 
 .layout-card {
@@ -1656,16 +1658,19 @@ touch-action: manipulation;
   height: 100%;
   background: linear-gradient(145deg, rgba(15, 25, 45, 0.95), rgba(10, 18, 30, 0.98));
   border: 2px solid rgba(100, 160, 200, 0.4);
-  border-radius: 14px;
-  padding: 12px 14px;
+  border-radius: clamp(10px, 2.5vmin, 14px);
+  padding: clamp(8px, 2vmin, 14px) clamp(10px, 2.5vmin, 16px);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: transform 0.4s ease, opacity 0.4s ease, box-shadow 0.4s ease;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease, box-shadow 0.4s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
   pointer-events: none;
   opacity: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .layout-card.card-pos-0 {
@@ -1695,55 +1700,63 @@ touch-action: manipulation;
   z-index: 1;
 }
 
+/* Swipe drag feedback — override transition when dragging */
+.layout-card.swiping {
+  transition: none !important;
+}
+
 .layout-card-portrait {
-  width: 72px;
-  height: 72px;
-  border-radius: 12px;
+  width: clamp(48px, 14vmin, 80px);
+  height: clamp(48px, 14vmin, 80px);
+  border-radius: clamp(8px, 2vmin, 12px);
   border: 2px solid rgba(100, 160, 200, 0.4);
-  margin-bottom: 4px;
+  margin-bottom: clamp(2px, 0.8vmin, 6px);
   image-rendering: pixelated;
+  flex-shrink: 0;
 }
 
 .layout-card-name {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 1.3em;
+  font-size: clamp(1em, 3vmin, 1.4em);
   color: #e0e8f0;
   text-shadow: 0 0 6px rgba(80, 160, 220, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.8);
-  margin-bottom: 6px;
+  margin-bottom: clamp(2px, 0.8vmin, 6px);
+  flex-shrink: 0;
 }
 
 .layout-card-stats {
   width: 100%;
   text-align: left;
+  flex-shrink: 0;
 }
 
 .layout-row {
   display: flex;
   align-items: center;
-  padding: 6px 4px;
+  padding: clamp(3px, 0.8vmin, 6px) clamp(2px, 0.6vmin, 4px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .layout-stat-name {
   flex: 1;
-  font-size: 1em;
+  font-size: clamp(0.75em, 2.2vmin, 1em);
   font-family: 'Luckiest Guy', cursive;
   color: #dde4ec;
 }
 
 .layout-stat-level {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 0.9em;
+  font-size: clamp(0.7em, 2vmin, 0.9em);
   color: #8cc8e8;
-  margin-right: 10px;
+  margin-right: clamp(4px, 1.5vmin, 10px);
   min-width: 36px;
   text-align: center;
 }
 
 .layout-buy-btn {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 0.8em;
-  padding: 4px 10px;
+  font-size: clamp(0.65em, 1.8vmin, 0.85em);
+  padding: clamp(2px, 0.6vmin, 4px) clamp(6px, 1.5vmin, 10px);
   border-radius: 8px;
   border: 2px solid rgba(200, 180, 100, 0.5);
   background: rgba(200, 180, 100, 0.12);
@@ -1752,6 +1765,7 @@ touch-action: manipulation;
   transition: transform 0.15s, background 0.15s, border-color 0.15s;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 
 .layout-buy-btn:hover {
@@ -1767,5 +1781,78 @@ touch-action: manipulation;
 .layout-buy-btn.cant-afford {
   opacity: 0.35;
   cursor: not-allowed;
+}
+
+/* ── Cosmetics placeholder ────────────────────────────── */
+.layout-cosmetics {
+  width: 100%;
+  margin-top: clamp(4px, 1.2vmin, 8px);
+  flex-shrink: 0;
+}
+
+.layout-cosmetic-label {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(0.7em, 2vmin, 0.95em);
+  color: rgba(200, 200, 220, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: clamp(2px, 0.6vmin, 4px);
+  text-align: left;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding-top: clamp(3px, 0.8vmin, 6px);
+}
+
+.layout-cosmetic-slots {
+  display: flex;
+  gap: clamp(6px, 1.5vmin, 10px);
+  justify-content: center;
+}
+
+.layout-cosmetic-slot {
+  width: clamp(40px, 10vmin, 56px);
+  height: clamp(40px, 10vmin, 56px);
+  border-radius: clamp(8px, 1.8vmin, 12px);
+  border: 2px dashed rgba(150, 150, 180, 0.3);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.cosmetic-icon {
+  font-size: clamp(14px, 3.5vmin, 20px);
+  opacity: 0.4;
+}
+
+.cosmetic-lock {
+  font-size: clamp(10px, 2vmin, 13px);
+  opacity: 0.5;
+  margin-top: -2px;
+}
+
+/* ── Layout landscape tweaks ─────────────────────────── */
+@media (orientation: landscape) and (max-height: 500px) {
+  #layout-panel {
+    max-width: 520px;
+    max-height: 96vh;
+    padding: 8px 10px;
+  }
+  .layout-deck {
+    height: clamp(220px, 46vh, 320px);
+  }
+  .layout-card-portrait {
+    width: clamp(36px, 10vmin, 56px);
+    height: clamp(36px, 10vmin, 56px);
+  }
+  .layout-card-name {
+    font-size: clamp(0.85em, 2.5vmin, 1.1em);
+    margin-bottom: 2px;
+  }
+  .layout-row {
+    padding: 2px 3px;
+  }
 }
 

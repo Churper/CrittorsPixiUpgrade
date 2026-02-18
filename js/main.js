@@ -152,6 +152,91 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     updateLayoutUI();
   });
 
+  // Touch swipe gestures for the card deck
+  const layoutDeckEl = document.querySelector('.layout-deck');
+  let swipeStartX = 0;
+  let swipeStartY = 0;
+  let swipeStartTime = 0;
+  let isSwiping = false;
+  let swipeLocked = false; // true once we decide horizontal vs vertical
+
+  layoutDeckEl.addEventListener('touchstart', function(e) {
+    const touch = e.touches[0];
+    swipeStartX = touch.clientX;
+    swipeStartY = touch.clientY;
+    swipeStartTime = Date.now();
+    isSwiping = true;
+    swipeLocked = false;
+    // Add swiping class to front card for instant feedback
+    const frontCard = layoutDeckEl.querySelector('.card-pos-0');
+    if (frontCard) frontCard.classList.add('swiping');
+  }, { passive: true });
+
+  layoutDeckEl.addEventListener('touchmove', function(e) {
+    if (!isSwiping) return;
+    const touch = e.touches[0];
+    const dx = touch.clientX - swipeStartX;
+    const dy = touch.clientY - swipeStartY;
+    // Decide axis lock on first significant movement
+    if (!swipeLocked && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
+      swipeLocked = true;
+      if (Math.abs(dy) > Math.abs(dx)) {
+        // Vertical scroll — cancel swipe
+        isSwiping = false;
+        const frontCard = layoutDeckEl.querySelector('.swiping');
+        if (frontCard) frontCard.classList.remove('swiping');
+        return;
+      }
+    }
+    if (!swipeLocked) return;
+    // Live drag feedback on front card
+    const frontCard = layoutDeckEl.querySelector('.swiping');
+    if (frontCard) {
+      const clampedDx = Math.max(-80, Math.min(80, dx));
+      const rot = clampedDx * 0.06;
+      frontCard.style.transform = `translateX(${clampedDx}px) rotate(${rot}deg) scale(1)`;
+      frontCard.style.opacity = Math.max(0.5, 1 - Math.abs(clampedDx) / 200);
+    }
+  }, { passive: true });
+
+  layoutDeckEl.addEventListener('touchend', function(e) {
+    if (!isSwiping) return;
+    isSwiping = false;
+    const frontCard = layoutDeckEl.querySelector('.swiping');
+    if (frontCard) {
+      frontCard.classList.remove('swiping');
+      frontCard.style.transform = '';
+      frontCard.style.opacity = '';
+    }
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - swipeStartX;
+    const elapsed = Date.now() - swipeStartTime;
+    const velocity = Math.abs(dx) / Math.max(1, elapsed);
+    // Trigger card change on sufficient swipe distance or velocity
+    const threshold = 30;
+    const velThreshold = 0.3;
+    if (Math.abs(dx) > threshold || velocity > velThreshold) {
+      if (dx < 0) {
+        // Swipe left → next card
+        layoutDeckIndex = (layoutDeckIndex + 1) % layoutCards.length;
+      } else {
+        // Swipe right → prev card
+        layoutDeckIndex = (layoutDeckIndex - 1 + layoutCards.length) % layoutCards.length;
+      }
+      updateLayoutUI();
+    }
+  }, { passive: true });
+
+  layoutDeckEl.addEventListener('touchcancel', function() {
+    isSwiping = false;
+    const frontCard = layoutDeckEl.querySelector('.swiping');
+    if (frontCard) {
+      frontCard.classList.remove('swiping');
+      frontCard.style.transform = '';
+      frontCard.style.opacity = '';
+    }
+  }, { passive: true });
+
   // Buy buttons on all cards
   document.querySelectorAll('.layout-buy-btn').forEach(btn => {
     btn.addEventListener('click', function() {

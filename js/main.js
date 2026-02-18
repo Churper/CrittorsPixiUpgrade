@@ -1659,73 +1659,83 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let _swapLock = false; // debounce guard for swap clicks
 
-  // Skin filter builders — each returns an array of PIXI filters
-  // Uses separate ColorMatrixFilter per effect to avoid the multiply=true
-  // normalization bug in PixiJS 8 (Issue #8359). Method is .hue() not .hueRotate().
+  // Skin filter builders — single ColorMatrixFilter with hand-crafted 5x4 matrix per skin.
+  // One filter pass instead of 3-5, better visuals, avoids PixiJS multiply bug.
+  // Matrix layout: [R_r, R_g, R_b, R_a, R_offset, G_r, G_g, G_b, G_a, G_offset, ...]
+  // Offsets are in 0-1 range (shader color space).
+  function makeSkinFilter(matrix) {
+    const f = new PIXI.ColorMatrixFilter();
+    f.matrix = matrix;
+    return [f];
+  }
   const skinFilterBuilders = {
     // ── Frog ──
-    'frog-ice': () => {
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(160, false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(-0.3, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.15, false);
-      return [hue, sat, brt];
-    },
-    'frog-golden': () => {
-      const sep = new PIXI.ColorMatrixFilter(); sep.sepia(false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(0.6, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.2, false);
-      return [sep, sat, brt];
-    },
-    'frog-shadow': () => {
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(0.55, false);
-      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.5, false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(-0.5, false);
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(270, false);
-      return [brt, con, sat, hue];
-    },
+    // Ice: frosty blue-cyan, cool and bright
+    'frog-ice': () => makeSkinFilter([
+      0.55, 0.10, 0.10, 0, 0.06,
+      0.05, 0.65, 0.20, 0, 0.10,
+      0.00, 0.15, 1.10, 0, 0.14,
+      0,    0,    0,    1, 0,
+    ]),
+    // Golden: rich warm gold, like a gilded statue
+    'frog-golden': () => makeSkinFilter([
+      1.15, 0.20, 0.00, 0, 0.06,
+      0.08, 0.85, 0.05, 0, 0.04,
+      0.00, 0.05, 0.35, 0, 0.00,
+      0,    0,    0,    1, 0,
+    ]),
+    // Shadow: dark mystic purple, high contrast
+    'frog-shadow': () => makeSkinFilter([
+      0.38, 0.05, 0.18, 0, 0.02,
+      0.00, 0.28, 0.06, 0, 0.00,
+      0.12, 0.06, 0.50, 0, 0.06,
+      0,    0,    0,    1, 0,
+    ]),
     // ── Snail ──
-    'snail-crystal': () => {
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(190, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.25, false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(0.4, false);
-      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.2, false);
-      return [hue, brt, sat, con];
-    },
-    'snail-magma': () => {
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(-30, false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(1.2, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.1, false);
-      return [hue, sat, brt];
-    },
+    // Crystal: bright shimmering cyan-blue
+    'snail-crystal': () => makeSkinFilter([
+      0.45, 0.10, 0.20, 0, 0.08,
+      0.10, 0.85, 0.22, 0, 0.12,
+      0.08, 0.20, 1.10, 0, 0.16,
+      0,    0,    0,    1, 0,
+    ]),
+    // Magma: fiery red-orange glow
+    'snail-magma': () => makeSkinFilter([
+      1.30, 0.18, 0.00, 0, 0.10,
+      0.12, 0.50, 0.00, 0, 0.02,
+      0.00, 0.02, 0.25, 0, 0.00,
+      0,    0,    0,    1, 0,
+    ]),
     // ── Bird ──
-    'bird-phoenix': () => {
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(-50, false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(1.0, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.15, false);
-      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.15, false);
-      return [hue, sat, brt, con];
-    },
-    'bird-arctic': () => {
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(-0.6, false);
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(180, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.3, false);
-      return [sat, hue, brt];
-    },
+    // Phoenix: warm fiery orange with saturated reds
+    'bird-phoenix': () => makeSkinFilter([
+      1.25, 0.22, 0.00, 0, 0.10,
+      0.15, 0.65, 0.00, 0, 0.04,
+      0.00, 0.05, 0.30, 0, 0.00,
+      0,    0,    0,    1, 0,
+    ]),
+    // Arctic: icy pale blue-white, ethereal
+    'bird-arctic': () => makeSkinFilter([
+      0.70, 0.15, 0.15, 0, 0.12,
+      0.10, 0.75, 0.18, 0, 0.14,
+      0.05, 0.18, 0.95, 0, 0.18,
+      0,    0,    0,    1, 0,
+    ]),
     // ── Bee ──
-    'bee-neon': () => {
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(90, false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(1.5, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.2, false);
-      return [hue, sat, brt];
-    },
-    'bee-royal': () => {
-      const sep = new PIXI.ColorMatrixFilter(); sep.sepia(false);
-      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(0.8, false);
-      const hue = new PIXI.ColorMatrixFilter(); hue.hue(-20, false);
-      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.1, false);
-      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.1, false);
-      return [sep, sat, hue, brt, con];
-    },
+    // Neon: vivid electric green
+    'bee-neon': () => makeSkinFilter([
+      0.35, 0.18, 0.00, 0, 0.00,
+      0.12, 1.20, 0.10, 0, 0.10,
+      0.00, 0.15, 0.45, 0, 0.02,
+      0,    0,    0,    1, 0,
+    ]),
+    // Royal: regal deep purple with gold highlights
+    'bee-royal': () => makeSkinFilter([
+      0.90, 0.12, 0.22, 0, 0.05,
+      0.05, 0.55, 0.08, 0, 0.00,
+      0.18, 0.08, 0.90, 0, 0.10,
+      0,    0,    0,    1, 0,
+    ]),
   };
 
   // Apply skin filter to critter (or clear for default)
@@ -3882,7 +3892,6 @@ state.frogGhostPlayer.scale.set(0.28);
       const hpBarHeight = 16;
 
       const hpBarX = castle.position.x - castle.width / 1.1;
-      // console.log(hpBarX);
       const hpBarY = app.screen.height - 40 - hpBarHeight - 210; // Adjusted position
       const hpBarBackgroundColor = 0x000000;
       const hpBar = new PIXI.Graphics();
@@ -4212,7 +4221,6 @@ state.frogGhostPlayer.scale.set(0.28);
         setIsCharAttacking(false);
         velocity.x = xDir * getCharacterSpeed(getCurrentCharacter());
         velocity.y = yDir * getCharacterSpeed(getCurrentCharacter());
-        // console.log(isMoving);
         if (isMoving) {
           mountainVelocity1.x = mountainVelocityX;
           mountainVelocity1.y = mountainVelocityY;
@@ -4512,7 +4520,6 @@ let cantGainEXP = false;
           spawnDemi();
           pauseTimer();
         }
-        //console.log("HERXOROR:", getEnemiesInRange());
         if (state.reviveDialogContainer) {
           updateDialogPositions();
         }
@@ -4600,11 +4607,9 @@ let cantGainEXP = false;
           pointerHoldInterval = setInterval(handleTouchHold, 10);
         }
 
-        //console.log("isatt:", state.isAttackingChar);
         if (state.roundOver) {
           if (getPlayerCurrentHealth() <= 0) {
             document.getElementById('spawn-text').style.visibility = 'visible';
-            //document.getElementById("pause-text").style.visibility = "hidden";
           }
 
           // Camera: match sprite walk speed during unlock, keep panning to 0 during celebration
@@ -4905,7 +4910,6 @@ state.demiSpawned = 0;
               // Loop through the enemies array and remove each enemy
               for (let i = 0; i < getEnemies().length; i++) {
                 let enemy = getEnemies()[i];
-                // console.log(i);
                 app.stage.removeChild(enemy);
                 app.stage.removeChild(enemy.hpBar);
                 app.stage.removeChild(enemy.hpBarBackground);
@@ -5066,13 +5070,9 @@ state.demiSpawned = 0;
 
         if (getSpeedChanged()) { updateVelocity(); setSpeedChanged(false); }
         if (!state.isAttackingChar) {
-          //  console.log("attacking char",state.isAttackingChar);
           if (!getisDead()) {
-            //  console.log("not getisdead");
             if (!state.isCombat) {
-              //   console.log("not iscombat");
               if (!state.isPointerDown) {
-                // console.log("not ispointerdown");
                 if (getEnemiesInRange() <= 0) {
 
                   if (getCurrentCharacter() != "character-snail") {
@@ -5155,7 +5155,6 @@ state.demiSpawned = 0;
       if (loadingOverlay) loadingOverlay.style.display = 'none';
       playRoundText(state.currentRound);
 
-      // document.getElementById("infoboxs").style.visibility = "visible";
       document.getElementById("coffee-button").style.visibility = "visible";
       document.getElementById("infoboxes").style.visibility = "visible";
       document.getElementById("ui-overlay").style.visibility = "visible";
@@ -5484,7 +5483,6 @@ state.demiSpawned = 0;
       // Loop through the enemies array and remove each enemy
       for (let i = 0; i < getEnemies().length; i++) {
         let enemy = getEnemies()[i];
-        // console.log(i);
         app.stage.removeChild(enemy);
         app.stage.removeChild(enemy.hpBar);
         app.stage.removeChild(enemy.hpBarBackground);

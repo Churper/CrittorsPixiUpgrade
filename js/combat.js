@@ -692,14 +692,7 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
           }
           hasPlayedSound = true;
         }
-        else {
-
-
-        }
-
       }
-      else { }
-
     }
   }
 

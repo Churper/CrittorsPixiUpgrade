@@ -10,7 +10,6 @@ import {
   setFrogDamage, setBeeDamage, setSnailDamage, setBirdDamage,
   setFrogHealth, setBeeHealth, setSnailHealth, setBirdHealth,
   getCurrentCharacter, getCharEXP, getEXPtoLevel, getCharLevel,
-  getPlayerHealth,
 } from './state.js';
 
 // --- Portrait flashing ---
@@ -256,14 +255,17 @@ export function getCharacterDamage(currentCharacter) {
 
 export function updateCurrentLevels() {
   const characterLevelElement = document.getElementById("character-level");
-  const updateDefense = document.getElementById("defense-level");
-  const updateHP = document.getElementById("heart-level");
-  const updateDamage = document.getElementById("swords-level");
-  const charName = state.currentCharacter ? state.currentCharacter.replace('character-', '') : 'frog';
-  const def = (state.charDefense && state.charDefense[charName]) || 0;
-  updateDefense.textContent = def.toString();
-  updateHP.textContent = getPlayerHealth().toString();
-  updateDamage.textContent = getCharacterDamage(state.currentCharacter).toString();
+  const ch = state.currentCharacter ? state.currentCharacter.replace('character-', '') : 'frog';
+  // Attack: base + (shop bonus)
+  const baseDmg = state.characterStats[state.currentCharacter] ? state.characterStats[state.currentCharacter].attack : 16;
+  const shopDmg = (state.layoutUpgrades[ch] && state.layoutUpgrades[ch].damage) || 0;
+  const dmgEl = document.getElementById('swords-level');
+  dmgEl.textContent = shopDmg > 0 ? `${baseDmg} (+${shopDmg})` : `${baseDmg}`;
+  // Defense: base (= level) + (shop bonus)
+  const baseDefense = state[ch + 'Level'] || 1;
+  const shopDefense = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
+  const defEl = document.getElementById('defense-level');
+  defEl.textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
   characterLevelElement.textContent = 'Lvl. ' + getCharLevel(state.currentCharacter);
   state.isCharacterMenuOpen = false;
 }

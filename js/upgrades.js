@@ -139,7 +139,6 @@ export function levelUp() {
   // Damage +2
   stats.attack += 2;
   setCharacterDamage(state.currentCharacter, stats.attack);
-  document.getElementById("swords-level").textContent = stats.attack.toString();
 
   // Health +12
   stats.health += 12;
@@ -148,7 +147,19 @@ export function levelUp() {
     setPlayerCurrentHealth(getPlayerCurrentHealth() + 12);
   }
   updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
-  document.getElementById("heart-level").textContent = stats.health.toString();
+
+  // Defense goes up with level — update charDefense and active defense
+  const ch = state.currentCharacter.replace('character-', '');
+  const newLevel = state[ch + 'Level'] || 1;
+  const shopBonus = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
+  if (state.charDefense) state.charDefense[ch] = newLevel + shopBonus;
+  state.defense = newLevel + shopBonus;
+
+  // Update attack + defense infoboxes
+  const shopDmg = (state.layoutUpgrades[ch] && state.layoutUpgrades[ch].damage) || 0;
+  document.getElementById('swords-level').textContent = shopDmg > 0 ? `${stats.attack} (+${shopDmg})` : `${stats.attack}`;
+  const defEl = document.getElementById('defense-level');
+  defEl.textContent = shopBonus > 0 ? `${newLevel} (+${shopBonus})` : `${newLevel}`;
 
   state.leveling = false;
 

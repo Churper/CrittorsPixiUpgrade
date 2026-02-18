@@ -121,14 +121,15 @@ export function loadGame() {
     state.characterStats = gameData.characterStats;
     state.repicked = gameData.repicked;
     const characterLevelElement = document.getElementById("character-level");
-    const updateDefense = document.getElementById("defense-level");
-    const updateHP = document.getElementById("heart-level");
-    const updateDamage = document.getElementById("swords-level");
-    const charName = state.currentCharacter ? state.currentCharacter.replace('character-', '') : 'frog';
-    const def = (state.charDefense && state.charDefense[charName]) || 0;
-    updateDefense.textContent = def.toString();
-    updateHP.textContent = getPlayerHealth().toString();
-    updateDamage.textContent = getCharacterDamage(state.currentCharacter).toString();
+    const ch = state.currentCharacter ? state.currentCharacter.replace('character-', '') : 'frog';
+    // Attack: base + (shop bonus)
+    const baseDmg = state.characterStats[state.currentCharacter] ? state.characterStats[state.currentCharacter].attack : 16;
+    const shopDmg = (state.layoutUpgrades[ch] && state.layoutUpgrades[ch].damage) || 0;
+    document.getElementById('swords-level').textContent = shopDmg > 0 ? `${baseDmg} (+${shopDmg})` : `${baseDmg}`;
+    // Defense: base (= level) + (shop bonus)
+    const baseDefense = state[ch + 'Level'] || 1;
+    const shopDefense = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
+    document.getElementById('defense-level').textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
     characterLevelElement.textContent = 'Lvl. ' + getFrogLevel();
     state.isCharacterMenuOpen = false;
     updateEXPIndicatorText("character-bird", gameData.birdLevel);

@@ -1739,6 +1739,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
+  // Update the attack + defense infoboxes for the given character
+  function updateStatInfoboxes(charType) {
+    const ch = charType ? charType.replace('character-', '') : 'frog';
+    // Attack: base damage + shop bonus
+    const baseDmg = state.characterStats[charType] ? state.characterStats[charType].attack : 16;
+    const shopDmg = (state.layoutUpgrades[ch] && state.layoutUpgrades[ch].damage) || 0;
+    const dmgEl = document.getElementById('swords-level');
+    dmgEl.textContent = shopDmg > 0 ? `${baseDmg} (+${shopDmg})` : `${baseDmg}`;
+    // Defense: base (= level) + shop bonus
+    const baseDefense = state[ch + 'Level'] || 1;
+    const shopDefense = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
+    const defEl = document.getElementById('defense-level');
+    defEl.textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
+  }
+
   // Hat rendering — draws a hat graphic as a child of the critter sprite
   let currentHatGraphic = null;
 
@@ -1861,40 +1876,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // Swap positions of the current character box and the previously selected character box
     if (prevSelected !== characterType) {
       const characterLevelElement = document.getElementById("character-level");
-      var updateDefense = document.getElementById("defense-level");
-      var updateHP = document.getElementById("heart-level");
-      var updateDamage = document.getElementById("swords-level");
-      let level;
-      switch (characterType) {
-        case 'character-snail':
-          level = getSnailLevel();
-          updateDefense.textContent = ((state.charDefense && state.charDefense.snail) || 0).toString();
-          updateHP.textContent = getSnailHealth().toString();
-          updateDamage.textContent = getSnailDamage().toString();
-          break;
-        case 'character-bird':
-          level = getBirdLevel();
-          updateDefense.textContent = ((state.charDefense && state.charDefense.bird) || 0).toString();
-          updateHP.textContent = getBirdHealth().toString();
-          updateDamage.textContent = getBirdDamage().toString();
-
-          break;
-        case 'character-frog':
-          level = getFrogLevel();
-          updateDefense.textContent = ((state.charDefense && state.charDefense.frog) || 0).toString();
-          updateHP.textContent = getFrogHealth().toString();
-          updateDamage.textContent = getFrogDamage().toString();
-          break;
-        case 'character-bee':
-          level = getBeeLevel();
-          updateDefense.textContent = ((state.charDefense && state.charDefense.bee) || 0).toString();
-          updateHP.textContent = getBeeHealth().toString();
-          updateDamage.textContent = getBeeDamage().toString();
-          break;
-        default:
-          console.log('Invalid character', characterType);
-          return;
-      }
+      const level = getCharLevel(characterType);
+      if (!level && level !== 0) { console.log('Invalid character', characterType); return; }
+      characterLevelElement.textContent = 'Lvl. ' + level;
+      updateStatInfoboxes(characterType);
       if (getPlayerCurrentHealth() >= 0) {
         setisPaused(false);
       }
@@ -2591,12 +2576,16 @@ document.addEventListener('DOMContentLoaded', function () {
       // Defense is per-character but we track current char's defense
       if (ups.defense) totalDefense = Math.max(totalDefense, ups.defense);
     });
-    // Store per-character defense levels for lookup on swap
+    // Store per-character defense: base (= char level) + shop bonus
     state.charDefense = {};
     charKeys.forEach(ch => {
-      state.charDefense[ch] = (lu[ch] && lu[ch].defense) || 0;
+      const baseDefense = state[ch + 'Level'] || 1;  // defense = character level
+      const shopBonus = (lu[ch] && lu[ch].defense) || 0;
+      state.charDefense[ch] = baseDefense + shopBonus;
+      state.charDefenseShop = state.charDefenseShop || {};
+      state.charDefenseShop[ch] = shopBonus;
     });
-    state.defense = state.charDefense.frog || 0; // start as frog
+    state.defense = state.charDefense.frog || 1; // start as frog
     // Apply potion heal bonus
     state.potionHealAmount = 70 + (state.startingItems.potionHeal || 0) * 15;
 

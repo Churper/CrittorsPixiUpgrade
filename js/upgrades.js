@@ -131,11 +131,10 @@ export function levelUp() {
   // Auto-apply all 3 stat upgrades
   const stats = state.characterStats[state.currentCharacter];
 
-  // Speed +0.15
+  // Speed +0.15 (hidden stat — still applied but not displayed)
   stats.speed += 0.15;
   setCharacterSpeed(state.currentCharacter, stats.speed);
   setSpeedChanged(true);
-  document.getElementById("lightning-level").textContent = stats.speed.toFixed(2);
 
   // Damage +2
   stats.attack += 2;

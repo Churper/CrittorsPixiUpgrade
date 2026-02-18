@@ -121,35 +121,16 @@ export function loadGame() {
     state.characterStats = gameData.characterStats;
     state.repicked = gameData.repicked;
     const characterLevelElement = document.getElementById("character-level");
-    const updateLightning = document.getElementById("lightning-level");
+    const updateDefense = document.getElementById("defense-level");
     const updateHP = document.getElementById("heart-level");
     const updateDamage = document.getElementById("swords-level");
-    let level;
-
-    level = getSnailLevel();
-
-    updateLightning.textContent = getSnailSpeed().toString();
-    updateHP.textContent = getSnailHealth().toString();
-    updateDamage.textContent = getSnailDamage().toString();
-
-    level = getBirdLevel();
-    console.log("DIRTY", level);
-    updateLightning.textContent = getBirdSpeed().toString();
-    updateHP.textContent = getBirdHealth().toString();
-    updateDamage.textContent = getBirdDamage().toString();
-
-    level = getFrogLevel();
-    updateLightning.textContent = getFrogSpeed().toString();
-    updateHP.textContent = getFrogHealth().toString();
-    console.log("LOADER", getCharacterDamage('character-frog').toString());
-    updateDamage.textContent = getCharacterDamage('character-frog').toString();
-    characterLevelElement.textContent = 'Lvl. ' + level;
+    const charName = state.currentCharacter ? state.currentCharacter.replace('character-', '') : 'frog';
+    const def = (state.charDefense && state.charDefense[charName]) || 0;
+    updateDefense.textContent = def.toString();
+    updateHP.textContent = getPlayerHealth().toString();
+    updateDamage.textContent = getCharacterDamage(state.currentCharacter).toString();
+    characterLevelElement.textContent = 'Lvl. ' + getFrogLevel();
     state.isCharacterMenuOpen = false;
-
-    level = getBeeLevel();
-    updateLightning.textContent = getBeeSpeed().toString();
-    updateHP.textContent = getBeeHealth().toString();
-    updateDamage.textContent = getBeeDamage().toString();
     updateEXPIndicatorText("character-bird", gameData.birdLevel);
     updateEXPIndicatorText("character-snail", gameData.snailLevel);
     updateEXPIndicatorText("character-frog", gameData.frogLevel);

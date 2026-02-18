@@ -1862,33 +1862,33 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // Swap positions of the current character box and the previously selected character box
     if (prevSelected !== characterType) {
       const characterLevelElement = document.getElementById("character-level");
-      var updateLightning = document.getElementById("lightning-level");
+      var updateDefense = document.getElementById("defense-level");
       var updateHP = document.getElementById("heart-level");
       var updateDamage = document.getElementById("swords-level");
       let level;
       switch (characterType) {
         case 'character-snail':
           level = getSnailLevel();
-          updateLightning.textContent = getSnailSpeed().toString();
+          updateDefense.textContent = ((state.charDefense && state.charDefense.snail) || 0).toString();
           updateHP.textContent = getSnailHealth().toString();
           updateDamage.textContent = getSnailDamage().toString();
           break;
         case 'character-bird':
           level = getBirdLevel();
-          updateLightning.textContent = getBirdSpeed().toString();
+          updateDefense.textContent = ((state.charDefense && state.charDefense.bird) || 0).toString();
           updateHP.textContent = getBirdHealth().toString();
           updateDamage.textContent = getBirdDamage().toString();
 
           break;
         case 'character-frog':
           level = getFrogLevel();
-          updateLightning.textContent = getFrogSpeed().toString();
+          updateDefense.textContent = ((state.charDefense && state.charDefense.frog) || 0).toString();
           updateHP.textContent = getFrogHealth().toString();
           updateDamage.textContent = getFrogDamage().toString();
           break;
         case 'character-bee':
           level = getBeeLevel();
-          updateLightning.textContent = getBeeSpeed().toString();
+          updateDefense.textContent = ((state.charDefense && state.charDefense.bee) || 0).toString();
           updateHP.textContent = getBeeHealth().toString();
           updateDamage.textContent = getBeeDamage().toString();
           break;

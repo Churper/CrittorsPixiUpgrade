@@ -708,6 +708,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       if (view === layoutSkinsView) { skinsCharName.textContent = charLabel; renderSkinsGrid(); }
     }
     if (view === layoutInventoryView) renderInventoryGrid();
+    // Update inventory button label
+    const btn = document.getElementById('layout-inventory-btn');
+    btn.textContent = view === layoutInventoryView ? '← Characters' : '🎒 Inventory';
   }
 
   function showLayoutDeck() {
@@ -716,6 +719,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     layoutInventoryView.classList.remove('active');
     layoutDeckArea.style.display = 'flex';
     activeSubviewChar = null;
+    // Restore inventory button label
+    document.getElementById('layout-inventory-btn').textContent = '🎒 Inventory';
   }
 
   // --- Render hats grid ---
@@ -846,9 +851,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     });
   });
 
-  // Inventory button
-  document.getElementById('layout-inventory-btn').addEventListener('click', function() {
-    showLayoutView(layoutInventoryView);
+  // Inventory button — toggles between inventory and deck view
+  const layoutInvBtn = document.getElementById('layout-inventory-btn');
+  layoutInvBtn.addEventListener('click', function() {
+    if (layoutInventoryView.classList.contains('active')) {
+      showLayoutDeck();
+    } else {
+      showLayoutView(layoutInventoryView);
+    }
   });
 
   // Back buttons

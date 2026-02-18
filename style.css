@@ -74,7 +74,7 @@ body {
 
 #menu-spacer {
   flex: 1;
-  max-height: 8%;
+  max-height: 22%;
 }
 
 #menu-title {
@@ -88,14 +88,14 @@ body {
 }
 
 .menu-info-btn {
-  width: clamp(34px, 8vmin, 42px);
-  height: clamp(34px, 8vmin, 42px);
+  width: clamp(40px, 10vmin, 52px);
+  height: clamp(40px, 10vmin, 52px);
   border-radius: 50%;
   border: 2px solid rgba(100, 160, 200, 0.4);
   background: rgba(14, 22, 38, 0.85);
   color: #ccd8e4;
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(1em, 3vmin, 1.3em);
+  font-size: clamp(1.1em, 3.5vmin, 1.5em);
   cursor: pointer;
   display: flex;
   align-items: center;

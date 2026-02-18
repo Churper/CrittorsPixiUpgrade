@@ -68,8 +68,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   const mctx = menuCanvas.getContext('2d');
   let menuAnimId = null;
 
-  // Snail sprite images
+  // Snail sprite images — crossOrigin needed for canvas drawing from imgur
   const snailFrames = [new Image(), new Image()];
+  snailFrames[0].crossOrigin = 'anonymous';
+  snailFrames[1].crossOrigin = 'anonymous';
   snailFrames[0].src = 'https://i.imgur.com/shRbAl5.png';
   snailFrames[1].src = 'https://i.imgur.com/r3DQaWf.png';
 
@@ -84,9 +86,24 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     let seed = 42;
     function srand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
 
-    // Stars
+    // Stars — matching game's twinkle system (individual phase + speed per star)
     const stars = [];
-    for (let i = 0; i < 90; i++) stars.push({ x: srand() * w, y: srand() * h * 0.6, r: srand() * 1.6 + 0.4, b: srand() * 0.5 + 0.5 });
+    for (let i = 0; i < 90; i++) {
+      stars.push({
+        x: srand() * w, y: srand() * h * 0.6,
+        r: srand() * 1.6 + 0.5,
+        baseAlpha: 0.15 + srand() * 0.35,
+        twinkleSpeed: 0.008 + srand() * 0.012,
+        twinklePhase: srand() * Math.PI * 2,
+      });
+    }
+    // One prominent bright star with cross sparkle (like the game's mainStar)
+    const brightStar = {
+      x: w * 0.35, y: h * 0.1,
+      twinkleSpeed: 0.04,
+      twinklePhase: 0,
+      coreR: Math.min(w, h) * 0.006,
+    };
 
     // Moon — matching game style (bigger, brighter)
     const moonX = w * 0.8, moonY = h * 0.16, moonR = Math.min(w, h) * 0.07;
@@ -149,14 +166,42 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       mctx.fillStyle = skyGrd;
       mctx.fillRect(0, 0, w, h * 0.78);
 
-      // Stars
+      // Stars — game-matching twinkle (per-star phase cycling)
       stars.forEach(s => {
-        const a = s.b + Math.sin(t * 1.5 + s.x * 0.5) * 0.25;
+        s.twinklePhase += s.twinkleSpeed;
+        const a = s.baseAlpha * (0.5 + Math.sin(s.twinklePhase) * 0.5);
         mctx.beginPath();
         mctx.arc(s.x, s.y, s.r, 0, 6.28);
-        mctx.fillStyle = `rgba(210, 225, 255, ${a})`;
+        mctx.fillStyle = `rgba(220, 230, 255, ${a})`;
         mctx.fill();
       });
+
+      // Bright star with cross sparkle + glow pulse
+      brightStar.twinklePhase += brightStar.twinkleSpeed;
+      const bsA = 0.5 + Math.sin(brightStar.twinklePhase) * 0.5;
+      const bsScale = 1 + Math.sin(brightStar.twinklePhase * 2) * 0.15;
+      const bx = brightStar.x, by = brightStar.y, cr = brightStar.coreR * bsScale;
+      // Outer glow
+      mctx.globalAlpha = 0.06 * bsA;
+      mctx.beginPath(); mctx.arc(bx, by, cr * 6, 0, 6.28);
+      mctx.fillStyle = '#ddeeff'; mctx.fill();
+      mctx.globalAlpha = 0.1 * bsA;
+      mctx.beginPath(); mctx.arc(bx, by, cr * 4, 0, 6.28);
+      mctx.fillStyle = '#ddeeff'; mctx.fill();
+      // Cross sparkle
+      mctx.globalAlpha = 0.4 * bsA;
+      mctx.strokeStyle = '#ffffff';
+      mctx.lineWidth = 1;
+      mctx.beginPath(); mctx.moveTo(bx, by - cr * 4); mctx.lineTo(bx, by + cr * 4); mctx.stroke();
+      mctx.beginPath(); mctx.moveTo(bx - cr * 4, by); mctx.lineTo(bx + cr * 4, by); mctx.stroke();
+      // Bright core
+      mctx.globalAlpha = 0.9 * bsA;
+      mctx.beginPath(); mctx.arc(bx, by, cr * 1.8, 0, 6.28);
+      mctx.fillStyle = '#ffffff'; mctx.fill();
+      mctx.globalAlpha = bsA;
+      mctx.beginPath(); mctx.arc(bx, by, cr, 0, 6.28);
+      mctx.fillStyle = '#ffffff'; mctx.fill();
+      mctx.globalAlpha = 1;
 
       // Moon — game-matching with glow, body, craters, terminator
       // Outer glow layers

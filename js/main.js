@@ -56,12 +56,13 @@ import {
 
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
-console.log("PIXIVERSION:",PIXI.VERSION);
   let rotateMessage = document.getElementById('rotateDevice');
   rotateMessage.style.display = "block"; // Always display the new menu
 
   // Load persistent bones currency before menu shows
   loadBones();
+  // Testing bonus — remove when done
+  state.bones += 100; saveBones();
 
   // --- Menu background scene ---
   const menuCanvas = document.getElementById('menu-scene');
@@ -1024,10 +1025,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
  function spawnDemi()
  {
   if (state.currentRound < 3) return;
-  console.log("running 1 DEMO HERE");
   if(state.demiSpawned === 0)
   {
-    console.log("SPAWENING 1 DEMO HERE");
     const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
     const selectedEnemy = state.enemyTypes[randomIndex];
 
@@ -1624,7 +1623,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   function togglePause() {
     if (state.roundOver === false) {
       setisPaused(!getisPaused());
-      console.log("PAUSED");
     }
   }
 
@@ -1641,12 +1639,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   pauseButton.addEventListener("mousedown", function () {
     pauseButton.style.backgroundImage = 'url("./assets/pausedown.png")';
-    console.log("Button Pressed");
   });
 
   pauseButton.addEventListener("mouseup", function () {
     pauseButton.style.backgroundImage = 'url("./assets/pauseup.png")';
-    console.log("Button Released");
   });
 
 
@@ -2920,7 +2916,7 @@ function downscaleTextures(textures, maxSize) {
     const scale = Math.min(maxSize / w, maxSize / h);
     const nw = Math.floor(w * scale);
     const nh = Math.floor(h * scale);
-    console.log(`Downscaling ${key}: ${w}x${h} -> ${nw}x${nh} (max=${maxSize})`);
+
 
     const canvas = document.createElement('canvas');
     canvas.width = nw;
@@ -2936,7 +2932,6 @@ function downscaleTextures(textures, maxSize) {
 
 texturesPromise.then((loadedTextures) => {
  const maxTex = getMaxTextureSize();
- console.log('GPU max texture size:', maxTex);
  downscaleTextures(loadedTextures, maxTex);
  setup(loadedTextures);
 });
@@ -4061,7 +4056,6 @@ state.frogGhostPlayer.scale.set(0.28);
 
       function handleMouseLeave(event) {
         state.isPointerDown = false;
-        console.log('Mouse has left the screen');
         attackAnimationPlayed = true;
         handleTouchEnd(event);
       }
@@ -4135,7 +4129,6 @@ state.frogGhostPlayer.scale.set(0.28);
                 }
 
                 if (state.gameMode !== 'endless' && critter.position.x > castle.position.x - castle.width / 1.1) {
-                  console.log("takingDamage");
                   const greyscaleFilter = new PIXI.ColorMatrixFilter();
                   const remainingHealthPercentage = castleHealth / castleMaxHealth;
                   const greyscaleFactor = 1 - remainingHealthPercentage;
@@ -4162,35 +4155,26 @@ state.frogGhostPlayer.scale.set(0.28);
 
         const deleteButton = event.target;
 
-        // Log the event target and its text
-        console.log(`Event target: ${deleteButton}`);
-        console.log(`Event target text: ${deleteButton.text}`);
 
         if (deleteButton && deleteButton.text === '🗑️') {
-          console.log('Delete button clicked');
           return;
         }
         if (deleteButton.isSlider) {
-          console.log('Slider clicked');
           return;
         }
         if ((deleteButton && deleteButton.text === '🔊') || (deleteButton && deleteButton.text === '🔈')) {
-          console.log('Sound button clicked');
           return;
         }
         if (deleteButton === backgroundSprite || deleteButton === state.pauseMenuContainer) {
-          console.log('Background or Pause menu clicked');
           return;
         }
         if (deleteButton === state.pauseMenuContainer || deleteButton.myCustomID === 'pauseMenuX') {
-          console.log('Background or Pause menu clicked');
           return;
         }
 
 
         if (state.isPointerDown) {
           state.isPointerDown = false;
-          console.log('Mouse has left the screen');
           attackAnimationPlayed = true;
           handleTouchEnd(event);
 
@@ -4387,7 +4371,6 @@ let cantGainEXP = false;
         // Rebuild enemy types for the new round
         buildEnemyTypes();
         setEnemiesInRange(0);
-        console.log("enemies has been updated to", getEnemiesInRange())
         resetEnemiesState();
         state.exploded = true;
         app.stage.removeChild(castle);
@@ -4537,7 +4520,6 @@ let cantGainEXP = false;
 
         if (isTimerFinished()) {
 
-          console.log("TIMERDONE");
           spawnDemi();
           pauseTimer();
         }
@@ -4791,7 +4773,6 @@ let cantGainEXP = false;
           if (app.stage.x === targetX && app.stage.y === targetY) {
 
             if (state.currentSnailHealth + state.currentBeeHealth + state.currentBirdHealth + state.currentFrogHealth <= 0) {
-              console.log("BANG");
               if (!state.isWiped) {
                 setisWiped(true);
 
@@ -4839,7 +4820,6 @@ let cantGainEXP = false;
               foreground.tint = getRandomColor();
               for (let i = 0; i < enemies.length; i++) {
                 const enemy = enemies[i];
-                console.log("hex", i);
 
                 // Remove the enemy and its associated HP bar elements from the PIXI stage
                 app.stage.removeChild(enemy);
@@ -4863,7 +4843,6 @@ let cantGainEXP = false;
               app.stage.addChild(castle);
               app.stage.addChild(critter);
 app.stage.addChild(hpBarBackground,hpBar);
-              console.log("REEEE");
               hasExploded = false;
 
 
@@ -4914,7 +4893,6 @@ state.demiSpawned = 0;
             switch (getCurrentCharacter()) {
               case 'character-snail':
                 characterHealth = state.currentSnailHealth;
-                console.log("SNALIED");
                 break;
               case 'character-bird':
                 characterHealth = state.currentBirdHealth;
@@ -4962,7 +4940,6 @@ state.demiSpawned = 0;
         //setisPaused(true);
 
         if (getCharSwap()) {
-          console.log("getcurrentchat", getCurrentCharacter());
           if (getCurrentCharacter() === "character-bird") {
             playerSpawn.tint = 0x0000ff; // Blue
             playerSpawn.blendMode = 'add';
@@ -4973,7 +4950,6 @@ state.demiSpawned = 0;
 
           }
           else if (getCurrentCharacter() === "character-frog") {
-            console.log("SWAP TO SNELL");
             playerSpawn.blendMode = 'add';
             playerSpawn.tint = 0x00ff80; // Light green
             playSpawnAnimation(critter, playerSpawn);
@@ -5104,7 +5080,6 @@ state.demiSpawned = 0;
           //  console.log("attacking char",state.isAttackingChar);
           if (!getisDead()) {
             //  console.log("not getisdead");
-            console.log("getenemiesinrange", getisPaused(), getisDead(), getEnemiesInRange());
             if (!state.isCombat) {
               //   console.log("not iscombat");
               if (!state.isPointerDown) {
@@ -5122,7 +5097,6 @@ state.demiSpawned = 0;
                     }
                   }
                   if ((critter.textures != state.frogWalkTextures)) {
-                    console.log("nope");
                     critter.textures = state.frogWalkTextures;
                     critter.play();
                   }
@@ -5228,7 +5202,6 @@ state.demiSpawned = 0;
       applySkinFilter(critter, getCurrentCharacter());
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
-      console.log("STORED", state.stored);
       critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
       updateEXP(getCharEXP(getCurrentCharacter()));
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
@@ -5448,7 +5421,6 @@ state.demiSpawned = 0;
 
     // Story mode logic below
     if (isTimerFinished()) {
-      console.log("TIMERDONE");
       return;
     }
 
@@ -5580,12 +5552,6 @@ state.demiSpawned = 0;
   // Function to handle all touches released
   function handleAllTouchesReleased() {
     // Your functionality when all touches are released
-    console.log("All touches released.");
-    console.log("All touches released.");
-    console.log("All touches released.");
-    console.log("All touches released.");
-    console.log("All touches released.");
-    console.log("All touches released.");
     handleTouchEnd();
   }
 

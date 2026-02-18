@@ -136,7 +136,6 @@ export function loadGame() {
     updateEXPIndicatorText("character-frog", gameData.frogLevel);
     updateEXPIndicatorText("character-bee", gameData.beeLevel);
     //updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
-    console.log("LOADING", getPlayerCurrentHealth());
     addCoffee(gameData.coffee - gameData.coffee);
     //updateVelocity();
     setSelectLevel(0);

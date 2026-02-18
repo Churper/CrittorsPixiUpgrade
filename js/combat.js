@@ -157,7 +157,7 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
   enemy.scale.x *= -1; // Flip the enemy horizontally
   enemy.play();
   const randomSpeedFactor = 0.75 + Math.random() * 0.5; // Random speed factor between 0.75 and 1.25
-  enemy.vx = -2 * randomSpeedFactor; // Set the enemy's horizontal velocity with random speed factor    console.log("enemy created", enemyName);
+  enemy.vx = -2 * randomSpeedFactor; // Set the enemy's horizontal velocity with random speed factor
   return enemy;
 }
 
@@ -219,7 +219,7 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
   enemy.scale.x *= -1; // Flip the enemy horizontally
   enemy.play();
   const randomSpeedFactor = 0.75 + Math.random() * 0.5; // Random speed factor between 0.75 and 1.25
-  enemy.vx = -2 * randomSpeedFactor; // Set the enemy's horizontal velocity with random speed factor    console.log("enemy created", enemyName);
+  enemy.vx = -2 * randomSpeedFactor; // Set the enemy's horizontal velocity with random speed factor
   return enemy;
 }
 
@@ -412,8 +412,6 @@ export function checkProjectileCollisions(critter, enemy) {
 export function rangedAttack(critter, enemy) {
   // Apply damage to the enemy
   drawHitSplat(enemy);
-  console.log('ENEMY HP', enemy.currentHP);
-
   if (enemy.currentHP <= 0) {
 
       // Callback function to remove enemy after death animation2
@@ -426,7 +424,6 @@ export function rangedAttack(critter, enemy) {
               enemyPortrait.style.display = 'none'; // Make the element visible
           }
 
-          console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
           createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
           // Item drop — demi-boss only
           if (state.gameMode === 'endless' && enemy.isDemi) {
@@ -546,13 +543,8 @@ export function resetToAttackTextures(enemy, critterAttackTextures) {
 export function handleEnemyAttacking(enemy, critterAttackTextures, critter, critterWalkTextures, enemyName) {
   if (state.roundOver) { return; }
 
-  console.log("enemyname?", enemyName);
-  console.log("enemynaeeeme?", enemy.emerging);
-
   // If the enemy is a shark and it's not currently playing the emerge animation
   if (enemyName === "shark" && !enemy.emerging) {
-    console.log(enemy.name, "TRANSITION");
-
     // Set the enemy textures to the shark emerge textures and play it once
     enemy.textures = state.sharkEmergeTextures;
     enemy.loop = false;
@@ -581,7 +573,6 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
       enemy.isAttacking = false;
       setEnemiesInRange(0);
       enemy.removeInRange = false;
-      console.log("notstuck");
       return;
     }
 
@@ -707,7 +698,7 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
         }
 
       }
-      else { console.log("enemy is dead"); }
+      else { }
 
     }
   }
@@ -970,11 +961,8 @@ export function drawHitSplat(enemy) {
 
 export function critterAttack(critter, enemy, critterAttackTextures) {
   // Reduce enemy's HP
-  console.log('ENEMY TYPE', enemy.type);
-
   drawHitSplat(enemy);
 
-  console.log("dmgD", getCharacterDamage(getCurrentCharacter()));
   if (enemy.currentHP - getCharacterDamage(getCurrentCharacter()) <= 0) {
 
     // Callback function to remove enemy after death animation
@@ -999,7 +987,6 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       if (state.gameMode === 'endless') state.endlessKillCount++;
       awardBones(enemy);
       setIsCharAttacking(false);
-      console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
       // Item drop — demi-boss only
       if (state.gameMode === 'endless' && enemy.isDemi) {
@@ -1822,7 +1809,6 @@ export function drawEnemyHPBar(enemy) {
   if (!enemy.hpBarContainer) {
     enemy.hpBarContainer = new PIXI.Container();
     enemy.addChild(enemy.hpBarContainer);
-    console.log("HELLO");
 
     enemy.hpBarBackground = new PIXI.Graphics();
     enemy.hpBarBackground.rect(hpBarX, hpBarY, hpBarWidth, hpBarHeight).fill({ color: 0x000000, alpha: 0.5 });
@@ -1841,8 +1827,6 @@ export function drawEnemyHPBar(enemy) {
   const hpBarWidthActual = Math.max(Math.round(hpBarWidth * hpBarRatio), 0);
 
   enemy.hpBarContainer.scale.set(1 / Math.abs(enemy.scale.x), 1 / Math.abs(enemy.scale.y));
-  console.log("HPX", hpBarX);
-  console.log("HPY", hpBarY);
 
   enemy.hpBar.clear();
   enemy.hpBar.rect(hpBarX + hpBarWidth - hpBarWidthActual, hpBarY, hpBarWidthActual, hpBarHeight).fill({ color: 0xff0000, alpha: 0.75 });

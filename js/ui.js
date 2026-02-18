@@ -248,7 +248,6 @@ export function createPauseMenuContainer() {
 
 export function shouldReturnEarly(value) {
   if ((value && state.pauseMenuContainer) || (!value && state.isUnpausing) || state.app.stage.children.includes(state.reviveDialogContainer)) {
-    console.log('returning early');
     return true;
   }
 
@@ -282,7 +281,6 @@ export function getIsWiped() {
 }
 
 export function setisWiped(value) {
-  console.log("WIPED");
   state.isWiped = value;
 
   var wipeText = document.getElementById("wipe-text");

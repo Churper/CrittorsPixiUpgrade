@@ -289,7 +289,7 @@ export function setFrogHealth(health) { state.frogHealth = health; }
 
 // Enemies
 export function getEnemies() { return state.enemies; }
-export function addEnemies(enemy) { console.log("added an eneymy"); return state.enemies.push(enemy); }
+export function addEnemies(enemy) { return state.enemies.push(enemy); }
 
 // Character
 export function getCharSwap() { return state.charSwap; }

@@ -1703,45 +1703,77 @@ document.addEventListener('DOMContentLoaded', function () {
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
   }
 
-  // Hue shift configs per skin — each shift targets a hue range and remaps it
-  // from/to = source hue range (degrees), targetFrom/targetTo = destination hue range
-  // sat/lit = multipliers for saturation and lightness (optional, default 1.0)
+  // Hue shift configs per skin — each shift targets a hue range and remaps it.
+  // from/to = source hue range (degrees), targetFrom/targetTo = destination hue range.
+  // sat = saturation multiplier, lit = lightness multiplier. Tight target ranges = cohesive look.
+  // Designed per-sprite: frog body has yellow-green highlights (~85°) through pure green (~140°),
+  // so we map that full range; snail shell spans blue+purple (200-280°); bird has two zones; etc.
   const skinHueConfigs = {
-    // ── Frog (base: green body hue ~90-155) ──
+    // ── FROG ──
+    // Base palette: bright lime-green highlights (~85-100°), pure green body (~100-145°),
+    //   dark green shadows (~130-155°). Yellow antenna tips (~50-65°) are outside range.
     'frog-ice': [
-      { from: 70, to: 160, targetFrom: 185, targetTo: 215, sat: 1.0, lit: 1.15 },
+      // Brilliant icy cyan. Tight target = cohesive crystal feel. Sat boost for vibrancy.
+      { from: 70, to: 160, targetFrom: 188, targetTo: 200, sat: 1.15, lit: 1.1 },
     ],
     'frog-golden': [
-      { from: 70, to: 160, targetFrom: 38, targetTo: 52, sat: 1.3, lit: 1.0 },
+      // Rich warm gold/amber. Key: high sat (1.5) prevents washed-out "pale yellow",
+      // lit 0.92 darkens highlights so they read as burnished gold rather than pissy yellow.
+      // Darker greens → deep amber (28°), lighter greens → bright gold (45°).
+      { from: 70, to: 160, targetFrom: 28, targetTo: 45, sat: 1.5, lit: 0.92 },
     ],
     'frog-shadow': [
-      { from: 70, to: 160, targetFrom: 270, targetTo: 300, sat: 0.85, lit: 0.7 },
+      // Deep mystic violet. Significantly darker for that menacing silhouette feel.
+      // Tight purple range keeps the body reading as one unified dark color.
+      { from: 70, to: 160, targetFrom: 272, targetTo: 288, sat: 0.9, lit: 0.6 },
     ],
-    // ── Snail (blue shell ~200-270, red spiral ~340-20, yellow body ~35-60) ──
+
+    // ── SNAIL ──
+    // Base palette: blue shell (200-255°), purple tones in shell (255-280°),
+    //   red/pink inner spiral (340-360° + 0-20°), yellow-tan body+sparkles (40-65°).
+    //   Black background is skipped (lightness < 0.06).
     'snail-crystal': [
-      { from: 190, to: 275, targetFrom: 170, targetTo: 200, sat: 1.2, lit: 1.15 },
-      { from: 330, to: 360, targetFrom: 175, targetTo: 195, sat: 0.5, lit: 1.3 },
-      { from: 0, to: 25, targetFrom: 175, targetTo: 195, sat: 0.5, lit: 1.3 },
+      // Full shell (blue + purple) → brilliant cyan crystal
+      { from: 190, to: 280, targetFrom: 178, targetTo: 192, sat: 1.15, lit: 1.2 },
+      // Red spiral → pale icy shimmer (heavily desaturated, very bright)
+      { from: 335, to: 360, targetFrom: 185, targetTo: 190, sat: 0.3, lit: 1.35 },
+      { from: 0, to: 20, targetFrom: 185, targetTo: 190, sat: 0.3, lit: 1.35 },
+      // Yellow body/sparkles → cool blue-grey to complete the crystal theme
+      { from: 38, to: 68, targetFrom: 200, targetTo: 210, sat: 0.55, lit: 1.05 },
     ],
     'snail-magma': [
-      { from: 190, to: 275, targetFrom: 0, targetTo: 18, sat: 1.3, lit: 0.9 },
-      { from: 35, to: 65, targetFrom: 15, targetTo: 35, sat: 1.2, lit: 1.0 },
+      // Shell → deep volcanic red-orange. High sat for molten intensity.
+      { from: 190, to: 280, targetFrom: 2, targetTo: 14, sat: 1.45, lit: 0.85 },
+      // Yellow body → warm volcanic orange
+      { from: 38, to: 68, targetFrom: 18, targetTo: 28, sat: 1.3, lit: 0.92 },
     ],
-    // ── Bird (green body ~80-160, purple crest ~260-330) ──
+
+    // ── BIRD ──
+    // Base palette: dark-to-medium green body (~85-165°), vivid purple flower crest (~260-325°),
+    //   yellow-orange beak (~40-55°), brown feet (~20-35°, low saturation — mostly skipped).
     'bird-phoenix': [
-      { from: 80, to: 160, targetFrom: 5, targetTo: 25, sat: 1.3, lit: 1.0 },
-      { from: 260, to: 330, targetFrom: 35, targetTo: 55, sat: 1.2, lit: 1.1 },
+      // Body → intense fiery red-orange. High sat for blazing look.
+      { from: 80, to: 168, targetFrom: 4, targetTo: 16, sat: 1.45, lit: 0.95 },
+      // Crest → brilliant flame gold (like fire tips)
+      { from: 258, to: 328, targetFrom: 38, targetTo: 50, sat: 1.35, lit: 1.1 },
     ],
     'bird-arctic': [
-      { from: 80, to: 160, targetFrom: 195, targetTo: 220, sat: 0.7, lit: 1.2 },
-      { from: 260, to: 330, targetFrom: 200, targetTo: 225, sat: 0.5, lit: 1.3 },
+      // Body → crisp ice blue. Moderate desat for frosted look.
+      { from: 80, to: 168, targetFrom: 200, targetTo: 212, sat: 0.75, lit: 1.15 },
+      // Crest → pale frost (strongly desaturated blue, very bright = near-white with blue tint)
+      { from: 258, to: 328, targetFrom: 212, targetTo: 222, sat: 0.35, lit: 1.35 },
     ],
-    // ── Bee (yellow body ~35-65) ──
+
+    // ── BEE ──
+    // Base palette: yellow body (40-60°), amber-brown stripes+wings+antennae (20-40°).
+    //   Black mouth/eye details are low-sat → skipped. Need wide source (20-70) to catch stripes.
     'bee-neon': [
-      { from: 30, to: 70, targetFrom: 110, targetTo: 145, sat: 1.4, lit: 1.0 },
+      // Electric toxic green. Very high sat for that radioactive neon glow.
+      { from: 18, to: 72, targetFrom: 118, targetTo: 142, sat: 1.55, lit: 1.05 },
     ],
     'bee-royal': [
-      { from: 30, to: 70, targetFrom: 265, targetTo: 290, sat: 1.1, lit: 0.85 },
+      // Deep regal purple. Rich and majestic, slightly dark for gravitas.
+      { from: 18, to: 72, targetFrom: 268, targetTo: 285, sat: 1.25, lit: 0.8 },
     ],
   };
 

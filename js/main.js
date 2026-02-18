@@ -286,6 +286,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let nightOverlay = null;
   let playerShadow = null;
   let nightFireGlows = null; // Animated glow circles for campfires/lanterns
+  let sunBeamsAboveClouds = null; // Long beams that render above clouds
 
   function getWeatherType() {
     if (state.gameMode === 'endless') {
@@ -322,6 +323,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.app.stage.removeChild(nightFireGlows);
       nightFireGlows.destroy({ children: true });
       nightFireGlows = null;
+    }
+    if (sunBeamsAboveClouds && state.app) {
+      state.app.stage.removeChild(sunBeamsAboveClouds);
+      sunBeamsAboveClouds.destroy({ children: true });
+      sunBeamsAboveClouds = null;
     }
   }
 
@@ -375,6 +381,22 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       }
       weatherSun.startTime = Date.now();
       weatherContainer.addChild(weatherSun);
+
+      // Long sun beams that render ABOVE clouds (zIndex 3 > clouds at 2)
+      sunBeamsAboveClouds = new PIXI.Container();
+      sunBeamsAboveClouds.zIndex = 3;
+      sunBeamsAboveClouds.eventMode = 'none';
+      for (let i = 0; i < 5; i++) {
+        const beam = new PIXI.Graphics();
+        const angle = -Math.PI * 0.15 + (i / 4) * Math.PI * 0.3; // spread downward
+        const len = 300 + Math.random() * 200;
+        beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len)
+          .stroke({ width: 3 + Math.random() * 2, color: 0xFFEE88, alpha: 0.08 + Math.random() * 0.06 });
+        beam.rayAngle = angle;
+        beam.rayLen = len;
+        sunBeamsAboveClouds.addChild(beam);
+      }
+      app.stage.addChild(sunBeamsAboveClouds);
 
       // Lighting overlay — dims at dawn/dusk, bright at noon
       // Use huge fixed size to cover any screen orientation/camera position
@@ -528,18 +550,18 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       _fgs = 99333;
       let lnx = 500;
       while (lnx < 50000) {
-        const sc = 0.8 + _fgr() * 0.3; // matches endlessGroundRandom() call in decor
+        const sc = (0.8 + _fgr() * 0.3) * 1.4; // matches endlessGroundRandom() call in decor (with 1.4x scale)
         const glow = new PIXI.Graphics();
-        glow.circle(0, 0, 20 * sc).fill({ color: 0xffaa33, alpha: 0.1 });
-        glow.circle(0, 0, 10 * sc).fill({ color: 0xffcc44, alpha: 0.14 });
+        glow.circle(0, 0, 25 * sc).fill({ color: 0xffaa33, alpha: 0.1 });
+        glow.circle(0, 0, 14 * sc).fill({ color: 0xffcc44, alpha: 0.14 });
         const groundY = Math.sin(lnx * 0.0004) * 14 + Math.sin(lnx * 0.0011) * 7;
-        glow.position.set(lnx, groundY - 30 * sc);
+        glow.position.set(lnx, groundY - 36 * sc);
         glow.baseAlpha = glow.alpha;
         glow.flickerPhase = Math.random() * Math.PI * 2;
         glow.flickerSpeed = 0.05 + Math.random() * 0.04;
         glow.isCampfire = false;
         nightFireGlows.addChild(glow);
-        lnx += 900 + _fgr() * 1400; // matches endlessGroundRandom() call in decor
+        lnx += 700 + _fgr() * 1000; // matches endlessGroundRandom() call in decor
       }
       app.stage.addChild(nightFireGlows);
     }
@@ -591,6 +613,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       // Pulse the glow
       const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
       weatherSun.scale.set(pulse);
+
+      // Move above-cloud beams to follow the sun (screen-fixed)
+      if (sunBeamsAboveClouds) {
+        sunBeamsAboveClouds.position.set(-app.stage.x + arcX, -app.stage.y + arcY);
+        sunBeamsAboveClouds.rotation = elapsed * 0.0002;
+        sunBeamsAboveClouds.alpha = weatherSun.alpha;
+      }
 
       // sinusoidal brightness: 0 at edges, 1 at middle, clamp so it doesn't go negative after sunset
       const brightness = Math.max(0, Math.sin(progress * Math.PI));
@@ -2069,28 +2098,35 @@ let currentSkyBottom = 0x99CCEE;
 const persistentStars = new PIXI.Container();
 persistentStars.zIndex = 0.3;
 persistentStars.eventMode = 'none';
-// Pick 2 random indices to be bright twinkler stars
-const brightTwinklerIndices = new Set();
-while (brightTwinklerIndices.size < 2) {
-  brightTwinklerIndices.add(Math.floor(Math.random() * 50));
-}
-for (let i = 0; i < 50; i++) {
+// Background stars — small, subtle
+for (let i = 0; i < 40; i++) {
   const star = new PIXI.Graphics();
-  const isBright = brightTwinklerIndices.has(i);
-  const sz = isBright ? (2.5 + Math.random() * 1.0) : (0.5 + Math.random() * 2.0);
-  const color = sz > 1.5 ? [0xFFFFFF, 0xFFEEDD, 0xDDEEFF][Math.floor(Math.random() * 3)] : 0xFFFFFF;
-  if (isBright) {
-    // Single inner glow ring only
-    star.circle(0, 0, sz * 1.6).fill({ color, alpha: 0.08 });
-  }
-  star.circle(0, 0, sz).fill({ color, alpha: isBright ? (0.7 + Math.random() * 0.2) : (0.2 + Math.random() * 0.4) });
-  star.position.set(Math.random() * app.screen.width, Math.random() * app.screen.height * 0.55);
-  star.twinkleSpeed = isBright ? (0.03 + Math.random() * 0.02) : (0.008 + Math.random() * 0.012);
+  const sz = 0.5 + Math.random() * 1.5;
+  star.circle(0, 0, sz).fill({ color: 0xFFFFFF, alpha: 0.15 + Math.random() * 0.25 });
+  star.position.set(Math.random() * app.screen.width, Math.random() * app.screen.height * 0.5);
+  star.twinkleSpeed = 0.008 + Math.random() * 0.012;
   star.twinklePhase = Math.random() * Math.PI * 2;
   star.baseAlpha = star.alpha;
-  star.isBrightTwinkler = isBright;
+  star.isBrightTwinkler = false;
   persistentStars.addChild(star);
 }
+// One prominent twinkly star — larger, brighter, with glow and cross sparkle
+const mainStar = new PIXI.Graphics();
+// Soft outer glow
+mainStar.circle(0, 0, 8).fill({ color: 0xDDEEFF, alpha: 0.06 });
+mainStar.circle(0, 0, 5).fill({ color: 0xDDEEFF, alpha: 0.1 });
+// 4-point sparkle cross
+mainStar.moveTo(0, -6).lineTo(0, 6).stroke({ width: 1, color: 0xFFFFFF, alpha: 0.4 });
+mainStar.moveTo(-6, 0).lineTo(6, 0).stroke({ width: 1, color: 0xFFFFFF, alpha: 0.4 });
+// Bright core
+mainStar.circle(0, 0, 2.5).fill({ color: 0xFFFFFF, alpha: 0.9 });
+mainStar.circle(0, 0, 1.5).fill({ color: 0xFFFFFF, alpha: 1.0 });
+mainStar.position.set(app.screen.width * 0.7, app.screen.height * 0.12);
+mainStar.twinkleSpeed = 0.04;
+mainStar.twinklePhase = 0;
+mainStar.baseAlpha = 1;
+mainStar.isBrightTwinkler = true;
+persistentStars.addChild(mainStar);
 app.stage.addChild(persistentStars);
 
 
@@ -2408,15 +2444,12 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       d.circle(cx + lean - canopyR * 0.2, cy + canopyR * 1.1, 1.5).fill({ color: 0x6688bb, alpha: 0.4 });
       d.circle(cx + lean + canopyR * 0.15, cy + canopyR * 1.0, 1.2).fill({ color: 0x6688bb, alpha: 0.35 });
     } else if (weather === 'night') {
-      // Silhouette tree with warm glow at base
+      // Silhouette tree — dark canopy, no glow at base
       const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
       d.circle(cx, cy, canopyR).fill({ color: canopyColor, alpha: 0.85 });
       d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor, alpha: 0.6 });
       d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.6 });
       d.circle(cx + canopyR * 0.1, cy - canopyR * 0.3, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.7 });
-      // Warm lantern glow at base
-      d.circle(tx, treeY - 2, canopyR * 0.6).fill({ color: 0xffaa44, alpha: 0.06 });
-      d.circle(tx, treeY - 4, canopyR * 0.35).fill({ color: 0xffcc66, alpha: 0.08 });
     } else {
       // Default round tree — enhanced
       const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
@@ -2603,25 +2636,28 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     let lnx = 500;
     while (lnx < w) {
       const lnY = terrainTopY(lnx);
-      const sc = 0.8 + endlessGroundRandom() * 0.3;
+      const sc = (0.8 + endlessGroundRandom() * 0.3) * 1.4;
       // Post
-      d.rect(lnx - 1.5 * sc, lnY - 28 * sc, 3 * sc, 28 * sc)
+      d.rect(lnx - 2 * sc, lnY - 32 * sc, 4 * sc, 32 * sc)
         .fill({ color: 0x4a3a2a });
+      // Cross beam at top
+      d.rect(lnx - 6 * sc, lnY - 33 * sc, 12 * sc, 2 * sc)
+        .fill({ color: 0x3a2a1a });
       // Lantern body — glass housing
-      d.roundRect(lnx - 4 * sc, lnY - 34 * sc, 8 * sc, 8 * sc, 2)
+      d.roundRect(lnx - 5 * sc, lnY - 42 * sc, 10 * sc, 10 * sc, 2)
         .fill({ color: 0x222222 });
       // Light inside
-      d.roundRect(lnx - 3 * sc, lnY - 33 * sc, 6 * sc, 6 * sc, 1.5)
-        .fill({ color: 0xffcc44, alpha: 0.85 });
-      d.circle(lnx, lnY - 30 * sc, 2 * sc)
-        .fill({ color: 0xffeedd, alpha: 0.7 });
+      d.roundRect(lnx - 4 * sc, lnY - 41 * sc, 8 * sc, 8 * sc, 1.5)
+        .fill({ color: 0xffcc44, alpha: 0.9 });
+      d.circle(lnx, lnY - 37 * sc, 3 * sc)
+        .fill({ color: 0xffeedd, alpha: 0.8 });
       // Top cap
-      d.rect(lnx - 5 * sc, lnY - 35 * sc, 10 * sc, 2 * sc)
+      d.rect(lnx - 6.5 * sc, lnY - 43 * sc, 13 * sc, 2.5 * sc)
         .fill({ color: 0x333333 });
-      // Ground glow
-      d.circle(lnx, lnY, 22 * sc).fill({ color: 0xffaa33, alpha: 0.05 });
-      d.circle(lnx, lnY, 12 * sc).fill({ color: 0xffcc44, alpha: 0.07 });
-      lnx += 900 + endlessGroundRandom() * 1400;
+      // Ground glow — warm pool of light
+      d.circle(lnx, lnY, 35 * sc).fill({ color: 0xffaa33, alpha: 0.06 });
+      d.circle(lnx, lnY, 20 * sc).fill({ color: 0xffcc44, alpha: 0.09 });
+      lnx += 700 + endlessGroundRandom() * 1000;
     }
   }
 
@@ -2697,7 +2733,7 @@ function transitionWeather(newWeather) {
   const oldWeather = weatherContainer;
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
-  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, nightFireGlows];
+  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, nightFireGlows, sunBeamsAboveClouds];
   const oldSkyTop = currentSkyTop;
   const oldSkyBottom = currentSkyBottom;
   const oldStarsAlpha = persistentStars.alpha;
@@ -2734,6 +2770,7 @@ function transitionWeather(newWeather) {
   nightOverlay = null;
   playerShadow = null;
   nightFireGlows = null;
+  sunBeamsAboveClouds = null;
   weatherContainer = null;
 
   // Create new weather at alpha 0
@@ -2793,11 +2830,11 @@ function updateBiomeTransition() {
   clouds.tint = cloudTint;
   clouds2.tint = cloudTint;
 
-  // Staggered crossfade ground — new appears before old fades, preventing ghosting
-  if (t.oldGround) t.oldGround.alpha = p < 0.3 ? 1 : Math.max(0, 1 - (p - 0.3) / 0.5);
-  if (t.oldGroundDecor) t.oldGroundDecor.alpha = p < 0.3 ? 1 : Math.max(0, 1 - (p - 0.3) / 0.5);
-  if (t.newGround) t.newGround.alpha = p < 0.1 ? 0 : Math.min(1, (p - 0.1) / 0.5);
-  if (t.newGroundDecor) t.newGroundDecor.alpha = p < 0.1 ? 0 : Math.min(1, (p - 0.1) / 0.5);
+  // Crossfade ground — new fades in on top of old, old removed once new is fully visible
+  if (t.newGround) t.newGround.alpha = Math.min(1, p / 0.6);
+  if (t.newGroundDecor) t.newGroundDecor.alpha = Math.min(1, p / 0.6);
+  if (t.oldGround) t.oldGround.alpha = p < 0.65 ? 1 : Math.max(0, 1 - (p - 0.65) / 0.2);
+  if (t.oldGroundDecor) t.oldGroundDecor.alpha = p < 0.65 ? 1 : Math.max(0, 1 - (p - 0.65) / 0.2);
 
   // Transition old weather out
   if (t.oldWeather) {
@@ -2849,7 +2886,7 @@ function updateBiomeTransition() {
     }
   }
   for (const o of (t.oldOverlays || [])) {
-    if (o && o.parent) o.alpha *= (1 - p * 0.05);
+    if (o && o.parent) o.alpha = Math.max(0, 1 - p * 2);
   }
 
   // Crossfade new weather/overlays in

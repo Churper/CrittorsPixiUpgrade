@@ -2894,7 +2894,7 @@ state.frogGhostPlayer.scale.set(0.28);
       function createMountainSprite(resourceName, xPos, velocity, foreground) {
         const sprite = new PIXI.Sprite(textures[resourceName]);
 
-        let scaleFactor = Math.min(
+        const scaleFactor = Math.min(
           app.screen.height * 0.6 / sprite.height,
           app.screen.width * 1.5 / sprite.width
         );
@@ -2902,16 +2902,11 @@ state.frogGhostPlayer.scale.set(0.28);
         sprite.scale.set(scaleFactor);
         sprite.anchor.set(0, 1);
 
-        // Position mountain base at the ground line so the rectangular sprite
-        // edge is hidden behind the ground (zIndex 5 covers zIndex 1 mountains)
-        const groundY = app.screen.height - foreground.height * 0.65;
-        const baseY = groundY + 10; // 10px below ground surface to fully hide edge
-        // Ensure mountain doesn't extend above the screen top
-        if (sprite.height > baseY) {
-          scaleFactor *= baseY / sprite.height;
-          sprite.scale.set(scaleFactor);
-        }
-        sprite.position.set(xPos, baseY);
+        const minHeightOffset = foreground ? foreground.height * 0.15 : 0;
+        const heightOffsetRatio = (1 - scaleFactor) * 0.3;
+
+        const foregroundHeightOffset = foreground ? minHeightOffset + sprite.height * heightOffsetRatio : 0;
+        sprite.position.set(xPos, app.screen.height - foregroundHeightOffset);
         sprite.zIndex = -1;
         sprite.velocity = velocity;
 
@@ -4365,14 +4360,11 @@ state.demiSpawned = 0;
         critter.position.y = state.stored;
 
         // Reposition mountains to match new screen height
-        const groundY = app.screen.height - foreground.height * 0.65;
-        const mBaseY = groundY + 10;
         [mountain1, mountain2, mountain3, mountain4].forEach(m => {
-          if (m.height > mBaseY) {
-            const ratio = mBaseY / m.height;
-            m.scale.set(m.scale.x * ratio, m.scale.y * ratio);
-          }
-          m.position.y = mBaseY;
+          const minHeightOffset = foreground ? foreground.height * 0.15 : 0;
+          const heightOffsetRatio = (1 - Math.abs(m.scale.y)) * 0.3;
+          const foregroundHeightOffset = foreground ? minHeightOffset + m.height * heightOffsetRatio : 0;
+          m.position.y = app.screen.height - foregroundHeightOffset;
         });
 
         // Reposition existing enemies preserving their offset from the ground

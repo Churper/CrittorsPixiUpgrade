@@ -1659,95 +1659,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let _swapLock = false; // debounce guard for swap clicks
 
-  // Skin filter builders — single ColorMatrixFilter with hand-crafted 5x4 matrix per skin.
-  // One filter pass instead of 3-5, better visuals, avoids PixiJS multiply bug.
-  // Matrix layout: [R_r, R_g, R_b, R_a, R_offset, G_r, G_g, G_b, G_a, G_offset, ...]
-  // Offsets are in 0-1 range (shader color space).
-  function makeSkinFilter(matrix) {
-    const f = new PIXI.ColorMatrixFilter();
-    f.matrix = matrix;
-    return [f];
-  }
-  // Matrices tuned to each character's base palette:
-  //   Frog = green, Snail = brown/tan, Bird = colorful, Bee = yellow/black
-  // Cross-channel mapping (e.g. R_g = 0.8) remaps green input → red output.
-  const skinFilterBuilders = {
-    // ── Frog (base: green) ──
-    // Ice: remap green → blue/cyan, suppress red, bright frosty
-    'frog-ice': () => makeSkinFilter([
-      0.20, 0.10, 0.05, 0, 0.08,
-      0.00, 0.40, 0.10, 0, 0.18,
-      0.00, 0.75, 0.30, 0, 0.22,
-      0,    0,    0,    1, 0,
-    ]),
-    // Golden: remap green → red+green (=gold), crush blue
-    'frog-golden': () => makeSkinFilter([
-      0.30, 0.85, 0.00, 0, 0.10,
-      0.00, 0.70, 0.00, 0, 0.05,
-      0.00, 0.00, 0.20, 0, 0.00,
-      0,    0,    0,    1, 0,
-    ]),
-    // Shadow: green → dim purple, very dark and moody
-    'frog-shadow': () => makeSkinFilter([
-      0.20, 0.30, 0.10, 0, 0.05,
-      0.00, 0.12, 0.00, 0, 0.00,
-      0.10, 0.40, 0.20, 0, 0.08,
-      0,    0,    0,    1, 0,
-    ]),
-    // ── Snail (base: brown/tan) ──
-    // Crystal: brown → bright cyan-blue crystal
-    'snail-crystal': () => makeSkinFilter([
-      0.15, 0.10, 0.30, 0, 0.10,
-      0.10, 0.45, 0.40, 0, 0.18,
-      0.05, 0.30, 1.10, 0, 0.22,
-      0,    0,    0,    1, 0,
-    ]),
-    // Magma: brown → fiery red-orange, crushed blue
-    'snail-magma': () => makeSkinFilter([
-      1.40, 0.25, 0.00, 0, 0.12,
-      0.20, 0.40, 0.00, 0, 0.00,
-      0.00, 0.00, 0.12, 0, 0.00,
-      0,    0,    0,    1, 0,
-    ]),
+  // Skin configs: tint gives clean directional color, brightness filter compensates darkening.
+  // Tint multiplies in sRGB: darks stay dark, lights get colored. Much cleaner than matrix recolor.
+  const skinConfigs = {
+    // ── Frog ──
+    'frog-ice':     { tint: 0x44ccff, bright: 1.6 },  // bright cyan-blue
+    'frog-golden':  { tint: 0xffbb11, bright: 1.4 },  // rich warm gold
+    'frog-shadow':  { tint: 0x8833cc, bright: 0.9 },  // dark mystic purple
+    // ── Snail ──
+    'snail-crystal': { tint: 0x33ddff, bright: 1.6 },  // bright crystal cyan
+    'snail-magma':   { tint: 0xff3311, bright: 1.4 },  // fiery deep red
     // ── Bird ──
-    // Phoenix: → fiery orange-red, intense warm
-    'bird-phoenix': () => makeSkinFilter([
-      1.30, 0.35, 0.10, 0, 0.12,
-      0.20, 0.45, 0.00, 0, 0.02,
-      0.00, 0.00, 0.15, 0, 0.00,
-      0,    0,    0,    1, 0,
-    ]),
-    // Arctic: → icy white-blue, washed out and cold
-    'bird-arctic': () => makeSkinFilter([
-      0.55, 0.20, 0.20, 0, 0.18,
-      0.15, 0.55, 0.25, 0, 0.20,
-      0.10, 0.25, 0.80, 0, 0.25,
-      0,    0,    0,    1, 0,
-    ]),
-    // ── Bee (base: yellow/black) ──
-    // Neon: yellow → electric green, kill red
-    'bee-neon': () => makeSkinFilter([
-      0.15, 0.10, 0.00, 0, 0.00,
-      0.10, 1.15, 0.10, 0, 0.15,
-      0.00, 0.20, 0.35, 0, 0.05,
-      0,    0,    0,    1, 0,
-    ]),
-    // Royal: yellow → regal purple, add blue from red
-    'bee-royal': () => makeSkinFilter([
-      0.65, 0.05, 0.30, 0, 0.08,
-      0.00, 0.25, 0.08, 0, 0.00,
-      0.25, 0.15, 0.85, 0, 0.12,
-      0,    0,    0,    1, 0,
-    ]),
+    'bird-phoenix': { tint: 0xff5500, bright: 1.5 },  // hot orange fire
+    'bird-arctic':  { tint: 0xbbddff, bright: 1.5 },  // icy pale blue
+    // ── Bee ──
+    'bee-neon':     { tint: 0x22ff66, bright: 1.5 },  // electric green
+    'bee-royal':    { tint: 0xaa33ff, bright: 1.3 },  // deep regal purple
   };
 
-  // Apply skin filter to critter (or clear for default)
+  // Apply skin: tint for color, brightness filter to compensate tint darkening
   function applySkinFilter(critterSprite, charType) {
     const charName = charType ? charType.replace('character-', '') : '';
     const skinId = state.equippedSkins[charName];
-    if (skinId && skinFilterBuilders[skinId]) {
-      critterSprite.filters = skinFilterBuilders[skinId]();
+    if (skinId && skinConfigs[skinId]) {
+      const cfg = skinConfigs[skinId];
+      critterSprite.tint = cfg.tint;
+      state.skinBaseTint = cfg.tint;
+      const f = new PIXI.ColorMatrixFilter();
+      f.brightness(cfg.bright, false);
+      critterSprite.filters = [f];
     } else {
+      critterSprite.tint = 0xffffff;
+      state.skinBaseTint = 0xffffff;
       critterSprite.filters = [];
     }
   }
@@ -1920,7 +1863,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (state.rageActive) {
         state.rageActive = false;
         state.rageEndTime = 0;
-        critter.tint = 0xffffff;
+        critter.tint = state.skinBaseTint || 0xffffff;
         if (state.originalAnimSpeed) {
           critter.animationSpeed = state.originalAnimSpeed;
           state.originalAnimSpeed = null;
@@ -4472,7 +4415,7 @@ let cantGainEXP = false;
         } else if (critter && (critter.alpha !== 1 || critter.tint === 0xffd700)) {
           critter.alpha = 1;
           if (state.featherReviveEnd) {
-            critter.tint = state.rageActive ? 0xff4444 : 0xffffff;
+            critter.tint = state.rageActive ? 0xff4444 : (state.skinBaseTint || 0xffffff);
             state.featherReviveEnd = null;
           }
         }
@@ -5035,7 +4978,7 @@ state.demiSpawned = 0;
         if (state.rageActive) {
           if (Date.now() > state.rageEndTime) {
             state.rageActive = false;
-            critter.tint = 0xffffff;
+            critter.tint = state.skinBaseTint || 0xffffff;
             if (state.originalAnimSpeed) {
               critter.animationSpeed = state.originalAnimSpeed;
               state.originalAnimSpeed = null;

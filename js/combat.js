@@ -684,7 +684,7 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
             return;
           }
           setTimeout(() => {
-            critter.tint = getFrogTintColor();
+            critter.tint = state.skinBaseTint || getFrogTintColor();
           }, state.flashDuration);
           if (enemy.isAlive) {
             state.hitSound.volume = state.effectsVolume;

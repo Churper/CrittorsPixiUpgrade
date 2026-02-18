@@ -1710,70 +1710,71 @@ document.addEventListener('DOMContentLoaded', function () {
   // so we map that full range; snail shell spans blue+purple (200-280°); bird has two zones; etc.
   const skinHueConfigs = {
     // ── FROG ──
-    // Base palette: bright lime-green highlights (~85-100°), pure green body (~100-145°),
-    //   dark green shadows (~130-155°). Yellow antenna tips (~50-65°) are outside range.
+    // Base: lime-green highlights (~85-100°), pure green body (~100-145°), dark green shadows.
+    // Yellow antenna tips (~50-65°) outside range → untouched.
     'frog-ice': [
-      // Brilliant icy cyan. Tight target = cohesive crystal feel. Sat boost for vibrancy.
-      { from: 70, to: 160, targetFrom: 188, targetTo: 200, sat: 1.15, lit: 1.1 },
+      // Crystal ice cyan. Tight target for cohesive look, boosted brightness for sparkle.
+      { from: 70, to: 160, targetFrom: 190, targetTo: 200, sat: 1.2, lit: 1.15 },
     ],
     'frog-golden': [
-      // Rich warm gold/amber. Key: high sat (1.5) prevents washed-out "pale yellow",
-      // lit 0.92 darkens highlights so they read as burnished gold rather than pissy yellow.
-      // Darker greens → deep amber (28°), lighter greens → bright gold (45°).
-      { from: 70, to: 160, targetFrom: 28, targetTo: 45, sat: 1.5, lit: 0.92 },
+      // TRUE GOLD — not amber, not brown. Key: hue 44-52° is pure gold, lit BOOST (1.15)
+      // makes highlights gleam and prevents shadows from becoming brown mud.
+      // Moderate sat (1.2) keeps it rich but not oversaturated.
+      { from: 70, to: 160, targetFrom: 44, targetTo: 52, sat: 1.2, lit: 1.15 },
     ],
     'frog-shadow': [
-      // Deep mystic violet. Significantly darker for that menacing silhouette feel.
-      // Tight purple range keeps the body reading as one unified dark color.
-      { from: 70, to: 160, targetFrom: 272, targetTo: 288, sat: 0.9, lit: 0.6 },
+      // Deep mystic violet. Dark and menacing but still readable.
+      { from: 70, to: 160, targetFrom: 272, targetTo: 286, sat: 0.9, lit: 0.65 },
     ],
 
     // ── SNAIL ──
-    // Base palette: blue shell (200-255°), purple tones in shell (255-280°),
-    //   red/pink inner spiral (340-360° + 0-20°), yellow-tan body+sparkles (40-65°).
-    //   Black background is skipped (lightness < 0.06).
+    // Base: blue shell (200-255°), purple tones (255-280°), red spiral (340-20°),
+    // yellow-tan body+sparkles (40-65°). Black bg skipped (lit < 0.06).
     'snail-crystal': [
-      // Full shell (blue + purple) → brilliant cyan crystal
+      // Shell → bright aqua crystal
       { from: 190, to: 280, targetFrom: 178, targetTo: 192, sat: 1.15, lit: 1.2 },
-      // Red spiral → pale icy shimmer (heavily desaturated, very bright)
-      { from: 335, to: 360, targetFrom: 185, targetTo: 190, sat: 0.3, lit: 1.35 },
-      { from: 0, to: 20, targetFrom: 185, targetTo: 190, sat: 0.3, lit: 1.35 },
-      // Yellow body/sparkles → cool blue-grey to complete the crystal theme
-      { from: 38, to: 68, targetFrom: 200, targetTo: 210, sat: 0.55, lit: 1.05 },
+      // Red spiral → pale icy shimmer
+      { from: 335, to: 360, targetFrom: 185, targetTo: 192, sat: 0.3, lit: 1.35 },
+      { from: 0, to: 20, targetFrom: 185, targetTo: 192, sat: 0.3, lit: 1.35 },
+      // Yellow body → cool pale blue for full crystal theme
+      { from: 38, to: 68, targetFrom: 200, targetTo: 210, sat: 0.5, lit: 1.1 },
     ],
     'snail-magma': [
-      // Shell → deep volcanic red-orange. High sat for molten intensity.
-      { from: 190, to: 280, targetFrom: 2, targetTo: 14, sat: 1.45, lit: 0.85 },
-      // Yellow body → warm volcanic orange
-      { from: 38, to: 68, targetFrom: 18, targetTo: 28, sat: 1.3, lit: 0.92 },
+      // Shell → deep volcanic red. Boosted lit (1.0) so dark blues don't become black.
+      { from: 190, to: 280, targetFrom: 2, targetTo: 12, sat: 1.4, lit: 1.0 },
+      // Red spiral stays red — already in range, no shift needed (outside 190-280).
+      // Yellow body → warm sandy amber (complements red shell, not ugly orange)
+      { from: 38, to: 68, targetFrom: 32, targetTo: 42, sat: 1.1, lit: 1.0 },
     ],
 
     // ── BIRD ──
-    // Base palette: dark-to-medium green body (~85-165°), vivid purple flower crest (~260-325°),
-    //   yellow-orange beak (~40-55°), brown feet (~20-35°, low saturation — mostly skipped).
+    // Base: dark-to-medium green body (~85-165°), vivid purple crest (~260-325°),
+    // yellow beak (~40-55°), brown feet (low sat → skipped).
+    // Bird body is DARKER than frog — needs significant lightness boost to avoid brown.
     'bird-phoenix': [
-      // Body → intense fiery red-orange. High sat for blazing look.
-      { from: 80, to: 168, targetFrom: 4, targetTo: 16, sat: 1.45, lit: 0.95 },
-      // Crest → brilliant flame gold (like fire tips)
-      { from: 258, to: 328, targetFrom: 38, targetTo: 50, sat: 1.35, lit: 1.1 },
+      // Body → vibrant warm orange (NOT red, not brown). Big lit boost (1.3) essential
+      // because bird's dark green base becomes dark brown at low lightness.
+      { from: 80, to: 168, targetFrom: 14, targetTo: 28, sat: 1.3, lit: 1.3 },
+      // Crest → brilliant flame gold (this looked good already)
+      { from: 258, to: 328, targetFrom: 38, targetTo: 50, sat: 1.3, lit: 1.1 },
     ],
     'bird-arctic': [
-      // Body → crisp ice blue. Moderate desat for frosted look.
-      { from: 80, to: 168, targetFrom: 200, targetTo: 212, sat: 0.75, lit: 1.15 },
-      // Crest → pale frost (strongly desaturated blue, very bright = near-white with blue tint)
-      { from: 258, to: 328, targetFrom: 212, targetTo: 222, sat: 0.35, lit: 1.35 },
+      // Body → vivid ice blue. Higher sat than before for more color pop.
+      { from: 80, to: 168, targetFrom: 200, targetTo: 212, sat: 0.85, lit: 1.2 },
+      // Crest → soft frost blue (not too desaturated — still reads as colored)
+      { from: 258, to: 328, targetFrom: 210, targetTo: 220, sat: 0.45, lit: 1.3 },
     ],
 
     // ── BEE ──
-    // Base palette: yellow body (40-60°), amber-brown stripes+wings+antennae (20-40°).
-    //   Black mouth/eye details are low-sat → skipped. Need wide source (20-70) to catch stripes.
+    // Base: yellow body (40-60°), amber-brown stripes+wings (20-40°).
+    // Wide source (18-72) catches stripes too for full-body recolor.
     'bee-neon': [
-      // Electric toxic green. Very high sat for that radioactive neon glow.
+      // Radioactive electric green. Very high sat for that neon glow.
       { from: 18, to: 72, targetFrom: 118, targetTo: 142, sat: 1.55, lit: 1.05 },
     ],
     'bee-royal': [
-      // Deep regal purple. Rich and majestic, slightly dark for gravitas.
-      { from: 18, to: 72, targetFrom: 268, targetTo: 285, sat: 1.25, lit: 0.8 },
+      // Deep regal purple. Rich and majestic.
+      { from: 18, to: 72, targetFrom: 268, targetTo: 285, sat: 1.25, lit: 0.82 },
     ],
   };
 

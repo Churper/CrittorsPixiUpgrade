@@ -1,8 +1,6 @@
 import state from './state.js';
 import { getPlayerCurrentHealth, getPlayerHealth, getCurrentCharacter, getEXPtoLevel, getSelectLevel, getCoffee, getisPaused, getisDead } from './state.js';
 import { pauseTimer, startTimer } from './timer.js';
-import { showLeaderboardPanel } from './leaderboard.js';
-
 // --- Pause menu helpers ---
 
 export function createBackgroundSprite() {
@@ -70,13 +68,14 @@ export function createVolumeSlider(backgroundSprite, yOffset, label, type) {
 
   const labelFontSize = Math.max(14, Math.min(24, bw * 0.05));
 
-  // Rounded track background
+  // Rounded track background (taller hit area for mobile)
   const sliderBackground = new PIXI.Graphics();
+  sliderBackground.roundRect(0, -18, trackWidth, 36, 10)
+    .fill({ color: 0x000000, alpha: 0 }); // invisible wide hit area
   sliderBackground.roundRect(0, -8, trackWidth, 16, 8)
     .fill({ color: 0x000000, alpha: 0.4 })
     .stroke({ width: 1, color: 0x666666 });
   sliderBackground.eventMode = 'static';
-  sliderBackground.on('pointerdown', (event) => { event.stopPropagation(); });
   volumeSlider.addChild(sliderBackground);
 
   const labelText = new PIXI.Text(label, {
@@ -93,14 +92,32 @@ export function createVolumeSlider(backgroundSprite, yOffset, label, type) {
   const ball = createSliderBall(backgroundSprite, type, trackWidth);
   volumeSlider.addChild(ball);
 
+  // Tap anywhere on the track to jump the slider ball there
+  sliderBackground.on('pointerdown', (event) => {
+    const localX = event.data.global.x - volumeSlider.getGlobalPosition().x;
+    const newX = Math.max(0, Math.min(trackWidth, localX));
+    ball.x = newX;
+    const vol = newX / trackWidth;
+    if (type === 'music') {
+      state.musicVolume = vol;
+      if (state.themeMusic) state.themeMusic.volume = vol;
+    } else {
+      state.effectsVolume = vol;
+    }
+    event.stopPropagation();
+  });
+
   return volumeSlider;
 }
 
 export function createSliderBall(backgroundSprite, type, trackWidth) {
   const currentVolume = type === 'music' ? state.musicVolume : state.effectsVolume;
-  const ballRadius = Math.max(8, Math.min(14, backgroundSprite.width * 0.028));
+  const ballRadius = Math.max(12, Math.min(18, backgroundSprite.width * 0.038));
 
   const sliderBall = new PIXI.Graphics();
+  // Invisible larger hit area for easier mobile touch
+  sliderBall.circle(0, 0, ballRadius + 14).fill({ color: 0xFFFFFF, alpha: 0 });
+  // Visible ball
   sliderBall.circle(0, 0, ballRadius).fill({ color: 0xFFFFFF }).stroke({ width: 2, color: 0x000000 });
   sliderBall.position.set(currentVolume * trackWidth, 0);
 
@@ -174,14 +191,16 @@ export function createPauseMenuContainer() {
   const bh = backgroundSprite.height;
 
   const pauseText = 'Game Paused';
-  const roundText = state.gameMode === 'endless' ? 'Endless Mode' : 'Round: ' + state.currentRound;
+  const roundText = state.gameMode === 'endless' ? '' : 'Round: ' + state.currentRound;
 
   const textStyle = getTextStyle(bw);
   const text = createText(pauseText, textStyle, backgroundSprite);
   state.pauseMenuContainer.addChild(text);
 
-  const text1 = createText(roundText, textStyle, backgroundSprite, true);
-  state.pauseMenuContainer.addChild(text1);
+  if (roundText) {
+    const text1 = createText(roundText, textStyle, backgroundSprite, true);
+    state.pauseMenuContainer.addChild(text1);
+  }
 
   const musicSlider = createVolumeSlider(backgroundSprite, bh * 0.32, 'Music', 'music');
   state.pauseMenuContainer.addChild(musicSlider);
@@ -221,16 +240,13 @@ export function createPauseMenuContainer() {
     state.pauseMenuContainer.addChild(txt);
   }
 
-  // Leaderboard button — teal accent
-  addPauseButton('Leaderboard', bh * 0.56, () => { showLeaderboardPanel(); }, 0x1a5566, 0x44aacc);
-
   // Submit Score button — blue accent
-  addPauseButton('Submit Score', bh * 0.68, () => {
+  addPauseButton('Submit Score', bh * 0.58, () => {
     if (window._crittorsShowPauseScore) window._crittorsShowPauseScore();
   }, 0x2a4477, 0x5588bb);
 
   // Main Menu button — muted red accent
-  addPauseButton('Main Menu', bh * 0.80, () => { window.location.reload(); }, 0x662233, 0xaa5566);
+  addPauseButton('Main Menu', bh * 0.72, () => { window.location.reload(); }, 0x662233, 0xaa5566);
 
   const garbageButton = createGarbageButton(backgroundSprite);
   state.pauseMenuContainer.addChild(garbageButton);

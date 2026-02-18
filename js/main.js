@@ -1971,7 +1971,11 @@ PIXI.Assets.add({ alias: 'frog_walk', src: './assets/frog_walk.png' });
 PIXI.Assets.add({ alias: 'frog_attack', src: './assets/frog_attack.png' });
 PIXI.Assets.add({ alias: 'enemy_death', src: './assets/enemy_death.png' });
 PIXI.Assets.add({ alias: 'castle', src: './assets/castle.png' });
-// Clouds are now procedural — no sprite assets needed
+PIXI.Assets.add({ alias: 'mountain1', src: './assets/mountain1.png' });
+PIXI.Assets.add({ alias: 'mountain2', src: './assets/mountain2.png' });
+PIXI.Assets.add({ alias: 'clouds', src: './assets/clouds.png' });
+PIXI.Assets.add({ alias: 'clouds2', src: './assets/clouds2.png' });
+PIXI.Assets.add({ alias: 'clouds3', src: './assets/clouds3.png' });
 
 // Load the assets with progress tracking
 const assetList = [
@@ -1986,7 +1990,9 @@ const assetList = [
   'snail_idle', 'snail_walk', 'snail_attack',
   'frog', 'frog_walk', 'frog_attack',
   'enemy_death',
-  'castle'
+  'castle',
+  'mountain1', 'mountain2',
+  'clouds', 'clouds2', 'clouds3'
 ];
 const texturesPromise = PIXI.Assets.load(assetList, (progress) => {
   const fill = document.getElementById('loading-bar-fill');
@@ -2868,16 +2874,10 @@ state.frogGhostPlayer = new PIXI.Sprite(frogGhostTextures);
 state.frogGhostPlayer.anchor.set(0, 0);
 state.frogGhostPlayer.scale.set(0.28);
 
-      const mountain1 = createMountainGraphics(1, app.screen.width * 0.8, mountainVelocity1, foreground, 0);
-      const mountain2 = createMountainGraphics(2, app.screen.width * 4.5, mountainVelocity2, foreground, 0);
-      const mountain3 = createMountainGraphics(2, app.screen.width * 2.2, mountainVelocity3, foreground, 0.7);
-      const mountain4 = createMountainGraphics(1, app.screen.width * 6.5, mountainVelocity4, foreground, 0.85);
-
-      // Store base positions and parallax factors for camera-based parallax
-      mountain4.baseX = mountain4.position.x; mountain4.parallaxFactor = 0.05;
-      mountain3.baseX = mountain3.position.x; mountain3.parallaxFactor = 0.10;
-      mountain1.baseX = mountain1.position.x; mountain1.parallaxFactor = 0.20;
-      mountain2.baseX = mountain2.position.x; mountain2.parallaxFactor = 0.30;
+      const mountain1 = createMountainSprite('mountain1', -100, mountainVelocity1, foreground);
+      const mountain2 = createMountainSprite('mountain2', app.screen.width * 0.45, mountainVelocity2, foreground);
+      const mountain3 = createMountainSprite('mountain2', -200, mountainVelocity3, foreground);
+      const mountain4 = createMountainSprite('mountain1', app.screen.width * 1.2, mountainVelocity4, foreground);
 
       // Apply initial sky gradient so the first round starts with correct colors
       const _initGrad = skyGradients[initialWeather] || skyGradients.sun;
@@ -2890,133 +2890,26 @@ state.frogGhostPlayer.scale.set(0.28);
       mountain3.tint = _initGrad.mountain;
       mountain4.tint = _initGrad.mountain;
 
-      function drawMountainType1(g, w, h, depth) {
-        const haze = 0x8899aa;
-        const d = depth || 0;
-        function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
-
-        // Silhouette path — softened peak with convex slopes
-        function mtnPath() {
-          g.moveTo(0, 0);
-          g.bezierCurveTo(w * 0.03, -h * 0.15, w * 0.12, -h * 0.55, w * 0.30, -h * 0.80);
-          g.bezierCurveTo(w * 0.36, -h * 0.90, w * 0.42, -h * 0.98, w * 0.47, -h);
-          g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h);
-          g.bezierCurveTo(w * 0.60, -h * 0.96, w * 0.68, -h * 0.82, w * 0.76, -h * 0.60);
-          g.bezierCurveTo(w * 0.86, -h * 0.35, w * 0.95, -h * 0.12, w, 0);
-          g.lineTo(0, 0);
-          g.closePath();
-        }
-
-        // Layer 1: Shadow side (right) — darker base
-        mtnPath();
-        g.fill(dc(0x4e5a6a, 1.0));
-
-        // Layer 2: Lit side (left) — lighter, covers left slope + peak, diagonal edge
-        g.moveTo(0, 0);
-        g.bezierCurveTo(w * 0.03, -h * 0.15, w * 0.12, -h * 0.55, w * 0.30, -h * 0.80);
-        g.bezierCurveTo(w * 0.36, -h * 0.90, w * 0.42, -h * 0.98, w * 0.47, -h);
-        g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h);
-        // Diagonal edge — runs from peak area down to bottom-right, not straight down
-        g.lineTo(w * 0.45, 0);
-        g.lineTo(0, 0);
-        g.closePath();
-        g.fill(dc(0x6a7b8d, 1.0));
-
-        // Layer 3: Base haze
-        g.moveTo(0, 0);
-        g.lineTo(w, 0);
-        g.lineTo(w, -h * 0.10);
-        g.bezierCurveTo(w * 0.7, -h * 0.13, w * 0.3, -h * 0.13, 0, -h * 0.10);
-        g.closePath();
-        g.fill(dc(0x8899aa, 0.18));
-      }
-
-      function drawMountainType2(g, w, h, depth) {
-        const haze = 0x8899aa;
-        const d = depth || 0;
-        function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
-
-        // 3-peak silhouette path
-        function mtnPath() {
-          g.moveTo(0, 0);
-          g.bezierCurveTo(w * 0.02, -h * 0.15, w * 0.08, -h * 0.45, w * 0.18, -h * 0.58);
-          g.quadraticCurveTo(w * 0.22, -h * 0.66, w * 0.26, -h * 0.58);
-          g.bezierCurveTo(w * 0.29, -h * 0.48, w * 0.32, -h * 0.40, w * 0.35, -h * 0.44);
-          g.bezierCurveTo(w * 0.38, -h * 0.58, w * 0.42, -h * 0.85, w * 0.47, -h * 0.96);
-          g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h * 0.96);
-          g.bezierCurveTo(w * 0.58, -h * 0.82, w * 0.63, -h * 0.52, w * 0.67, -h * 0.38);
-          g.bezierCurveTo(w * 0.69, -h * 0.34, w * 0.71, -h * 0.36, w * 0.73, -h * 0.42);
-          g.bezierCurveTo(w * 0.74, -h * 0.48, w * 0.76, -h * 0.53, w * 0.78, -h * 0.55);
-          g.quadraticCurveTo(w * 0.80, -h * 0.57, w * 0.82, -h * 0.53);
-          g.bezierCurveTo(w * 0.87, -h * 0.38, w * 0.94, -h * 0.14, w, 0);
-          g.lineTo(0, 0);
-          g.closePath();
-        }
-
-        // Layer 1: Shadow side — darker base
-        mtnPath();
-        g.fill(dc(0x4e5a6a, 1.0));
-
-        // Layer 2: Lit side — lighter, covers left slope of each peak with diagonal edges
-        // Left peak lit face
-        g.moveTo(0, 0);
-        g.bezierCurveTo(w * 0.02, -h * 0.15, w * 0.08, -h * 0.45, w * 0.18, -h * 0.58);
-        g.quadraticCurveTo(w * 0.22, -h * 0.66, w * 0.24, -h * 0.62);
-        g.lineTo(w * 0.15, 0);
-        g.closePath();
-        g.fill(dc(0x6a7b8d, 1.0));
-
-        // Center peak lit face
-        g.moveTo(w * 0.35, -h * 0.44);
-        g.bezierCurveTo(w * 0.38, -h * 0.58, w * 0.42, -h * 0.85, w * 0.47, -h * 0.96);
-        g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.52, -h * 0.97);
-        g.lineTo(w * 0.42, 0);
-        g.lineTo(w * 0.33, 0);
-        g.closePath();
-        g.fill(dc(0x6a7b8d, 1.0));
-
-        // Right peak lit face
-        g.moveTo(w * 0.71, -h * 0.36);
-        g.bezierCurveTo(w * 0.73, -h * 0.42, w * 0.75, -h * 0.50, w * 0.78, -h * 0.55);
-        g.quadraticCurveTo(w * 0.80, -h * 0.57, w * 0.81, -h * 0.55);
-        g.lineTo(w * 0.76, 0);
-        g.lineTo(w * 0.69, 0);
-        g.closePath();
-        g.fill(dc(0x6a7b8d, 1.0));
-
-        // Layer 3: Base haze
-        g.moveTo(0, 0);
-        g.lineTo(w, 0);
-        g.lineTo(w, -h * 0.10);
-        g.bezierCurveTo(w * 0.7, -h * 0.13, w * 0.3, -h * 0.13, 0, -h * 0.10);
-        g.closePath();
-        g.fill(dc(0x8899aa, 0.18));
-      }
-
-      function createMountainGraphics(type, xPos, velocity, foreground, depth) {
-        const g = new PIXI.Graphics();
-        g.eventMode = 'none';
-        const w = (type === 1) ? 600 : 1000;
-        const h = (type === 1) ? 400 : 350;
-
-        if (type === 1) drawMountainType1(g, w, h, depth || 0);
-        else drawMountainType2(g, w, h, depth || 0);
+      function createMountainSprite(resourceName, xPos, velocity, foreground) {
+        const sprite = new PIXI.Sprite(textures[resourceName]);
 
         const scaleFactor = Math.min(
-          app.screen.height * 0.6 / h,
-          app.screen.width * 1.5 / w
+          app.screen.height * 0.6 / sprite.height,
+          app.screen.width * 1.5 / sprite.width
         );
-        g.scale.set(scaleFactor);
+
+        sprite.scale.set(scaleFactor);
+        sprite.anchor.set(0, 1);
 
         const minHeightOffset = foreground ? foreground.height * 0.22 : 0;
         const heightOffsetRatio = (1 - scaleFactor) * 0.3;
-        const scaledHeight = h * scaleFactor;
-        const foregroundHeightOffset = foreground
-          ? minHeightOffset + scaledHeight * heightOffsetRatio : 0;
-        g.position.set(xPos, app.screen.height - foregroundHeightOffset);
-        g.zIndex = -1;
-        g.velocity = velocity;
-        return g;
+
+        const foregroundHeightOffset = foreground ? minHeightOffset + sprite.height * heightOffsetRatio : 0;
+        sprite.position.set(xPos, app.screen.height - foregroundHeightOffset);
+        sprite.zIndex = -1;
+        sprite.velocity = velocity;
+
+        return sprite;
       }
       mountain3.scale.x = .6;
       mountain3.scale.y = .65;
@@ -3067,7 +2960,8 @@ state.frogGhostPlayer.scale.set(0.28);
       const beeAttackTextures = createAnimationTextures2('bee_attack', 18, 256, 1950, 1024);
       const birdWalkTextures = createAnimationTextures2('bird_walk', 13, 403, 2541, 806);
       const birdAttackTextures = createAnimationTextures2('bird_attack', 13, 403, 2541, 806);
-      // Clouds are procedural — no textures needed
+      const cloudsTexture = textures.clouds;
+      const clouds2Texture = textures.clouds2;
       const scorpWalkTextures = createAnimationTextures2('scorp_walk', 6, 499, 2202, 499);
       const scorpAttackTextures = createAnimationTextures2('scorp_attack', 9, 499, 3303, 499);
       const tooferWalkTextures = createAnimationTextures2('toofer_walk', 6, 377, 2412, 377);
@@ -3081,62 +2975,11 @@ state.frogGhostPlayer.scale.set(0.28);
       const sharkWalkTextures = createAnimationTextures2('shark_walk', 10, 398, 1398, 1990);
       const sharkAttackTextures = createAnimationTextures2('shark_attack', 21, 398, 3495, 1990);
       state.sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
-      // Procedural cloud generation
-      function drawCloud(g, cw, ch, complexity) {
-        // Clean cloud: rounded ellipse shape with very gentle top undulation
-        // The key is SUBTLE bumps — barely noticeable waviness, not separate peaks
-
-        // Slight variation per cloud
-        const v = (complexity % 3) * 0.03;
-
-        // Start bottom-left
-        g.moveTo(-cw * 0.46, ch * 0.04);
-        // Left rounded side — smooth arc upward
-        g.bezierCurveTo(-cw * 0.48, -ch * 0.20, -cw * 0.44, -ch * 0.55, -cw * 0.30, -ch * (0.70 + v));
-        // Top — one continuous smooth curve with very gentle undulation
-        // Instead of separate bumps, it's basically an ellipse top that dips slightly in 2 places
-        g.bezierCurveTo(-cw * 0.20, -ch * (0.85 + v), -cw * 0.10, -ch * (0.78 + v), -cw * 0.02, -ch * (0.82 + v));
-        g.bezierCurveTo(cw * 0.08, -ch * (0.92 + v), cw * 0.18, -ch * (0.88 + v), cw * 0.25, -ch * (0.75 + v));
-        g.bezierCurveTo(cw * 0.32, -ch * (0.62 + v), cw * 0.40, -ch * (0.50 + v), cw * 0.44, -ch * 0.25);
-        // Right rounded side — smooth arc downward
-        g.bezierCurveTo(cw * 0.48, -ch * 0.05, cw * 0.47, ch * 0.04, cw * 0.44, ch * 0.06);
-        // Bottom — very gently curved, almost flat
-        g.bezierCurveTo(cw * 0.20, ch * 0.10, -cw * 0.20, ch * 0.10, -cw * 0.46, ch * 0.04);
-        g.closePath();
-        g.fill({ color: 0xffffff, alpha: 1.0 });
-
-        // Soft bottom shadow
-        g.ellipse(0, ch * 0.06, cw * 0.38, ch * 0.04).fill({ color: 0xdde2ea, alpha: 0.35 });
-      }
-
-      const clouds = new PIXI.Container();
-      clouds.eventMode = 'none';
-      const clouds2 = new PIXI.Container();
-      clouds2.eventMode = 'none';
-      const CLOUD_SPREAD = 8000;
-      // Layer 1: foreground clouds — bigger, more spread out
-      const cloud1Seeds = [0.05, 0.15, 0.26, 0.36, 0.46, 0.56, 0.66, 0.76, 0.86, 0.96];
-      for (let i = 0; i < cloud1Seeds.length; i++) {
-        const cg = new PIXI.Graphics();
-        const cw = 180 + (i % 3) * 60;
-        const ch = 60 + (i % 3) * 20;
-        drawCloud(cg, cw, ch, 3 + (i % 4));
-        cg.position.set(cloud1Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.04 + (i % 4) * 28);
-        cg.alpha = 0.9;
-        clouds.addChild(cg);
-      }
-      // Layer 2: background clouds — medium, more of them
-      const cloud2Seeds = [0.03, 0.11, 0.20, 0.29, 0.38, 0.47, 0.55, 0.64, 0.73, 0.82, 0.91];
-      for (let i = 0; i < cloud2Seeds.length; i++) {
-        const cg = new PIXI.Graphics();
-        const cw = 120 + (i % 3) * 40;
-        const ch = 40 + (i % 2) * 15;
-        drawCloud(cg, cw, ch, 3 + (i % 3));
-        cg.position.set(cloud2Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.12 + (i % 4) * 25);
-        cg.alpha = 0.95;
-        clouds2.addChild(cg);
-      }
-      clouds2.alpha = 0.35;
+      const CLOUD_TILE_WIDTH = 50000;
+      const clouds = createTilingSprite(cloudsTexture, CLOUD_TILE_WIDTH, 200);
+      const clouds2 = createTilingSprite(clouds2Texture, CLOUD_TILE_WIDTH, 200);
+      clouds2.position.y += 100;
+      clouds2.alpha = .3;
       // Apply initial cloud tint from weather
       clouds.tint = _initGrad.cloud;
       clouds2.tint = _initGrad.cloud;
@@ -3634,28 +3477,32 @@ let cantGainEXP = false;
       const maxX = foreground.width - critter.width / 2;
       const cloudSpeed = .5 / 3.5;
       const cloud2Speed = 1.1 / 3.5;
+      const mountain1Speed = 0.01;
+      const mountain2Speed = 0.05;
+      const mountain3Speed = .03;
+      const mountain4Speed = .03;
 
-      // Camera-based parallax — update mountain positions each frame
-      function updateMountainParallax() {
+      // Wrap mountains so they reappear on the opposite side when scrolling off-screen
+      function wrapMountains() {
+        const cam = -app.stage.x; // current camera left edge in world coords
         const screenW = app.screen.width;
+        const margin = 200; // buffer before recycling
         [mountain1, mountain2, mountain3, mountain4].forEach(m => {
-          // Mountains are stage children so screen_x = position.x + stage.x
-          // We want screen_x = baseX + stage.x * factor (slower than camera)
-          // So position.x = baseX - stage.x * (1 - factor)
-          m.position.x = m.baseX - app.stage.x * (1 - m.parallaxFactor);
-
-          // Wrap for endless scrolling: keep mountains cycling within view
-          const screenX = m.position.x + app.stage.x;
-          const mw = m.width;
-          if (screenX + mw < -200) {
-            m.baseX += screenW + mw + 400;
-          } else if (screenX > screenW + 200 + mw) {
-            m.baseX -= screenW + mw + 400;
+          // anchor is (0,1): position.x = left edge
+          const mRight = m.position.x + m.width;
+          const mLeft = m.position.x;
+          // If entirely off the left side of the visible area
+          if (mRight < cam - margin) {
+            m.position.x = cam + screenW + margin + Math.random() * 300;
+          }
+          // If entirely off the right side of the visible area
+          else if (mLeft > cam + screenW + margin) {
+            m.position.x = cam - margin - m.width - Math.random() * 300;
           }
         });
       }
 
-      // Procedural clouds don't need initialClouds tracking
+      state.initialClouds = clouds.position.x;
       let once = 0;
       app.ticker.add((ticker) => {
         state.dt = ticker.deltaTime;
@@ -3842,7 +3689,11 @@ let cantGainEXP = false;
           // Update the camera position
           app.stage.x += movementX;
           app.stage.y += movementY;
-          updateMountainParallax();
+          mountain1.position.x -= velocity.x * mountain1Speed * state.dt;
+          mountain2.position.x += velocity.x * mountain2Speed * state.dt;
+          mountain3.position.x += velocity.x * mountain3Speed * state.dt;
+          mountain4.position.x += velocity.x * mountain4Speed * state.dt;
+          wrapMountains();
 
           // Animate unlock character walking out of castle toward player's base
           if (unlockActive) {
@@ -4301,7 +4152,11 @@ state.demiSpawned = 0;
                     critter.play();
                   }
                   critter.loop = true;
-                  updateMountainParallax();
+                  mountain1.position.x -= velocity.x * mountain1Speed * state.dt;
+                  mountain2.position.x -= velocity.x * mountain2Speed * state.dt;
+                  mountain3.position.x -= velocity.x * mountain3Speed * state.dt;
+                  mountain4.position.x -= velocity.x * mountain4Speed * state.dt;
+                  wrapMountains();
                 }
                 else {
                   if (critter.textures != frogIdleTexture) {
@@ -4335,18 +4190,15 @@ state.demiSpawned = 0;
 
         }
 
-        // Update procedural cloud positions — scroll each child and wrap
-        for (const c of clouds.children) {
-          c.position.x -= cloudSpeed * state.dt;
-          if (c.position.x < -app.stage.x - 300) {
-            c.position.x = -app.stage.x + app.screen.width + 200 + Math.random() * 400;
-          }
+        // Update cloud position
+        clouds.position.x -= cloudSpeed * state.dt;
+        clouds2.position.x -= cloud2Speed * state.dt;
+        // Check if cloud has gone offscreen and move it to the right side
+        if (clouds.x + clouds.width / 2 < -3000) {
+          clouds.x = state.initialClouds;
         }
-        for (const c of clouds2.children) {
-          c.position.x -= cloud2Speed * state.dt;
-          if (c.position.x < -app.stage.x - 300) {
-            c.position.x = -app.stage.x + app.screen.width + 200 + Math.random() * 400;
-          }
+        if (clouds2.x + clouds2.width / 2 < -3000) {
+          clouds2.x = state.initialClouds;
         }
         if (!getAreResetting()) {
           // Adjust app stage position

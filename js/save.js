@@ -125,12 +125,14 @@ export function loadGame() {
     // Attack: base + (shop bonus)
     const baseDmg = state.characterStats[state.currentCharacter] ? state.characterStats[state.currentCharacter].attack : 16;
     const shopDmg = (state.layoutUpgrades[ch] && state.layoutUpgrades[ch].damage) || 0;
-    document.getElementById('swords-level').textContent = shopDmg > 0 ? `${baseDmg} (+${shopDmg})` : `${baseDmg}`;
+    const dmgEl = document.getElementById('swords-level');
+    if (dmgEl) dmgEl.textContent = shopDmg > 0 ? `${baseDmg} (+${shopDmg})` : `${baseDmg}`;
     // Defense: base (= level) + (shop bonus)
     const baseDefense = state[ch + 'Level'] || 1;
     const shopDefense = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
-    document.getElementById('defense-level').textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
-    characterLevelElement.textContent = 'Lvl. ' + getFrogLevel();
+    const defEl = document.getElementById('defense-level');
+    if (defEl) defEl.textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
+    if (characterLevelElement) characterLevelElement.textContent = 'Lvl. ' + getFrogLevel();
     state.isCharacterMenuOpen = false;
     updateEXPIndicatorText("character-bird", gameData.birdLevel);
     updateEXPIndicatorText("character-snail", gameData.snailLevel);

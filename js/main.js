@@ -382,22 +382,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       weatherSun.startTime = Date.now();
       weatherContainer.addChild(weatherSun);
 
-      // Long sun beams that render ABOVE clouds (zIndex 3 > clouds at 2)
-      sunBeamsAboveClouds = new PIXI.Container();
-      sunBeamsAboveClouds.zIndex = 3;
-      sunBeamsAboveClouds.eventMode = 'none';
-      for (let i = 0; i < 5; i++) {
-        const beam = new PIXI.Graphics();
-        const angle = -Math.PI * 0.15 + (i / 4) * Math.PI * 0.3; // spread downward
-        const len = 300 + Math.random() * 200;
-        beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len)
-          .stroke({ width: 3 + Math.random() * 2, color: 0xFFEE88, alpha: 0.08 + Math.random() * 0.06 });
-        beam.rayAngle = angle;
-        beam.rayLen = len;
-        sunBeamsAboveClouds.addChild(beam);
-      }
-      app.stage.addChild(sunBeamsAboveClouds);
-
       // Lighting overlay — dims at dawn/dusk, bright at noon
       // Use huge fixed size to cover any screen orientation/camera position
       sunLightOverlay = new PIXI.Graphics();
@@ -614,12 +598,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
       weatherSun.scale.set(pulse);
 
-      // Move above-cloud beams to follow the sun (screen-fixed)
-      if (sunBeamsAboveClouds) {
-        sunBeamsAboveClouds.position.set(-app.stage.x + arcX, -app.stage.y + arcY);
-        sunBeamsAboveClouds.rotation = elapsed * 0.0002;
-        sunBeamsAboveClouds.alpha = weatherSun.alpha;
-      }
 
       // sinusoidal brightness: 0 at edges, 1 at middle, clamp so it doesn't go negative after sunset
       const brightness = Math.max(0, Math.sin(progress * Math.PI));
@@ -2733,7 +2711,7 @@ function transitionWeather(newWeather) {
   const oldWeather = weatherContainer;
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
-  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, nightFireGlows, sunBeamsAboveClouds];
+  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, nightFireGlows];
   const oldSkyTop = currentSkyTop;
   const oldSkyBottom = currentSkyBottom;
   const oldStarsAlpha = persistentStars.alpha;
@@ -2770,7 +2748,6 @@ function transitionWeather(newWeather) {
   nightOverlay = null;
   playerShadow = null;
   nightFireGlows = null;
-  sunBeamsAboveClouds = null;
   weatherContainer = null;
 
   // Create new weather at alpha 0
@@ -2886,7 +2863,7 @@ function updateBiomeTransition() {
     }
   }
   for (const o of (t.oldOverlays || [])) {
-    if (o && o.parent) o.alpha = Math.max(0, 1 - p * 2);
+    if (o && o.parent) o.alpha *= (1 - p * 0.05);
   }
 
   // Crossfade new weather/overlays in

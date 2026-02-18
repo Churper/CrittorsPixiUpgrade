@@ -1582,14 +1582,12 @@ touch-action: manipulation;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 85%;
-  max-width: 380px;
-  max-height: 80vh;
-  overflow-y: auto;
+  width: 90%;
+  max-width: 400px;
   background: rgba(8, 12, 20, 0.94);
   border: 2px solid rgba(100, 160, 200, 0.5);
   border-radius: 16px;
-  padding: 20px 16px;
+  padding: 16px 12px;
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;
   text-align: center;
@@ -1600,7 +1598,7 @@ touch-action: manipulation;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 #layout-bones {
@@ -1610,65 +1608,142 @@ touch-action: manipulation;
   text-shadow: 0 0 6px rgba(200, 180, 100, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.9);
 }
 
-.layout-tabs {
+/* ── Card deck ────────────────────────────────────────── */
+.layout-deck-area {
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-bottom: 16px;
 }
 
-.layout-tab {
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 0.95em;
-  padding: 6px 14px;
-  border-radius: 8px;
-  border: 2px solid rgba(100, 160, 200, 0.3);
-  background: rgba(255, 255, 255, 0.06);
-  color: #99aabb;
+.layout-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(100, 160, 200, 0.5);
+  background: rgba(10, 15, 25, 0.6);
+  color: #ccd8e4;
+  font-size: 1.6em;
+  line-height: 1;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.15s, background 0.15s;
+  flex-shrink: 0;
 }
 
-.layout-tab.active {
-  background: rgba(60, 130, 180, 0.2);
+.layout-nav-btn:hover {
+  transform: scale(1.15);
+  background: rgba(20, 40, 60, 0.8);
+}
+
+.layout-nav-btn:active {
+  transform: scale(0.92);
+}
+
+.layout-deck {
+  position: relative;
+  width: 240px;
+  height: 300px;
+  perspective: 600px;
+}
+
+.layout-card {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(145deg, rgba(15, 25, 45, 0.95), rgba(10, 18, 30, 0.98));
+  border: 2px solid rgba(100, 160, 200, 0.4);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.4s ease, opacity 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.layout-card.card-pos-0 {
+  transform: translateX(0) scale(1);
+  opacity: 1;
+  z-index: 4;
+  pointer-events: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(80, 160, 220, 0.15);
   border-color: rgba(100, 180, 220, 0.7);
-  color: #c8e0f0;
 }
 
-.layout-upgrades {
+.layout-card.card-pos-1 {
+  transform: translateX(14px) scale(0.94);
+  opacity: 0.7;
+  z-index: 3;
+}
+
+.layout-card.card-pos-2 {
+  transform: translateX(28px) scale(0.88);
+  opacity: 0.45;
+  z-index: 2;
+}
+
+.layout-card.card-pos-3 {
+  transform: translateX(42px) scale(0.82);
+  opacity: 0.25;
+  z-index: 1;
+}
+
+.layout-card-portrait {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  border: 2px solid rgba(100, 160, 200, 0.4);
+  margin-bottom: 4px;
+  image-rendering: pixelated;
+}
+
+.layout-card-name {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1.3em;
+  color: #e0e8f0;
+  text-shadow: 0 0 6px rgba(80, 160, 220, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.8);
+  margin-bottom: 6px;
+}
+
+.layout-card-stats {
+  width: 100%;
   text-align: left;
-  margin-bottom: 16px;
 }
 
 .layout-row {
   display: flex;
   align-items: center;
-  padding: 8px 6px;
+  padding: 6px 4px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .layout-stat-name {
   flex: 1;
-  font-size: 1.1em;
+  font-size: 1em;
   font-family: 'Luckiest Guy', cursive;
   color: #dde4ec;
 }
 
 .layout-stat-level {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 0.95em;
+  font-size: 0.9em;
   color: #8cc8e8;
-  margin-right: 12px;
-  min-width: 40px;
+  margin-right: 10px;
+  min-width: 36px;
   text-align: center;
 }
 
 .layout-buy-btn {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 0.85em;
-  padding: 5px 12px;
+  font-size: 0.8em;
+  padding: 4px 10px;
   border-radius: 8px;
   border: 2px solid rgba(200, 180, 100, 0.5);
   background: rgba(200, 180, 100, 0.12);
@@ -1692,23 +1767,5 @@ touch-action: manipulation;
 .layout-buy-btn.cant-afford {
   opacity: 0.35;
   cursor: not-allowed;
-}
-
-.layout-unlocks {
-  margin-top: 12px;
-}
-
-.layout-unlocks h3 {
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 1.3em;
-  color: #e0e8f0;
-  text-shadow: 0 0 6px rgba(80, 160, 220, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.8);
-  margin: 0 0 6px 0;
-}
-
-.layout-coming-soon {
-  font-size: 0.9em;
-  opacity: 0.5;
-  font-style: italic;
 }
 

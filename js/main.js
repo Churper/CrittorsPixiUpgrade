@@ -91,34 +91,45 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     startFromMenu('endless');
   });
 
-  // --- Layout panel ---
+  // --- Layout panel (card deck) ---
   const layoutPanel = document.getElementById('layout-panel');
   const layoutBonesEl = document.getElementById('layout-bones');
-  let layoutSelectedChar = 'frog';
+  const layoutCards = Array.from(document.querySelectorAll('.layout-card'));
+  const charOrder = ['frog', 'snail', 'bird', 'bee'];
+  let layoutDeckIndex = 0; // which character is on top
+
+  function updateDeckPositions() {
+    layoutCards.forEach(card => {
+      card.className = 'layout-card'; // reset classes
+    });
+    for (let i = 0; i < layoutCards.length; i++) {
+      const cardIdx = (layoutDeckIndex + i) % layoutCards.length;
+      layoutCards[cardIdx].classList.add('card-pos-' + i);
+    }
+  }
 
   function updateLayoutUI() {
-    const { getBones, getLayoutUpgrades } = state.constructor ? {} : {};
     const bones = state.bones;
     const upgrades = state.layoutUpgrades;
     layoutBonesEl.textContent = `🦴 ${bones}`;
 
-    // Update tab highlights
-    document.querySelectorAll('.layout-tab').forEach(tab => {
-      tab.classList.toggle('active', tab.dataset.char === layoutSelectedChar);
+    // Update each card's stat rows
+    layoutCards.forEach(card => {
+      const charName = card.dataset.char;
+      const charUpgrades = upgrades[charName] || { damage: 0, health: 0, speed: 0 };
+      card.querySelectorAll('.layout-row').forEach(row => {
+        const stat = row.dataset.stat;
+        const level = charUpgrades[stat] || 0;
+        row.querySelector('.layout-stat-level').textContent = `Lv ${level}`;
+        const cost = 10 + level * 5;
+        const btn = row.querySelector('.layout-buy-btn');
+        btn.dataset.cost = cost;
+        btn.textContent = `🦴 ${cost}`;
+        btn.classList.toggle('cant-afford', bones < cost);
+      });
     });
 
-    // Update stat rows
-    const charUpgrades = upgrades[layoutSelectedChar] || { damage: 0, health: 0, speed: 0 };
-    document.querySelectorAll('.layout-row').forEach(row => {
-      const stat = row.dataset.stat;
-      const level = charUpgrades[stat] || 0;
-      row.querySelector('.layout-stat-level').textContent = `Lv ${level}`;
-      const cost = 10 + level * 5;
-      const btn = row.querySelector('.layout-buy-btn');
-      btn.dataset.cost = cost;
-      btn.textContent = `🦴 ${cost}`;
-      btn.classList.toggle('cant-afford', bones < cost);
-    });
+    updateDeckPositions();
   }
 
   document.getElementById('layout-btn').addEventListener('click', function() {
@@ -130,21 +141,28 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     layoutPanel.style.display = 'none';
   });
 
-  document.querySelectorAll('.layout-tab').forEach(tab => {
-    tab.addEventListener('click', function() {
-      layoutSelectedChar = this.dataset.char;
-      updateLayoutUI();
-    });
+  // Card deck navigation — flip through characters
+  document.getElementById('layout-next').addEventListener('click', function() {
+    layoutDeckIndex = (layoutDeckIndex + 1) % layoutCards.length;
+    updateLayoutUI();
   });
 
+  document.getElementById('layout-prev').addEventListener('click', function() {
+    layoutDeckIndex = (layoutDeckIndex - 1 + layoutCards.length) % layoutCards.length;
+    updateLayoutUI();
+  });
+
+  // Buy buttons on all cards
   document.querySelectorAll('.layout-buy-btn').forEach(btn => {
     btn.addEventListener('click', function() {
+      const card = this.closest('.layout-card');
+      const charName = card.dataset.char;
       const row = this.closest('.layout-row');
       const stat = row.dataset.stat;
       const cost = parseInt(this.dataset.cost);
       if (state.bones < cost) return;
       state.bones -= cost;
-      state.layoutUpgrades[layoutSelectedChar][stat]++;
+      state.layoutUpgrades[charName][stat]++;
       saveBones();
       updateLayoutUI();
     });
@@ -2414,8 +2432,8 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       // Maple tree — rich multi-layered canopy
       const cx = tx, cy = treeY - trunkH;
       const r = canopyR;
-      // Dark inner base layer
-      d.circle(cx, cy + r * 0.1, r * 0.85).fill({ color: darkCanopy });
+      // Solid base fill — covers entire canopy footprint so no sky peeks through
+      d.ellipse(cx, cy - r * 0.4, r * 1.2, r * 1.1).fill({ color: darkCanopy });
       // Main body — cluster of overlapping circles
       d.circle(cx, cy - r * 0.4, r * 1.15).fill({ color: canopyColor });
       d.circle(cx - r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor });

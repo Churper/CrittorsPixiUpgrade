@@ -97,32 +97,95 @@
           <span id="layout-bones">🦴 0</span>
           <button id="layout-close-btn" class="menu-info-btn">✕</button>
         </div>
-        <div class="layout-tabs">
-          <button class="layout-tab active" data-char="frog">Frog</button>
-          <button class="layout-tab" data-char="snail">Snail</button>
-          <button class="layout-tab" data-char="bird">Bird</button>
-          <button class="layout-tab" data-char="bee">Bee</button>
-        </div>
-        <div class="layout-upgrades">
-          <div class="layout-row" data-stat="damage">
-            <span class="layout-stat-name">Damage</span>
-            <span class="layout-stat-level">Lv 0</span>
-            <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+        <div class="layout-deck-area">
+          <button id="layout-prev" class="layout-nav-btn">‹</button>
+          <div class="layout-deck">
+            <div class="layout-card" data-char="frog">
+              <img src="./assets/frogportrait.png" class="layout-card-portrait">
+              <div class="layout-card-name">Frog</div>
+              <div class="layout-card-stats">
+                <div class="layout-row" data-stat="damage">
+                  <span class="layout-stat-name">⚔️ Damage</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="health">
+                  <span class="layout-stat-name">❤️ Health</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="speed">
+                  <span class="layout-stat-name">⚡ Speed</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+              </div>
+            </div>
+            <div class="layout-card" data-char="snail">
+              <img src="./assets/snailportrait.png" class="layout-card-portrait">
+              <div class="layout-card-name">Snail</div>
+              <div class="layout-card-stats">
+                <div class="layout-row" data-stat="damage">
+                  <span class="layout-stat-name">⚔️ Damage</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="health">
+                  <span class="layout-stat-name">❤️ Health</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="speed">
+                  <span class="layout-stat-name">⚡ Speed</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+              </div>
+            </div>
+            <div class="layout-card" data-char="bird">
+              <img src="./assets/birdportrait.png" class="layout-card-portrait">
+              <div class="layout-card-name">Bird</div>
+              <div class="layout-card-stats">
+                <div class="layout-row" data-stat="damage">
+                  <span class="layout-stat-name">⚔️ Damage</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="health">
+                  <span class="layout-stat-name">❤️ Health</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="speed">
+                  <span class="layout-stat-name">⚡ Speed</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+              </div>
+            </div>
+            <div class="layout-card" data-char="bee">
+              <img src="./assets/beeportrait.png" class="layout-card-portrait">
+              <div class="layout-card-name">Bee</div>
+              <div class="layout-card-stats">
+                <div class="layout-row" data-stat="damage">
+                  <span class="layout-stat-name">⚔️ Damage</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="health">
+                  <span class="layout-stat-name">❤️ Health</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+                <div class="layout-row" data-stat="speed">
+                  <span class="layout-stat-name">⚡ Speed</span>
+                  <span class="layout-stat-level">Lv 0</span>
+                  <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="layout-row" data-stat="health">
-            <span class="layout-stat-name">Health</span>
-            <span class="layout-stat-level">Lv 0</span>
-            <button class="layout-buy-btn" data-cost="10">🦴 10</button>
-          </div>
-          <div class="layout-row" data-stat="speed">
-            <span class="layout-stat-name">Speed</span>
-            <span class="layout-stat-level">Lv 0</span>
-            <button class="layout-buy-btn" data-cost="10">🦴 10</button>
-          </div>
-        </div>
-        <div class="layout-unlocks">
-          <h3>Unlocks</h3>
-          <p class="layout-coming-soon">Coming soon...</p>
+          <button id="layout-next" class="layout-nav-btn">›</button>
         </div>
       </div>
     </div>

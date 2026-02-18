@@ -1749,31 +1749,32 @@ document.addEventListener('DOMContentLoaded', function () {
       { from: 38, to: 68, targetFrom: 35, targetTo: 45, sat: 1.0, lit: 1.0 },
     ],
     'snail-valentine': [
-      // Shell → bright candy pink. Warm, saturated, cheerful.
-      { from: 190, to: 280, targetFrom: 335, targetTo: 348, sat: 1.2, lit: 1.15 },
-      // Red spiral → hot magenta-pink (deeper, richer pink than the shell)
-      { from: 335, to: 360, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.0 },
-      { from: 0, to: 20, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.0 },
-      // Yellow body+sparkles → soft rosy pink
-      { from: 38, to: 68, targetFrom: 345, targetTo: 355, sat: 0.7, lit: 1.1 },
+      // Shell → candy pink. Starts at 205 to skip dark teal head/face area (190-205°).
+      { from: 205, to: 280, targetFrom: 335, targetTo: 348, sat: 1.2, lit: 1.2 },
+      // Red spiral → hot magenta-pink
+      { from: 335, to: 360, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.05 },
+      { from: 0, to: 20, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.05 },
+      // Yellow body+sparkles → very light blush pink (almost white with pink hint)
+      { from: 38, to: 68, targetFrom: 348, targetTo: 355, sat: 0.35, lit: 1.45 },
     ],
 
     // ── BIRD ──
     // Base: dark-to-medium green body (~85-165°), vivid purple crest (~260-325°),
     // yellow beak (~40-55°), brown feet (low sat → skipped).
-    // Bird body is DARKER than frog — needs significant lightness boost to avoid brown.
+    // Bird body is MUCH darker than frog — needs extreme lightness boost to avoid brown.
     'bird-phoenix': [
-      // Body → vibrant warm orange (NOT red, not brown). Big lit boost (1.3) essential
-      // because bird's dark green base becomes dark brown at low lightness.
-      { from: 80, to: 168, targetFrom: 14, targetTo: 28, sat: 1.3, lit: 1.3 },
-      // Crest → brilliant flame gold (this looked good already)
-      { from: 258, to: 328, targetFrom: 38, targetTo: 50, sat: 1.3, lit: 1.1 },
+      // Body → fiery red-orange. Hue 5-16° reads as FIRE (not brown) even at lower
+      // lightness. Massive lit 1.5 + shine 0.35 to push dark green into bright ember range.
+      { from: 80, to: 168, targetFrom: 5, targetTo: 16, sat: 1.4, lit: 1.5, shine: 0.35 },
+      // Crest → brilliant flame gold
+      { from: 258, to: 328, targetFrom: 38, targetTo: 50, sat: 1.3, lit: 1.15 },
     ],
     'bird-arctic': [
-      // Body → vivid ice blue. Higher sat than before for more color pop.
-      { from: 80, to: 168, targetFrom: 200, targetTo: 212, sat: 0.85, lit: 1.2 },
-      // Crest → soft frost blue (not too desaturated — still reads as colored)
-      { from: 258, to: 328, targetFrom: 210, targetTo: 220, sat: 0.45, lit: 1.3 },
+      // Body → bright vivid ice blue. High sat + lit for that frozen crystal look.
+      // Shine adds icy gleam on highlights.
+      { from: 80, to: 168, targetFrom: 196, targetTo: 208, sat: 0.95, lit: 1.35, shine: 0.25 },
+      // Crest → icy crystal blue (more saturated than before for visible ice color)
+      { from: 258, to: 328, targetFrom: 205, targetTo: 215, sat: 0.55, lit: 1.4 },
     ],
 
     // ── BEE ──

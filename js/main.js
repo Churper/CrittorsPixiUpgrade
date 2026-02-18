@@ -672,7 +672,19 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     { id: 'tophat', icon: '🎩', name: 'Top Hat', cost: 1 },
   ];
   const skinCatalog = [
-    { id: 'frog-blue', icon: '🐸', name: 'Blue Frog', cost: 1, charOnly: 'frog', tint: 0x5588ff },
+    // Frog skins
+    { id: 'frog-ice',    icon: '🧊', name: 'Ice Frog',       cost: 3, charOnly: 'frog' },
+    { id: 'frog-golden', icon: '✨', name: 'Golden Frog',    cost: 5, charOnly: 'frog' },
+    { id: 'frog-shadow', icon: '🌑', name: 'Shadow Frog',    cost: 4, charOnly: 'frog' },
+    // Snail skins
+    { id: 'snail-crystal', icon: '💎', name: 'Crystal Snail', cost: 3, charOnly: 'snail' },
+    { id: 'snail-magma',   icon: '🌋', name: 'Magma Snail',  cost: 4, charOnly: 'snail' },
+    // Bird skins
+    { id: 'bird-phoenix', icon: '🔥', name: 'Phoenix Bird',  cost: 5, charOnly: 'bird' },
+    { id: 'bird-arctic',  icon: '❄️', name: 'Arctic Bird',   cost: 3, charOnly: 'bird' },
+    // Bee skins
+    { id: 'bee-neon',  icon: '💚', name: 'Neon Bee',   cost: 3, charOnly: 'bee' },
+    { id: 'bee-royal', icon: '👑', name: 'Royal Bee',  cost: 5, charOnly: 'bee' },
   ];
   // Items that can have starting counts purchased
   const inventoryItemCatalog = [
@@ -777,8 +789,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const el = document.createElement('div');
       el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
-        ? `<span>${skin.icon}</span>`
-        : `<span>${skin.icon}</span><span class="subview-cost">🦴${skin.cost}</span>`;
+        ? `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span>`
+        : `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span><span class="subview-cost">🦴${skin.cost}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.bones < skin.cost) return;
@@ -1641,15 +1653,91 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   let _swapLock = false; // debounce guard for swap clicks
 
-  // Skin catalog with tints (must match the catalog in the layout section)
-  const skinTints = { 'frog-blue': 0x5588ff };
+  // Skin filter builders — each returns an array of PIXI filters (or empty for default)
+  const skinFilterBuilders = {
+    // ── Frog ──
+    'frog-ice': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.hueRotate(160, false);
+      f.saturate(-0.3, true);
+      f.brightness(1.15, true);
+      return [f];
+    },
+    'frog-golden': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.sepia(false);
+      f.saturate(0.6, true);
+      f.brightness(1.2, true);
+      return [f];
+    },
+    'frog-shadow': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.brightness(0.55, false);
+      f.contrast(1.5, true);
+      f.saturate(-0.5, true);
+      f.hueRotate(270, true);
+      return [f];
+    },
+    // ── Snail ──
+    'snail-crystal': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.hueRotate(190, false);
+      f.brightness(1.25, true);
+      f.saturate(0.4, true);
+      f.contrast(1.2, true);
+      return [f];
+    },
+    'snail-magma': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.hueRotate(-30, false);
+      f.saturate(1.2, true);
+      f.brightness(1.1, true);
+      return [f];
+    },
+    // ── Bird ──
+    'bird-phoenix': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.hueRotate(-50, false);
+      f.saturate(1.0, true);
+      f.brightness(1.15, true);
+      f.contrast(1.15, true);
+      return [f];
+    },
+    'bird-arctic': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.saturate(-0.6, false);
+      f.hueRotate(180, true);
+      f.brightness(1.3, true);
+      return [f];
+    },
+    // ── Bee ──
+    'bee-neon': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.hueRotate(90, false);
+      f.saturate(1.5, true);
+      f.brightness(1.2, true);
+      return [f];
+    },
+    'bee-royal': () => {
+      const f = new PIXI.ColorMatrixFilter();
+      f.sepia(false);
+      f.saturate(0.8, true);
+      f.hueRotate(-20, true);
+      f.brightness(1.1, true);
+      f.contrast(1.1, true);
+      return [f];
+    },
+  };
 
-  // Returns the base tint for the current character (skin color override or white)
-  function getCharBaseTint(charType) {
+  // Apply skin filter to critter (or clear for default)
+  function applySkinFilter(critterSprite, charType) {
     const charName = charType ? charType.replace('character-', '') : '';
     const skinId = state.equippedSkins[charName];
-    if (skinId && skinTints[skinId]) return skinTints[skinId];
-    return 0xffffff;
+    if (skinId && skinFilterBuilders[skinId]) {
+      critterSprite.filters = skinFilterBuilders[skinId]();
+    } else {
+      critterSprite.filters = [];
+    }
   }
 
   // Hat rendering — draws a hat graphic as a child of the critter sprite
@@ -1835,7 +1923,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       if (state.rageActive) {
         state.rageActive = false;
         state.rageEndTime = 0;
-        critter.tint = getCharBaseTint(getCurrentCharacter());
+        critter.tint = 0xffffff;
         if (state.originalAnimSpeed) {
           critter.animationSpeed = state.originalAnimSpeed;
           state.originalAnimSpeed = null;
@@ -4394,7 +4482,7 @@ let cantGainEXP = false;
         } else if (critter && (critter.alpha !== 1 || critter.tint === 0xffd700)) {
           critter.alpha = 1;
           if (state.featherReviveEnd) {
-            critter.tint = state.rageActive ? 0xff4444 : getCharBaseTint(getCurrentCharacter());
+            critter.tint = state.rageActive ? 0xff4444 : 0xffffff;
             state.featherReviveEnd = null;
           }
         }
@@ -4921,8 +5009,9 @@ state.demiSpawned = 0;
           updateVelocity();
           setCharSwap(false);
           stopFlashing();
-          critter.tint = getCharBaseTint(getCurrentCharacter());
+          critter.tint = 0xffffff;
           applyHat(critter, getCurrentCharacter());
+          applySkinFilter(critter, getCurrentCharacter());
           // Update defense for this character
           const swapChar = getCurrentCharacter().replace('character-', '');
           state.defense = (state.charDefense && state.charDefense[swapChar]) || 0;
@@ -4967,7 +5056,7 @@ state.demiSpawned = 0;
         if (state.rageActive) {
           if (Date.now() > state.rageEndTime) {
             state.rageActive = false;
-            critter.tint = getCharBaseTint(getCurrentCharacter());
+            critter.tint = 0xffffff;
             if (state.originalAnimSpeed) {
               critter.animationSpeed = state.originalAnimSpeed;
               state.originalAnimSpeed = null;
@@ -5127,8 +5216,9 @@ state.demiSpawned = 0;
       document.getElementById("potion-shop").style.visibility = "visible";
       updatePotionUI();
       critter.scale.set(getFrogSize());
-      critter.tint = getCharBaseTint(getCurrentCharacter());
+      critter.tint = 0xffffff;
       applyHat(critter, getCurrentCharacter());
+      applySkinFilter(critter, getCurrentCharacter());
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       console.log("STORED", state.stored);

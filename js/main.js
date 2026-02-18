@@ -1668,72 +1668,75 @@ document.addEventListener('DOMContentLoaded', function () {
     f.matrix = matrix;
     return [f];
   }
+  // Matrices tuned to each character's base palette:
+  //   Frog = green, Snail = brown/tan, Bird = colorful, Bee = yellow/black
+  // Cross-channel mapping (e.g. R_g = 0.8) remaps green input → red output.
   const skinFilterBuilders = {
-    // ── Frog ──
-    // Ice: frosty blue-cyan, cool and bright
+    // ── Frog (base: green) ──
+    // Ice: remap green → blue/cyan, suppress red, bright frosty
     'frog-ice': () => makeSkinFilter([
-      0.55, 0.10, 0.10, 0, 0.06,
-      0.05, 0.65, 0.20, 0, 0.10,
-      0.00, 0.15, 1.10, 0, 0.14,
+      0.20, 0.10, 0.05, 0, 0.08,
+      0.00, 0.40, 0.10, 0, 0.18,
+      0.00, 0.75, 0.30, 0, 0.22,
       0,    0,    0,    1, 0,
     ]),
-    // Golden: rich warm gold, like a gilded statue
+    // Golden: remap green → red+green (=gold), crush blue
     'frog-golden': () => makeSkinFilter([
-      1.15, 0.20, 0.00, 0, 0.06,
-      0.08, 0.85, 0.05, 0, 0.04,
-      0.00, 0.05, 0.35, 0, 0.00,
+      0.30, 0.85, 0.00, 0, 0.10,
+      0.00, 0.70, 0.00, 0, 0.05,
+      0.00, 0.00, 0.20, 0, 0.00,
       0,    0,    0,    1, 0,
     ]),
-    // Shadow: dark mystic purple, high contrast
+    // Shadow: green → dim purple, very dark and moody
     'frog-shadow': () => makeSkinFilter([
-      0.38, 0.05, 0.18, 0, 0.02,
-      0.00, 0.28, 0.06, 0, 0.00,
-      0.12, 0.06, 0.50, 0, 0.06,
+      0.20, 0.30, 0.10, 0, 0.05,
+      0.00, 0.12, 0.00, 0, 0.00,
+      0.10, 0.40, 0.20, 0, 0.08,
       0,    0,    0,    1, 0,
     ]),
-    // ── Snail ──
-    // Crystal: bright shimmering cyan-blue
+    // ── Snail (base: brown/tan) ──
+    // Crystal: brown → bright cyan-blue crystal
     'snail-crystal': () => makeSkinFilter([
-      0.45, 0.10, 0.20, 0, 0.08,
-      0.10, 0.85, 0.22, 0, 0.12,
-      0.08, 0.20, 1.10, 0, 0.16,
+      0.15, 0.10, 0.30, 0, 0.10,
+      0.10, 0.45, 0.40, 0, 0.18,
+      0.05, 0.30, 1.10, 0, 0.22,
       0,    0,    0,    1, 0,
     ]),
-    // Magma: fiery red-orange glow
+    // Magma: brown → fiery red-orange, crushed blue
     'snail-magma': () => makeSkinFilter([
-      1.30, 0.18, 0.00, 0, 0.10,
-      0.12, 0.50, 0.00, 0, 0.02,
-      0.00, 0.02, 0.25, 0, 0.00,
+      1.40, 0.25, 0.00, 0, 0.12,
+      0.20, 0.40, 0.00, 0, 0.00,
+      0.00, 0.00, 0.12, 0, 0.00,
       0,    0,    0,    1, 0,
     ]),
     // ── Bird ──
-    // Phoenix: warm fiery orange with saturated reds
+    // Phoenix: → fiery orange-red, intense warm
     'bird-phoenix': () => makeSkinFilter([
-      1.25, 0.22, 0.00, 0, 0.10,
-      0.15, 0.65, 0.00, 0, 0.04,
-      0.00, 0.05, 0.30, 0, 0.00,
+      1.30, 0.35, 0.10, 0, 0.12,
+      0.20, 0.45, 0.00, 0, 0.02,
+      0.00, 0.00, 0.15, 0, 0.00,
       0,    0,    0,    1, 0,
     ]),
-    // Arctic: icy pale blue-white, ethereal
+    // Arctic: → icy white-blue, washed out and cold
     'bird-arctic': () => makeSkinFilter([
-      0.70, 0.15, 0.15, 0, 0.12,
-      0.10, 0.75, 0.18, 0, 0.14,
-      0.05, 0.18, 0.95, 0, 0.18,
+      0.55, 0.20, 0.20, 0, 0.18,
+      0.15, 0.55, 0.25, 0, 0.20,
+      0.10, 0.25, 0.80, 0, 0.25,
       0,    0,    0,    1, 0,
     ]),
-    // ── Bee ──
-    // Neon: vivid electric green
+    // ── Bee (base: yellow/black) ──
+    // Neon: yellow → electric green, kill red
     'bee-neon': () => makeSkinFilter([
-      0.35, 0.18, 0.00, 0, 0.00,
-      0.12, 1.20, 0.10, 0, 0.10,
-      0.00, 0.15, 0.45, 0, 0.02,
+      0.15, 0.10, 0.00, 0, 0.00,
+      0.10, 1.15, 0.10, 0, 0.15,
+      0.00, 0.20, 0.35, 0, 0.05,
       0,    0,    0,    1, 0,
     ]),
-    // Royal: regal deep purple with gold highlights
+    // Royal: yellow → regal purple, add blue from red
     'bee-royal': () => makeSkinFilter([
-      0.90, 0.12, 0.22, 0, 0.05,
-      0.05, 0.55, 0.08, 0, 0.00,
-      0.18, 0.08, 0.90, 0, 0.10,
+      0.65, 0.05, 0.30, 0, 0.08,
+      0.00, 0.25, 0.08, 0, 0.00,
+      0.25, 0.15, 0.85, 0, 0.12,
       0,    0,    0,    1, 0,
     ]),
   };

@@ -2868,10 +2868,10 @@ state.frogGhostPlayer = new PIXI.Sprite(frogGhostTextures);
 state.frogGhostPlayer.anchor.set(0, 0);
 state.frogGhostPlayer.scale.set(0.28);
 
-      const mountain1 = createMountainGraphics(1, -100, mountainVelocity1, foreground, 0);
-      const mountain2 = createMountainGraphics(2, app.screen.width * 3.0, mountainVelocity2, foreground, 0);
-      const mountain3 = createMountainGraphics(2, app.screen.width * 1.5, mountainVelocity3, foreground, 0.7);
-      const mountain4 = createMountainGraphics(1, app.screen.width * 4.5, mountainVelocity4, foreground, 0.85);
+      const mountain1 = createMountainGraphics(1, app.screen.width * 0.8, mountainVelocity1, foreground, 0);
+      const mountain2 = createMountainGraphics(2, app.screen.width * 4.5, mountainVelocity2, foreground, 0);
+      const mountain3 = createMountainGraphics(2, app.screen.width * 2.2, mountainVelocity3, foreground, 0.7);
+      const mountain4 = createMountainGraphics(1, app.screen.width * 6.5, mountainVelocity4, foreground, 0.85);
 
       // Store base positions and parallax factors for camera-based parallax
       mountain4.baseX = mountain4.position.x; mountain4.parallaxFactor = 0.05;
@@ -2940,24 +2940,16 @@ state.frogGhostPlayer.scale.set(0.28);
         g.ellipse(w * 0.45, -h * 0.75, w * 0.04, h * 0.03).fill(dc(0x3d4a58, 0.15));
         g.ellipse(w * 0.15, -h * 0.28, w * 0.05, h * 0.03).fill(dc(0x3d4a58, 0.18));
 
-        // Layer 5: Small snow cap — just the tip
-        g.moveTo(w * 0.38, -h * 0.89);
-        g.bezierCurveTo(w * 0.41, -h * 0.94, w * 0.44, -h * 0.98, w * 0.47, -h);
+        // Layer 5: Peak highlight — subtle lightening near the top (not a separate "hat")
+        // Upper peak area — follows the silhouette closely, blends via low alpha
+        g.moveTo(w * 0.35, -h * 0.86);
+        g.bezierCurveTo(w * 0.39, -h * 0.92, w * 0.43, -h * 0.98, w * 0.47, -h);
         g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h);
-        g.bezierCurveTo(w * 0.57, -h * 0.97, w * 0.61, -h * 0.92, w * 0.64, -h * 0.87);
-        // Wavy bottom
-        g.bezierCurveTo(w * 0.58, -h * 0.85, w * 0.52, -h * 0.87, w * 0.47, -h * 0.85);
-        g.bezierCurveTo(w * 0.42, -h * 0.87, w * 0.40, -h * 0.88, w * 0.38, -h * 0.89);
+        g.bezierCurveTo(w * 0.58, -h * 0.96, w * 0.63, -h * 0.90, w * 0.67, -h * 0.84);
+        g.bezierCurveTo(w * 0.58, -h * 0.82, w * 0.50, -h * 0.84, w * 0.44, -h * 0.82);
+        g.bezierCurveTo(w * 0.39, -h * 0.83, w * 0.37, -h * 0.84, w * 0.35, -h * 0.86);
         g.closePath();
-        g.fill(dc(0xdce1e8, 0.85));
-
-        // Layer 6: Snow highlight — bright left edge of snow
-        g.moveTo(w * 0.40, -h * 0.91);
-        g.bezierCurveTo(w * 0.43, -h * 0.95, w * 0.45, -h * 0.98, w * 0.47, -h);
-        g.quadraticCurveTo(w * 0.49, -h * 1.01, w * 0.50, -h);
-        g.lineTo(w * 0.46, -h * 0.90);
-        g.closePath();
-        g.fill(dc(0xeef2f7, 0.5));
+        g.fill(dc(0x8899aa, 0.45));
 
         // Layer 7: Base atmospheric haze
         g.moveTo(0, 0);
@@ -3029,15 +3021,15 @@ state.frogGhostPlayer.scale.set(0.28);
         g.ellipse(w * 0.75, -h * 0.35, w * 0.04, h * 0.02).fill(dc(0x3d4a58, 0.18));
         g.ellipse(w * 0.30, -h * 0.28, w * 0.03, h * 0.02).fill(dc(0x3d4a58, 0.15));
 
-        // Layer 5: Snow cap — center peak only, small
-        g.moveTo(w * 0.42, -h * 0.88);
-        g.bezierCurveTo(w * 0.44, -h * 0.93, w * 0.46, -h * 0.96, w * 0.47, -h * 0.96);
+        // Layer 5: Peak highlight — subtle lightening near center peak top
+        g.moveTo(w * 0.40, -h * 0.86);
+        g.bezierCurveTo(w * 0.43, -h * 0.92, w * 0.46, -h * 0.96, w * 0.47, -h * 0.96);
         g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h * 0.96);
-        g.bezierCurveTo(w * 0.55, -h * 0.94, w * 0.58, -h * 0.89, w * 0.60, -h * 0.86);
-        g.bezierCurveTo(w * 0.55, -h * 0.84, w * 0.50, -h * 0.86, w * 0.46, -h * 0.84);
-        g.bezierCurveTo(w * 0.44, -h * 0.86, w * 0.43, -h * 0.87, w * 0.42, -h * 0.88);
+        g.bezierCurveTo(w * 0.56, -h * 0.93, w * 0.59, -h * 0.88, w * 0.62, -h * 0.84);
+        g.bezierCurveTo(w * 0.55, -h * 0.82, w * 0.50, -h * 0.84, w * 0.45, -h * 0.82);
+        g.bezierCurveTo(w * 0.42, -h * 0.83, w * 0.41, -h * 0.84, w * 0.40, -h * 0.86);
         g.closePath();
-        g.fill(dc(0xdce1e8, 0.8));
+        g.fill(dc(0x8899aa, 0.4));
 
         // Layer 6: Base atmospheric haze
         g.moveTo(0, 0);
@@ -3163,13 +3155,13 @@ state.frogGhostPlayer.scale.set(0.28);
         // Right side drop
         g.bezierCurveTo(cw * 0.43, -b3h * 0.25, cw * 0.45, 0, cw * 0.45, 0);
 
-        // Flat bottom
-        g.lineTo(-cw * 0.45, 0);
+        // Slightly curved bottom — not a sharp straight line
+        g.bezierCurveTo(cw * 0.30, ch * 0.08, -cw * 0.10, ch * 0.10, -cw * 0.45, 0);
         g.closePath();
         g.fill({ color: 0xffffff, alpha: 1.0 });
 
-        // Subtle bottom shadow
-        g.ellipse(0, ch * 0.03, cw * 0.38, ch * 0.04).fill({ color: 0xe0e4ec, alpha: 0.45 });
+        // Subtle bottom shadow — slightly inside the shape
+        g.ellipse(0, ch * 0.02, cw * 0.36, ch * 0.05).fill({ color: 0xe0e4ec, alpha: 0.4 });
       }
 
       const clouds = new PIXI.Container();
@@ -3177,25 +3169,25 @@ state.frogGhostPlayer.scale.set(0.28);
       const clouds2 = new PIXI.Container();
       clouds2.eventMode = 'none';
       const CLOUD_SPREAD = 8000;
-      // Layer 1: foreground clouds
-      const cloud1Seeds = [0.12, 0.28, 0.42, 0.55, 0.68, 0.82, 0.95];
+      // Layer 1: foreground clouds — bigger, more spread out
+      const cloud1Seeds = [0.05, 0.15, 0.26, 0.36, 0.46, 0.56, 0.66, 0.76, 0.86, 0.96];
       for (let i = 0; i < cloud1Seeds.length; i++) {
+        const cg = new PIXI.Graphics();
+        const cw = 180 + (i % 3) * 60;
+        const ch = 60 + (i % 3) * 20;
+        drawCloud(cg, cw, ch, 3 + (i % 4));
+        cg.position.set(cloud1Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.04 + (i % 4) * 28);
+        cg.alpha = 0.9;
+        clouds.addChild(cg);
+      }
+      // Layer 2: background clouds — medium, more of them
+      const cloud2Seeds = [0.03, 0.11, 0.20, 0.29, 0.38, 0.47, 0.55, 0.64, 0.73, 0.82, 0.91];
+      for (let i = 0; i < cloud2Seeds.length; i++) {
         const cg = new PIXI.Graphics();
         const cw = 120 + (i % 3) * 40;
         const ch = 40 + (i % 2) * 15;
-        drawCloud(cg, cw, ch, 5 + (i % 3));
-        cg.position.set(cloud1Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.08 + (i % 3) * 30);
-        cg.alpha = 0.85;
-        clouds.addChild(cg);
-      }
-      // Layer 2: background clouds — smaller, translucent
-      const cloud2Seeds = [0.05, 0.15, 0.27, 0.38, 0.48, 0.6, 0.72, 0.83, 0.93];
-      for (let i = 0; i < cloud2Seeds.length; i++) {
-        const cg = new PIXI.Graphics();
-        const cw = 70 + (i % 3) * 25;
-        const ch = 25 + (i % 2) * 10;
-        drawCloud(cg, cw, ch, 4 + (i % 2));
-        cg.position.set(cloud2Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.2 + (i % 3) * 25);
+        drawCloud(cg, cw, ch, 3 + (i % 3));
+        cg.position.set(cloud2Seeds[i] * CLOUD_SPREAD, app.screen.height * 0.12 + (i % 4) * 25);
         cg.alpha = 0.95;
         clouds2.addChild(cg);
       }

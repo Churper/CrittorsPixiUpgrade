@@ -3640,7 +3640,6 @@ function transitionWeather(newWeather) {
     if (t.newWeather) t.newWeather.alpha = 1;
     if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha;
     if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha;
-    if (t.newPlayerShadow) t.newPlayerShadow.alpha = t.targetPlayerShadowAlpha;
     if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha;
     currentSkyTop = t.newSkyTop;
     currentSkyBottom = t.newSkyBottom;
@@ -3657,7 +3656,7 @@ function transitionWeather(newWeather) {
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
   const oldGroundDecorFG = endlessGroundDecorFG;
-  const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, nightFireGlows];
+  const oldOverlays = [sunLightOverlay, nightOverlay, nightFireGlows];
   const oldSkyTop = currentSkyTop;
   const oldSkyBottom = currentSkyBottom;
   const oldStarsAlpha = persistentStars.alpha;
@@ -3699,7 +3698,6 @@ function transitionWeather(newWeather) {
   // Detach old overlays so createWeatherEffects makes fresh ones
   sunLightOverlay = null;
   nightOverlay = null;
-  playerShadow = null;
   nightFireGlows = null;
   weatherContainer = null;
 
@@ -3708,12 +3706,10 @@ function transitionWeather(newWeather) {
   if (weatherContainer) weatherContainer.alpha = 0;
   if (sunLightOverlay) sunLightOverlay.alpha = 0;
   if (nightOverlay) nightOverlay.alpha = 0;
-  if (playerShadow) playerShadow.alpha = 0;
   if (nightFireGlows) nightFireGlows.alpha = 0;
 
   const targetNightAlpha = nightOverlay ? 0.35 : 0;
   const targetSunLightAlpha = sunLightOverlay ? 0.12 : 0;
-  const targetPlayerShadowAlpha = playerShadow ? 0.5 : 0;
   const targetFireGlowsAlpha = nightFireGlows ? 1 : 0;
   const newGrad = skyGradients[newWeather] || skyGradients.sun;
 
@@ -3726,10 +3722,9 @@ function transitionWeather(newWeather) {
     newWeather: weatherContainer,
     newSunLight: sunLightOverlay,
     newNightOverlay: nightOverlay,
-    newPlayerShadow: playerShadow,
     newFireGlows: nightFireGlows,
     newGround, newGroundDecor, newGroundDecorFG,
-    targetNightAlpha, targetSunLightAlpha, targetPlayerShadowAlpha,
+    targetNightAlpha, targetSunLightAlpha,
     targetFireGlowsAlpha,
     oldSkyTop, oldSkyBottom, oldStarsAlpha,
     newSkyTop: newGrad.top, newSkyBottom: newGrad.bottom, newStarsAlpha: newGrad.starsAlpha,
@@ -3829,7 +3824,6 @@ function updateBiomeTransition() {
   if (t.newWeather) t.newWeather.alpha = p;
   if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha * p;
   if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
-  if (t.newPlayerShadow) t.newPlayerShadow.alpha = t.targetPlayerShadowAlpha * p;
   if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha * p;
 
   if (p >= 1) {

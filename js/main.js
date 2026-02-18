@@ -74,6 +74,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   snailFrames[1].crossOrigin = 'anonymous';
   snailFrames[0].src = 'https://i.imgur.com/shRbAl5.png';
   snailFrames[1].src = 'https://i.imgur.com/r3DQaWf.png';
+  // Persistent snail state — survives resize
+  let snailX = -60;
+  let snailFrame = 0;
+  let snailFrameTimer = 0;
 
   function initMenuScene() {
     const dpr = window.devicePixelRatio || 1;
@@ -153,8 +157,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     ];
     const lanternR = Math.min(w, h) * 0.04;
 
-    // Snail state
-    let snailX = -60;
+    // Snail sizing
     const snailSpeed = w * 0.014;
     const snailSize = Math.min(w, h) * 0.1;
     let snailFrame = 0;
@@ -292,12 +295,24 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         mctx.fill();
       });
 
-      // Fires — logs/stones are static, only flames pulse
+      // Snail — drawn BEHIND fires/lanterns, bottom edge on ground
+      snailX += snailSpeed * 0.016;
+      if (snailX > w + snailSize) snailX = -snailSize;
+      snailFrameTimer += 0.016;
+      if (snailFrameTimer > 0.4) { snailFrameTimer = 0; snailFrame = (snailFrame + 1) % 2; }
+      const img = snailFrames[snailFrame];
+      if (img.complete && img.naturalWidth > 0) {
+        mctx.globalAlpha = 0.5;
+        mctx.drawImage(img, snailX, groundY - snailSize, snailSize, snailSize);
+        mctx.globalAlpha = 1;
+      }
+
+      // Fires — logs/stones static, only flames pulse
       fires.forEach(f => {
         const flicker = 0.7 + Math.sin(t * 5 + f.phase) * 0.2 + Math.sin(t * 11.5 + f.phase) * 0.1;
         const flamePulse = 0.9 + Math.sin(t * 3.5 + f.phase) * 0.15;
         const fy = groundY;
-        const r = fireBaseR; // static size for structure
+        const r = fireBaseR;
 
         // Wide ground light
         const groundGlow = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 10);
@@ -315,14 +330,14 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         mctx.fillStyle = fg;
         mctx.beginPath(); mctx.arc(f.x, fy - r * 0.5, r * 5, 0, 6.28); mctx.fill();
 
-        // Mid + core glow
+        // Mid glow
         const fg2 = mctx.createRadialGradient(f.x, fy - r * 0.6, 0, f.x, fy - r * 0.6, r * 2.5);
         fg2.addColorStop(0, `rgba(255, 180, 70, ${0.25 * flicker})`);
         fg2.addColorStop(1, 'rgba(255, 140, 50, 0)');
         mctx.fillStyle = fg2;
         mctx.beginPath(); mctx.arc(f.x, fy - r * 0.6, r * 2.5, 0, 6.28); mctx.fill();
 
-        // Static campfire structure — logs + stones (no pulse)
+        // Static campfire structure
         const logW = r * 1.2, logH = r * 0.22;
         mctx.save();
         mctx.translate(f.x, fy);
@@ -345,7 +360,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         }
         mctx.restore();
 
-        // Flames only — these pulse and flicker
+        // Flames only pulse
         const flameR = r * flamePulse;
         const flameH = flameR * 1.6;
         mctx.save();
@@ -376,70 +391,71 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         mctx.globalAlpha = 1;
       });
 
-      // Lanterns — tall posts with warm glow lighting the sides
+      // Lanterns — tall posts with cool white glow
       lanterns.forEach(ln => {
         const flicker = 0.75 + Math.sin(t * 4 + ln.phase) * 0.15 + Math.sin(t * 9 + ln.phase) * 0.1;
         const fy = groundY;
-        const postH = lanternR * 4;
+        const postH = lanternR * 7;
         const lampY = fy - postH;
 
-        // Wide ambient glow from lamp — lights up the side
-        const lg = mctx.createRadialGradient(ln.x, lampY, 0, ln.x, lampY, lanternR * 12);
-        lg.addColorStop(0, `rgba(255, 170, 60, ${0.1 * flicker})`);
-        lg.addColorStop(0.3, `rgba(255, 140, 40, ${0.05 * flicker})`);
-        lg.addColorStop(1, 'rgba(255, 100, 20, 0)');
+        // Wide ambient glow — cool white
+        const lg = mctx.createRadialGradient(ln.x, lampY, 0, ln.x, lampY, lanternR * 14);
+        lg.addColorStop(0, `rgba(220, 230, 255, ${0.1 * flicker})`);
+        lg.addColorStop(0.3, `rgba(200, 215, 240, ${0.05 * flicker})`);
+        lg.addColorStop(1, 'rgba(180, 200, 230, 0)');
         mctx.fillStyle = lg;
-        mctx.beginPath(); mctx.arc(ln.x, lampY, lanternR * 12, 0, 6.28); mctx.fill();
+        mctx.beginPath(); mctx.arc(ln.x, lampY, lanternR * 14, 0, 6.28); mctx.fill();
 
-        // Mid glow
-        const lg2 = mctx.createRadialGradient(ln.x, lampY, 0, ln.x, lampY, lanternR * 4);
-        lg2.addColorStop(0, `rgba(255, 190, 80, ${0.22 * flicker})`);
-        lg2.addColorStop(1, 'rgba(255, 150, 50, 0)');
+        // Mid glow — white
+        const lg2 = mctx.createRadialGradient(ln.x, lampY, 0, ln.x, lampY, lanternR * 5);
+        lg2.addColorStop(0, `rgba(230, 240, 255, ${0.2 * flicker})`);
+        lg2.addColorStop(1, 'rgba(210, 225, 245, 0)');
         mctx.fillStyle = lg2;
-        mctx.beginPath(); mctx.arc(ln.x, lampY, lanternR * 4, 0, 6.28); mctx.fill();
+        mctx.beginPath(); mctx.arc(ln.x, lampY, lanternR * 5, 0, 6.28); mctx.fill();
 
-        // Post
-        const postW = lanternR * 0.3;
-        mctx.fillStyle = '#1a1a1e';
+        // Post — tall dark iron
+        const postW = lanternR * 0.25;
+        mctx.fillStyle = '#18181c';
         mctx.fillRect(ln.x - postW * 0.5, lampY + lanternR * 0.5, postW, postH - lanternR * 0.5);
-        // Lamp housing
-        mctx.fillStyle = '#2a2a30';
-        mctx.fillRect(ln.x - lanternR * 0.5, lampY - lanternR * 0.3, lanternR, lanternR * 0.8);
-        // Cap
+        // Cross brace near top
+        mctx.fillRect(ln.x - lanternR * 0.35, lampY + lanternR * 1.2, lanternR * 0.7, postW * 0.6);
+
+        // Lamp housing — glass box
+        mctx.fillStyle = 'rgba(30, 35, 45, 0.8)';
+        mctx.fillRect(ln.x - lanternR * 0.45, lampY - lanternR * 0.35, lanternR * 0.9, lanternR * 0.9);
+        // Glass highlight edges
+        mctx.strokeStyle = 'rgba(150, 170, 200, 0.3)';
+        mctx.lineWidth = 1;
+        mctx.strokeRect(ln.x - lanternR * 0.45, lampY - lanternR * 0.35, lanternR * 0.9, lanternR * 0.9);
+
+        // Cap / roof
         mctx.beginPath();
-        mctx.moveTo(ln.x - lanternR * 0.6, lampY - lanternR * 0.3);
-        mctx.lineTo(ln.x, lampY - lanternR * 0.7);
-        mctx.lineTo(ln.x + lanternR * 0.6, lampY - lanternR * 0.3);
+        mctx.moveTo(ln.x - lanternR * 0.6, lampY - lanternR * 0.35);
+        mctx.lineTo(ln.x, lampY - lanternR * 0.9);
+        mctx.lineTo(ln.x + lanternR * 0.6, lampY - lanternR * 0.35);
         mctx.closePath();
-        mctx.fillStyle = '#2a2a30';
-        mctx.fill();
-        // Lamp glow core
-        mctx.beginPath();
-        mctx.arc(ln.x, lampY, lanternR * 0.35, 0, 6.28);
-        mctx.fillStyle = `rgba(255, 200, 80, ${0.7 * flicker})`;
+        mctx.fillStyle = '#22222a';
         mctx.fill();
 
-        // Ground light pool from lantern
+        // Lamp glow core — bright white
+        mctx.beginPath();
+        mctx.arc(ln.x, lampY + lanternR * 0.1, lanternR * 0.3, 0, 6.28);
+        mctx.fillStyle = `rgba(240, 245, 255, ${0.8 * flicker})`;
+        mctx.fill();
+        mctx.beginPath();
+        mctx.arc(ln.x, lampY + lanternR * 0.1, lanternR * 0.15, 0, 6.28);
+        mctx.fillStyle = `rgba(255, 255, 255, ${0.9 * flicker})`;
+        mctx.fill();
+
+        // Ground light pool — cool white
         mctx.globalAlpha = 0.1 * flicker;
-        const lPool = mctx.createRadialGradient(ln.x, groundY + 2, 0, ln.x, groundY + 2, lanternR * 10);
-        lPool.addColorStop(0, '#ffbb66');
-        lPool.addColorStop(1, 'rgba(255, 150, 60, 0)');
+        const lPool = mctx.createRadialGradient(ln.x, groundY + 2, 0, ln.x, groundY + 2, lanternR * 12);
+        lPool.addColorStop(0, '#dde6ff');
+        lPool.addColorStop(1, 'rgba(200, 215, 240, 0)');
         mctx.fillStyle = lPool;
-        mctx.fillRect(ln.x - lanternR * 10, groundY, lanternR * 20, h - groundY);
+        mctx.fillRect(ln.x - lanternR * 12, groundY, lanternR * 24, h - groundY);
         mctx.globalAlpha = 1;
       });
-
-      // Snail crawling across ground — bottom edge on the ground, darkened
-      snailX += snailSpeed * 0.016;
-      if (snailX > w + snailSize) snailX = -snailSize;
-      snailFrameTimer += 0.016;
-      if (snailFrameTimer > 0.4) { snailFrameTimer = 0; snailFrame = (snailFrame + 1) % 2; }
-      const img = snailFrames[snailFrame];
-      if (img.complete && img.naturalWidth > 0) {
-        mctx.globalAlpha = 0.55;
-        mctx.drawImage(img, snailX, groundY - snailSize * 0.45, snailSize, snailSize * 0.5);
-        mctx.globalAlpha = 1;
-      }
 
       menuAnimId = requestAnimationFrame(drawFrame);
     }

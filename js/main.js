@@ -544,11 +544,11 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('layout-btn').addEventListener('click', function() {
     showLayoutDeck();
     updateLayoutUI();
-    layoutPanel.style.display = 'block';
+    showPanel('layout');
   });
 
   document.getElementById('layout-close-btn').addEventListener('click', function() {
-    layoutPanel.style.display = 'none';
+    hidePanel('layout');
   });
 
   // Card deck navigation — flip through characters
@@ -855,28 +855,48 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // Helper: show/hide panel via its backdrop
+  function showPanel(panelId) {
+    const backdrop = document.getElementById(panelId + '-backdrop');
+    if (backdrop) backdrop.classList.add('visible');
+  }
+  function hidePanel(panelId) {
+    const backdrop = document.getElementById(panelId + '-backdrop');
+    if (backdrop) backdrop.classList.remove('visible');
+  }
+
+  // Click-outside-to-close for all panel backdrops
+  document.querySelectorAll('.panel-backdrop').forEach(function(backdrop) {
+    backdrop.addEventListener('click', function(e) {
+      if (e.target === backdrop) {
+        backdrop.classList.remove('visible');
+      }
+    });
+  });
+
   document.getElementById('info-btn').addEventListener('click', function() {
-    document.getElementById('info-panel').style.display = 'block';
+    showPanel('info');
   });
 
   document.getElementById('info-close-btn').addEventListener('click', function() {
-    document.getElementById('info-panel').style.display = 'none';
+    hidePanel('info');
   });
 
   document.getElementById('leaderboard-btn').addEventListener('click', function() {
     showLeaderboardPanel();
+    showPanel('leaderboard');
   });
 
   document.getElementById('leaderboard-close-btn').addEventListener('click', function() {
-    document.getElementById('leaderboard-panel').style.display = 'none';
+    hidePanel('leaderboard');
   });
 
   document.getElementById('guide-btn').addEventListener('click', function() {
-    document.getElementById('guide-panel').style.display = 'block';
+    showPanel('guide');
   });
 
   document.getElementById('guide-close-btn').addEventListener('click', function() {
-    document.getElementById('guide-panel').style.display = 'none';
+    hidePanel('guide');
   });
 
   async function mainAppFunction() {

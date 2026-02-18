@@ -67,7 +67,6 @@ export async function fetchLeaderboard(mode, limit = 20) {
 // ── Leaderboard panel rendering ─────────────────────────────
 export async function showLeaderboardPanel() {
   const panel = document.getElementById('leaderboard-panel');
-  panel.style.display = 'block';
 
   // Wire tab clicks
   const tabs = panel.querySelectorAll('.lb-tab');

@@ -143,10 +143,10 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
   enemy.isDemi = true;
 
   if (state.gameMode === 'endless') {
-    const elapsed = state.endlessElapsed || 0;
-    enemy.attackDamage = Math.round(2 + elapsed / 20) + 2;
-    enemy.maxHP = 200 + Math.floor(elapsed / 10) * 7;
-    enemy.exp = 32 + Math.floor(elapsed / 10) * 4;
+    const sc = state.endlessSpawnCount || 0;
+    enemy.attackDamage = Math.round(2 + sc / 2) + 2;
+    enemy.maxHP = 200 + sc * 7;
+    enemy.exp = 32 + sc * 4;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 2);
     enemy.maxHP = 200 + state.currentRound * 7;
@@ -205,10 +205,10 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
   enemy.isAlive = true;
 
   if (state.gameMode === 'endless') {
-    const elapsed = state.endlessElapsed || 0;
-    enemy.attackDamage = Math.round(2 + elapsed / 20);
-    enemy.maxHP = 80 + Math.floor(elapsed / 10) * 7;
-    enemy.exp = 32 + Math.floor(elapsed / 10) * 2;
+    const sc = state.endlessSpawnCount || 0;
+    enemy.attackDamage = Math.round(2 + sc / 2);
+    enemy.maxHP = 80 + sc * 7;
+    enemy.exp = 32 + sc * 2;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 3);
     enemy.maxHP = 80 + state.currentRound * 7;
@@ -243,15 +243,7 @@ export function determineEnemyScale(enemyName) {
 
 export function handleEnemySorting(enemy) {
   if (state.app.stage.children.includes(enemy)) {
-    state.enemies.sort((a, b) => a.position.y - b.position.y);
-    state.enemies.forEach((enemy) => {
-      if (enemy.parent === state.app.stage) {
-        state.app.stage.removeChild(enemy);
-      }
-    });
-    state.enemies.forEach((enemy) => {
-      state.app.stage.addChild(enemy);
-    });
+    state.app.stage.sortChildren();
   }
 }
 

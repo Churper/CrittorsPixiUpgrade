@@ -1,25 +1,20 @@
 // utils.js — Random color helpers
 
+function makeRandomColor(rMin, rRange, gMin, gRange, bMin, bRange) {
+  const r = Math.floor(Math.random() * rRange) + rMin;
+  const g = Math.floor(Math.random() * gRange) + gMin;
+  const b = Math.floor(Math.random() * bRange) + bMin;
+  return (r << 16) | (g << 8) | b;
+}
+
 export function getRandomColor() {
-  const r = Math.floor(Math.random() * 192) + 64;
-  const g = Math.floor(Math.random() * 192) + 64;
-  const b = Math.floor(Math.random() * 128) + 128;
-  const color = (r << 16) | (g << 8) | b;
-  return color;
+  return makeRandomColor(64, 192, 64, 192, 128, 128);
 }
 
 export function getRandomColor1() {
-  const r = Math.floor(Math.random() * 64) + 192;
-  const g = Math.floor(Math.random() * 64) + 192;
-  const b = Math.floor(Math.random() * 128) + 128;
-  const color = (r << 16) | (g << 8) | b;
-  return color;
+  return makeRandomColor(192, 64, 192, 64, 128, 128);
 }
 
 export function getRandomColor3() {
-  const r = Math.floor(Math.random() * 256);
-  const g = Math.floor(Math.random() * 128) + 128;
-  const b = Math.floor(Math.random() * 256);
-  const color = (r << 16) | (g << 8) | b;
-  return color;
+  return makeRandomColor(0, 256, 128, 128, 0, 256);
 }

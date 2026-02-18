@@ -4,7 +4,8 @@ const state = {
   // Game mode
   gameMode: 'story',          // 'story' or 'endless'
   endlessStartTime: null,     // Date.now() when endless begins
-  endlessElapsed: 0,          // seconds survived
+  endlessElapsed: 0,          // seconds survived (cosmetic only — weather)
+  endlessSpawnCount: 0,       // number of enemies spawned (used for gameplay scaling)
 
   // Core game state
   leveling: false,
@@ -67,7 +68,6 @@ const state = {
   currentCharacter: "character-frog",
   isCharAttacking: false,
   playerEXP: 0,
-  repicked: false,
   isDead: false,
   enemiesInRange: 0,
   areResetting: false,

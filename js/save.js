@@ -51,7 +51,6 @@ export function saveGame() {
     currentBirdHealth: state.currentBirdHealth,
     isGameStarted: state.isGameStarted,
     characterStats: state.characterStats,
-    repicked: state.repicked,
     frogEXP: state.frogEXP,
     snailEXP: state.snailEXP,
     beeEXP: state.beeEXP,
@@ -119,7 +118,6 @@ export function loadGame() {
     state.frogLevel = gameData.frogLevel;
     state.isGameStarted = gameData.isGameStarted;
     state.characterStats = gameData.characterStats;
-    state.repicked = gameData.repicked;
     const characterLevelElement = document.getElementById("character-level");
     const ch = state.currentCharacter ? state.currentCharacter.replace('character-', '') : 'frog';
     // Attack: base + (shop bonus)

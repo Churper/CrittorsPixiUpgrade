@@ -2,12 +2,17 @@
 
 import state from './state.js';
 
+let _snailEl = null;
+let _progressFilledEl = null;
+function getSnailEl() { return _snailEl || (_snailEl = document.getElementById('snail')); }
+function getProgressFilledEl() { return _progressFilledEl || (_progressFilledEl = document.getElementById('progress-filled')); }
+
 export function startTimer() {
   if (state.gameMode === 'endless') return;
   if (state.timerFinished) return;
 
-  const snail = document.getElementById('snail');
-  const progressFilled = document.getElementById('progress-filled');
+  const snail = getSnailEl();
+  const progressFilled = getProgressFilledEl();
 
   if (state.isPaused1) {
     // Resume from the paused time
@@ -57,8 +62,8 @@ export function startTimer() {
 }
 
 export function pauseTimer() {
-  const snail = document.getElementById('snail');
-  const progressFilled = document.getElementById('progress-filled');
+  const snail = getSnailEl();
+  const progressFilled = getProgressFilledEl();
 
   snail.style.animationPlayState = 'paused';
   progressFilled.style.animationPlayState = 'paused';
@@ -74,8 +79,8 @@ export function pauseTimer() {
 
 export function resetTimer() {
   if (state.gameMode === 'endless') return;
-  const snail = document.getElementById('snail');
-  const progressFilled = document.getElementById('progress-filled');
+  const snail = getSnailEl();
+  const progressFilled = getProgressFilledEl();
 
   snail.style.animation = 'none';
   progressFilled.style.animation = 'none';

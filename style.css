@@ -1867,6 +1867,74 @@ touch-action: manipulation;
   font-size: clamp(16px, 4vmin, 22px);
 }
 
+/* ── Inline picker (hat/skin grid inside card) ────────── */
+.layout-inline-picker {
+  width: 100%;
+  margin-top: clamp(4px, 1vmin, 8px);
+  flex-shrink: 0;
+}
+
+.layout-inline-picker .inline-picker-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(4px, 1vmin, 6px);
+  justify-content: center;
+}
+
+.layout-inline-picker .inline-picker-item {
+  width: clamp(36px, 9vmin, 44px);
+  height: clamp(36px, 9vmin, 44px);
+  border-radius: clamp(6px, 1.4vmin, 8px);
+  border: 2px solid rgba(100, 160, 200, 0.35);
+  background: rgba(15, 25, 45, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(16px, 4vmin, 20px);
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.layout-inline-picker .inline-picker-item:hover {
+  transform: scale(1.1);
+  border-color: rgba(100, 180, 220, 0.7);
+  box-shadow: 0 0 8px rgba(60, 140, 200, 0.25);
+}
+
+.layout-inline-picker .inline-picker-item:active {
+  transform: scale(0.93);
+}
+
+.layout-inline-picker .inline-picker-item.equipped {
+  border-color: rgba(80, 220, 120, 0.8);
+  box-shadow: 0 0 10px rgba(50, 200, 100, 0.35);
+  background: rgba(20, 50, 30, 0.6);
+}
+
+.layout-inline-picker .inline-picker-cost {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(7px, 1.6vmin, 9px);
+  color: #f0e8d0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  line-height: 1;
+}
+
+.layout-inline-picker .inline-picker-label {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(7px, 1.5vmin, 9px);
+  color: rgba(200, 220, 240, 0.6);
+  line-height: 1;
+}
+
+.layout-cosmetic-slot.slot-active {
+  border-color: rgba(80, 220, 120, 0.8);
+  box-shadow: 0 0 10px rgba(50, 200, 100, 0.3);
+  background: rgba(20, 50, 30, 0.5);
+}
 
 /* ── Inventory button in header ───────────────────────── */
 #layout-inventory-btn {

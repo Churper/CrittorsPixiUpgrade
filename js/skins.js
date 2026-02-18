@@ -79,27 +79,27 @@ const skinHueConfigs = {
   // Shell range starts at 170 to catch ALL blue/teal pixels including the lower shell.
   // The dark head area (~170-190°) gets recolored too but with the lit boost it looks fine.
   'snail-crystal': [
-    { from: 170, to: 280, targetFrom: 178, targetTo: 192, sat: 1.15, lit: 1.2 },
+    { from: 170, to: 334, targetFrom: 178, targetTo: 192, sat: 1.15, lit: 1.2 },
     { from: 335, to: 360, targetFrom: 185, targetTo: 192, sat: 0.3, lit: 1.35 },
     { from: 0, to: 20, targetFrom: 185, targetTo: 192, sat: 0.3, lit: 1.35 },
     { from: 38, to: 68, targetFrom: 200, targetTo: 210, sat: 0.5, lit: 1.1 },
   ],
   'snail-magma': [
-    { from: 170, to: 280, targetFrom: 2, targetTo: 14, sat: 1.35, lit: 1.3 },
+    { from: 170, to: 334, targetFrom: 2, targetTo: 14, sat: 1.35, lit: 1.3 },
     { from: 38, to: 68, targetFrom: 35, targetTo: 45, sat: 1.0, lit: 1.0 },
   ],
   'snail-valentine': [
-    { from: 170, to: 280, targetFrom: 335, targetTo: 348, sat: 1.2, lit: 1.35 },
+    { from: 170, to: 334, targetFrom: 335, targetTo: 348, sat: 1.2, lit: 1.35 },
     { from: 335, to: 360, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.05 },
     { from: 0, to: 20, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.05 },
     { from: 38, to: 68, targetFrom: 348, targetTo: 355, sat: 0.35, lit: 1.45 },
   ],
 
   // ── BIRD ──
-  // Phoenix: body → bright yellow/orange (hot flame center), petals/crest → vivid red-orange (fire)
+  // Phoenix: body → warm orange-red (fire core), crest → deep red (ember edges)
   'bird-phoenix': [
-    { from: 80, to: 168, targetFrom: 42, targetTo: 55, sat: 1.5, lit: 1.8, shine: 0.5 },
-    { from: 258, to: 328, targetFrom: 6, targetTo: 18, sat: 1.5, lit: 1.4, shine: 0.3 },
+    { from: 80, to: 168, targetFrom: 12, targetTo: 30, sat: 1.6, lit: 1.1, shine: 0.15 },
+    { from: 258, to: 328, targetFrom: 0, targetTo: 10, sat: 1.4, lit: 0.95, shine: 0.1 },
   ],
   'bird-arctic': [
     { from: 80, to: 168, targetFrom: 196, targetTo: 208, sat: 0.95, lit: 1.35, shine: 0.25 },

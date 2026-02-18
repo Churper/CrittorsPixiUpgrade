@@ -237,7 +237,7 @@ export function updateCharacterStats() {
 
 export function getCharacterDamage(currentCharacter) {
   let baseDmg;
-  switch (state.currentCharacter) {
+  switch (currentCharacter) {
     case 'character-snail':
       baseDmg = getSnailDamage(); break;
     case 'character-bird':
@@ -247,7 +247,7 @@ export function getCharacterDamage(currentCharacter) {
     case 'character-bee':
       baseDmg = getBeeDamage(); break;
     default:
-      console.log('Invalid character', state.currentCharacter);
+      console.log('Invalid character', currentCharacter);
       return 0;
   }
   return state.rageActive ? baseDmg * 2 : baseDmg;

@@ -504,6 +504,10 @@ document.addEventListener('DOMContentLoaded', function () {
   function updateDeckPositions() {
     layoutCards.forEach(card => {
       card.className = 'layout-card'; // reset classes
+      // Close any open inline pickers when swiping
+      const picker = card.querySelector('.layout-inline-picker');
+      if (picker) { picker.style.display = 'none'; picker.dataset.activeSlot = ''; }
+      card.querySelectorAll('.layout-cosmetic-slot').forEach(s => s.classList.remove('slot-active'));
     });
     for (let i = 0; i < layoutCards.length; i++) {
       const cardIdx = (layoutDeckIndex + i) % layoutCards.length;
@@ -823,20 +827,123 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-  // Cosmetic slot click handlers
+  // Cosmetic slot click handlers — toggle inline picker on the card
   document.querySelectorAll('.layout-cosmetic-slot').forEach(slot => {
     slot.addEventListener('click', function() {
       const card = this.closest('.layout-card');
       const charName = card.dataset.char;
-      const charLabel = card.querySelector('.layout-card-name').textContent;
       const slotType = this.dataset.slot;
+      const picker = card.querySelector('.layout-inline-picker');
+
+      // If this slot's picker is already open, close it
+      if (picker.style.display !== 'none' && picker.dataset.activeSlot === slotType) {
+        picker.style.display = 'none';
+        picker.dataset.activeSlot = '';
+        this.classList.remove('slot-active');
+        return;
+      }
+
+      // Clear active state from sibling slots
+      card.querySelectorAll('.layout-cosmetic-slot').forEach(s => s.classList.remove('slot-active'));
+      this.classList.add('slot-active');
+
+      // Render inline picker
+      picker.dataset.activeSlot = slotType;
+      picker.style.display = 'block';
       if (slotType === 'hat') {
-        showLayoutView(layoutHatsView, charLabel, charName);
+        renderInlineHats(picker, charName);
       } else if (slotType === 'skin') {
-        showLayoutView(layoutSkinsView, charLabel, charName);
+        renderInlineSkins(picker, charName);
       }
     });
   });
+
+  function renderInlineHats(container, charName) {
+    container.innerHTML = '<div class="inline-picker-grid"></div>';
+    const grid = container.querySelector('.inline-picker-grid');
+
+    // Default (no hat) — always first
+    const isNone = !state.equippedHats[charName];
+    const noneEl = document.createElement('div');
+    noneEl.className = 'inline-picker-item' + (isNone ? ' equipped' : '');
+    noneEl.innerHTML = '<span>✨</span>';
+    noneEl.addEventListener('click', () => {
+      state.equippedHats[charName] = null;
+      saveBones();
+      renderInlineHats(container, charName);
+      updateLayoutUI();
+    });
+    grid.appendChild(noneEl);
+
+    hatCatalog.forEach(hat => {
+      const owned = state.ownedHats.includes(hat.id);
+      const equipped = state.equippedHats[charName] === hat.id;
+      const el = document.createElement('div');
+      el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
+      el.innerHTML = owned
+        ? `<span>${hat.icon}</span>`
+        : `<span>${hat.icon}</span><span class="inline-picker-cost">🦴${hat.cost}</span>`;
+      el.addEventListener('click', () => {
+        if (!owned) {
+          if (state.bones < hat.cost) return;
+          state.bones -= hat.cost;
+          state.ownedHats.push(hat.id);
+          saveBones();
+          updateLayoutUI();
+          renderInlineHats(container, charName);
+        } else {
+          state.equippedHats[charName] = equipped ? null : hat.id;
+          saveBones();
+          renderInlineHats(container, charName);
+        }
+      });
+      grid.appendChild(el);
+    });
+  }
+
+  function renderInlineSkins(container, charName) {
+    container.innerHTML = '<div class="inline-picker-grid"></div>';
+    const grid = container.querySelector('.inline-picker-grid');
+
+    // Default skin — always first
+    const isDefault = !state.equippedSkins[charName];
+    const defEl = document.createElement('div');
+    defEl.className = 'inline-picker-item' + (isDefault ? ' equipped' : '');
+    defEl.innerHTML = '<span>✨</span>';
+    defEl.addEventListener('click', () => {
+      state.equippedSkins[charName] = null;
+      saveBones();
+      renderInlineSkins(container, charName);
+      updateLayoutUI();
+    });
+    grid.appendChild(defEl);
+
+    const available = skinCatalog.filter(s => !s.charOnly || s.charOnly === charName);
+    available.forEach(skin => {
+      const owned = state.ownedSkins.includes(skin.id);
+      const equipped = state.equippedSkins[charName] === skin.id;
+      const el = document.createElement('div');
+      el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
+      el.innerHTML = owned
+        ? `<span>${skin.icon}</span>`
+        : `<span>${skin.icon}</span><span class="inline-picker-cost">🦴${skin.cost}</span>`;
+      el.addEventListener('click', () => {
+        if (!owned) {
+          if (state.bones < skin.cost) return;
+          state.bones -= skin.cost;
+          state.ownedSkins.push(skin.id);
+          saveBones();
+          updateLayoutUI();
+          renderInlineSkins(container, charName);
+        } else {
+          state.equippedSkins[charName] = equipped ? null : skin.id;
+          saveBones();
+          renderInlineSkins(container, charName);
+        }
+      });
+      grid.appendChild(el);
+    });
+  }
 
   // Inventory button — toggles between inventory and deck view
   const layoutInvBtn = document.getElementById('layout-inventory-btn');
@@ -1601,8 +1708,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // If no enemies are alive, force a fast spawn (max 2s wait)
         const aliveCount = state.enemies.filter(e => e.isAlive).length;
         if (aliveCount === 0) {
-          const elapsed = state.endlessElapsed || 0;
-          const currentInterval = Math.max(2000, 12000 - Math.floor(elapsed / 5) * 50);
+          const sc = state.endlessSpawnCount || 0;
+          const currentInterval = Math.max(2000, 12000 - sc * 100);
           const maxWait = 2000;
           const earliest = Date.now() - (currentInterval - maxWait);
           if (state.timeOfLastSpawn < earliest) {
@@ -2554,6 +2661,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Set endless start time + reset kill count
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
+      state.endlessSpawnCount = 0;
       state.endlessKillCount = 0;
 
       // Load item stockpile — these are consumable, not per-run
@@ -5305,8 +5413,8 @@ state.demiSpawned = 0;
       }
 
       // Endless mode: no max spawns, no timer check
-      const elapsed = state.endlessElapsed || 0;
-      const currentInterval = Math.max(2000, 12000 - Math.floor(elapsed / 5) * 50);
+      const sc = state.endlessSpawnCount || 0;
+      const currentInterval = Math.max(2000, 12000 - sc * 100);
 
       const timeSinceLastSpawn = Date.now() - state.timeOfLastSpawn;
       if (timeSinceLastSpawn < currentInterval) {
@@ -5344,6 +5452,7 @@ state.demiSpawned = 0;
       }
 
       state.timeOfLastSpawn = Date.now();
+      state.endlessSpawnCount++;
 
       state.enemySpawnTimeout = setTimeout(() => {
         state.isSpawning = false;

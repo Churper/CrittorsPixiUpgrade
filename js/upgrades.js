@@ -27,7 +27,7 @@ export function updateEXP(exp) {
 }
 
 export function setCharacterSpeed(currentCharacter, speed) {
-  switch (state.currentCharacter) {
+  switch (currentCharacter) {
     case 'character-snail':
       setSnailSpeed(speed);
       break;
@@ -41,12 +41,12 @@ export function setCharacterSpeed(currentCharacter, speed) {
       setBeeSpeed(speed);
       break;
     default:
-      console.log('Invalid character', state.currentCharacter);
+      console.log('Invalid character', currentCharacter);
   }
 }
 
 export function setCharacterHealth(currentCharacter, health) {
-  switch (state.currentCharacter) {
+  switch (currentCharacter) {
     case 'character-snail':
       setSnailHealth(health);
       break;
@@ -60,12 +60,12 @@ export function setCharacterHealth(currentCharacter, health) {
       setBeeHealth(health);
       break;
     default:
-      console.log('Invalid character', state.currentCharacter);
+      console.log('Invalid character', currentCharacter);
   }
 }
 
 export function setCharacterDamage(currentCharacter, attack) {
-  switch (state.currentCharacter) {
+  switch (currentCharacter) {
     case 'character-snail':
       setSnailDamage(attack);
       break;
@@ -79,7 +79,7 @@ export function setCharacterDamage(currentCharacter, attack) {
       setBeeDamage(attack);
       break;
     default:
-      console.log('Invalid character', state.currentCharacter);
+      console.log('Invalid character', currentCharacter);
   }
 }
 

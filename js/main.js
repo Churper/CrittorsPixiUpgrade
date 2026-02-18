@@ -1718,10 +1718,10 @@ document.addEventListener('DOMContentLoaded', function () {
       { from: 70, to: 160, targetFrom: 190, targetTo: 200, sat: 1.2, lit: 1.15 },
     ],
     'frog-golden': [
-      // TRUE GOLD — not amber, not brown. Key: hue 44-52° is pure gold, lit BOOST (1.15)
-      // makes highlights gleam and prevents shadows from becoming brown mud.
-      // Moderate sat (1.2) keeps it rich but not oversaturated.
-      { from: 70, to: 160, targetFrom: 44, targetTo: 52, sat: 1.2, lit: 1.15 },
+      // TRUE GOLD with metallic shine. Hue 44-52° = pure gold. Lit 1.1 keeps it bright.
+      // shine: non-linear boost that makes bright pixels gleam like metal (highlights pop,
+      // shadows barely affected). Creates that shiny metallic statue look.
+      { from: 70, to: 160, targetFrom: 44, targetTo: 52, sat: 1.2, lit: 1.1, shine: 0.45 },
     ],
     'frog-shadow': [
       // Deep mystic violet. Dark and menacing but still readable.
@@ -1741,11 +1741,12 @@ document.addEventListener('DOMContentLoaded', function () {
       { from: 38, to: 68, targetFrom: 200, targetTo: 210, sat: 0.5, lit: 1.1 },
     ],
     'snail-magma': [
-      // Shell → deep volcanic red. Boosted lit (1.0) so dark blues don't become black.
-      { from: 190, to: 280, targetFrom: 2, targetTo: 12, sat: 1.4, lit: 1.0 },
-      // Red spiral stays red — already in range, no shift needed (outside 190-280).
-      // Yellow body → warm sandy amber (complements red shell, not ugly orange)
-      { from: 38, to: 68, targetFrom: 32, targetTo: 42, sat: 1.1, lit: 1.0 },
+      // Shell → fiery red. Range starts at 205 (not 190) to skip the dark teal head/face
+      // area (~190-205°) which turns into ugly dark brown when shifted to red at low lightness.
+      // Lit 1.15 ensures dark blue shadow areas in the shell become visible red, not black.
+      { from: 205, to: 280, targetFrom: 2, targetTo: 14, sat: 1.35, lit: 1.15 },
+      // Yellow body → warm natural tan (subtle shift, not jarring)
+      { from: 38, to: 68, targetFrom: 35, targetTo: 45, sat: 1.0, lit: 1.0 },
     ],
     'snail-valentine': [
       // Shell → bright candy pink. Warm, saturated, cheerful.
@@ -1811,6 +1812,9 @@ document.addEventListener('DOMContentLoaded', function () {
           hue = s.targetFrom + pct * (s.targetTo - s.targetFrom);
           if (s.sat !== undefined) sat = Math.min(1, sat * s.sat);
           if (s.lit !== undefined) lit = Math.min(1, Math.max(0, lit * s.lit));
+          // Metallic shine: non-linear boost where bright pixels get extra gleam
+          // (lit² means highlights pop dramatically while shadows barely change)
+          if (s.shine) lit = Math.min(1, lit + s.shine * lit * lit);
           break;
         }
       }

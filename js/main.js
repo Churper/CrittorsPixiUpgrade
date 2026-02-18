@@ -511,6 +511,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     }
   }
 
+  // Flat bonus per layout upgrade level
+  const layoutBonusPerLevel = { damage: 1, health: 12, speed: 0.15 };
+  const layoutBonusLabel = { damage: 'dmg', health: 'hp', speed: 'spd' };
+
   function updateLayoutUI() {
     const bones = state.bones;
     const upgrades = state.layoutUpgrades;
@@ -523,7 +527,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       card.querySelectorAll('.layout-row').forEach(row => {
         const stat = row.dataset.stat;
         const level = charUpgrades[stat] || 0;
-        row.querySelector('.layout-stat-level').textContent = `Lv ${level}`;
+        const totalBonus = level * layoutBonusPerLevel[stat];
+        const bonusStr = stat === 'speed' ? totalBonus.toFixed(2) : totalBonus;
+        row.querySelector('.layout-stat-bonus').textContent = `+${bonusStr} ${layoutBonusLabel[stat]}`;
         const cost = 10 + level * 5;
         const btn = row.querySelector('.layout-buy-btn');
         btn.dataset.cost = cost;
@@ -675,6 +681,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 5 },
     { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 5 },
     { id: 'goldenBean', icon: '☕', name: 'Golden Bean',     costPer: 4 },
+    { id: 'potionHeal', icon: '🧪', name: 'Potion Power',   costPer: 4, suffix: '+15 hp/use' },
   ];
 
   function showLayoutView(view, charLabel, charName) {
@@ -777,7 +784,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const count = state.startingItems[item.id] || 0;
       const el = document.createElement('div');
       el.className = 'layout-subview-item';
-      el.innerHTML = `<span>${item.icon}</span><span class="subview-count">x${count}</span><span class="subview-cost">🦴${item.costPer}</span>`;
+      const label = item.suffix ? `<span class="subview-label">${item.suffix}</span>` : '';
+      el.innerHTML = `<span>${item.icon}</span><span class="subview-count">x${count}</span>${label}<span class="subview-cost">🦴${item.costPer}</span>`;
       el.addEventListener('click', () => {
         if (state.bones < item.costPer) return;
         state.bones -= item.costPer;
@@ -1014,7 +1022,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   let weatherTicker = null;
   let sunLightOverlay = null;
   let nightOverlay = null;
-  let playerShadow = null;
+  // playerShadow removed for performance
   let nightFireGlows = null; // Animated glow circles for campfires/lanterns
   let sunBeamsAboveClouds = null; // Long beams that render above clouds
 
@@ -1041,11 +1049,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.app.stage.removeChild(nightOverlay);
       nightOverlay.destroy();
       nightOverlay = null;
-    }
-    if (playerShadow && state.app) {
-      state.app.stage.removeChild(playerShadow);
-      playerShadow.destroy();
-      playerShadow = null;
     }
     weatherSun = null;
     weatherMoon = null;
@@ -1120,13 +1123,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       sunLightOverlay.alpha = 0.12;
       sunLightOverlay.eventMode = 'none';
       app.stage.addChild(sunLightOverlay);
-
-      // Player shadow — big enough to be noticeable, above foreground
-      playerShadow = new PIXI.Graphics();
-      playerShadow.ellipse(0, 0, 40, 10).fill({ color: 0x000000, alpha: 0.5 });
-      playerShadow.zIndex = 9;
-      playerShadow.eventMode = 'none';
-      app.stage.addChild(playerShadow);
 
     } else if (type === 'rain') {
       // Rain drops
@@ -1228,13 +1224,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       nightOverlay.alpha = 0.35;
       nightOverlay.eventMode = 'none';
       app.stage.addChild(nightOverlay);
-
-      // Player shadow from moonlight
-      playerShadow = new PIXI.Graphics();
-      playerShadow.ellipse(0, 0, 30, 8).fill({ color: 0x000000, alpha: 0.3 });
-      playerShadow.zIndex = 9;
-      playerShadow.eventMode = 'none';
-      app.stage.addChild(playerShadow);
 
       // Animated fire glows — placed at campfire and lantern positions
       // (must match seeds 99222 and 99333 from drawEndlessGroundDecor)
@@ -1343,25 +1332,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         }
       }
 
-      // Player shadow: direction + length based on sun position
-      if (playerShadow && critter) {
-        const sunScreenX = arcX;
-        const critterScreenX = critter.position.x + app.stage.x;
-
-        // Shadow cast direction: opposite side from the sun
-        const sunDir = sunScreenX < critterScreenX ? 1 : -1;
-        // Longer shadow when sun is low, shorter at noon
-        const stretchX = 1 + (1 - brightness) * 2.5;
-
-        // Position at character's feet
-        playerShadow.position.set(
-          critter.position.x + sunDir * stretchX * 12,
-          state.stored + critter.height * 0.42
-        );
-        playerShadow.scale.set(stretchX, 1);
-        playerShadow.alpha = 0.25 + brightness * 0.35;
-      }
-
     } else if (type === 'rain') {
       for (const drop of weatherContainer.children) {
         drop.position.x += drop.vx * state.dt;
@@ -1447,20 +1417,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         nightOverlay.alpha = 0.3 + 0.15 * (1 - moonBrightness);
       }
 
-      // Player shadow from moonlight
-      if (playerShadow && critter) {
-        const moonScreenX = arcX;
-        const critterScreenX = critter.position.x + app.stage.x;
-        const moonDir = moonScreenX < critterScreenX ? 1 : -1;
-        const stretchX = 1 + (1 - moonBrightness) * 2;
-        playerShadow.position.set(
-          critter.position.x + moonDir * stretchX * 10,
-          state.stored + critter.height * 0.42
-        );
-        playerShadow.scale.set(stretchX, 1);
-        playerShadow.alpha = 0.12 + moonBrightness * 0.18;
-      }
-
       // Animate fire glows — flicker
       if (nightFireGlows) {
         // Position container on the ground layer
@@ -1530,7 +1486,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const isHurt = getPlayerCurrentHealth() < getPlayerHealth();
     if (doses <= 0 || !isHurt) return;
 
-    setPlayerCurrentHealth(Math.min(getPlayerCurrentHealth() + 70, getPlayerHealth()));
+    const healAmt = state.potionHealAmount || 70;
+    setPlayerCurrentHealth(Math.min(getPlayerCurrentHealth() + healAmt, getPlayerHealth()));
     updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
     state.potionDoses--;
     updatePotionUI();
@@ -2477,6 +2434,28 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const mountainVelocity4 = new PIXI.Point(0.1, 0.1);
     const hpBarColor = 0xff0000;
     loadGame();
+
+    // Apply layout stat upgrades to base character stats
+    const lu = state.layoutUpgrades || {};
+    const charKeys = ['frog', 'snail', 'bird', 'bee'];
+    charKeys.forEach(ch => {
+      const ups = lu[ch] || { damage: 0, health: 0, speed: 0 };
+      if (ups.damage) {
+        state[ch + 'Damage'] += ups.damage * 1;           // +1 flat damage per level
+        state.characterStats['character-' + ch].attack += ups.damage * 1;
+      }
+      if (ups.health) {
+        state[ch + 'Health'] += ups.health * 12;           // +12 flat HP per level
+        state['current' + ch[0].toUpperCase() + ch.slice(1) + 'Health'] += ups.health * 12;
+        state.characterStats['character-' + ch].health += ups.health * 12;
+      }
+      if (ups.speed) {
+        state[ch + 'Speed'] += ups.speed * 0.15;           // +0.15 speed per level
+        state.characterStats['character-' + ch].speed += ups.speed * 0.15;
+      }
+    });
+    // Apply potion heal bonus
+    state.potionHealAmount = 70 + (state.startingItems.potionHeal || 0) * 15;
 
     // --- Endless mode setup ---
     if (state.gameMode === 'endless') {

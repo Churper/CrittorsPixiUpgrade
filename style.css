@@ -1771,20 +1771,19 @@ touch-action: manipulation;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.layout-stat-name {
-  flex: 1;
-  font-size: clamp(0.85em, 2.8vmin, 1.05em);
-  font-family: 'Luckiest Guy', cursive;
-  color: #dde4ec;
+.layout-stat-icon {
+  font-size: clamp(16px, 4vmin, 22px);
+  flex-shrink: 0;
+  width: clamp(24px, 6vmin, 30px);
+  text-align: center;
 }
 
-.layout-stat-level {
+.layout-stat-bonus {
+  flex: 1;
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.8em, 2.4vmin, 0.95em);
+  font-size: clamp(0.85em, 2.6vmin, 1.05em);
   color: #8cc8e8;
-  margin-right: clamp(6px, 2vmin, 12px);
-  min-width: 36px;
-  text-align: center;
+  text-shadow: 0 0 4px rgba(80, 160, 220, 0.3);
 }
 
 .layout-buy-btn {
@@ -2023,6 +2022,12 @@ touch-action: manipulation;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
 }
 
+.subview-label {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(9px, 2vmin, 11px);
+  color: rgba(200, 220, 240, 0.6);
+}
+
 /* ── Layout landscape tweaks ─────────────────────────── */
 @media (orientation: landscape) and (max-height: 500px) {
   #layout-panel {
@@ -2049,8 +2054,7 @@ touch-action: manipulation;
   .layout-row {
     padding: clamp(3px, 1vh, 6px) 4px;
   }
-  .layout-stat-name { font-size: clamp(0.8em, 2.6vh, 1em); }
-  .layout-stat-level { font-size: clamp(0.75em, 2.2vh, 0.9em); }
+  .layout-stat-bonus { font-size: clamp(0.8em, 2.6vh, 1em); }
   .layout-buy-btn { font-size: clamp(0.7em, 2vh, 0.85em); padding: 3px 8px; }
   .layout-cosmetic-slot {
     width: clamp(34px, 9vh, 48px);

@@ -588,9 +588,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       weatherSun.position.set(arcX, arcY);
 
-      // Fade out as sun approaches/crosses the ground line
-      const sunGroundY = app.screen.height * 0.6;
-      weatherSun.alpha = arcY < sunGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (sunGroundY - 60)) / 80);
+      // Sun sinks behind foreground naturally (foreground zIndex 5 > sun zIndex 0.5)
 
       // Rotate rays slowly
       weatherSun.rotation = elapsed * 0.0003;
@@ -703,9 +701,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       weatherMoon.position.set(arcX, arcY);
 
-      // Fade out as moon approaches/crosses the ground line
-      const moonGroundY = app.screen.height * 0.6;
-      weatherMoon.alpha = arcY < moonGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (moonGroundY - 60)) / 80);
+      // Moon sinks behind foreground naturally via z-ordering
 
       // Slow rotation for subtle liveliness
       weatherMoon.rotation = Math.sin(elapsed * 0.0001) * 0.05;
@@ -2632,9 +2628,6 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       // Top cap
       d.rect(lnx - 6.5 * sc, lnY - 43 * sc, 13 * sc, 2.5 * sc)
         .fill({ color: 0x333333 });
-      // Ground glow — warm pool of light
-      d.circle(lnx, lnY, 35 * sc).fill({ color: 0xffaa33, alpha: 0.06 });
-      d.circle(lnx, lnY, 20 * sc).fill({ color: 0xffcc44, alpha: 0.09 });
       lnx += 700 + endlessGroundRandom() * 1000;
     }
   }
@@ -2807,11 +2800,9 @@ function updateBiomeTransition() {
   clouds.tint = cloudTint;
   clouds2.tint = cloudTint;
 
-  // Crossfade ground — new fades in on top of old, old removed once new is fully visible
+  // Crossfade ground — new fades in on top, old stays solid underneath until removed at p=1
   if (t.newGround) t.newGround.alpha = Math.min(1, p / 0.6);
   if (t.newGroundDecor) t.newGroundDecor.alpha = Math.min(1, p / 0.6);
-  if (t.oldGround) t.oldGround.alpha = p < 0.65 ? 1 : Math.max(0, 1 - (p - 0.65) / 0.2);
-  if (t.oldGroundDecor) t.oldGroundDecor.alpha = p < 0.65 ? 1 : Math.max(0, 1 - (p - 0.65) / 0.2);
 
   // Transition old weather out
   if (t.oldWeather) {
@@ -2835,9 +2826,7 @@ function updateBiomeTransition() {
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       t.oldSun.position.set(arcX, arcY);
       t.oldSun.rotation = sinkElapsed * 0.0003;
-      // Fade out as sun approaches ground line
-      const sinkGroundY = h * 0.6;
-      t.oldSun.alpha = arcY < sinkGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (sinkGroundY - 60)) / 80);
+      // Sun sinks behind foreground naturally via z-ordering
       t.oldWeather.alpha = 1;
     } else if (t.oldWasMoon && t.oldMoon) {
       // Moon: sink behind the ground the same way
@@ -2854,9 +2843,7 @@ function updateBiomeTransition() {
       const arcX = w * 0.9 - Math.min(progress, 1.3) * w * 0.8 + parallaxX;
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       t.oldMoon.position.set(arcX, arcY);
-      // Fade out as moon approaches ground line
-      const moonSinkGroundY = h * 0.6;
-      t.oldMoon.alpha = arcY < moonSinkGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (moonSinkGroundY - 60)) / 80);
+      // Moon sinks behind foreground naturally via z-ordering
       t.oldWeather.alpha = 1;
     } else {
       t.oldWeather.alpha = 1 - p;

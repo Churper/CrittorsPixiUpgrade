@@ -1644,18 +1644,24 @@ export function collectGroundItem(groundItem) {
     sprite.alpha = t < 0.7 ? 1 : 1 - (t - 0.7) * 3.33;
 
     if (progress >= 1) {
-      // Increment count
+      // Increment count + persist to stockpile
       if (itemType === 'shield') {
         setShieldCount(getShieldCount() + 1);
+        state.startingItems.shield = (state.startingItems.shield || 0) + 1;
       } else if (itemType === 'bomb') {
         setBombCount(getBombCount() + 1);
+        state.startingItems.bomb = (state.startingItems.bomb || 0) + 1;
       } else if (itemType === 'rage') {
         setRageCount(getRageCount() + 1);
+        state.startingItems.rage = (state.startingItems.rage || 0) + 1;
       } else if (itemType === 'feather') {
         setFeatherCount(getFeatherCount() + 1);
+        state.startingItems.feather = (state.startingItems.feather || 0) + 1;
       } else if (itemType === 'goldenBean') {
         setGoldenBeanCount(getGoldenBeanCount() + 1);
+        state.startingItems.goldenBean = (state.startingItems.goldenBean || 0) + 1;
       }
+      saveBones();
       updateItemButtonState(itemType);
 
       // Flash the button

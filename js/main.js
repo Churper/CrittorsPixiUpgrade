@@ -2625,11 +2625,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.endlessElapsed = 0;
       state.endlessKillCount = 0;
 
-      // Start with base items + purchased starting items from layout
+      // Load item stockpile — these are consumable, not per-run
       const si = state.startingItems || {};
       setShieldCount(si.shield || 0);
-      setBombCount(1 + (si.bomb || 0));
-      setRageCount(1 + (si.rage || 0));
+      setBombCount(si.bomb || 0);
+      setRageCount(si.rage || 0);
       setFeatherCount(si.feather || 0);
       setGoldenBeanCount(si.goldenBean || 0);
 
@@ -2654,6 +2654,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       shieldBtn.addEventListener('click', () => {
         if (getShieldCount() > 0 && !state.shieldActive) {
           setShieldCount(getShieldCount() - 1);
+          state.startingItems.shield = Math.max(0, (state.startingItems.shield || 0) - 1);
+          saveBones();
           document.getElementById('shield-count').textContent = getShieldCount();
           shieldBtn.classList.toggle('active', getShieldCount() > 0);
           if (getShieldCount() <= 0) { shieldBtn.style.display = 'none'; }
@@ -2691,6 +2693,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       bombBtn.addEventListener('click', () => {
         if (getBombCount() > 0) {
           setBombCount(getBombCount() - 1);
+          state.startingItems.bomb = Math.max(0, (state.startingItems.bomb || 0) - 1);
+          saveBones();
           document.getElementById('bomb-count').textContent = getBombCount();
           bombBtn.classList.toggle('active', getBombCount() > 0);
           if (getBombCount() <= 0) { bombBtn.style.display = 'none'; }
@@ -2703,6 +2707,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       rageBtn.addEventListener('click', () => {
         if (getRageCount() > 0 && !state.rageActive) {
           setRageCount(getRageCount() - 1);
+          state.startingItems.rage = Math.max(0, (state.startingItems.rage || 0) - 1);
+          saveBones();
           document.getElementById('rage-count').textContent = getRageCount();
           rageBtn.classList.toggle('active', getRageCount() > 0);
 
@@ -2724,6 +2730,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       featherBtn.addEventListener('click', () => {
         if (getFeatherCount() > 0 && !state.featherActive) {
           setFeatherCount(getFeatherCount() - 1);
+          state.startingItems.feather = Math.max(0, (state.startingItems.feather || 0) - 1);
+          saveBones();
           document.getElementById('feather-count').textContent = getFeatherCount();
           featherBtn.classList.toggle('active', getFeatherCount() > 0);
           if (getFeatherCount() <= 0) { featherBtn.style.display = 'none'; }
@@ -2745,6 +2753,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       goldenBeanBtn.addEventListener('click', () => {
         if (getGoldenBeanCount() > 0) {
           setGoldenBeanCount(getGoldenBeanCount() - 1);
+          state.startingItems.goldenBean = Math.max(0, (state.startingItems.goldenBean || 0) - 1);
+          saveBones();
           document.getElementById('golden-bean-count').textContent = getGoldenBeanCount();
           goldenBeanBtn.classList.toggle('active', getGoldenBeanCount() > 0);
           if (getGoldenBeanCount() <= 0) { goldenBeanBtn.style.display = 'none'; }

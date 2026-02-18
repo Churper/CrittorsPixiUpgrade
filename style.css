@@ -67,43 +67,74 @@ body {
   justify-content: center;
   width: 100%;
   height: 100%;
+  gap: clamp(2px, 0.6vmin, 6px);
 }
 
 #menu-spacer {
   flex: 1;
-  max-height: 12%;
+  max-height: 8%;
+}
+
+#menu-title {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(2.2em, 7vmin, 3.6em);
+  color: #e0e8f0;
+  text-shadow:
+    0 0 24px rgba(80, 160, 240, 0.45),
+    0 0 60px rgba(60, 130, 200, 0.2),
+    2px 2px 6px rgba(0, 0, 0, 0.9);
+  letter-spacing: 3px;
+  margin-bottom: clamp(8px, 2.5vmin, 20px);
+  user-select: none;
+  animation: menuTitleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes menuTitleGlow {
+  0%   { text-shadow: 0 0 24px rgba(80, 160, 240, 0.45), 0 0 60px rgba(60, 130, 200, 0.2), 2px 2px 6px rgba(0, 0, 0, 0.9); }
+  100% { text-shadow: 0 0 32px rgba(80, 160, 240, 0.65), 0 0 80px rgba(60, 130, 200, 0.35), 2px 2px 6px rgba(0, 0, 0, 0.9); }
+}
+
+#menu-subtitle {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(0.85em, 2.5vmin, 1.1em);
+  color: rgba(180, 200, 220, 0.5);
+  letter-spacing: 1px;
+  margin-bottom: clamp(4px, 1.5vmin, 12px);
+  user-select: none;
 }
 
 .menu-info-btn {
-  width: 36px;
-  height: 36px;
+  width: clamp(34px, 8vmin, 42px);
+  height: clamp(34px, 8vmin, 42px);
   border-radius: 50%;
-  border: 2px solid rgba(100, 160, 200, 0.6);
-  background: rgba(10, 15, 25, 0.65);
+  border: 2px solid rgba(100, 160, 200, 0.4);
+  background: rgba(14, 22, 38, 0.85);
   color: #ccd8e4;
   font-family: 'Luckiest Guy', cursive;
-  font-size: 1.2em;
+  font-size: clamp(1em, 3vmin, 1.3em);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.15s ease, background 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .menu-bottom-row {
   margin-top: auto;
   padding-bottom: clamp(10px, 3vmin, 20px);
   display: flex;
-  gap: 12px;
+  gap: clamp(10px, 3vmin, 16px);
 }
 
 .menu-info-btn:hover {
   transform: scale(1.12);
-  background: rgba(20, 40, 60, 0.8);
-  border-color: rgba(100, 180, 220, 0.8);
+  background: rgba(22, 40, 65, 0.9);
+  border-color: rgba(100, 180, 220, 0.7);
+  box-shadow: 0 0 10px rgba(60, 140, 200, 0.2), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 #info-panel {
@@ -147,31 +178,34 @@ body {
 .menu-btn {
   font-family: 'Luckiest Guy', cursive;
   font-size: clamp(1em, 3.5vmin, 1.4em);
-  width: min(230px, 60vw);
-  padding: clamp(8px, 2vmin, 14px) 0;
-  margin: clamp(4px, 1.5vmin, 10px) 0;
+  width: min(240px, 62vw);
+  padding: clamp(10px, 2.5vmin, 16px) 0;
+  margin: clamp(3px, 1vmin, 8px) 0;
   border-radius: 10px;
-  border: 2px solid rgba(100, 160, 200, 0.5);
-  background: rgba(15, 25, 40, 0.7);
+  border: 2px solid rgba(100, 160, 200, 0.45);
+  background: linear-gradient(145deg, rgba(18, 30, 52, 0.9), rgba(12, 20, 38, 0.95));
   color: #e0e8f0;
   text-shadow: 0 0 6px rgba(80, 160, 220, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.9);
   -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.4);
   letter-spacing: 0.5px;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 .menu-btn:hover {
   transform: scale(1.08);
-  background: rgba(25, 45, 70, 0.8);
+  background: linear-gradient(145deg, rgba(25, 45, 70, 0.95), rgba(18, 32, 55, 0.98));
   border-color: rgba(100, 180, 220, 0.7);
+  box-shadow: 0 4px 16px rgba(60, 140, 200, 0.2), 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .menu-btn:active {
   transform: scale(0.97);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .menu-btn-disabled {
@@ -1266,10 +1300,7 @@ touch-action: manipulation;
 #rotateDevice {
   display: none;
   position: fixed;
-  background-image: url('./assets/mainmenu.png');
-  background-size: cover;
-  background-position: center;
-  background-color: transparent;
+  background: linear-gradient(135deg, #0a0e1a 0%, #101828 50%, #0a1220 100%);
   width: 100%;
   height: 100%;
   top: 0;
@@ -1278,6 +1309,14 @@ touch-action: manipulation;
   overflow: hidden;
   font-size: 24px;
   z-index: 9999;
+}
+
+#rotateDevice::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(ellipse at 50% 30%, rgba(40, 80, 130, 0.12) 0%, transparent 60%);
+  pointer-events: none;
 }
 
 /* ── Leaderboard button ──────────────────────────────────── */

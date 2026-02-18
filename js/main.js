@@ -500,16 +500,17 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       playerShadow.eventMode = 'none';
       app.stage.addChild(playerShadow);
 
-      // Animated fire glows — world-positioned, flicker each frame
+      // Animated fire glows — placed at campfire and lantern positions
+      // (must match seeds 99222 and 99333 from drawEndlessGroundDecor)
       nightFireGlows = new PIXI.Container();
       nightFireGlows.zIndex = 7; // above decor (6), below critter (10)
       nightFireGlows.eventMode = 'none';
-      // Place glows at campfire and lantern positions (must match seeds from drawEndlessGroundDecor)
-      let _s = 99222;
-      function _r() { _s = (_s * 16807) % 2147483647; return (_s & 0x7fffffff) / 2147483647; }
+      // Campfire glows — seed 99222, same spacing as campfire decor
+      let _fgs = 99222;
+      function _fgr() { _fgs = (_fgs * 16807) % 2147483647; return (_fgs & 0x7fffffff) / 2147483647; }
       let cfx = 200;
       while (cfx < 50000) {
-        const sc = 0.8 + _r() * 0.4;
+        const sc = 0.8 + _fgr() * 0.4; // matches endlessGroundRandom() call in decor
         const glow = new PIXI.Graphics();
         glow.circle(0, 0, 28 * sc).fill({ color: 0xff8833, alpha: 0.12 });
         glow.circle(0, 0, 16 * sc).fill({ color: 0xffaa44, alpha: 0.15 });
@@ -521,13 +522,13 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         glow.flickerSpeed = 0.08 + Math.random() * 0.06;
         glow.isCampfire = true;
         nightFireGlows.addChild(glow);
-        cfx += 600 + _r() * 1000;
+        cfx += 600 + _fgr() * 1000; // matches endlessGroundRandom() call in decor
       }
-      // Lantern glows
-      _s = 99333;
+      // Lantern glows — seed 99333, same spacing as lantern decor
+      _fgs = 99333;
       let lnx = 500;
       while (lnx < 50000) {
-        const sc = 0.8 + _r() * 0.3;
+        const sc = 0.8 + _fgr() * 0.3; // matches endlessGroundRandom() call in decor
         const glow = new PIXI.Graphics();
         glow.circle(0, 0, 20 * sc).fill({ color: 0xffaa33, alpha: 0.1 });
         glow.circle(0, 0, 10 * sc).fill({ color: 0xffcc44, alpha: 0.14 });
@@ -538,7 +539,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         glow.flickerSpeed = 0.05 + Math.random() * 0.04;
         glow.isCampfire = false;
         nightFireGlows.addChild(glow);
-        lnx += 900 + _r() * 1400;
+        lnx += 900 + _fgr() * 1400; // matches endlessGroundRandom() call in decor
       }
       app.stage.addChild(nightFireGlows);
     }
@@ -2893,7 +2894,7 @@ state.frogGhostPlayer.scale.set(0.28);
       function createMountainSprite(resourceName, xPos, velocity, foreground) {
         const sprite = new PIXI.Sprite(textures[resourceName]);
 
-        const scaleFactor = Math.min(
+        let scaleFactor = Math.min(
           app.screen.height * 0.6 / sprite.height,
           app.screen.width * 1.5 / sprite.width
         );
@@ -2905,6 +2906,12 @@ state.frogGhostPlayer.scale.set(0.28);
         const heightOffsetRatio = (1 - scaleFactor) * 0.3;
 
         const foregroundHeightOffset = foreground ? minHeightOffset + sprite.height * heightOffsetRatio : 0;
+        // Ensure mountain doesn't extend above the screen top
+        const maxHeight = app.screen.height - foregroundHeightOffset;
+        if (sprite.height > maxHeight) {
+          scaleFactor *= maxHeight / sprite.height;
+          sprite.scale.set(scaleFactor);
+        }
         sprite.position.set(xPos, app.screen.height - foregroundHeightOffset);
         sprite.zIndex = -1;
         sprite.velocity = velocity;
@@ -4363,6 +4370,12 @@ state.demiSpawned = 0;
           const minHeightOffset = foreground ? foreground.height * 0.22 : 0;
           const heightOffsetRatio = (1 - Math.abs(m.scale.y)) * 0.3;
           const foregroundHeightOffset = foreground ? minHeightOffset + m.height * heightOffsetRatio : 0;
+          // Ensure mountain doesn't extend above the screen top
+          const maxHeight = app.screen.height - foregroundHeightOffset;
+          if (m.height > maxHeight) {
+            const ratio = maxHeight / m.height;
+            m.scale.set(m.scale.x * ratio, m.scale.y * ratio);
+          }
           m.position.y = app.screen.height - foregroundHeightOffset;
         });
 

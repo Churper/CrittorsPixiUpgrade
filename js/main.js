@@ -512,8 +512,8 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   }
 
   // Flat bonus per layout upgrade level
-  const layoutBonusPerLevel = { damage: 1, health: 12, speed: 0.15 };
-  const layoutBonusLabel = { damage: 'dmg', health: 'hp', speed: 'spd' };
+  const layoutBonusPerLevel = { damage: 1, health: 12, defense: 1 };
+  const layoutBonusLabel = { damage: 'dmg', health: 'hp', defense: 'def' };
 
   function updateLayoutUI() {
     const bones = state.bones;
@@ -523,12 +523,12 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // Update each card's stat rows
     layoutCards.forEach(card => {
       const charName = card.dataset.char;
-      const charUpgrades = upgrades[charName] || { damage: 0, health: 0, speed: 0 };
+      const charUpgrades = upgrades[charName] || { damage: 0, health: 0, defense: 0 };
       card.querySelectorAll('.layout-row').forEach(row => {
         const stat = row.dataset.stat;
         const level = charUpgrades[stat] || 0;
         const totalBonus = level * layoutBonusPerLevel[stat];
-        const bonusStr = stat === 'speed' ? totalBonus.toFixed(2) : totalBonus;
+        const bonusStr = totalBonus;
         row.querySelector('.layout-stat-bonus').textContent = `+${bonusStr} ${layoutBonusLabel[stat]}`;
         const cost = 10 + level * 5;
         const btn = row.querySelector('.layout-buy-btn');
@@ -711,6 +711,20 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const grid = document.getElementById('hats-grid');
     grid.innerHTML = '';
     const ch = activeSubviewChar;
+
+    // Default (no hat) — always first
+    const isNone = !state.equippedHats[ch];
+    const noneEl = document.createElement('div');
+    noneEl.className = 'layout-subview-item' + (isNone ? ' equipped' : '');
+    noneEl.innerHTML = '<span>✨</span><span class="subview-label">None</span>';
+    noneEl.addEventListener('click', () => {
+      state.equippedHats[ch] = null;
+      saveBones();
+      renderHatsGrid();
+    });
+    grid.appendChild(noneEl);
+
+    // Unlockable hats
     hatCatalog.forEach(hat => {
       const owned = state.ownedHats.includes(hat.id);
       const equipped = state.equippedHats[ch] === hat.id;
@@ -728,7 +742,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
           updateLayoutUI();
           renderHatsGrid();
         } else {
-          // Toggle equip
           state.equippedHats[ch] = equipped ? null : hat.id;
           saveBones();
           renderHatsGrid();
@@ -736,9 +749,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       });
       grid.appendChild(el);
     });
-    if (hatCatalog.length === 0) {
-      grid.innerHTML = '<div class="layout-subview-empty">No hats available yet.</div>';
-    }
   }
 
   // --- Render skins grid ---
@@ -746,6 +756,20 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     const grid = document.getElementById('skins-grid');
     grid.innerHTML = '';
     const ch = activeSubviewChar;
+
+    // Default skin (always first, always available)
+    const isDefault = !state.equippedSkins[ch];
+    const defEl = document.createElement('div');
+    defEl.className = 'layout-subview-item' + (isDefault ? ' equipped' : '');
+    defEl.innerHTML = '<span>✨</span><span class="subview-label">Default</span>';
+    defEl.addEventListener('click', () => {
+      state.equippedSkins[ch] = null;
+      saveBones();
+      renderSkinsGrid();
+    });
+    grid.appendChild(defEl);
+
+    // Unlockable skins
     const available = skinCatalog.filter(s => !s.charOnly || s.charOnly === ch);
     available.forEach(skin => {
       const owned = state.ownedSkins.includes(skin.id);
@@ -771,9 +795,6 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       });
       grid.appendChild(el);
     });
-    if (available.length === 0) {
-      grid.innerHTML = '<div class="layout-subview-empty">No skins for this character yet.</div>';
-    }
   }
 
   // --- Render inventory grid ---
@@ -1620,15 +1641,45 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   let _swapLock = false; // debounce guard for swap clicks
 
+  // Skin catalog with tints (must match the catalog in the layout section)
+  const skinTints = { 'frog-blue': 0x5588ff };
+
   // Returns the base tint for the current character (skin color override or white)
   function getCharBaseTint(charType) {
     const charName = charType ? charType.replace('character-', '') : '';
     const skinId = state.equippedSkins[charName];
-    if (skinId) {
-      const skin = [{ id: 'frog-blue', tint: 0x5588ff }].find(s => s.id === skinId);
-      if (skin) return skin.tint;
-    }
+    if (skinId && skinTints[skinId]) return skinTints[skinId];
     return 0xffffff;
+  }
+
+  // Hat rendering — draws a hat graphic as a child of the critter sprite
+  let currentHatGraphic = null;
+
+  function applyHat(critterSprite, charType) {
+    // Remove existing hat
+    if (currentHatGraphic) {
+      if (currentHatGraphic.parent) currentHatGraphic.parent.removeChild(currentHatGraphic);
+      currentHatGraphic.destroy();
+      currentHatGraphic = null;
+    }
+    const charName = charType ? charType.replace('character-', '') : '';
+    const hatId = state.equippedHats[charName];
+    if (!hatId || !critterSprite) return;
+
+    if (hatId === 'tophat') {
+      const hat = new PIXI.Graphics();
+      // Brim
+      hat.roundRect(-22, -4, 44, 8, 3).fill({ color: 0x1a1a2e });
+      // Crown
+      hat.roundRect(-14, -34, 28, 32, 4).fill({ color: 0x1a1a2e });
+      // Band
+      hat.rect(-14, -10, 28, 5).fill({ color: 0x8b0000 });
+      // Position above the character's head (anchor 0.5, 0.5 means 0,0 is center)
+      hat.position.set(0, -critterSprite.texture.height * 0.42);
+      hat.zIndex = 100;
+      critterSprite.addChild(hat);
+      currentHatGraphic = hat;
+    }
   }
 
   function handleCharacterClick(characterType) {
@@ -2438,8 +2489,9 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     // Apply layout stat upgrades to base character stats
     const lu = state.layoutUpgrades || {};
     const charKeys = ['frog', 'snail', 'bird', 'bee'];
+    let totalDefense = 0;
     charKeys.forEach(ch => {
-      const ups = lu[ch] || { damage: 0, health: 0, speed: 0 };
+      const ups = lu[ch] || { damage: 0, health: 0, defense: 0 };
       if (ups.damage) {
         state[ch + 'Damage'] += ups.damage * 1;           // +1 flat damage per level
         state.characterStats['character-' + ch].attack += ups.damage * 1;
@@ -2449,11 +2501,15 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         state['current' + ch[0].toUpperCase() + ch.slice(1) + 'Health'] += ups.health * 12;
         state.characterStats['character-' + ch].health += ups.health * 12;
       }
-      if (ups.speed) {
-        state[ch + 'Speed'] += ups.speed * 0.15;           // +0.15 speed per level
-        state.characterStats['character-' + ch].speed += ups.speed * 0.15;
-      }
+      // Defense is per-character but we track current char's defense
+      if (ups.defense) totalDefense = Math.max(totalDefense, ups.defense);
     });
+    // Store per-character defense levels for lookup on swap
+    state.charDefense = {};
+    charKeys.forEach(ch => {
+      state.charDefense[ch] = (lu[ch] && lu[ch].defense) || 0;
+    });
+    state.defense = state.charDefense.frog || 0; // start as frog
     // Apply potion heal bonus
     state.potionHealAmount = 70 + (state.startingItems.potionHeal || 0) * 15;
 
@@ -4866,6 +4922,10 @@ state.demiSpawned = 0;
           setCharSwap(false);
           stopFlashing();
           critter.tint = getCharBaseTint(getCurrentCharacter());
+          applyHat(critter, getCurrentCharacter());
+          // Update defense for this character
+          const swapChar = getCurrentCharacter().replace('character-', '');
+          state.defense = (state.charDefense && state.charDefense[swapChar]) || 0;
           critter.visible = true;
           app.stage.addChild(critter);
           // Ensure health bar reflects the new character (fixes stale bar after dead→alive swap)
@@ -5067,6 +5127,8 @@ state.demiSpawned = 0;
       document.getElementById("potion-shop").style.visibility = "visible";
       updatePotionUI();
       critter.scale.set(getFrogSize());
+      critter.tint = getCharBaseTint(getCurrentCharacter());
+      applyHat(critter, getCurrentCharacter());
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       console.log("STORED", state.stored);

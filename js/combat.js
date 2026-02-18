@@ -641,7 +641,9 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
             }
 
             critter.tint = state.flashColor;
-            setPlayerCurrentHealth(getPlayerCurrentHealth() - enemy.attackDamage);
+            const dmgReduction = state.defense || 0;
+            const finalDmg = Math.max(1, enemy.attackDamage - dmgReduction);
+            setPlayerCurrentHealth(getPlayerCurrentHealth() - finalDmg);
             drawCharHitSplat(critter, enemy);
             updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
 

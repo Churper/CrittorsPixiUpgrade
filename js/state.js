@@ -124,14 +124,15 @@ const state = {
   goldenBeanCount: 0,
   ghostFlyInterval: null,
   endlessKillCount: 0,
+  defense: 0, // flat damage reduction from layout upgrades
 
   // Cross-round currency
   bones: 0,
   layoutUpgrades: {
-    frog:  { damage: 0, health: 0, speed: 0 },
-    snail: { damage: 0, health: 0, speed: 0 },
-    bird:  { damage: 0, health: 0, speed: 0 },
-    bee:   { damage: 0, health: 0, speed: 0 },
+    frog:  { damage: 0, health: 0, defense: 0 },
+    snail: { damage: 0, health: 0, defense: 0 },
+    bird:  { damage: 0, health: 0, defense: 0 },
+    bee:   { damage: 0, health: 0, defense: 0 },
   },
   startingItems: { shield: 0, bomb: 0, rage: 0, feather: 0, goldenBean: 0, potionHeal: 0 },
   ownedHats: [],

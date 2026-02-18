@@ -693,8 +693,7 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'bomb',       icon: '💣', name: 'Bomb',            costPer: 3 },
     { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 5 },
     { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 5 },
-    { id: 'goldenBean', icon: '☕', name: 'Golden Bean',     costPer: 4 },
-    { id: 'potionHeal', icon: '🧪', name: 'Potion Power',   costPer: 4, suffix: '+15 hp/use' },
+    { id: 'potionHeal', icon: 'potion-svg', name: 'Potion Power', costPer: 10, suffix: '+15 hp/use' },
   ];
 
   function showLayoutView(view, charLabel, charName) {
@@ -819,12 +818,14 @@ document.addEventListener('DOMContentLoaded', function () {
   function renderInventoryGrid() {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = '';
+    const potionSVG = '<svg width="22" height="32" viewBox="0 0 28 40"><rect x="10" y="0" width="8" height="5" rx="1" fill="#8B5E3C"/><rect x="11" y="5" width="6" height="8" rx="2" fill="#cc2222" opacity="0.8"/><rect x="6" y="13" width="16" height="22" rx="4" fill="#dd2222"/><rect x="8" y="15" width="4" height="12" rx="2" fill="#ff6666" opacity="0.45"/></svg>';
     inventoryItemCatalog.forEach(item => {
       const count = state.startingItems[item.id] || 0;
       const el = document.createElement('div');
       el.className = 'layout-subview-item';
       const label = item.suffix ? `<span class="subview-label">${item.suffix}</span>` : '';
-      el.innerHTML = `<span>${item.icon}</span><span class="subview-count">x${count}</span>${label}<span class="subview-cost">🦴${item.costPer}</span>`;
+      const iconHtml = item.icon === 'potion-svg' ? potionSVG : item.icon;
+      el.innerHTML = `<span>${iconHtml}</span><span class="subview-count">x${count}</span>${label}<span class="subview-cost">🦴${item.costPer}</span>`;
       el.addEventListener('click', () => {
         if (state.bones < item.costPer) return;
         state.bones -= item.costPer;

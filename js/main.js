@@ -3150,40 +3150,49 @@ state.frogGhostPlayer.scale.set(0.28);
       state.sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
       // Procedural cloud generation
       function drawCloud(g, cw, ch, complexity) {
-        // Procedural cumulus — many small overlapping circles for organic puffy shapes
-        const fill = { color: 0xffffff, alpha: 1.0 };
+        // Draw cloud as a single filled path — bumpy top contour, flat bottom
+        // This avoids visible individual circle outlines
 
-        // Bottom row: 4-5 circles forming the flat-ish base
-        const bottomCount = 4 + Math.min(complexity, 1);
-        for (let i = 0; i < bottomCount; i++) {
-          const t = (i + 0.5) / bottomCount;
-          const bx = -cw * 0.38 + t * cw * 0.76;
-          const r = cw * (0.18 + Math.sin(t * Math.PI) * 0.07);
-          g.circle(bx, ch * 0.02, r).fill(fill);
+        // Number of bumps along the top (3-6 based on complexity)
+        const bumps = 3 + Math.min(complexity, 3);
+        // Pseudo-random offsets based on complexity to vary each cloud
+        const seed = complexity * 7.3;
+        function prand(i) { return ((Math.sin(seed + i * 13.7) * 43758.5453) % 1 + 1) % 1; }
+
+        // Build the cloud as one continuous path
+        // Start at bottom-left
+        g.moveTo(-cw * 0.42, ch * 0.05);
+
+        // Left side rise — gentle curve upward
+        g.quadraticCurveTo(-cw * 0.44, -ch * 0.15, -cw * 0.32, -ch * 0.25);
+
+        // Top contour — series of arc bumps across the cloud
+        for (let i = 0; i < bumps; i++) {
+          const t0 = i / bumps;
+          const t1 = (i + 1) / bumps;
+          // X positions across the cloud width
+          const x0 = -cw * 0.32 + t0 * cw * 0.64;
+          const x1 = -cw * 0.32 + t1 * cw * 0.64;
+          const midX = (x0 + x1) * 0.5;
+          // Bump height — center bumps are taller, with pseudo-random variation
+          const heightMul = Math.sin((t0 + t1) * 0.5 * Math.PI) * 0.6 + 0.4;
+          const randOff = (prand(i) - 0.5) * 0.25;
+          const peakY = -ch * (0.35 + heightMul * 0.55 + randOff * 0.3);
+          // Draw bump as a quadratic curve through the peak
+          g.quadraticCurveTo(midX - cw * 0.03, peakY, midX, peakY + ch * 0.02);
+          g.quadraticCurveTo(midX + cw * 0.03, peakY, x1, -ch * 0.25 - prand(i + 3) * ch * 0.1);
         }
 
-        // Middle row: 3-4 circles slightly above and overlapping, larger
-        const midCount = 3 + Math.min(complexity, 1);
-        for (let i = 0; i < midCount; i++) {
-          const t = (i + 0.5) / midCount;
-          const mx = -cw * 0.30 + t * cw * 0.60;
-          const my = -ch * 0.12 - Math.sin(t * Math.PI) * ch * 0.08;
-          const r = cw * (0.16 + Math.sin(t * Math.PI) * 0.10);
-          g.circle(mx, my, r).fill(fill);
-        }
+        // Right side drop — gentle curve downward
+        g.quadraticCurveTo(cw * 0.44, -ch * 0.10, cw * 0.42, ch * 0.05);
 
-        // Top bumps: 2-3 circles forming the puffy billowy top
-        const topCount = 2 + Math.min(complexity, 1);
-        for (let i = 0; i < topCount; i++) {
-          const t = (i + 0.5) / topCount;
-          const tx = -cw * 0.20 + t * cw * 0.40;
-          const ty = -ch * 0.28 - Math.sin(t * Math.PI) * ch * 0.14 - (i % 2) * ch * 0.04;
-          const r = cw * (0.12 + Math.sin(t * Math.PI) * 0.08);
-          g.circle(tx, ty, r).fill(fill);
-        }
+        // Flat bottom — nearly straight line back to start
+        g.lineTo(-cw * 0.42, ch * 0.05);
+        g.closePath();
+        g.fill({ color: 0xffffff, alpha: 1.0 });
 
-        // Single bottom shadow — wider, positioned at the bottom
-        g.ellipse(cw * 0.02, ch * 0.10, cw * 0.40, ch * 0.06).fill({ color: 0xe8ecf4, alpha: 1.0 });
+        // Subtle bottom shading — thin flat ellipse at the base
+        g.ellipse(0, ch * 0.04, cw * 0.36, ch * 0.04).fill({ color: 0xe0e4ec, alpha: 0.6 });
       }
 
       const clouds = new PIXI.Container();

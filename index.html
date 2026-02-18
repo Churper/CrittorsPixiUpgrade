@@ -18,7 +18,7 @@
 <link rel="apple-touch-icon" href="https://i.imgur.com/BVQ9vFj.png">
 
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" type="text/css" href="style.css?v=8">
+  <link rel="stylesheet" type="text/css" href="style.css?v=9">
   
 </head>
 
@@ -97,6 +97,7 @@
       <div id="layout-panel" style="display:none;">
         <div class="layout-header">
           <span id="layout-bones">🦴 0</span>
+          <button id="layout-inventory-btn">🎒 Inventory</button>
           <button id="layout-close-btn" class="menu-info-btn">✕</button>
         </div>
         <div class="layout-deck-area">
@@ -216,6 +217,32 @@
             </div>
           </div>
           <button id="layout-next" class="layout-nav-btn">›</button>
+        </div>
+        <!-- Hat selection sub-view -->
+        <div id="layout-hats-view" class="layout-subview">
+          <div class="layout-subview-title">Hats</div>
+          <div class="layout-subview-char" id="hats-char-name"></div>
+          <div class="layout-subview-grid" id="hats-grid">
+            <div class="layout-subview-empty">No hats available yet — coming soon!</div>
+          </div>
+          <button class="layout-back-btn" data-back="deck">Back</button>
+        </div>
+        <!-- Skin selection sub-view -->
+        <div id="layout-skins-view" class="layout-subview">
+          <div class="layout-subview-title">Skins</div>
+          <div class="layout-subview-char" id="skins-char-name"></div>
+          <div class="layout-subview-grid" id="skins-grid">
+            <div class="layout-subview-empty">No skins available yet — coming soon!</div>
+          </div>
+          <button class="layout-back-btn" data-back="deck">Back</button>
+        </div>
+        <!-- Inventory sub-view -->
+        <div id="layout-inventory-view" class="layout-subview">
+          <div class="layout-subview-title">Inventory</div>
+          <div class="layout-subview-grid" id="inventory-grid">
+            <div class="layout-subview-empty">Your inventory is empty.</div>
+          </div>
+          <button class="layout-back-btn" data-back="deck">Back</button>
         </div>
       </div>
     </div>

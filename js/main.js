@@ -536,6 +536,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   }
 
   document.getElementById('layout-btn').addEventListener('click', function() {
+    showLayoutDeck();
     updateLayoutUI();
     layoutPanel.style.display = 'block';
   });
@@ -648,6 +649,61 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       state.layoutUpgrades[charName][stat]++;
       saveBones();
       updateLayoutUI();
+    });
+  });
+
+  // --- Layout sub-view navigation ---
+  const layoutDeckArea = document.querySelector('.layout-deck-area');
+  const layoutHatsView = document.getElementById('layout-hats-view');
+  const layoutSkinsView = document.getElementById('layout-skins-view');
+  const layoutInventoryView = document.getElementById('layout-inventory-view');
+  const hatsCharName = document.getElementById('hats-char-name');
+  const skinsCharName = document.getElementById('skins-char-name');
+
+  function showLayoutView(view, charLabel) {
+    // Hide deck + nav
+    layoutDeckArea.style.display = 'none';
+    layoutHatsView.classList.remove('active');
+    layoutSkinsView.classList.remove('active');
+    layoutInventoryView.classList.remove('active');
+    view.classList.add('active');
+    if (charLabel) {
+      if (view === layoutHatsView) hatsCharName.textContent = charLabel;
+      if (view === layoutSkinsView) skinsCharName.textContent = charLabel;
+    }
+  }
+
+  function showLayoutDeck() {
+    layoutHatsView.classList.remove('active');
+    layoutSkinsView.classList.remove('active');
+    layoutInventoryView.classList.remove('active');
+    layoutDeckArea.style.display = 'flex';
+  }
+
+  // Cosmetic slot click handlers
+  document.querySelectorAll('.layout-cosmetic-slot').forEach(slot => {
+    slot.addEventListener('click', function() {
+      const card = this.closest('.layout-card');
+      const charName = card.dataset.char;
+      const charLabel = card.querySelector('.layout-card-name').textContent;
+      const slotType = this.dataset.slot;
+      if (slotType === 'hat') {
+        showLayoutView(layoutHatsView, charLabel);
+      } else if (slotType === 'skin') {
+        showLayoutView(layoutSkinsView, charLabel);
+      }
+    });
+  });
+
+  // Inventory button
+  document.getElementById('layout-inventory-btn').addEventListener('click', function() {
+    showLayoutView(layoutInventoryView);
+  });
+
+  // Back buttons
+  document.querySelectorAll('.layout-back-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      showLayoutDeck();
     });
   });
 

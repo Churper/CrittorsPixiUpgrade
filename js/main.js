@@ -47,7 +47,7 @@ import {
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
 import { saveGame, loadGame, saveBones, loadBones } from './save.js';
-import { skinCatalog, applySkinFilter, getSkinTextures, generateSkinTextures } from './skins.js';
+import { skinCatalog, applySkinFilter, getSkinTextures, generateSkinTextures, updateSkinEffects, clearSkinEffects } from './skins.js';
 import {
   submitScore, formatScore,
   getSavedPlayerName, savePlayerName,
@@ -4401,6 +4401,7 @@ let cantGainEXP = false;
           }
         }
 
+        updateSkinEffects(critter, Date.now());
         updateWeatherEffects();
         updateBiomeTransition();
 
@@ -4907,6 +4908,7 @@ state.demiSpawned = 0;
           updateVelocity();
           setCharSwap(false);
           stopFlashing();
+          clearSkinEffects();
           critter.tint = 0xffffff;
           applyHat(critter, getCurrentCharacter());
           applySkinFilter(critter, getCurrentCharacter());
@@ -5107,6 +5109,7 @@ state.demiSpawned = 0;
       document.getElementById("potion-shop").style.visibility = "visible";
       updatePotionUI();
       critter.scale.set(getFrogSize());
+      clearSkinEffects();
       critter.tint = 0xffffff;
       applyHat(critter, getCurrentCharacter());
       applySkinFilter(critter, getCurrentCharacter());

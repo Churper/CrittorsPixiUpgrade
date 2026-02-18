@@ -2895,49 +2895,77 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
-        // Layer 1: Base silhouette — softened peak, convex slopes (not straight, not a dome)
-        // Control points pulled OUTWARD from slope midpoints to bow the sides out
+        // Helper: draw the mountain silhouette path (reused by multiple layers)
+        function mtnPath() {
+          g.moveTo(0, 0);
+          g.bezierCurveTo(w * 0.03, -h * 0.15, w * 0.12, -h * 0.55, w * 0.30, -h * 0.80);
+          g.bezierCurveTo(w * 0.36, -h * 0.90, w * 0.42, -h * 0.98, w * 0.47, -h);
+          g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h);
+          g.bezierCurveTo(w * 0.60, -h * 0.96, w * 0.68, -h * 0.82, w * 0.76, -h * 0.60);
+          g.bezierCurveTo(w * 0.86, -h * 0.35, w * 0.95, -h * 0.12, w, 0);
+          g.lineTo(0, 0);
+          g.closePath();
+        }
+
+        // Layer 1: Deep base color
+        mtnPath();
+        g.fill(dc(0x4a5566, 1.0));
+
+        // Layer 2: Lighter left face — broad highlight covering the sunlit side
         g.moveTo(0, 0);
-        // Left slope: convex outward curve — cp1 pulls left, cp2 pulls up
         g.bezierCurveTo(w * 0.03, -h * 0.15, w * 0.12, -h * 0.55, w * 0.30, -h * 0.80);
-        // Upper left to peak — narrowing, slight curve
         g.bezierCurveTo(w * 0.36, -h * 0.90, w * 0.42, -h * 0.98, w * 0.47, -h);
-        // Peak is slightly rounded — small arc over the top
         g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h);
-        // Upper right from peak — steeper for asymmetry
-        g.bezierCurveTo(w * 0.60, -h * 0.96, w * 0.68, -h * 0.82, w * 0.76, -h * 0.60);
-        // Right slope: convex outward curve — bows right
-        g.bezierCurveTo(w * 0.86, -h * 0.35, w * 0.95, -h * 0.12, w, 0);
+        g.bezierCurveTo(w * 0.56, -h * 0.97, w * 0.58, -h * 0.90, w * 0.60, -h * 0.80);
+        g.lineTo(w * 0.35, 0);
         g.lineTo(0, 0);
         g.closePath();
-        g.fill(dc(0x5a6678, 1.0));
+        g.fill(dc(0x6b7a8e, 0.7));
 
-        // Layer 2: Soft shadow on right face
-        g.moveTo(w * 0.50, -h);
-        g.bezierCurveTo(w * 0.60, -h * 0.96, w * 0.68, -h * 0.82, w * 0.76, -h * 0.60);
-        g.bezierCurveTo(w * 0.86, -h * 0.35, w * 0.95, -h * 0.12, w, 0);
-        g.lineTo(w * 0.55, 0);
+        // Layer 3: Mid-tone band across the middle to break flatness
+        g.moveTo(w * 0.08, -h * 0.20);
+        g.bezierCurveTo(w * 0.15, -h * 0.50, w * 0.25, -h * 0.70, w * 0.35, -h * 0.85);
+        g.bezierCurveTo(w * 0.42, -h * 0.70, w * 0.55, -h * 0.55, w * 0.65, -h * 0.50);
+        g.bezierCurveTo(w * 0.75, -h * 0.40, w * 0.85, -h * 0.20, w * 0.92, -h * 0.08);
+        g.lineTo(w * 0.85, 0);
+        g.lineTo(w * 0.05, 0);
         g.closePath();
-        g.fill(dc(0x4a5565, 0.3));
+        g.fill(dc(0x5e6d80, 0.4));
 
-        // Layer 3: Small snow cap — just the top ~15% of the mountain
-        g.moveTo(w * 0.37, -h * 0.88);
-        g.bezierCurveTo(w * 0.40, -h * 0.93, w * 0.44, -h * 0.98, w * 0.47, -h);
+        // Layer 4: Rocky texture patches — scattered ellipses for surface detail
+        g.ellipse(w * 0.22, -h * 0.42, w * 0.06, h * 0.04).fill(dc(0x4a5566, 0.25));
+        g.ellipse(w * 0.35, -h * 0.62, w * 0.05, h * 0.03).fill(dc(0x3d4a58, 0.20));
+        g.ellipse(w * 0.60, -h * 0.55, w * 0.07, h * 0.04).fill(dc(0x3d4a58, 0.25));
+        g.ellipse(w * 0.72, -h * 0.35, w * 0.05, h * 0.03).fill(dc(0x4a5566, 0.20));
+        g.ellipse(w * 0.45, -h * 0.75, w * 0.04, h * 0.03).fill(dc(0x3d4a58, 0.15));
+        g.ellipse(w * 0.15, -h * 0.28, w * 0.05, h * 0.03).fill(dc(0x3d4a58, 0.18));
+
+        // Layer 5: Small snow cap — just the tip
+        g.moveTo(w * 0.38, -h * 0.89);
+        g.bezierCurveTo(w * 0.41, -h * 0.94, w * 0.44, -h * 0.98, w * 0.47, -h);
         g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h);
-        g.bezierCurveTo(w * 0.57, -h * 0.97, w * 0.62, -h * 0.91, w * 0.65, -h * 0.86);
-        // Wavy bottom edge of snow
-        g.bezierCurveTo(w * 0.58, -h * 0.84, w * 0.52, -h * 0.86, w * 0.47, -h * 0.84);
-        g.bezierCurveTo(w * 0.42, -h * 0.86, w * 0.39, -h * 0.87, w * 0.37, -h * 0.88);
+        g.bezierCurveTo(w * 0.57, -h * 0.97, w * 0.61, -h * 0.92, w * 0.64, -h * 0.87);
+        // Wavy bottom
+        g.bezierCurveTo(w * 0.58, -h * 0.85, w * 0.52, -h * 0.87, w * 0.47, -h * 0.85);
+        g.bezierCurveTo(w * 0.42, -h * 0.87, w * 0.40, -h * 0.88, w * 0.38, -h * 0.89);
         g.closePath();
         g.fill(dc(0xdce1e8, 0.85));
 
-        // Layer 4: Base atmospheric haze
+        // Layer 6: Snow highlight — bright left edge of snow
+        g.moveTo(w * 0.40, -h * 0.91);
+        g.bezierCurveTo(w * 0.43, -h * 0.95, w * 0.45, -h * 0.98, w * 0.47, -h);
+        g.quadraticCurveTo(w * 0.49, -h * 1.01, w * 0.50, -h);
+        g.lineTo(w * 0.46, -h * 0.90);
+        g.closePath();
+        g.fill(dc(0xeef2f7, 0.5));
+
+        // Layer 7: Base atmospheric haze
         g.moveTo(0, 0);
         g.lineTo(w, 0);
-        g.lineTo(w, -h * 0.1);
-        g.bezierCurveTo(w * 0.7, -h * 0.12, w * 0.3, -h * 0.12, 0, -h * 0.1);
+        g.lineTo(w, -h * 0.12);
+        g.bezierCurveTo(w * 0.7, -h * 0.15, w * 0.3, -h * 0.15, 0, -h * 0.12);
         g.closePath();
-        g.fill(dc(0x8899aa, 0.15));
+        g.fill(dc(0x8899aa, 0.20));
       }
 
       function drawMountainType2(g, w, h, depth) {
@@ -2945,61 +2973,79 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
-        // Layer 1: Three softened peaks — convex slopes, slightly rounded tips
+        // Helper: draw the 3-peak silhouette path
+        function mtnPath() {
+          g.moveTo(0, 0);
+          g.bezierCurveTo(w * 0.02, -h * 0.15, w * 0.08, -h * 0.45, w * 0.18, -h * 0.58);
+          g.quadraticCurveTo(w * 0.22, -h * 0.66, w * 0.26, -h * 0.58);
+          g.bezierCurveTo(w * 0.29, -h * 0.48, w * 0.32, -h * 0.40, w * 0.35, -h * 0.44);
+          g.bezierCurveTo(w * 0.38, -h * 0.58, w * 0.42, -h * 0.85, w * 0.47, -h * 0.96);
+          g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h * 0.96);
+          g.bezierCurveTo(w * 0.58, -h * 0.82, w * 0.63, -h * 0.52, w * 0.67, -h * 0.38);
+          g.bezierCurveTo(w * 0.69, -h * 0.34, w * 0.71, -h * 0.36, w * 0.73, -h * 0.42);
+          g.bezierCurveTo(w * 0.74, -h * 0.48, w * 0.76, -h * 0.53, w * 0.78, -h * 0.55);
+          g.quadraticCurveTo(w * 0.80, -h * 0.57, w * 0.82, -h * 0.53);
+          g.bezierCurveTo(w * 0.87, -h * 0.38, w * 0.94, -h * 0.14, w, 0);
+          g.lineTo(0, 0);
+          g.closePath();
+        }
+
+        // Layer 1: Deep base color
+        mtnPath();
+        g.fill(dc(0x4a5566, 1.0));
+
+        // Layer 2: Lighter left faces — sunlit side of each peak
         g.moveTo(0, 0);
-        // Left slope up — convex outward
         g.bezierCurveTo(w * 0.02, -h * 0.15, w * 0.08, -h * 0.45, w * 0.18, -h * 0.58);
-        // Left peak — slightly rounded tip
-        g.quadraticCurveTo(w * 0.22, -h * 0.66, w * 0.26, -h * 0.58);
-        // Saddle dip to center
-        g.bezierCurveTo(w * 0.29, -h * 0.48, w * 0.32, -h * 0.40, w * 0.35, -h * 0.44);
-        // Center left slope up — convex
+        g.quadraticCurveTo(w * 0.22, -h * 0.66, w * 0.24, -h * 0.62);
+        g.lineTo(w * 0.22, 0);
+        g.closePath();
+        g.fill(dc(0x6b7a8e, 0.5));
+
+        // Center peak left face
+        g.moveTo(w * 0.35, -h * 0.44);
         g.bezierCurveTo(w * 0.38, -h * 0.58, w * 0.42, -h * 0.85, w * 0.47, -h * 0.96);
-        // Center peak — slightly rounded
-        g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h * 0.96);
-        // Center right slope down
-        g.bezierCurveTo(w * 0.58, -h * 0.82, w * 0.63, -h * 0.52, w * 0.67, -h * 0.38);
-        // Saddle dip to right
-        g.bezierCurveTo(w * 0.69, -h * 0.34, w * 0.71, -h * 0.36, w * 0.73, -h * 0.42);
-        // Right peak rise — convex
-        g.bezierCurveTo(w * 0.74, -h * 0.48, w * 0.76, -h * 0.53, w * 0.78, -h * 0.55);
-        // Right peak — slightly rounded
-        g.quadraticCurveTo(w * 0.80, -h * 0.57, w * 0.82, -h * 0.53);
-        // Right slope down — convex outward
-        g.bezierCurveTo(w * 0.87, -h * 0.38, w * 0.94, -h * 0.14, w, 0);
-        g.lineTo(0, 0);
+        g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.51, -h * 0.98);
+        g.lineTo(w * 0.48, -h * 0.50);
+        g.lineTo(w * 0.38, 0);
+        g.lineTo(w * 0.33, 0);
         g.closePath();
-        g.fill(dc(0x5a6678, 1.0));
+        g.fill(dc(0x6b7a8e, 0.55));
 
-        // Layer 2: Soft shadow on right side
-        g.moveTo(w * 0.50, -h);
-        g.bezierCurveTo(w * 0.58, -h * 0.82, w * 0.63, -h * 0.52, w * 0.67, -h * 0.38);
-        g.bezierCurveTo(w * 0.69, -h * 0.34, w * 0.71, -h * 0.36, w * 0.73, -h * 0.42);
-        g.bezierCurveTo(w * 0.74, -h * 0.48, w * 0.76, -h * 0.53, w * 0.78, -h * 0.55);
-        g.quadraticCurveTo(w * 0.80, -h * 0.57, w * 0.82, -h * 0.53);
-        g.bezierCurveTo(w * 0.87, -h * 0.38, w * 0.94, -h * 0.14, w, 0);
-        g.lineTo(w * 0.50, 0);
+        // Layer 3: Mid-tone texture band
+        g.moveTo(w * 0.06, -h * 0.15);
+        g.bezierCurveTo(w * 0.12, -h * 0.35, w * 0.20, -h * 0.48, w * 0.28, -h * 0.42);
+        g.bezierCurveTo(w * 0.35, -h * 0.35, w * 0.45, -h * 0.55, w * 0.55, -h * 0.50);
+        g.bezierCurveTo(w * 0.65, -h * 0.30, w * 0.80, -h * 0.30, w * 0.90, -h * 0.10);
+        g.lineTo(w * 0.88, 0);
+        g.lineTo(w * 0.05, 0);
         g.closePath();
-        g.fill(dc(0x4a5565, 0.3));
+        g.fill(dc(0x5e6d80, 0.3));
 
-        // Layer 3: Small snow cap — center peak only
+        // Layer 4: Rocky texture patches
+        g.ellipse(w * 0.15, -h * 0.35, w * 0.04, h * 0.03).fill(dc(0x3d4a58, 0.20));
+        g.ellipse(w * 0.40, -h * 0.55, w * 0.05, h * 0.03).fill(dc(0x3d4a58, 0.18));
+        g.ellipse(w * 0.55, -h * 0.42, w * 0.04, h * 0.03).fill(dc(0x4a5566, 0.22));
+        g.ellipse(w * 0.75, -h * 0.35, w * 0.04, h * 0.02).fill(dc(0x3d4a58, 0.18));
+        g.ellipse(w * 0.30, -h * 0.28, w * 0.03, h * 0.02).fill(dc(0x3d4a58, 0.15));
+
+        // Layer 5: Snow cap — center peak only, small
         g.moveTo(w * 0.42, -h * 0.88);
         g.bezierCurveTo(w * 0.44, -h * 0.93, w * 0.46, -h * 0.96, w * 0.47, -h * 0.96);
         g.quadraticCurveTo(w * 0.50, -h * 1.01, w * 0.53, -h * 0.96);
         g.bezierCurveTo(w * 0.55, -h * 0.94, w * 0.58, -h * 0.89, w * 0.60, -h * 0.86);
-        // Soft wavy bottom
         g.bezierCurveTo(w * 0.55, -h * 0.84, w * 0.50, -h * 0.86, w * 0.46, -h * 0.84);
         g.bezierCurveTo(w * 0.44, -h * 0.86, w * 0.43, -h * 0.87, w * 0.42, -h * 0.88);
         g.closePath();
         g.fill(dc(0xdce1e8, 0.8));
 
-        // Layer 4: Base atmospheric haze
+        // Layer 6: Base atmospheric haze
         g.moveTo(0, 0);
         g.lineTo(w, 0);
-        g.lineTo(w, -h * 0.08);
-        g.bezierCurveTo(w * 0.7, -h * 0.1, w * 0.3, -h * 0.1, 0, -h * 0.08);
+        g.lineTo(w, -h * 0.10);
+        g.bezierCurveTo(w * 0.7, -h * 0.13, w * 0.3, -h * 0.13, 0, -h * 0.10);
         g.closePath();
-        g.fill(dc(0x8899aa, 0.12));
+        g.fill(dc(0x8899aa, 0.20));
       }
 
       function createMountainGraphics(type, xPos, velocity, foreground, depth) {

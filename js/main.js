@@ -2895,67 +2895,45 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
-        // Peak off-center for asymmetry
-        const px = w * 0.43;
-
-        // Layer 1: Base silhouette — concave lower slopes, shoulder ridges, natural shape
+        // Layer 1: Base silhouette — wide, rounded dome shape (not a triangle)
+        // The key: control points pull OUTWARD from the slope to create a bell curve
         g.moveTo(0, 0);
-        // Left base: concave flare outward, then steepens
-        g.bezierCurveTo(w * 0.02, -h * 0.01, w * 0.06, -h * 0.05, w * 0.10, -h * 0.14);
-        // Left lower slope with a subtle shoulder/ridge bump
-        g.bezierCurveTo(w * 0.14, -h * 0.26, w * 0.16, -h * 0.32, w * 0.20, -h * 0.38);
-        g.bezierCurveTo(w * 0.22, -h * 0.42, w * 0.23, -h * 0.40, w * 0.25, -h * 0.46);
-        // Left upper slope steepens to peak
-        g.bezierCurveTo(w * 0.30, -h * 0.60, w * 0.36, -h * 0.82, px, -h);
-        // Right slope: steeper near peak, then a ridge shoulder, then concave base
-        g.bezierCurveTo(w * 0.50, -h * 0.92, w * 0.55, -h * 0.78, w * 0.60, -h * 0.62);
-        // Right shoulder bump
-        g.bezierCurveTo(w * 0.63, -h * 0.54, w * 0.65, -h * 0.52, w * 0.68, -h * 0.46);
-        g.bezierCurveTo(w * 0.72, -h * 0.36, w * 0.76, -h * 0.28, w * 0.82, -h * 0.18);
-        // Right concave base flare
-        g.bezierCurveTo(w * 0.88, -h * 0.10, w * 0.94, -h * 0.03, w, 0);
+        // Left slope: wide sweeping curve that bows outward
+        g.bezierCurveTo(w * 0.05, -h * 0.40, w * 0.20, -h * 0.80, w * 0.42, -h * 0.97);
+        // Rounded peak — not a sharp point, a smooth dome top
+        g.bezierCurveTo(w * 0.46, -h, w * 0.54, -h, w * 0.58, -h * 0.97);
+        // Right slope: slightly steeper than left for asymmetry
+        g.bezierCurveTo(w * 0.78, -h * 0.78, w * 0.92, -h * 0.38, w, 0);
         g.lineTo(0, 0);
         g.closePath();
         g.fill(dc(0x5a6678, 1.0));
 
-        // Layer 2: Shadow — gradient-like darker face on the right, following the slope
-        g.moveTo(px, -h);
-        g.bezierCurveTo(w * 0.50, -h * 0.92, w * 0.55, -h * 0.78, w * 0.60, -h * 0.62);
-        g.bezierCurveTo(w * 0.63, -h * 0.54, w * 0.65, -h * 0.52, w * 0.68, -h * 0.46);
-        g.bezierCurveTo(w * 0.72, -h * 0.36, w * 0.76, -h * 0.28, w * 0.82, -h * 0.18);
-        g.bezierCurveTo(w * 0.88, -h * 0.10, w * 0.94, -h * 0.03, w, 0);
-        g.lineTo(w * 0.55, 0);
+        // Layer 2: Soft shadow on right face — follows the right slope curve
+        g.moveTo(w * 0.50, -h);
+        g.bezierCurveTo(w * 0.58, -h * 0.97, w * 0.78, -h * 0.78, w, 0);
+        g.lineTo(w * 0.50, 0);
         g.closePath();
-        g.fill(dc(0x3d4a58, 0.4));
+        g.fill(dc(0x4a5565, 0.3));
 
-        // Layer 3: Snow cap with jagged/irregular bottom edge
-        // Left and right edges trace the silhouette; bottom is a zigzag
-        g.moveTo(w * 0.31, -h * 0.64);
-        // Left edge up — matches silhouette bezier
-        g.bezierCurveTo(w * 0.34, -h * 0.74, w * 0.38, -h * 0.88, px, -h);
-        // Right edge down — matches silhouette bezier
-        g.bezierCurveTo(w * 0.48, -h * 0.94, w * 0.52, -h * 0.82, w * 0.57, -h * 0.68);
-        // Jagged snow bottom edge — series of small line segments
-        g.lineTo(w * 0.54, -h * 0.66);
-        g.lineTo(w * 0.51, -h * 0.70);
-        g.lineTo(w * 0.48, -h * 0.65);
-        g.lineTo(w * 0.45, -h * 0.68);
-        g.lineTo(w * 0.42, -h * 0.63);
-        g.lineTo(w * 0.39, -h * 0.67);
-        g.lineTo(w * 0.36, -h * 0.62);
-        g.lineTo(w * 0.33, -h * 0.66);
-        g.lineTo(w * 0.31, -h * 0.64);
+        // Layer 3: Snow cap — smooth rounded cap following the dome silhouette
+        g.moveTo(w * 0.28, -h * 0.74);
+        // Left edge curves up following the silhouette
+        g.bezierCurveTo(w * 0.32, -h * 0.84, w * 0.38, -h * 0.94, w * 0.42, -h * 0.97);
+        // Across the rounded peak
+        g.bezierCurveTo(w * 0.46, -h, w * 0.54, -h, w * 0.58, -h * 0.97);
+        // Right edge curves down following the silhouette
+        g.bezierCurveTo(w * 0.62, -h * 0.93, w * 0.68, -h * 0.83, w * 0.72, -h * 0.74);
+        // Bottom edge: gentle wavy curve (not straight, not jagged)
+        g.bezierCurveTo(w * 0.64, -h * 0.70, w * 0.55, -h * 0.73, w * 0.48, -h * 0.70);
+        g.bezierCurveTo(w * 0.40, -h * 0.67, w * 0.34, -h * 0.72, w * 0.28, -h * 0.74);
         g.closePath();
-        g.fill(dc(0xdce1e8, 0.9));
+        g.fill(dc(0xdce1e8, 0.85));
 
-        // Layer 4: Snow shadow — subtle darker tint on the right half of snow
-        g.moveTo(px, -h);
-        g.bezierCurveTo(w * 0.48, -h * 0.94, w * 0.52, -h * 0.82, w * 0.57, -h * 0.68);
-        g.lineTo(w * 0.54, -h * 0.66);
-        g.lineTo(w * 0.51, -h * 0.70);
-        g.lineTo(w * 0.48, -h * 0.65);
-        g.lineTo(px, -h * 0.68);
-        g.lineTo(px, -h);
+        // Layer 4: Snow shadow — soft tint on right half of snow
+        g.moveTo(w * 0.52, -h * 0.99);
+        g.bezierCurveTo(w * 0.56, -h * 0.98, w * 0.62, -h * 0.93, w * 0.68, -h * 0.83);
+        g.bezierCurveTo(w * 0.70, -h * 0.78, w * 0.72, -h * 0.74, w * 0.72, -h * 0.74);
+        g.bezierCurveTo(w * 0.64, -h * 0.70, w * 0.55, -h * 0.73, w * 0.52, -h * 0.72);
         g.closePath();
         g.fill(dc(0xb8c0cc, 0.2));
 
@@ -2973,81 +2951,64 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
-        // Three peaks at different heights for natural range look
-        const lpx = w * 0.22, lpy = -h * 0.62;
-        const cpx = w * 0.47, cpy = -h;
-        const rpx = w * 0.75, rpy = -h * 0.55;
-
-        // Layer 1: Base silhouette — organic ridgeline with concave bases
+        // Layer 1: Base silhouette — three soft rounded humps, like rolling hills
         g.moveTo(0, 0);
-        // Left concave base flare up to lower left slope
-        g.bezierCurveTo(w * 0.02, -h * 0.02, w * 0.06, -h * 0.08, w * 0.10, -h * 0.20);
-        // Left slope up — curves inward as it steepens
-        g.bezierCurveTo(w * 0.14, -h * 0.36, w * 0.18, -h * 0.52, lpx, lpy);
-        // Left peak to saddle — dip down with rocky ridge
-        g.bezierCurveTo(w * 0.25, -h * 0.56, w * 0.27, -h * 0.44, w * 0.29, -h * 0.40);
-        g.bezierCurveTo(w * 0.30, -h * 0.38, w * 0.31, -h * 0.36, w * 0.33, -h * 0.38);
-        // Rise to center peak — steepening curve
-        g.bezierCurveTo(w * 0.36, -h * 0.50, w * 0.40, -h * 0.76, cpx, cpy);
-        // Center peak down — steep, then a small spur ridge
-        g.bezierCurveTo(w * 0.52, -h * 0.88, w * 0.56, -h * 0.68, w * 0.60, -h * 0.52);
-        g.bezierCurveTo(w * 0.62, -h * 0.44, w * 0.64, -h * 0.38, w * 0.66, -h * 0.34);
-        // Saddle to right peak
-        g.bezierCurveTo(w * 0.68, -h * 0.32, w * 0.69, -h * 0.34, w * 0.71, -h * 0.40);
-        g.bezierCurveTo(w * 0.73, -h * 0.48, w * 0.74, -h * 0.52, rpx, rpy);
-        // Right peak down — concave flare to base
-        g.bezierCurveTo(w * 0.78, -h * 0.46, w * 0.82, -h * 0.32, w * 0.86, -h * 0.20);
-        g.bezierCurveTo(w * 0.90, -h * 0.12, w * 0.95, -h * 0.04, w, 0);
+        // Rise to left hump — wide convex curve
+        g.bezierCurveTo(w * 0.02, -h * 0.30, w * 0.10, -h * 0.58, w * 0.20, -h * 0.62);
+        // Left hump rounded top
+        g.bezierCurveTo(w * 0.24, -h * 0.65, w * 0.28, -h * 0.63, w * 0.30, -h * 0.55);
+        // Dip into saddle between left and center
+        g.bezierCurveTo(w * 0.32, -h * 0.45, w * 0.34, -h * 0.40, w * 0.36, -h * 0.42);
+        // Rise to center hump — the tallest, wide dome
+        g.bezierCurveTo(w * 0.38, -h * 0.60, w * 0.42, -h * 0.88, w * 0.47, -h * 0.96);
+        // Center hump rounded top
+        g.bezierCurveTo(w * 0.49, -h, w * 0.53, -h, w * 0.55, -h * 0.96);
+        // Down from center into right saddle
+        g.bezierCurveTo(w * 0.60, -h * 0.82, w * 0.64, -h * 0.50, w * 0.66, -h * 0.38);
+        // Rise to right hump — smaller and rounder
+        g.bezierCurveTo(w * 0.68, -h * 0.42, w * 0.72, -h * 0.52, w * 0.75, -h * 0.55);
+        // Right hump rounded top
+        g.bezierCurveTo(w * 0.78, -h * 0.56, w * 0.80, -h * 0.54, w * 0.82, -h * 0.48);
+        // Down to right base — wide sweeping curve
+        g.bezierCurveTo(w * 0.88, -h * 0.30, w * 0.94, -h * 0.12, w, 0);
         g.lineTo(0, 0);
         g.closePath();
         g.fill(dc(0x5a6678, 1.0));
 
-        // Layer 2: Shadow on right faces of each peak (softer, offset from center)
-        g.moveTo(cpx, cpy);
-        g.bezierCurveTo(w * 0.52, -h * 0.88, w * 0.56, -h * 0.68, w * 0.60, -h * 0.52);
-        g.bezierCurveTo(w * 0.62, -h * 0.44, w * 0.64, -h * 0.38, w * 0.66, -h * 0.34);
-        g.bezierCurveTo(w * 0.68, -h * 0.32, w * 0.69, -h * 0.34, w * 0.71, -h * 0.40);
-        g.bezierCurveTo(w * 0.73, -h * 0.48, w * 0.74, -h * 0.52, rpx, rpy);
-        g.bezierCurveTo(w * 0.78, -h * 0.46, w * 0.82, -h * 0.32, w * 0.86, -h * 0.20);
-        g.bezierCurveTo(w * 0.90, -h * 0.12, w * 0.95, -h * 0.04, w, 0);
-        g.lineTo(w * 0.52, 0);
+        // Layer 2: Soft shadow on right side
+        g.moveTo(w * 0.51, -h);
+        g.bezierCurveTo(w * 0.55, -h * 0.96, w * 0.60, -h * 0.82, w * 0.66, -h * 0.38);
+        g.bezierCurveTo(w * 0.68, -h * 0.42, w * 0.72, -h * 0.52, w * 0.75, -h * 0.55);
+        g.bezierCurveTo(w * 0.78, -h * 0.56, w * 0.80, -h * 0.54, w * 0.82, -h * 0.48);
+        g.bezierCurveTo(w * 0.88, -h * 0.30, w * 0.94, -h * 0.12, w, 0);
+        g.lineTo(w * 0.51, 0);
         g.closePath();
-        g.fill(dc(0x3d4a58, 0.35));
+        g.fill(dc(0x4a5565, 0.3));
 
-        // Layer 3: Snow cap (center peak) — jagged bottom edge
-        g.moveTo(w * 0.39, -h * 0.72);
-        g.bezierCurveTo(w * 0.41, -h * 0.82, w * 0.44, -h * 0.92, cpx, cpy);
-        g.bezierCurveTo(w * 0.51, -h * 0.92, w * 0.54, -h * 0.80, w * 0.57, -h * 0.70);
-        // Jagged snow bottom
-        g.lineTo(w * 0.55, -h * 0.68);
-        g.lineTo(w * 0.52, -h * 0.72);
-        g.lineTo(w * 0.50, -h * 0.67);
-        g.lineTo(w * 0.47, -h * 0.71);
-        g.lineTo(w * 0.44, -h * 0.66);
-        g.lineTo(w * 0.42, -h * 0.70);
-        g.lineTo(w * 0.39, -h * 0.72);
+        // Layer 3: Snow cap (center hump) — smooth rounded cap
+        g.moveTo(w * 0.40, -h * 0.84);
+        g.bezierCurveTo(w * 0.42, -h * 0.90, w * 0.45, -h * 0.95, w * 0.47, -h * 0.96);
+        g.bezierCurveTo(w * 0.49, -h, w * 0.53, -h, w * 0.55, -h * 0.96);
+        g.bezierCurveTo(w * 0.57, -h * 0.93, w * 0.60, -h * 0.86, w * 0.62, -h * 0.82);
+        // Soft wavy bottom
+        g.bezierCurveTo(w * 0.56, -h * 0.79, w * 0.50, -h * 0.82, w * 0.46, -h * 0.79);
+        g.bezierCurveTo(w * 0.43, -h * 0.81, w * 0.41, -h * 0.82, w * 0.40, -h * 0.84);
         g.closePath();
         g.fill(dc(0xdce1e8, 0.85));
 
-        // Layer 4: Snow cap (left peak) — small jagged cap
-        g.moveTo(w * 0.19, -h * 0.52);
-        g.bezierCurveTo(w * 0.20, -h * 0.56, w * 0.21, -h * 0.60, lpx, lpy);
-        g.bezierCurveTo(w * 0.23, -h * 0.60, w * 0.24, -h * 0.55, w * 0.26, -h * 0.52);
-        g.lineTo(w * 0.24, -h * 0.50);
-        g.lineTo(w * 0.22, -h * 0.52);
-        g.lineTo(w * 0.20, -h * 0.50);
-        g.lineTo(w * 0.19, -h * 0.52);
+        // Layer 4: Snow cap (left hump) — small smooth cap
+        g.moveTo(w * 0.18, -h * 0.56);
+        g.bezierCurveTo(w * 0.20, -h * 0.60, w * 0.22, -h * 0.63, w * 0.24, -h * 0.65);
+        g.bezierCurveTo(w * 0.26, -h * 0.64, w * 0.28, -h * 0.60, w * 0.29, -h * 0.56);
+        g.bezierCurveTo(w * 0.25, -h * 0.54, w * 0.21, -h * 0.54, w * 0.18, -h * 0.56);
         g.closePath();
         g.fill(dc(0xdce1e8, 0.7));
 
-        // Layer 5: Snow cap (right peak) — small jagged cap
-        g.moveTo(w * 0.72, -h * 0.46);
-        g.bezierCurveTo(w * 0.73, -h * 0.50, w * 0.74, -h * 0.53, rpx, rpy);
-        g.bezierCurveTo(w * 0.76, -h * 0.53, w * 0.77, -h * 0.49, w * 0.79, -h * 0.46);
-        g.lineTo(w * 0.77, -h * 0.44);
-        g.lineTo(w * 0.75, -h * 0.46);
-        g.lineTo(w * 0.73, -h * 0.44);
-        g.lineTo(w * 0.72, -h * 0.46);
+        // Layer 5: Snow cap (right hump) — small smooth cap
+        g.moveTo(w * 0.72, -h * 0.49);
+        g.bezierCurveTo(w * 0.73, -h * 0.52, w * 0.75, -h * 0.55, w * 0.76, -h * 0.56);
+        g.bezierCurveTo(w * 0.78, -h * 0.55, w * 0.79, -h * 0.52, w * 0.80, -h * 0.49);
+        g.bezierCurveTo(w * 0.77, -h * 0.47, w * 0.74, -h * 0.47, w * 0.72, -h * 0.49);
         g.closePath();
         g.fill(dc(0xdce1e8, 0.65));
 

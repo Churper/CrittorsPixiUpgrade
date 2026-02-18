@@ -68,6 +68,11 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   const mctx = menuCanvas.getContext('2d');
   let menuAnimId = null;
 
+  // Snail sprite images
+  const snailFrames = [new Image(), new Image()];
+  snailFrames[0].src = 'https://i.imgur.com/shRbAl5.png';
+  snailFrames[1].src = 'https://i.imgur.com/r3DQaWf.png';
+
   function initMenuScene() {
     const dpr = window.devicePixelRatio || 1;
     const w = window.innerWidth;
@@ -76,82 +81,120 @@ console.log("PIXIVERSION:",PIXI.VERSION);
     menuCanvas.height = h * dpr;
     mctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Seed random for deterministic scenery
     let seed = 42;
     function srand() { seed = (seed * 16807 + 0) % 2147483647; return (seed - 1) / 2147483646; }
 
     // Stars
     const stars = [];
-    for (let i = 0; i < 80; i++) stars.push({ x: srand() * w, y: srand() * h * 0.55, r: srand() * 1.4 + 0.3, b: srand() * 0.4 + 0.5 });
+    for (let i = 0; i < 90; i++) stars.push({ x: srand() * w, y: srand() * h * 0.6, r: srand() * 1.6 + 0.4, b: srand() * 0.5 + 0.5 });
 
-    // Moon
-    const moonX = w * 0.78, moonY = h * 0.18, moonR = Math.min(w, h) * 0.05;
+    // Moon — matching game style (bigger, brighter)
+    const moonX = w * 0.8, moonY = h * 0.16, moonR = Math.min(w, h) * 0.07;
 
-    // Mountain layers (back to front)
+    // Mountains — lighter tones
     function genMountain(count, baseY, minH, maxH) {
       const pts = [];
       for (let i = 0; i < count; i++) {
         const cx = (i / (count - 1)) * (w + 200) - 100;
-        const peakH = minH + srand() * (maxH - minH);
-        pts.push({ x: cx, h: peakH });
+        pts.push({ x: cx, h: minH + srand() * (maxH - minH) });
       }
       return { pts, baseY };
     }
     const mtns = [
-      { layer: genMountain(5, h * 0.62, h * 0.18, h * 0.32), color: '#0d1520', speed: 0.3 },
-      { layer: genMountain(6, h * 0.68, h * 0.12, h * 0.24), color: '#111e2e', speed: 0.6 },
-      { layer: genMountain(7, h * 0.74, h * 0.06, h * 0.15), color: '#162636', speed: 1.0 },
+      { layer: genMountain(5, h * 0.62, h * 0.2, h * 0.35), color: '#141e2c', speed: 0.3 },
+      { layer: genMountain(6, h * 0.68, h * 0.12, h * 0.24), color: '#182840', speed: 0.6 },
+      { layer: genMountain(7, h * 0.74, h * 0.06, h * 0.16), color: '#1c3048', speed: 1.0 },
     ];
 
-    // Ground trees
-    const trees = [];
+    // Ground
     const groundY = h * 0.78;
-    for (let i = 0; i < 14; i++) {
-      trees.push({
-        x: srand() * w * 1.1 - w * 0.05,
-        h: 18 + srand() * 30,
-        w: 10 + srand() * 14,
-        trunk: 2 + srand() * 2,
-      });
+
+    // Trees
+    const trees = [];
+    for (let i = 0; i < 12; i++) {
+      trees.push({ x: srand() * w * 1.1 - w * 0.05, h: 20 + srand() * 32, w: 12 + srand() * 16, trunk: 2.5 + srand() * 2 });
     }
-    trees.sort((a, b) => a.h - b.h); // smaller behind
+    trees.sort((a, b) => a.h - b.h);
 
     // Clouds
     const clouds = [];
     for (let i = 0; i < 4; i++) {
-      clouds.push({
-        x: srand() * w,
-        y: h * 0.1 + srand() * h * 0.2,
-        w: 60 + srand() * 80,
-        h: 18 + srand() * 14,
-        speed: 6 + srand() * 10,
-      });
+      clouds.push({ x: srand() * w, y: h * 0.08 + srand() * h * 0.22, w: 70 + srand() * 90, h: 18 + srand() * 14, speed: 5 + srand() * 8 });
     }
+
+    // Two fires — positioned on ground left and right of center
+    const fires = [
+      { x: w * 0.15, phase: 0 },
+      { x: w * 0.85, phase: Math.PI },
+    ];
+    const fireBaseR = Math.min(w, h) * 0.04;
+
+    // Snail state
+    let snailX = -50;
+    const snailSpeed = w * 0.012; // pixels per second
+    const snailSize = Math.min(w, h) * 0.08;
+    let snailFrame = 0;
+    let snailFrameTimer = 0;
 
     let t = 0;
     function drawFrame() {
       t += 0.016;
       mctx.clearRect(0, 0, w, h);
 
-      // Stars with twinkle
+      // Sky gradient — slightly brighter night
+      const skyGrd = mctx.createLinearGradient(0, 0, 0, h * 0.78);
+      skyGrd.addColorStop(0, '#0c1222');
+      skyGrd.addColorStop(0.4, '#12203a');
+      skyGrd.addColorStop(1, '#1a3050');
+      mctx.fillStyle = skyGrd;
+      mctx.fillRect(0, 0, w, h * 0.78);
+
+      // Stars
       stars.forEach(s => {
-        const a = s.b + Math.sin(t * 1.2 + s.x) * 0.2;
+        const a = s.b + Math.sin(t * 1.5 + s.x * 0.5) * 0.25;
         mctx.beginPath();
         mctx.arc(s.x, s.y, s.r, 0, 6.28);
-        mctx.fillStyle = `rgba(200, 220, 255, ${a})`;
+        mctx.fillStyle = `rgba(210, 225, 255, ${a})`;
         mctx.fill();
       });
 
-      // Moon
-      const grd = mctx.createRadialGradient(moonX, moonY, moonR * 0.3, moonX, moonY, moonR * 3);
-      grd.addColorStop(0, 'rgba(180, 200, 230, 0.25)');
-      grd.addColorStop(1, 'rgba(180, 200, 230, 0)');
-      mctx.fillStyle = grd;
-      mctx.fillRect(moonX - moonR * 3, moonY - moonR * 3, moonR * 6, moonR * 6);
-      mctx.beginPath();
-      mctx.arc(moonX, moonY, moonR, 0, 6.28);
-      mctx.fillStyle = '#c8d8e8';
-      mctx.fill();
+      // Moon — game-matching with glow, body, craters, terminator
+      // Outer glow layers
+      const g3 = mctx.createRadialGradient(moonX, moonY, moonR * 0.5, moonX, moonY, moonR * 4);
+      g3.addColorStop(0, 'rgba(200, 220, 255, 0.12)');
+      g3.addColorStop(0.5, 'rgba(200, 220, 255, 0.05)');
+      g3.addColorStop(1, 'rgba(200, 220, 255, 0)');
+      mctx.fillStyle = g3;
+      mctx.beginPath(); mctx.arc(moonX, moonY, moonR * 4, 0, 6.28); mctx.fill();
+
+      const g2 = mctx.createRadialGradient(moonX, moonY, moonR * 0.5, moonX, moonY, moonR * 2.2);
+      g2.addColorStop(0, 'rgba(210, 225, 255, 0.18)');
+      g2.addColorStop(1, 'rgba(210, 225, 255, 0)');
+      mctx.fillStyle = g2;
+      mctx.beginPath(); mctx.arc(moonX, moonY, moonR * 2.2, 0, 6.28); mctx.fill();
+
+      // Moon body
+      mctx.beginPath(); mctx.arc(moonX, moonY, moonR, 0, 6.28);
+      mctx.fillStyle = '#e8e8f0'; mctx.fill();
+      mctx.beginPath(); mctx.arc(moonX, moonY, moonR * 0.96, 0, 6.28);
+      mctx.fillStyle = '#eeeef4'; mctx.fill();
+      // Craters
+      mctx.globalAlpha = 0.35;
+      mctx.beginPath(); mctx.arc(moonX - moonR * 0.3, moonY - moonR * 0.23, moonR * 0.19, 0, 6.28);
+      mctx.fillStyle = '#d0d0da'; mctx.fill();
+      mctx.beginPath(); mctx.arc(moonX + moonR * 0.23, moonY - moonR * 0.38, moonR * 0.13, 0, 6.28);
+      mctx.fillStyle = '#d4d4de'; mctx.fill();
+      mctx.beginPath(); mctx.arc(moonX + moonR * 0.12, moonY + moonR * 0.3, moonR * 0.15, 0, 6.28);
+      mctx.fillStyle = '#ccccda'; mctx.fill();
+      mctx.globalAlpha = 0.15;
+      // Terminator shadow
+      mctx.beginPath(); mctx.arc(moonX + moonR * 0.3, moonY, moonR * 0.85, 0, 6.28);
+      mctx.fillStyle = '#667788'; mctx.fill();
+      // Bright highlight
+      mctx.globalAlpha = 0.12;
+      mctx.beginPath(); mctx.arc(moonX - moonR * 0.22, moonY - moonR * 0.3, moonR * 0.46, 0, 6.28);
+      mctx.fillStyle = '#ffffff'; mctx.fill();
+      mctx.globalAlpha = 1;
 
       // Clouds
       clouds.forEach(c => {
@@ -160,7 +203,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         mctx.ellipse(cx, c.y, c.w * 0.5, c.h * 0.5, 0, 0, 6.28);
         mctx.ellipse(cx - c.w * 0.25, c.y + 2, c.w * 0.35, c.h * 0.4, 0, 0, 6.28);
         mctx.ellipse(cx + c.w * 0.28, c.y + 1, c.w * 0.38, c.h * 0.42, 0, 0, 6.28);
-        mctx.fillStyle = 'rgba(30, 45, 65, 0.35)';
+        mctx.fillStyle = 'rgba(35, 55, 80, 0.3)';
         mctx.fill();
       });
 
@@ -169,9 +212,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         const offset = Math.sin(t * 0.15) * m.speed * 4;
         mctx.beginPath();
         mctx.moveTo(-20, m.layer.baseY);
-        m.layer.pts.forEach(p => {
-          mctx.lineTo(p.x + offset, m.layer.baseY - p.h);
-        });
+        m.layer.pts.forEach(p => { mctx.lineTo(p.x + offset, m.layer.baseY - p.h); });
         mctx.lineTo(w + 20, m.layer.baseY);
         mctx.closePath();
         mctx.fillStyle = m.color;
@@ -179,24 +220,71 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       });
 
       // Ground
-      mctx.fillStyle = '#0e1a24';
+      const gndGrd = mctx.createLinearGradient(0, groundY, 0, h);
+      gndGrd.addColorStop(0, '#15283a');
+      gndGrd.addColorStop(1, '#0e1c28');
+      mctx.fillStyle = gndGrd;
       mctx.fillRect(0, groundY, w, h - groundY);
-      // Ground top edge - subtle grass line
-      mctx.fillStyle = '#1a2e3c';
-      mctx.fillRect(0, groundY, w, 3);
+      // Grass edge
+      mctx.fillStyle = '#1e3a4e';
+      mctx.fillRect(0, groundY, w, 2);
 
       // Trees
       trees.forEach(tr => {
         const tx = tr.x + Math.sin(t * 0.4 + tr.x * 0.01) * 0.5;
-        // Trunk
-        mctx.fillStyle = '#0a161e';
+        mctx.fillStyle = '#0e1e2a';
         mctx.fillRect(tx - tr.trunk * 0.5, groundY - tr.h * 0.5, tr.trunk, tr.h * 0.5);
-        // Canopy
         mctx.beginPath();
         mctx.ellipse(tx, groundY - tr.h * 0.55, tr.w * 0.5, tr.h * 0.5, 0, 0, 6.28);
-        mctx.fillStyle = '#0f2030';
+        mctx.fillStyle = '#142838';
         mctx.fill();
       });
+
+      // Fire glows — matching game's campfire style (orange concentric circles with flicker)
+      fires.forEach(f => {
+        const flicker = 0.7 + Math.sin(t * 5 + f.phase) * 0.2 + Math.sin(t * 11.5 + f.phase) * 0.1;
+        const pulse = 0.9 + Math.sin(t * 3.5 + f.phase) * 0.15;
+        const fy = groundY - 4;
+        const r = fireBaseR * pulse;
+
+        // Large outer glow
+        const fg = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 3.5);
+        fg.addColorStop(0, `rgba(255, 136, 50, ${0.14 * flicker})`);
+        fg.addColorStop(0.5, `rgba(255, 100, 30, ${0.06 * flicker})`);
+        fg.addColorStop(1, 'rgba(255, 80, 20, 0)');
+        mctx.fillStyle = fg;
+        mctx.beginPath(); mctx.arc(f.x, fy, r * 3.5, 0, 6.28); mctx.fill();
+
+        // Mid glow
+        const fg2 = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 2);
+        fg2.addColorStop(0, `rgba(255, 170, 68, ${0.2 * flicker})`);
+        fg2.addColorStop(1, 'rgba(255, 140, 50, 0)');
+        mctx.fillStyle = fg2;
+        mctx.beginPath(); mctx.arc(f.x, fy, r * 2, 0, 6.28); mctx.fill();
+
+        // Bright core
+        const fg3 = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 0.8);
+        fg3.addColorStop(0, `rgba(255, 204, 100, ${0.35 * flicker})`);
+        fg3.addColorStop(1, 'rgba(255, 180, 70, 0)');
+        mctx.fillStyle = fg3;
+        mctx.beginPath(); mctx.arc(f.x, fy, r * 0.8, 0, 6.28); mctx.fill();
+
+        // Ground light pool
+        mctx.globalAlpha = 0.08 * flicker;
+        mctx.fillStyle = '#ff9944';
+        mctx.fillRect(f.x - r * 3, groundY, r * 6, 8);
+        mctx.globalAlpha = 1;
+      });
+
+      // Snail crawling across ground
+      snailX += snailSpeed * 0.016;
+      if (snailX > w + snailSize) snailX = -snailSize;
+      snailFrameTimer += 0.016;
+      if (snailFrameTimer > 0.4) { snailFrameTimer = 0; snailFrame = (snailFrame + 1) % 2; }
+      const img = snailFrames[snailFrame];
+      if (img.complete && img.naturalWidth > 0) {
+        mctx.drawImage(img, snailX, groundY - snailSize * 0.8, snailSize, snailSize);
+      }
 
       menuAnimId = requestAnimationFrame(drawFrame);
     }

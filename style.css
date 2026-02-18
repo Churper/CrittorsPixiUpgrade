@@ -77,29 +77,11 @@ body {
 
 #menu-title {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(2.2em, 7vmin, 3.6em);
+  font-size: clamp(2.4em, 8vmin, 4em);
   color: #e0e8f0;
-  text-shadow:
-    0 0 24px rgba(80, 160, 240, 0.45),
-    0 0 60px rgba(60, 130, 200, 0.2),
-    2px 2px 6px rgba(0, 0, 0, 0.9);
-  letter-spacing: 3px;
-  margin-bottom: clamp(8px, 2.5vmin, 20px);
-  user-select: none;
-  animation: menuTitleGlow 3s ease-in-out infinite alternate;
-}
-
-@keyframes menuTitleGlow {
-  0%   { text-shadow: 0 0 24px rgba(80, 160, 240, 0.45), 0 0 60px rgba(60, 130, 200, 0.2), 2px 2px 6px rgba(0, 0, 0, 0.9); }
-  100% { text-shadow: 0 0 32px rgba(80, 160, 240, 0.65), 0 0 80px rgba(60, 130, 200, 0.35), 2px 2px 6px rgba(0, 0, 0, 0.9); }
-}
-
-#menu-subtitle {
-  font-family: 'Patrick Hand', cursive;
-  font-size: clamp(0.85em, 2.5vmin, 1.1em);
-  color: rgba(180, 200, 220, 0.5);
-  letter-spacing: 1px;
-  margin-bottom: clamp(4px, 1.5vmin, 12px);
+  text-shadow: 0 0 16px rgba(80, 160, 240, 0.5), 2px 2px 6px rgba(0, 0, 0, 0.9);
+  letter-spacing: 4px;
+  margin-bottom: clamp(12px, 3vmin, 28px);
   user-select: none;
 }
 

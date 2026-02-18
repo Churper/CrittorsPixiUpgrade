@@ -678,8 +678,9 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'frog-golden', icon: '✨', name: 'Golden Frog',    cost: 5, charOnly: 'frog' },
     { id: 'frog-shadow', icon: '🌑', name: 'Shadow Frog',    cost: 4, charOnly: 'frog' },
     // Snail skins
-    { id: 'snail-crystal', icon: '💎', name: 'Crystal Snail', cost: 3, charOnly: 'snail' },
-    { id: 'snail-magma',   icon: '🌋', name: 'Magma Snail',  cost: 4, charOnly: 'snail' },
+    { id: 'snail-crystal',   icon: '💎', name: 'Crystal Snail',   cost: 3, charOnly: 'snail' },
+    { id: 'snail-magma',     icon: '🌋', name: 'Magma Snail',    cost: 4, charOnly: 'snail' },
+    { id: 'snail-valentine', icon: '💝', name: 'Valentine Snail', cost: 4, charOnly: 'snail' },
     // Bird skins
     { id: 'bird-phoenix', icon: '🔥', name: 'Phoenix Bird',  cost: 5, charOnly: 'bird' },
     { id: 'bird-arctic',  icon: '❄️', name: 'Arctic Bird',   cost: 3, charOnly: 'bird' },
@@ -1745,6 +1746,15 @@ document.addEventListener('DOMContentLoaded', function () {
       // Red spiral stays red — already in range, no shift needed (outside 190-280).
       // Yellow body → warm sandy amber (complements red shell, not ugly orange)
       { from: 38, to: 68, targetFrom: 32, targetTo: 42, sat: 1.1, lit: 1.0 },
+    ],
+    'snail-valentine': [
+      // Shell → bright candy pink. Warm, saturated, cheerful.
+      { from: 190, to: 280, targetFrom: 335, targetTo: 348, sat: 1.2, lit: 1.15 },
+      // Red spiral → hot magenta-pink (deeper, richer pink than the shell)
+      { from: 335, to: 360, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.0 },
+      { from: 0, to: 20, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.0 },
+      // Yellow body+sparkles → soft rosy pink
+      { from: 38, to: 68, targetFrom: 345, targetTo: 355, sat: 0.7, lit: 1.1 },
     ],
 
     // ── BIRD ──

@@ -3138,28 +3138,38 @@ state.frogGhostPlayer.scale.set(0.28);
       state.sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
       // Procedural cloud generation
       function drawCloud(g, cw, ch, complexity) {
-        // Compound circles — all added to one path, then filled once (no internal edges)
-        // Flat bottom row
-        g.circle(-cw * 0.25, ch * 0.02, cw * 0.20);
-        g.circle(-cw * 0.05, ch * 0.02, cw * 0.22);
-        g.circle(cw * 0.15, ch * 0.02, cw * 0.20);
-        g.circle(cw * 0.30, ch * 0.02, cw * 0.16);
-        // Middle puffs — larger, overlapping
-        g.circle(-cw * 0.18, -ch * 0.14, cw * 0.22);
-        g.circle(cw * 0.05, -ch * 0.16, cw * 0.25);
-        g.circle(cw * 0.24, -ch * 0.12, cw * 0.20);
-        // Top puffs — the billowy part
-        g.circle(-cw * 0.08, -ch * 0.32, cw * 0.20);
-        g.circle(cw * 0.12, -ch * 0.30, cw * 0.18);
-        if (complexity > 4) {
-          g.circle(-cw * 0.30, -ch * 0.06, cw * 0.16);
-          g.circle(cw * 0.02, -ch * 0.40, cw * 0.14);
-        }
-        // Single fill for all circles — no visible internal edges
+        // Smooth bezier cloud outline — flat bottom, 3 wide puffy bumps on top
+        // Each bump uses wide bezier arcs so the contour is smooth, not bumpy/spiky
+
+        // Vary bump heights slightly per cloud using complexity as seed
+        const b1h = ch * (0.6 + (complexity % 3) * 0.08);  // left bump
+        const b2h = ch * (0.9 + (complexity % 2) * 0.1);   // center bump (tallest)
+        const b3h = ch * (0.5 + (complexity % 4) * 0.06);  // right bump
+
+        g.moveTo(-cw * 0.45, 0);
+
+        // Left side rise
+        g.bezierCurveTo(-cw * 0.45, -b1h * 0.3, -cw * 0.40, -b1h * 0.6, -cw * 0.32, -b1h);
+        // Left bump top — wide smooth arc
+        g.bezierCurveTo(-cw * 0.24, -b1h * 1.15, -cw * 0.16, -b1h * 1.1, -cw * 0.12, -b1h * 0.85);
+        // Valley between left and center bumps
+        g.bezierCurveTo(-cw * 0.08, -b1h * 0.65, -cw * 0.04, -b2h * 0.65, 0, -b2h * 0.8);
+        // Center bump top — tallest, wide arc
+        g.bezierCurveTo(cw * 0.06, -b2h * 1.05, cw * 0.14, -b2h * 1.1, cw * 0.18, -b2h * 0.9);
+        // Valley between center and right bumps
+        g.bezierCurveTo(cw * 0.22, -b2h * 0.65, cw * 0.26, -b3h * 0.6, cw * 0.28, -b3h * 0.8);
+        // Right bump top — wide smooth arc
+        g.bezierCurveTo(cw * 0.32, -b3h * 1.1, cw * 0.38, -b3h * 1.0, cw * 0.40, -b3h * 0.6);
+        // Right side drop
+        g.bezierCurveTo(cw * 0.43, -b3h * 0.25, cw * 0.45, 0, cw * 0.45, 0);
+
+        // Flat bottom
+        g.lineTo(-cw * 0.45, 0);
+        g.closePath();
         g.fill({ color: 0xffffff, alpha: 1.0 });
 
-        // Subtle flat shadow at base
-        g.ellipse(cw * 0.02, ch * 0.12, cw * 0.32, ch * 0.05).fill({ color: 0xe0e4ec, alpha: 0.5 });
+        // Subtle bottom shadow
+        g.ellipse(0, ch * 0.03, cw * 0.38, ch * 0.04).fill({ color: 0xe0e4ec, alpha: 0.45 });
       }
 
       const clouds = new PIXI.Container();

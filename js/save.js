@@ -8,6 +8,7 @@ import {
   getSnailDamage, getBirdDamage, getFrogDamage, getBeeDamage,
   getPlayerCurrentHealth, getPlayerHealth,
   setSelectLevel,
+  getBones, setBones, getLayoutUpgrades, setLayoutUpgrades,
 } from './state.js';
 import {
   setCurrentFrogHealth, setCurrentSnailHealth, setCurrentBeeHealth, setCurrentBirdHealth,
@@ -180,5 +181,27 @@ export function loadGame() {
     state.cooldownActive = false;
 
 
+  }
+}
+
+// Bones persistence — separate localStorage key so it survives endless mode
+export function saveBones() {
+  const data = {
+    bones: getBones(),
+    layoutUpgrades: getLayoutUpgrades(),
+  };
+  localStorage.setItem('crittorsBones', JSON.stringify(data));
+}
+
+export function loadBones() {
+  const saved = localStorage.getItem('crittorsBones');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      if (data.bones !== undefined) setBones(data.bones);
+      if (data.layoutUpgrades) setLayoutUpgrades(data.layoutUpgrades);
+    } catch (e) {
+      console.warn('Failed to load bones data:', e);
+    }
   }
 }

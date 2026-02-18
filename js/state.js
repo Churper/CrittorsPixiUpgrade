@@ -125,6 +125,15 @@ const state = {
   ghostFlyInterval: null,
   endlessKillCount: 0,
 
+  // Cross-round currency
+  bones: 0,
+  layoutUpgrades: {
+    frog:  { damage: 0, health: 0, speed: 0 },
+    snail: { damage: 0, health: 0, speed: 0 },
+    bird:  { damage: 0, health: 0, speed: 0 },
+    bee:   { damage: 0, health: 0, speed: 0 },
+  },
+
   // Config
   characterPositions: {
     "character-snail": { top: "-50px", left: "calc(45% - 70px)" },
@@ -401,3 +410,9 @@ export function getisPaused() {
 // Unlocked Characters
 export function getUnlockedCharacters() { return state.unlockedCharacters; }
 export function setUnlockedCharacters(value) { state.unlockedCharacters = value; }
+
+// Bones (cross-round currency)
+export function getBones() { return state.bones; }
+export function setBones(value) { state.bones = value; }
+export function getLayoutUpgrades() { return state.layoutUpgrades; }
+export function setLayoutUpgrades(value) { state.layoutUpgrades = value; }

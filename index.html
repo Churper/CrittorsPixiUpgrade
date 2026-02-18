@@ -26,8 +26,9 @@
   <div id="rotateDevice">
     <div id="main-menu">
       <div id="menu-spacer"></div>
-      <button id="story-mode-btn" class="menu-btn">Story Mode</button>
       <button id="endless-mode-btn" class="menu-btn">Endless Mode</button>
+      <button id="layout-btn" class="menu-btn">Layout</button>
+      <button id="story-mode-btn" class="menu-btn menu-btn-disabled" disabled>Story Mode</button>
       <div class="menu-bottom-row">
         <button id="leaderboard-btn" class="menu-info-btn">&#127942;</button>
         <button id="info-btn" class="menu-info-btn">i</button>
@@ -90,6 +91,39 @@
           </div>
         </div>
         <button id="guide-close-btn" class="menu-btn">Close</button>
+      </div>
+      <div id="layout-panel" style="display:none;">
+        <div class="layout-header">
+          <span id="layout-bones">🦴 0</span>
+          <button id="layout-close-btn" class="menu-info-btn">✕</button>
+        </div>
+        <div class="layout-tabs">
+          <button class="layout-tab active" data-char="frog">Frog</button>
+          <button class="layout-tab" data-char="snail">Snail</button>
+          <button class="layout-tab" data-char="bird">Bird</button>
+          <button class="layout-tab" data-char="bee">Bee</button>
+        </div>
+        <div class="layout-upgrades">
+          <div class="layout-row" data-stat="damage">
+            <span class="layout-stat-name">Damage</span>
+            <span class="layout-stat-level">Lv 0</span>
+            <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+          </div>
+          <div class="layout-row" data-stat="health">
+            <span class="layout-stat-name">Health</span>
+            <span class="layout-stat-level">Lv 0</span>
+            <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+          </div>
+          <div class="layout-row" data-stat="speed">
+            <span class="layout-stat-name">Speed</span>
+            <span class="layout-stat-level">Lv 0</span>
+            <button class="layout-buy-btn" data-cost="10">🦴 10</button>
+          </div>
+        </div>
+        <div class="layout-unlocks">
+          <h3>Unlocks</h3>
+          <p class="layout-coming-soon">Coming soon...</p>
+        </div>
       </div>
     </div>
   </div>

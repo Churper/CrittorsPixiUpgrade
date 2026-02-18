@@ -46,7 +46,7 @@ import {
   playPotionChugSound, playPotionBottleAnimation,
 } from './combat.js';
 import { updateEXP } from './upgrades.js';
-import { saveGame, loadGame } from './save.js';
+import { saveGame, loadGame, saveBones, loadBones } from './save.js';
 import {
   submitScore, formatScore,
   getSavedPlayerName, savePlayerName,
@@ -59,6 +59,9 @@ document.addEventListener('DOMContentLoaded', function () {
 console.log("PIXIVERSION:",PIXI.VERSION);
   let rotateMessage = document.getElementById('rotateDevice');
   rotateMessage.style.display = "block"; // Always display the new menu
+
+  // Load persistent bones currency before menu shows
+  loadBones();
 
   function startFromMenu(mode) {
     rotateMessage.style.display = 'none';
@@ -80,11 +83,71 @@ console.log("PIXIVERSION:",PIXI.VERSION);
   }
 
   document.getElementById('story-mode-btn').addEventListener('click', function() {
+    if (this.disabled) return;
     startFromMenu('story');
   });
 
   document.getElementById('endless-mode-btn').addEventListener('click', function() {
     startFromMenu('endless');
+  });
+
+  // --- Layout panel ---
+  const layoutPanel = document.getElementById('layout-panel');
+  const layoutBonesEl = document.getElementById('layout-bones');
+  let layoutSelectedChar = 'frog';
+
+  function updateLayoutUI() {
+    const { getBones, getLayoutUpgrades } = state.constructor ? {} : {};
+    const bones = state.bones;
+    const upgrades = state.layoutUpgrades;
+    layoutBonesEl.textContent = `🦴 ${bones}`;
+
+    // Update tab highlights
+    document.querySelectorAll('.layout-tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.char === layoutSelectedChar);
+    });
+
+    // Update stat rows
+    const charUpgrades = upgrades[layoutSelectedChar] || { damage: 0, health: 0, speed: 0 };
+    document.querySelectorAll('.layout-row').forEach(row => {
+      const stat = row.dataset.stat;
+      const level = charUpgrades[stat] || 0;
+      row.querySelector('.layout-stat-level').textContent = `Lv ${level}`;
+      const cost = 10 + level * 5;
+      const btn = row.querySelector('.layout-buy-btn');
+      btn.dataset.cost = cost;
+      btn.textContent = `🦴 ${cost}`;
+      btn.classList.toggle('cant-afford', bones < cost);
+    });
+  }
+
+  document.getElementById('layout-btn').addEventListener('click', function() {
+    updateLayoutUI();
+    layoutPanel.style.display = 'block';
+  });
+
+  document.getElementById('layout-close-btn').addEventListener('click', function() {
+    layoutPanel.style.display = 'none';
+  });
+
+  document.querySelectorAll('.layout-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      layoutSelectedChar = this.dataset.char;
+      updateLayoutUI();
+    });
+  });
+
+  document.querySelectorAll('.layout-buy-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const row = this.closest('.layout-row');
+      const stat = row.dataset.stat;
+      const cost = parseInt(this.dataset.cost);
+      if (state.bones < cost) return;
+      state.bones -= cost;
+      state.layoutUpgrades[layoutSelectedChar][stat]++;
+      saveBones();
+      updateLayoutUI();
+    });
   });
 
   document.getElementById('info-btn').addEventListener('click', function() {
@@ -532,7 +595,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       }
       // Lantern glows — seed 99333, same spacing as lantern decor
       _fgs = 99333;
-      let lnx = 500;
+      let lnx = 900;
       while (lnx < 50000) {
         const sc = (0.8 + _fgr() * 0.3) * 1.4; // matches endlessGroundRandom() call in decor (with 1.4x scale)
         const glow = new PIXI.Graphics();
@@ -545,7 +608,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         glow.flickerSpeed = 0.05 + Math.random() * 0.04;
         glow.isCampfire = false;
         nightFireGlows.addChild(glow);
-        lnx += 700 + _fgr() * 1000; // matches endlessGroundRandom() call in decor
+        lnx += 1100 + _fgr() * 1200; // matches endlessGroundRandom() call in decor
       }
       app.stage.addChild(nightFireGlows);
     }
@@ -2116,6 +2179,7 @@ foreground.y = Math.max(app.screen.height);
 // Endless mode: procedural ground that extends beyond the foreground sprite
 let endlessGround = null;
 let endlessGroundDecor = null; // Separate container for trees/rocks above ground line
+let endlessGroundDecorFG = null; // Foreground decor layer (in front of character)
 const endlessGroundPalettes = {
   sun:  { base: 0x4a8c3f, dirt: 0x6b5234, path: 0xc4a66a, grass: 0x5cb350, variation: 0x3f7a35,
           rock: 0x8a8078, rockShade: 0x6b6058, trunk: 0x6b4226, canopy: [0xd4442a, 0xe06830, 0xcc3322, 0x44a040, 0x389030], flower: 0xe8c840 },
@@ -2268,6 +2332,9 @@ function drawEndlessGround(weather) {
   if (endlessGroundDecor) {
     endlessGroundDecor.removeChildren();
   }
+  if (endlessGroundDecorFG) {
+    endlessGroundDecorFG.removeChildren();
+  }
   drawEndlessGroundDecor(weather, palette, h);
 }
 
@@ -2285,7 +2352,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     const trunkH = (30 + endlessGroundRandom() * 25) * treeScale;
     const trunkW = (6 + endlessGroundRandom() * 4) * treeScale;
     const canopyR = (18 + endlessGroundRandom() * 14) * treeScale;
-    const depthOffset = endlessGroundRandom() * 12 * treeScale; // slight Y offset for depth
+    const depthOffset = endlessGroundRandom() * 22 * treeScale; // slight Y offset for depth
     const treeY = terrainTopY(tx) + depthOffset; // follow terrain curve + depth
     const canopyColor = palette.canopy[Math.floor(endlessGroundRandom() * palette.canopy.length)];
     const darkCanopy = palette.canopy[Math.min(3, palette.canopy.length - 1)];
@@ -2607,7 +2674,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
   // Lanterns on posts (night only)
   if (weather === 'night') {
     _endlessGroundSeed = 99333;
-    let lnx = 500;
+    let lnx = 900;
     while (lnx < w) {
       const lnY = terrainTopY(lnx);
       const sc = (0.8 + endlessGroundRandom() * 0.3) * 1.4;
@@ -2628,11 +2695,69 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       // Top cap
       d.rect(lnx - 6.5 * sc, lnY - 43 * sc, 13 * sc, 2.5 * sc)
         .fill({ color: 0x333333 });
-      lnx += 700 + endlessGroundRandom() * 1000;
+      lnx += 1100 + endlessGroundRandom() * 1200;
     }
   }
 
   endlessGroundDecor.addChild(d);
+
+  // --- Foreground decor (in front of character, semi-transparent for depth) ---
+  if (endlessGroundDecorFG) {
+    const fg = new PIXI.Graphics();
+    const fgAlpha = 0.55;
+
+    // FG trees — sparse, larger, dark silhouettes
+    _endlessGroundSeed = 33334;
+    let ftx = 800;
+    while (ftx < w) {
+      const sc = 1.6 + endlessGroundRandom() * 0.4;
+      const trH = (30 + endlessGroundRandom() * 20) * sc;
+      const trW = (6 + endlessGroundRandom() * 3) * sc;
+      const cr = (18 + endlessGroundRandom() * 10) * sc;
+      const fy = terrainTopY(ftx) + 30 + endlessGroundRandom() * 25;
+      const col = weather === 'night' ? 0x0a150a : (weather === 'snow' ? 0x1a3a2a : palette.trunk);
+      const canCol = weather === 'night' ? 0x0c1a0c : (weather === 'snow' ? 0x1a4a2a : palette.canopy[0]);
+      // Trunk
+      fg.moveTo(ftx - trW / 2, fy);
+      fg.lineTo(ftx - trW * 0.35, fy - trH);
+      fg.lineTo(ftx + trW * 0.35, fy - trH);
+      fg.lineTo(ftx + trW / 2, fy);
+      fg.closePath().fill({ color: col, alpha: fgAlpha });
+      // Canopy — simple overlapping circles
+      const cx = ftx, cy = fy - trH - cr * 0.5;
+      fg.circle(cx, cy, cr).fill({ color: canCol, alpha: fgAlpha * 0.85 });
+      fg.circle(cx - cr * 0.4, cy + cr * 0.2, cr * 0.6).fill({ color: canCol, alpha: fgAlpha * 0.7 });
+      fg.circle(cx + cr * 0.4, cy + cr * 0.15, cr * 0.55).fill({ color: canCol, alpha: fgAlpha * 0.7 });
+      ftx += 1500 + endlessGroundRandom() * 1500;
+    }
+
+    // FG bushes — sparse, bigger
+    _endlessGroundSeed = 22223;
+    let fbx = 500;
+    while (fbx < w) {
+      const bw = (20 + endlessGroundRandom() * 20) * 1.5;
+      const bh = (12 + endlessGroundRandom() * 10) * 1.5;
+      const by = terrainTopY(fbx) + 20 + endlessGroundRandom() * 20;
+      const canCol = weather === 'night' ? 0x0c1a0c : palette.canopy[0];
+      fg.circle(fbx, by - bh * 0.4, bw * 0.4).fill({ color: canCol, alpha: fgAlpha * 0.8 });
+      fg.circle(fbx - bw * 0.2, by - bh * 0.25, bw * 0.3).fill({ color: canCol, alpha: fgAlpha * 0.7 });
+      fg.circle(fbx + bw * 0.2, by - bh * 0.25, bw * 0.28).fill({ color: canCol, alpha: fgAlpha * 0.65 });
+      fbx += 1000 + endlessGroundRandom() * 1000;
+    }
+
+    // FG rocks — sparse, bigger
+    _endlessGroundSeed = 44445;
+    let frx = 1200;
+    while (frx < w) {
+      const rw = (18 + endlessGroundRandom() * 20) * 1.4;
+      const rh = (12 + endlessGroundRandom() * 12) * 1.4;
+      const ry = terrainTopY(frx) + 15 + endlessGroundRandom() * 15;
+      fg.roundRect(frx, ry - rh * 0.4, rw, rh, rh * 0.35).fill({ color: palette.rock, alpha: fgAlpha * 0.75 });
+      frx += 2000 + endlessGroundRandom() * 2000;
+    }
+
+    endlessGroundDecorFG.addChild(fg);
+  }
 }
 
 endlessGround = new PIXI.Graphics();
@@ -2641,6 +2766,9 @@ endlessGround.zIndex = 5;
 endlessGroundDecor = new PIXI.Container();
 endlessGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
 endlessGroundDecor.zIndex = 6;
+endlessGroundDecorFG = new PIXI.Container();
+endlessGroundDecorFG.position.set(0, app.screen.height - endlessGroundHeight);
+endlessGroundDecorFG.zIndex = 11;
 const initialWeather = getWeatherType();
 drawEndlessGround(initialWeather);
 endlessGroundCurrentWeather = initialWeather;
@@ -2684,6 +2812,7 @@ function transitionWeather(newWeather) {
     if (t.oldWeather && t.oldWeather.parent) { app.stage.removeChild(t.oldWeather); t.oldWeather.destroy({ children: true }); }
     if (t.oldGround && t.oldGround.parent) { app.stage.removeChild(t.oldGround); t.oldGround.destroy({ children: true }); }
     if (t.oldGroundDecor && t.oldGroundDecor.parent) { app.stage.removeChild(t.oldGroundDecor); t.oldGroundDecor.destroy({ children: true }); }
+    if (t.oldGroundDecorFG && t.oldGroundDecorFG.parent) { app.stage.removeChild(t.oldGroundDecorFG); t.oldGroundDecorFG.destroy({ children: true }); }
     for (const o of (t.oldOverlays || [])) { if (o && o.parent) { app.stage.removeChild(o); o.destroy({ children: true }); } }
     if (t.newWeather) t.newWeather.alpha = 1;
     if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha;
@@ -2704,6 +2833,7 @@ function transitionWeather(newWeather) {
   const oldWeather = weatherContainer;
   const oldGround = endlessGround;
   const oldGroundDecor = endlessGroundDecor;
+  const oldGroundDecorFG = endlessGroundDecorFG;
   const oldOverlays = [sunLightOverlay, nightOverlay, playerShadow, nightFireGlows];
   const oldSkyTop = currentSkyTop;
   const oldSkyBottom = currentSkyBottom;
@@ -2724,9 +2854,16 @@ function transitionWeather(newWeather) {
   newGroundDecor.alpha = 0;
   app.stage.addChild(newGroundDecor);
 
+  const newGroundDecorFG = new PIXI.Container();
+  newGroundDecorFG.position.set(0, app.screen.height - endlessGroundHeight);
+  newGroundDecorFG.zIndex = 11;
+  newGroundDecorFG.alpha = 0;
+  app.stage.addChild(newGroundDecorFG);
+
   // Draw new biome ground
   endlessGround = newGround;
   endlessGroundDecor = newGroundDecor;
+  endlessGroundDecorFG = newGroundDecorFG;
   drawEndlessGround(newWeather);
   endlessGroundCurrentWeather = newWeather;
 
@@ -2760,7 +2897,7 @@ function transitionWeather(newWeather) {
   updateWeatherIcon();
 
   state.biomeTransition = {
-    oldWeather, oldGround, oldGroundDecor, oldOverlays,
+    oldWeather, oldGround, oldGroundDecor, oldGroundDecorFG, oldOverlays,
     oldWasSun, oldSun, oldWasMoon, oldMoon,
     progress: 0,
     newWeather: weatherContainer,
@@ -2768,7 +2905,7 @@ function transitionWeather(newWeather) {
     newNightOverlay: nightOverlay,
     newPlayerShadow: playerShadow,
     newFireGlows: nightFireGlows,
-    newGround, newGroundDecor,
+    newGround, newGroundDecor, newGroundDecorFG,
     targetNightAlpha, targetSunLightAlpha, targetPlayerShadowAlpha,
     targetFireGlowsAlpha,
     oldSkyTop, oldSkyBottom, oldStarsAlpha,
@@ -2807,9 +2944,13 @@ function updateBiomeTransition() {
   if (p < 0.5) {
     if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1;
     if (t.newGroundDecor) t.newGroundDecor.alpha = 0;
+    if (t.oldGroundDecorFG) t.oldGroundDecorFG.alpha = 1;
+    if (t.newGroundDecorFG) t.newGroundDecorFG.alpha = 0;
   } else {
     if (t.oldGroundDecor) t.oldGroundDecor.alpha = 0;
     if (t.newGroundDecor) t.newGroundDecor.alpha = 1;
+    if (t.oldGroundDecorFG) t.oldGroundDecorFG.alpha = 0;
+    if (t.newGroundDecorFG) t.newGroundDecorFG.alpha = 1;
   }
 
   // Transition old weather out
@@ -2873,6 +3014,7 @@ function updateBiomeTransition() {
     if (t.oldWeather && t.oldWeather.parent) { state.app.stage.removeChild(t.oldWeather); t.oldWeather.destroy({ children: true }); }
     if (t.oldGround && t.oldGround.parent) { state.app.stage.removeChild(t.oldGround); t.oldGround.destroy({ children: true }); }
     if (t.oldGroundDecor && t.oldGroundDecor.parent) { state.app.stage.removeChild(t.oldGroundDecor); t.oldGroundDecor.destroy({ children: true }); }
+    if (t.oldGroundDecorFG && t.oldGroundDecorFG.parent) { state.app.stage.removeChild(t.oldGroundDecorFG); t.oldGroundDecorFG.destroy({ children: true }); }
     for (const o of (t.oldOverlays || [])) { if (o && o.parent) { state.app.stage.removeChild(o); o.destroy({ children: true }); } }
     state.biomeTransition = null;
   }
@@ -4308,9 +4450,9 @@ state.demiSpawned = 0;
 
       }
       if (state.gameMode === 'endless') {
-        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, endlessGroundDecor, foreground, critter, clouds, clouds2, state.enemyDeath, castlePlayer);
+        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, endlessGroundDecor, foreground, critter, endlessGroundDecorFG, clouds, clouds2, state.enemyDeath, castlePlayer);
       } else {
-        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, endlessGroundDecor, foreground, castle, critter, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
+        app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, endlessGroundDecor, foreground, castle, critter, endlessGroundDecorFG, clouds, clouds2, hpBarBackground, hpBar, state.enemyDeath, castlePlayer);
       }
 
       // Z-layer ordering for weather effects (sun renders behind foreground)
@@ -4362,6 +4504,9 @@ state.demiSpawned = 0;
         }
         if (endlessGroundDecor) {
           endlessGroundDecor.position.y = app.screen.height - endlessGroundHeight;
+        }
+        if (endlessGroundDecorFG) {
+          endlessGroundDecorFG.position.y = app.screen.height - endlessGroundHeight;
         }
         castle.position.y = app.screen.height - castle.height * 0.25;
         castlePlayer.position.y = app.screen.height - castle.height * 0.25;

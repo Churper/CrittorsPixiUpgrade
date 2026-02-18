@@ -13,11 +13,13 @@ import {
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
+  getBones, setBones,
 } from './state.js';
 import { isTimerFinished } from './timer.js';
 import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCharacterDamage } from './characters.js';
 import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
 import { updateEXP } from './upgrades.js';
+import { saveBones } from './save.js';
 
 // --- Synthesized SFX via Web Audio API ---
 let _audioCtx = null;
@@ -438,6 +440,7 @@ export function rangedAttack(critter, enemy) {
             state.lastDemiKillTime = Date.now();
           }
           if (state.gameMode === 'endless') state.endlessKillCount++;
+          awardBones(enemy);
           state.isCombat = false;
           setIsCharAttacking(false);
           playDeathAnimation(enemy, critter);
@@ -992,6 +995,7 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
         state.lastDemiKillTime = Date.now();
       }
       if (state.gameMode === 'endless') state.endlessKillCount++;
+      awardBones(enemy);
       setIsCharAttacking(false);
       console.log("ENEMY DEAD", enemy.position.x, enemy.position.y);
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
@@ -1112,6 +1116,43 @@ export function addCoffee(amount) {
   coffeeAmountElement.textContent = `${coffeeAmount}`;
   playCoinSound();
   document.dispatchEvent(new Event('coffeeChanged'));
+}
+
+// --- Bones (cross-round currency) ---
+export function awardBones(enemy) {
+  if (state.gameMode !== 'endless') return;
+  const amount = enemy.isDemi ? 3 : 1;
+  setBones(getBones() + amount);
+  saveBones();
+  // Visual popup near the kill
+  if (state.app) {
+    const txt = new PIXI.Text({ text: `+${amount} 🦴`, style: {
+      fontFamily: 'Luckiest Guy, cursive',
+      fontSize: 18,
+      fill: '#f0e8d0',
+      stroke: { color: '#000000', width: 3 },
+    }});
+    txt.anchor.set(0.5);
+    txt.position.set(enemy.position.x, enemy.position.y - 40);
+    txt.zIndex = 9999;
+    state.app.stage.addChild(txt);
+    const startY = txt.position.y;
+    const startTime = Date.now();
+    const ticker = () => {
+      const elapsed = Date.now() - startTime;
+      txt.position.y = startY - elapsed * 0.03;
+      txt.alpha = Math.max(0, 1 - elapsed / 1200);
+      if (elapsed > 1200) {
+        state.app.ticker.remove(ticker);
+        if (txt.parent) txt.parent.removeChild(txt);
+        txt.destroy();
+      }
+    };
+    state.app.ticker.add(ticker);
+  }
+  // Update layout UI if open
+  const bonesEl = document.getElementById('layout-bones');
+  if (bonesEl) bonesEl.textContent = `🦴 ${getBones()}`;
 }
 
 // --- Item Drop System (Shield + Bomb) ---

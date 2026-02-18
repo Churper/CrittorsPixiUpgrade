@@ -127,12 +127,12 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       { x: w * 0.15, phase: 0 },
       { x: w * 0.85, phase: Math.PI },
     ];
-    const fireBaseR = Math.min(w, h) * 0.04;
+    const fireBaseR = Math.min(w, h) * 0.06;
 
     // Snail state
-    let snailX = -50;
-    const snailSpeed = w * 0.012; // pixels per second
-    const snailSize = Math.min(w, h) * 0.08;
+    let snailX = -60;
+    const snailSpeed = w * 0.014;
+    const snailSize = Math.min(w, h) * 0.1;
     let snailFrame = 0;
     let snailFrameTimer = 0;
 
@@ -240,50 +240,111 @@ console.log("PIXIVERSION:",PIXI.VERSION);
         mctx.fill();
       });
 
-      // Fire glows — matching game's campfire style (orange concentric circles with flicker)
+      // Fires — draw physical campfire + wide glow
       fires.forEach(f => {
         const flicker = 0.7 + Math.sin(t * 5 + f.phase) * 0.2 + Math.sin(t * 11.5 + f.phase) * 0.1;
         const pulse = 0.9 + Math.sin(t * 3.5 + f.phase) * 0.15;
-        const fy = groundY - 4;
+        const fy = groundY;
         const r = fireBaseR * pulse;
 
-        // Large outer glow
-        const fg = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 3.5);
-        fg.addColorStop(0, `rgba(255, 136, 50, ${0.14 * flicker})`);
-        fg.addColorStop(0.5, `rgba(255, 100, 30, ${0.06 * flicker})`);
+        // Wide ground light — warm ambient pool
+        const groundGlow = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 8);
+        groundGlow.addColorStop(0, `rgba(255, 150, 60, ${0.1 * flicker})`);
+        groundGlow.addColorStop(0.4, `rgba(255, 120, 40, ${0.05 * flicker})`);
+        groundGlow.addColorStop(1, 'rgba(255, 80, 20, 0)');
+        mctx.fillStyle = groundGlow;
+        mctx.beginPath(); mctx.arc(f.x, fy, r * 8, 0, 6.28); mctx.fill();
+
+        // Big outer glow
+        const fg = mctx.createRadialGradient(f.x, fy - r * 0.5, 0, f.x, fy - r * 0.5, r * 5);
+        fg.addColorStop(0, `rgba(255, 140, 50, ${0.16 * flicker})`);
+        fg.addColorStop(0.3, `rgba(255, 100, 30, ${0.08 * flicker})`);
         fg.addColorStop(1, 'rgba(255, 80, 20, 0)');
         mctx.fillStyle = fg;
-        mctx.beginPath(); mctx.arc(f.x, fy, r * 3.5, 0, 6.28); mctx.fill();
+        mctx.beginPath(); mctx.arc(f.x, fy - r * 0.5, r * 5, 0, 6.28); mctx.fill();
 
         // Mid glow
-        const fg2 = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 2);
-        fg2.addColorStop(0, `rgba(255, 170, 68, ${0.2 * flicker})`);
+        const fg2 = mctx.createRadialGradient(f.x, fy - r * 0.6, 0, f.x, fy - r * 0.6, r * 2.5);
+        fg2.addColorStop(0, `rgba(255, 180, 70, ${0.25 * flicker})`);
         fg2.addColorStop(1, 'rgba(255, 140, 50, 0)');
         mctx.fillStyle = fg2;
-        mctx.beginPath(); mctx.arc(f.x, fy, r * 2, 0, 6.28); mctx.fill();
+        mctx.beginPath(); mctx.arc(f.x, fy - r * 0.6, r * 2.5, 0, 6.28); mctx.fill();
 
-        // Bright core
-        const fg3 = mctx.createRadialGradient(f.x, fy, 0, f.x, fy, r * 0.8);
-        fg3.addColorStop(0, `rgba(255, 204, 100, ${0.35 * flicker})`);
+        // Core bright
+        const fg3 = mctx.createRadialGradient(f.x, fy - r * 0.7, 0, f.x, fy - r * 0.7, r);
+        fg3.addColorStop(0, `rgba(255, 220, 120, ${0.4 * flicker})`);
         fg3.addColorStop(1, 'rgba(255, 180, 70, 0)');
         mctx.fillStyle = fg3;
-        mctx.beginPath(); mctx.arc(f.x, fy, r * 0.8, 0, 6.28); mctx.fill();
+        mctx.beginPath(); mctx.arc(f.x, fy - r * 0.7, r, 0, 6.28); mctx.fill();
 
-        // Ground light pool
-        mctx.globalAlpha = 0.08 * flicker;
-        mctx.fillStyle = '#ff9944';
-        mctx.fillRect(f.x - r * 3, groundY, r * 6, 8);
+        // Physical campfire — logs
+        const logW = r * 1.2, logH = r * 0.22;
+        mctx.save();
+        mctx.translate(f.x, fy);
+        // Left log
+        mctx.save(); mctx.rotate(-0.35);
+        mctx.fillStyle = '#2a1a0e';
+        mctx.fillRect(-logW * 0.6, -logH * 0.5, logW, logH);
+        mctx.fillStyle = '#3a2418';
+        mctx.fillRect(-logW * 0.55, -logH * 0.3, logW * 0.9, logH * 0.6);
+        mctx.restore();
+        // Right log
+        mctx.save(); mctx.rotate(0.35);
+        mctx.fillStyle = '#2a1a0e';
+        mctx.fillRect(-logW * 0.4, -logH * 0.5, logW, logH);
+        mctx.fillStyle = '#3a2418';
+        mctx.fillRect(-logW * 0.35, -logH * 0.3, logW * 0.9, logH * 0.6);
+        mctx.restore();
+        // Stone ring
+        mctx.fillStyle = '#3a3a40';
+        for (let si = 0; si < 6; si++) {
+          const sa = (si / 6) * 6.28;
+          const sx = Math.cos(sa) * r * 0.55;
+          const sy = Math.sin(sa) * r * 0.2;
+          mctx.beginPath(); mctx.ellipse(sx, sy, r * 0.12, r * 0.08, 0, 0, 6.28); mctx.fill();
+        }
+        mctx.restore();
+
+        // Flickering flame shapes on top of logs
+        const flameH = r * 1.4 * pulse;
+        mctx.save();
+        mctx.translate(f.x, fy - r * 0.1);
+        // Outer flame
+        mctx.beginPath();
+        mctx.moveTo(-r * 0.3, 0);
+        mctx.quadraticCurveTo(-r * 0.15, -flameH * 0.6, r * 0.05 + Math.sin(t * 8 + f.phase) * r * 0.1, -flameH);
+        mctx.quadraticCurveTo(r * 0.2, -flameH * 0.5, r * 0.3, 0);
+        mctx.closePath();
+        mctx.fillStyle = `rgba(255, 120, 20, ${0.7 * flicker})`;
+        mctx.fill();
+        // Inner flame
+        mctx.beginPath();
+        mctx.moveTo(-r * 0.15, 0);
+        mctx.quadraticCurveTo(-r * 0.05, -flameH * 0.5, r * 0.02 + Math.sin(t * 12 + f.phase) * r * 0.06, -flameH * 0.7);
+        mctx.quadraticCurveTo(r * 0.1, -flameH * 0.35, r * 0.15, 0);
+        mctx.closePath();
+        mctx.fillStyle = `rgba(255, 200, 60, ${0.8 * flicker})`;
+        mctx.fill();
+        mctx.restore();
+
+        // Ground light pool strip
+        mctx.globalAlpha = 0.12 * flicker;
+        const poolGrd = mctx.createRadialGradient(f.x, groundY + 4, 0, f.x, groundY + 4, r * 6);
+        poolGrd.addColorStop(0, '#ffaa55');
+        poolGrd.addColorStop(1, 'rgba(255, 140, 50, 0)');
+        mctx.fillStyle = poolGrd;
+        mctx.fillRect(f.x - r * 6, groundY, r * 12, h - groundY);
         mctx.globalAlpha = 1;
       });
 
-      // Snail crawling across ground
+      // Snail crawling across ground — sits ON the ground line
       snailX += snailSpeed * 0.016;
       if (snailX > w + snailSize) snailX = -snailSize;
       snailFrameTimer += 0.016;
       if (snailFrameTimer > 0.4) { snailFrameTimer = 0; snailFrame = (snailFrame + 1) % 2; }
       const img = snailFrames[snailFrame];
       if (img.complete && img.naturalWidth > 0) {
-        mctx.drawImage(img, snailX, groundY - snailSize * 0.8, snailSize, snailSize);
+        mctx.drawImage(img, snailX, groundY - snailSize + 2, snailSize, snailSize);
       }
 
       menuAnimId = requestAnimationFrame(drawFrame);

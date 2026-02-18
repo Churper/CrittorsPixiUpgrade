@@ -319,10 +319,6 @@ export function openCharacterMenu() {
     return;
   }
 
-  if (isCooldownActive()) {
-    return;
-  }
-
   const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
 
   // If paused waiting for character selection (dead), always show menu — don't toggle close

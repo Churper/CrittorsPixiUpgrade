@@ -2414,20 +2414,20 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       const cx = tx, cy = treeY - trunkH;
       const r = canopyR;
       // Dark inner base layer
-      d.circle(cx, cy + r * 0.1, r * 0.85).fill({ color: darkCanopy, alpha: 0.4 });
+      d.circle(cx, cy + r * 0.1, r * 0.85).fill({ color: darkCanopy });
       // Main body — cluster of overlapping circles
-      d.circle(cx, cy - r * 0.4, r * 1.15).fill({ color: canopyColor, alpha: 0.85 });
-      d.circle(cx - r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor, alpha: 0.8 });
-      d.circle(cx + r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor, alpha: 0.8 });
+      d.circle(cx, cy - r * 0.4, r * 1.15).fill({ color: canopyColor });
+      d.circle(cx - r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor });
+      d.circle(cx + r * 0.65, cy - r * 0.1, r * 0.75).fill({ color: canopyColor });
       // Upper lobes
-      d.circle(cx - r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor, alpha: 0.9 });
-      d.circle(cx + r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor, alpha: 0.9 });
-      d.circle(cx, cy - r * 1.1, r * 0.5).fill({ color: canopyColor, alpha: 0.85 });
+      d.circle(cx - r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor });
+      d.circle(cx + r * 0.3, cy - r * 0.9, r * 0.6).fill({ color: canopyColor });
+      d.circle(cx, cy - r * 1.1, r * 0.5).fill({ color: canopyColor });
       // Extra lobes for fullness
-      d.circle(cx - r * 0.5, cy - r * 0.55, r * 0.5).fill({ color: canopyColor, alpha: 0.75 });
-      d.circle(cx + r * 0.5, cy - r * 0.55, r * 0.5).fill({ color: canopyColor, alpha: 0.75 });
-      d.circle(cx - r * 0.15, cy - r * 0.2, r * 0.65).fill({ color: canopyColor, alpha: 0.7 });
-      d.circle(cx + r * 0.15, cy - r * 0.25, r * 0.6).fill({ color: canopyColor, alpha: 0.7 });
+      d.circle(cx - r * 0.5, cy - r * 0.55, r * 0.5).fill({ color: canopyColor });
+      d.circle(cx + r * 0.5, cy - r * 0.55, r * 0.5).fill({ color: canopyColor });
+      d.circle(cx - r * 0.15, cy - r * 0.2, r * 0.65).fill({ color: canopyColor });
+      d.circle(cx + r * 0.15, cy - r * 0.25, r * 0.6).fill({ color: canopyColor });
       // Highlight — sunlit top-left
       d.circle(cx - r * 0.2, cy - r * 0.75, r * 0.45).fill({ color: 0xffffff, alpha: 0.12 });
       d.circle(cx - r * 0.05, cy - r * 1.0, r * 0.3).fill({ color: 0xffffff, alpha: 0.1 });
@@ -2471,11 +2471,11 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       const cx = tx, cy = treeY - trunkH - canopyR * 0.4;
       const lean = canopyR * 0.15;
       // Main canopy — ellipse
-      d.ellipse(cx + lean, cy, canopyR * 1.05, canopyR * 1.3).fill({ color: canopyColor, alpha: 0.85 });
+      d.ellipse(cx + lean, cy, canopyR * 1.05, canopyR * 1.3).fill({ color: canopyColor });
       // Drooping sub-ellipses
-      d.ellipse(cx + lean - canopyR * 0.4, cy + canopyR * 0.6, canopyR * 0.4, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.65 });
-      d.ellipse(cx + lean + canopyR * 0.35, cy + canopyR * 0.5, canopyR * 0.35, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.6 });
-      d.ellipse(cx + lean, cy + canopyR * 0.7, canopyR * 0.3, canopyR * 0.4).fill({ color: canopyColor, alpha: 0.5 });
+      d.ellipse(cx + lean - canopyR * 0.4, cy + canopyR * 0.6, canopyR * 0.4, canopyR * 0.55).fill({ color: canopyColor });
+      d.ellipse(cx + lean + canopyR * 0.35, cy + canopyR * 0.5, canopyR * 0.35, canopyR * 0.5).fill({ color: canopyColor });
+      d.ellipse(cx + lean, cy + canopyR * 0.7, canopyR * 0.3, canopyR * 0.4).fill({ color: canopyColor });
       // Darker depth underneath
       d.ellipse(cx + lean, cy + canopyR * 0.3, canopyR * 0.65, canopyR * 0.5).fill({ color: darkCanopy, alpha: 0.3 });
       // Moss dots on trunk
@@ -2487,22 +2487,22 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     } else if (weather === 'night') {
       // Silhouette tree — dark canopy, no glow at base
       const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
-      d.circle(cx, cy, canopyR).fill({ color: canopyColor, alpha: 0.85 });
-      d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor, alpha: 0.6 });
-      d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.6 });
-      d.circle(cx + canopyR * 0.1, cy - canopyR * 0.3, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.7 });
+      d.circle(cx, cy, canopyR).fill({ color: canopyColor });
+      d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor });
+      d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor });
+      d.circle(cx + canopyR * 0.1, cy - canopyR * 0.3, canopyR * 0.5).fill({ color: canopyColor });
     } else {
       // Default round tree — enhanced
       const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
       // Dark underside for volume
-      d.ellipse(cx, cy + canopyR * 0.35, canopyR * 0.9, canopyR * 0.5).fill({ color: darkCanopy, alpha: 0.3 });
+      d.ellipse(cx, cy + canopyR * 0.35, canopyR * 0.9, canopyR * 0.5).fill({ color: darkCanopy });
       // Main circle
-      d.circle(cx, cy, canopyR).fill({ color: canopyColor, alpha: 0.85 });
+      d.circle(cx, cy, canopyR).fill({ color: canopyColor });
       // Side clusters — 4 overlapping
-      d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor, alpha: 0.6 });
-      d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor, alpha: 0.6 });
-      d.circle(cx - canopyR * 0.5, cy - canopyR * 0.15, canopyR * 0.45).fill({ color: canopyColor, alpha: 0.65 });
-      d.circle(cx + canopyR * 0.45, cy - canopyR * 0.2, canopyR * 0.5).fill({ color: canopyColor, alpha: 0.65 });
+      d.circle(cx - canopyR * 0.3, cy + canopyR * 0.2, canopyR * 0.6).fill({ color: canopyColor });
+      d.circle(cx + canopyR * 0.35, cy + canopyR * 0.15, canopyR * 0.55).fill({ color: canopyColor });
+      d.circle(cx - canopyR * 0.5, cy - canopyR * 0.15, canopyR * 0.45).fill({ color: canopyColor });
+      d.circle(cx + canopyR * 0.45, cy - canopyR * 0.2, canopyR * 0.5).fill({ color: canopyColor });
       // Highlight on top-left
       d.circle(cx - canopyR * 0.15, cy - canopyR * 0.35, canopyR * 0.4).fill({ color: 0xffffff, alpha: 0.1 });
     }
@@ -2520,9 +2520,9 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     const bushW = 16 + endlessGroundRandom() * 20;
     const bushH = 10 + endlessGroundRandom() * 12;
     // Bush body — overlapping circles
-    d.circle(bsx, bushY - bushH * 0.5, bushW * 0.4).fill({ color: palette.canopy[0], alpha: 0.8 });
-    d.circle(bsx - bushW * 0.25, bushY - bushH * 0.3, bushW * 0.35).fill({ color: palette.canopy[Math.min(1, palette.canopy.length - 1)], alpha: 0.75 });
-    d.circle(bsx + bushW * 0.25, bushY - bushH * 0.3, bushW * 0.33).fill({ color: palette.canopy[0], alpha: 0.7 });
+    d.circle(bsx, bushY - bushH * 0.5, bushW * 0.4).fill({ color: palette.canopy[0] });
+    d.circle(bsx - bushW * 0.25, bushY - bushH * 0.3, bushW * 0.35).fill({ color: palette.canopy[Math.min(1, palette.canopy.length - 1)] });
+    d.circle(bsx + bushW * 0.25, bushY - bushH * 0.3, bushW * 0.33).fill({ color: palette.canopy[0] });
     // Berries — small bright dots
     const numBerries = 2 + Math.floor(endlessGroundRandom() * 4);
     for (let b = 0; b < numBerries; b++) {
@@ -2702,11 +2702,12 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
   endlessGroundDecor.addChild(d);
 
   // --- Foreground decor (in front of character, semi-transparent for depth) ---
+  // Container alpha controls overall transparency — shapes are opaque so overlapping circles don't show through
   if (endlessGroundDecorFG) {
+    endlessGroundDecorFG.alpha = 0.5;
     const fg = new PIXI.Graphics();
-    const fgAlpha = 0.55;
 
-    // FG trees — sparse, larger, dark silhouettes
+    // FG trees — sparse, larger, dark silhouettes, positioned well below terrain line
     _endlessGroundSeed = 33334;
     let ftx = 800;
     while (ftx < w) {
@@ -2714,7 +2715,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       const trH = (30 + endlessGroundRandom() * 20) * sc;
       const trW = (6 + endlessGroundRandom() * 3) * sc;
       const cr = (18 + endlessGroundRandom() * 10) * sc;
-      const fy = terrainTopY(ftx) + 30 + endlessGroundRandom() * 25;
+      const fy = terrainTopY(ftx) + 55 + endlessGroundRandom() * 35;
       const col = weather === 'night' ? 0x0a150a : (weather === 'snow' ? 0x1a3a2a : palette.trunk);
       const canCol = weather === 'night' ? 0x0c1a0c : (weather === 'snow' ? 0x1a4a2a : palette.canopy[0]);
       // Trunk
@@ -2722,37 +2723,37 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       fg.lineTo(ftx - trW * 0.35, fy - trH);
       fg.lineTo(ftx + trW * 0.35, fy - trH);
       fg.lineTo(ftx + trW / 2, fy);
-      fg.closePath().fill({ color: col, alpha: fgAlpha });
-      // Canopy — simple overlapping circles
+      fg.closePath().fill({ color: col });
+      // Canopy — opaque overlapping circles
       const cx = ftx, cy = fy - trH - cr * 0.5;
-      fg.circle(cx, cy, cr).fill({ color: canCol, alpha: fgAlpha * 0.85 });
-      fg.circle(cx - cr * 0.4, cy + cr * 0.2, cr * 0.6).fill({ color: canCol, alpha: fgAlpha * 0.7 });
-      fg.circle(cx + cr * 0.4, cy + cr * 0.15, cr * 0.55).fill({ color: canCol, alpha: fgAlpha * 0.7 });
+      fg.circle(cx, cy, cr).fill({ color: canCol });
+      fg.circle(cx - cr * 0.4, cy + cr * 0.2, cr * 0.6).fill({ color: canCol });
+      fg.circle(cx + cr * 0.4, cy + cr * 0.15, cr * 0.55).fill({ color: canCol });
       ftx += 1500 + endlessGroundRandom() * 1500;
     }
 
-    // FG bushes — sparse, bigger
+    // FG bushes — sparse, bigger, positioned lower
     _endlessGroundSeed = 22223;
     let fbx = 500;
     while (fbx < w) {
       const bw = (20 + endlessGroundRandom() * 20) * 1.5;
       const bh = (12 + endlessGroundRandom() * 10) * 1.5;
-      const by = terrainTopY(fbx) + 20 + endlessGroundRandom() * 20;
+      const by = terrainTopY(fbx) + 45 + endlessGroundRandom() * 30;
       const canCol = weather === 'night' ? 0x0c1a0c : palette.canopy[0];
-      fg.circle(fbx, by - bh * 0.4, bw * 0.4).fill({ color: canCol, alpha: fgAlpha * 0.8 });
-      fg.circle(fbx - bw * 0.2, by - bh * 0.25, bw * 0.3).fill({ color: canCol, alpha: fgAlpha * 0.7 });
-      fg.circle(fbx + bw * 0.2, by - bh * 0.25, bw * 0.28).fill({ color: canCol, alpha: fgAlpha * 0.65 });
+      fg.circle(fbx, by - bh * 0.4, bw * 0.4).fill({ color: canCol });
+      fg.circle(fbx - bw * 0.2, by - bh * 0.25, bw * 0.3).fill({ color: canCol });
+      fg.circle(fbx + bw * 0.2, by - bh * 0.25, bw * 0.28).fill({ color: canCol });
       fbx += 1000 + endlessGroundRandom() * 1000;
     }
 
-    // FG rocks — sparse, bigger
+    // FG rocks — sparse, bigger, positioned lower
     _endlessGroundSeed = 44445;
     let frx = 1200;
     while (frx < w) {
       const rw = (18 + endlessGroundRandom() * 20) * 1.4;
       const rh = (12 + endlessGroundRandom() * 12) * 1.4;
-      const ry = terrainTopY(frx) + 15 + endlessGroundRandom() * 15;
-      fg.roundRect(frx, ry - rh * 0.4, rw, rh, rh * 0.35).fill({ color: palette.rock, alpha: fgAlpha * 0.75 });
+      const ry = terrainTopY(frx) + 40 + endlessGroundRandom() * 25;
+      fg.roundRect(frx, ry - rh * 0.4, rw, rh, rh * 0.35).fill({ color: palette.rock });
       frx += 2000 + endlessGroundRandom() * 2000;
     }
 

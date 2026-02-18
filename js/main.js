@@ -303,7 +303,7 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const img = snailFrames[snailFrame];
       if (img.complete && img.naturalWidth > 0) {
         mctx.globalAlpha = 0.5;
-        mctx.drawImage(img, snailX, groundY - snailSize, snailSize, snailSize);
+        mctx.drawImage(img, snailX, groundY - snailSize * 0.4, snailSize, snailSize);
         mctx.globalAlpha = 1;
       }
 

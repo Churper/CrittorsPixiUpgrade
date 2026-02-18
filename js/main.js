@@ -581,6 +581,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       weatherSun.position.set(arcX, arcY);
 
+      // Fade out as sun approaches/crosses the ground line
+      const sunGroundY = app.screen.height * 0.6;
+      weatherSun.alpha = arcY < sunGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (sunGroundY - 60)) / 80);
+
       // Rotate rays slowly
       weatherSun.rotation = elapsed * 0.0003;
       // Pulse the glow
@@ -690,6 +694,10 @@ console.log("PIXIVERSION:",PIXI.VERSION);
       const arcX = w * 0.9 - Math.min(progress, 1.3) * w * 0.8 + parallaxX;
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       weatherMoon.position.set(arcX, arcY);
+
+      // Fade out as moon approaches/crosses the ground line
+      const moonGroundY = app.screen.height * 0.6;
+      weatherMoon.alpha = arcY < moonGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (moonGroundY - 60)) / 80);
 
       // Slow rotation for subtle liveliness
       weatherMoon.rotation = Math.sin(elapsed * 0.0001) * 0.05;
@@ -2778,11 +2786,11 @@ function updateBiomeTransition() {
   clouds.tint = cloudTint;
   clouds2.tint = cloudTint;
 
-  // Crossfade ground
-  if (t.oldGround) t.oldGround.alpha = 1 - p;
-  if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1 - p;
-  if (t.newGround) t.newGround.alpha = p;
-  if (t.newGroundDecor) t.newGroundDecor.alpha = p;
+  // Staggered crossfade ground — new appears before old fades, preventing ghosting
+  if (t.oldGround) t.oldGround.alpha = p < 0.3 ? 1 : Math.max(0, 1 - (p - 0.3) / 0.5);
+  if (t.oldGroundDecor) t.oldGroundDecor.alpha = p < 0.3 ? 1 : Math.max(0, 1 - (p - 0.3) / 0.5);
+  if (t.newGround) t.newGround.alpha = p < 0.1 ? 0 : Math.min(1, (p - 0.1) / 0.5);
+  if (t.newGroundDecor) t.newGroundDecor.alpha = p < 0.1 ? 0 : Math.min(1, (p - 0.1) / 0.5);
 
   // Transition old weather out
   if (t.oldWeather) {
@@ -2806,7 +2814,9 @@ function updateBiomeTransition() {
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       t.oldSun.position.set(arcX, arcY);
       t.oldSun.rotation = sinkElapsed * 0.0003;
-      // No alpha fade — foreground naturally hides it
+      // Fade out as sun approaches ground line
+      const sinkGroundY = h * 0.6;
+      t.oldSun.alpha = arcY < sinkGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (sinkGroundY - 60)) / 80);
       t.oldWeather.alpha = 1;
     } else if (t.oldWasMoon && t.oldMoon) {
       // Moon: sink behind the ground the same way
@@ -2823,6 +2833,9 @@ function updateBiomeTransition() {
       const arcX = w * 0.9 - Math.min(progress, 1.3) * w * 0.8 + parallaxX;
       const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
       t.oldMoon.position.set(arcX, arcY);
+      // Fade out as moon approaches ground line
+      const moonSinkGroundY = h * 0.6;
+      t.oldMoon.alpha = arcY < moonSinkGroundY - 60 ? 1 : Math.max(0, 1 - (arcY - (moonSinkGroundY - 60)) / 80);
       t.oldWeather.alpha = 1;
     } else {
       t.oldWeather.alpha = 1 - p;
@@ -2882,53 +2895,50 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
-        // Layer 1: Base silhouette
+        // Peak slightly off-center for natural asymmetry
+        const px = w * 0.45;
+
+        // Layer 1: Base silhouette — asymmetric peak
         g.moveTo(0, 0);
-        g.bezierCurveTo(w * 0.05, -h * 0.02, w * 0.1, -h * 0.2, w * 0.2, -h * 0.45);
-        g.bezierCurveTo(w * 0.28, -h * 0.65, w * 0.38, -h * 0.88, w * 0.5, -h);
-        g.bezierCurveTo(w * 0.62, -h * 0.88, w * 0.72, -h * 0.65, w * 0.8, -h * 0.45);
-        g.bezierCurveTo(w * 0.9, -h * 0.2, w * 0.95, -h * 0.02, w, 0);
+        g.bezierCurveTo(w * 0.04, -h * 0.02, w * 0.1, -h * 0.22, w * 0.18, -h * 0.46);
+        g.bezierCurveTo(w * 0.26, -h * 0.68, w * 0.35, -h * 0.9, px, -h);
+        g.bezierCurveTo(w * 0.56, -h * 0.88, w * 0.68, -h * 0.6, w * 0.78, -h * 0.4);
+        g.bezierCurveTo(w * 0.88, -h * 0.18, w * 0.95, -h * 0.03, w, 0);
         g.lineTo(0, 0);
         g.closePath();
         g.fill(dc(0x5a6678, 1.0));
 
-        // Layer 2: Right shadow face
-        g.moveTo(w * 0.5, -h);
-        g.bezierCurveTo(w * 0.62, -h * 0.88, w * 0.72, -h * 0.65, w * 0.8, -h * 0.45);
-        g.bezierCurveTo(w * 0.9, -h * 0.2, w * 0.95, -h * 0.02, w, 0);
-        g.lineTo(w * 0.5, 0);
+        // Layer 2: Right shadow face (from peak to right base)
+        g.moveTo(px, -h);
+        g.bezierCurveTo(w * 0.56, -h * 0.88, w * 0.68, -h * 0.6, w * 0.78, -h * 0.4);
+        g.bezierCurveTo(w * 0.88, -h * 0.18, w * 0.95, -h * 0.03, w, 0);
+        g.lineTo(px, 0);
         g.closePath();
         g.fill(dc(0x3d4a58, 0.5));
 
-        // Layer 3: Left face highlight — thin sliver along left slope
-        g.moveTo(w * 0.2, -h * 0.45);
-        g.bezierCurveTo(w * 0.28, -h * 0.65, w * 0.38, -h * 0.88, w * 0.5, -h);
-        g.lineTo(w * 0.48, -h * 0.98);
-        g.bezierCurveTo(w * 0.37, -h * 0.86, w * 0.27, -h * 0.63, w * 0.22, -h * 0.45);
+        // Layer 3: Snow cap — uses EXACT silhouette beziers for left and right edges
+        // Snow line at ~80% height
+        // Left snow edge: traces silhouette from snow-line point up to peak
+        const snowLeftX = w * 0.30, snowLeftY = -h * 0.78;
+        const snowRightX = w * 0.60, snowRightY = -h * 0.78;
+        g.moveTo(snowLeftX, snowLeftY);
+        // Left edge up to peak — same control points as left silhouette slope
+        g.bezierCurveTo(w * 0.35, -h * 0.9, w * 0.40, -h * 0.96, px, -h);
+        // Right edge down from peak — same control points as right silhouette slope
+        g.bezierCurveTo(w * 0.52, -h * 0.94, w * 0.56, -h * 0.88, snowRightX, snowRightY);
+        // Bottom edge: gentle irregular curve connecting the two snow-line points
+        g.quadraticCurveTo(w * 0.47, -h * 0.75, snowLeftX, snowLeftY);
         g.closePath();
-        g.fill(dc(0x6d7a8c, 0.2));
-
-        // Layer 4: Subtle ridge line from peak down left slope
-        g.moveTo(w * 0.5, -h);
-        g.bezierCurveTo(w * 0.44, -h * 0.92, w * 0.36, -h * 0.78, w * 0.28, -h * 0.6);
-        g.stroke({ color: d > 0 ? lerpColor(0x4a5668, haze, d * 0.45) : 0x4a5668, alpha: 0.15, width: 1.5 });
-
-        // Layer 5: Snow cap — curved bottom edge following silhouette
-        g.moveTo(w * 0.40, -h * 0.83);
-        g.bezierCurveTo(w * 0.43, -h * 0.90, w * 0.47, -h * 0.97, w * 0.5, -h);
-        g.bezierCurveTo(w * 0.53, -h * 0.97, w * 0.57, -h * 0.90, w * 0.60, -h * 0.83);
-        g.bezierCurveTo(w * 0.56, -h * 0.82, w * 0.5, -h * 0.81, w * 0.40, -h * 0.83);
         g.fill(dc(0xd8dde4, 0.85));
 
-        // Layer 6: Snow shadow — right side of cap
-        g.moveTo(w * 0.52, -h * 0.97);
-        g.bezierCurveTo(w * 0.55, -h * 0.93, w * 0.58, -h * 0.88, w * 0.60, -h * 0.83);
-        g.lineTo(w * 0.58, -h * 0.85);
-        g.bezierCurveTo(w * 0.56, -h * 0.90, w * 0.54, -h * 0.94, w * 0.52, -h * 0.97);
+        // Layer 4: Snow shadow — right side of cap only
+        g.moveTo(px, -h);
+        g.bezierCurveTo(w * 0.52, -h * 0.94, w * 0.56, -h * 0.88, snowRightX, snowRightY);
+        g.quadraticCurveTo(w * 0.52, -h * 0.80, px + w * 0.02, -h * 0.96);
         g.closePath();
         g.fill(dc(0xb0b8c4, 0.25));
 
-        // Layer 7: Base atmospheric haze
+        // Layer 5: Base atmospheric haze
         g.moveTo(0, 0);
         g.lineTo(w, 0);
         g.lineTo(w, -h * 0.1);
@@ -2942,67 +2952,71 @@ state.frogGhostPlayer.scale.set(0.28);
         const d = depth || 0;
         function dc(c, a) { return { color: d > 0 ? lerpColor(c, haze, d * 0.45) : c, alpha: a }; }
 
+        // Peak positions — slightly asymmetric
+        const lpx = w * 0.23, lpy = -h * 0.65;
+        const cpx = w * 0.48, cpy = -h;
+        const rpx = w * 0.76, rpy = -h * 0.6;
+
         // Layer 1: Base silhouette — three-peak curved ridgeline
         g.moveTo(0, 0);
-        g.bezierCurveTo(w * 0.04, -h * 0.05, w * 0.12, -h * 0.4, w * 0.25, -h * 0.65);
-        g.bezierCurveTo(w * 0.28, -h * 0.55, w * 0.3, -h * 0.38, w * 0.32, -h * 0.35);
-        g.bezierCurveTo(w * 0.35, -h * 0.45, w * 0.42, -h * 0.78, w * 0.5, -h);
-        g.bezierCurveTo(w * 0.58, -h * 0.78, w * 0.65, -h * 0.45, w * 0.68, -h * 0.3);
-        g.bezierCurveTo(w * 0.7, -h * 0.35, w * 0.72, -h * 0.48, w * 0.78, -h * 0.6);
-        g.bezierCurveTo(w * 0.82, -h * 0.5, w * 0.88, -h * 0.3, w * 0.92, -h * 0.15);
+        // Left slope up to left peak
+        g.bezierCurveTo(w * 0.04, -h * 0.05, w * 0.12, -h * 0.4, lpx, lpy);
+        // Saddle between left and center peaks
+        g.bezierCurveTo(w * 0.27, -h * 0.52, w * 0.30, -h * 0.38, w * 0.32, -h * 0.35);
+        // Center peak rise
+        g.bezierCurveTo(w * 0.35, -h * 0.48, w * 0.41, -h * 0.82, cpx, cpy);
+        // Center peak down to right saddle
+        g.bezierCurveTo(w * 0.56, -h * 0.80, w * 0.64, -h * 0.45, w * 0.67, -h * 0.32);
+        // Right peak rise
+        g.bezierCurveTo(w * 0.69, -h * 0.38, w * 0.72, -h * 0.50, rpx, rpy);
+        // Right slope down to base
+        g.bezierCurveTo(w * 0.82, -h * 0.48, w * 0.88, -h * 0.28, w * 0.92, -h * 0.14);
         g.bezierCurveTo(w * 0.96, -h * 0.04, w * 0.98, -h * 0.01, w, 0);
         g.lineTo(0, 0);
         g.closePath();
         g.fill(dc(0x5a6678, 1.0));
 
-        // Layer 2: Right shadow from center peak
-        g.moveTo(w * 0.5, -h);
-        g.bezierCurveTo(w * 0.58, -h * 0.78, w * 0.65, -h * 0.45, w * 0.68, -h * 0.3);
-        g.bezierCurveTo(w * 0.7, -h * 0.35, w * 0.72, -h * 0.48, w * 0.78, -h * 0.6);
-        g.bezierCurveTo(w * 0.82, -h * 0.5, w * 0.88, -h * 0.3, w * 0.92, -h * 0.15);
+        // Layer 2: Right shadow face (from center peak rightward)
+        g.moveTo(cpx, cpy);
+        g.bezierCurveTo(w * 0.56, -h * 0.80, w * 0.64, -h * 0.45, w * 0.67, -h * 0.32);
+        g.bezierCurveTo(w * 0.69, -h * 0.38, w * 0.72, -h * 0.50, rpx, rpy);
+        g.bezierCurveTo(w * 0.82, -h * 0.48, w * 0.88, -h * 0.28, w * 0.92, -h * 0.14);
         g.bezierCurveTo(w * 0.96, -h * 0.04, w * 0.98, -h * 0.01, w, 0);
-        g.lineTo(w * 0.5, 0);
+        g.lineTo(cpx, 0);
         g.closePath();
         g.fill(dc(0x3d4a58, 0.4));
 
-        // Layer 3: Left face highlight on center peak
-        g.moveTo(w * 0.35, -h * 0.45);
-        g.bezierCurveTo(w * 0.38, -h * 0.58, w * 0.42, -h * 0.78, w * 0.5, -h);
-        g.lineTo(w * 0.48, -h * 0.98);
-        g.bezierCurveTo(w * 0.41, -h * 0.76, w * 0.37, -h * 0.56, w * 0.36, -h * 0.45);
+        // Layer 3: Snow cap (center peak) — traces EXACT silhouette beziers
+        const cSnowLX = w * 0.39, cSnowLY = -h * 0.86;
+        const cSnowRX = w * 0.57, cSnowRY = -h * 0.82;
+        g.moveTo(cSnowLX, cSnowLY);
+        g.bezierCurveTo(w * 0.41, -h * 0.90, w * 0.44, -h * 0.96, cpx, cpy);
+        g.bezierCurveTo(w * 0.52, -h * 0.96, w * 0.55, -h * 0.88, cSnowRX, cSnowRY);
+        g.quadraticCurveTo(w * 0.48, -h * 0.83, cSnowLX, cSnowLY);
         g.closePath();
-        g.fill(dc(0x6d7a8c, 0.18));
-
-        // Layer 4: Left peak subtle shadow (right side of left peak)
-        g.moveTo(w * 0.25, -h * 0.65);
-        g.bezierCurveTo(w * 0.27, -h * 0.58, w * 0.29, -h * 0.45, w * 0.32, -h * 0.35);
-        g.lineTo(w * 0.30, -h * 0.35);
-        g.bezierCurveTo(w * 0.28, -h * 0.45, w * 0.26, -h * 0.56, w * 0.25, -h * 0.65);
-        g.closePath();
-        g.fill(dc(0x3d4a58, 0.2));
-
-        // Layer 5: Snow cap (center peak) — curved bottom edge
-        g.moveTo(w * 0.43, -h * 0.87);
-        g.bezierCurveTo(w * 0.45, -h * 0.93, w * 0.48, -h * 0.98, w * 0.5, -h);
-        g.bezierCurveTo(w * 0.52, -h * 0.98, w * 0.55, -h * 0.93, w * 0.57, -h * 0.87);
-        g.bezierCurveTo(w * 0.53, -h * 0.86, w * 0.5, -h * 0.855, w * 0.43, -h * 0.87);
         g.fill(dc(0xd8dde4, 0.85));
 
-        // Layer 6: Snow cap (left peak) — adjusted to match silhouette
-        g.moveTo(w * 0.21, -h * 0.57);
-        g.bezierCurveTo(w * 0.22, -h * 0.60, w * 0.24, -h * 0.65, w * 0.25, -h * 0.65);
-        g.bezierCurveTo(w * 0.26, -h * 0.65, w * 0.28, -h * 0.60, w * 0.29, -h * 0.57);
+        // Layer 4: Snow cap (left peak) — traces silhouette
+        const lSnowLX = w * 0.18, lSnowLY = -h * 0.54;
+        const lSnowRX = w * 0.27, lSnowRY = -h * 0.54;
+        g.moveTo(lSnowLX, lSnowLY);
+        g.bezierCurveTo(w * 0.19, -h * 0.58, w * 0.21, -h * 0.63, lpx, lpy);
+        g.bezierCurveTo(w * 0.25, -h * 0.62, w * 0.26, -h * 0.56, lSnowRX, lSnowRY);
+        g.quadraticCurveTo(w * 0.23, -h * 0.52, lSnowLX, lSnowLY);
         g.closePath();
         g.fill(dc(0xd8dde4, 0.7));
 
-        // Layer 7: Snow cap (right peak) — adjusted to match silhouette
-        g.moveTo(w * 0.74, -h * 0.52);
-        g.bezierCurveTo(w * 0.75, -h * 0.55, w * 0.77, -h * 0.60, w * 0.78, -h * 0.60);
-        g.bezierCurveTo(w * 0.79, -h * 0.60, w * 0.81, -h * 0.55, w * 0.82, -h * 0.52);
+        // Layer 5: Snow cap (right peak) — traces silhouette
+        const rSnowLX = w * 0.72, rSnowLY = -h * 0.50;
+        const rSnowRX = w * 0.80, rSnowRY = -h * 0.50;
+        g.moveTo(rSnowLX, rSnowLY);
+        g.bezierCurveTo(w * 0.73, -h * 0.54, w * 0.75, -h * 0.58, rpx, rpy);
+        g.bezierCurveTo(w * 0.78, -h * 0.57, w * 0.79, -h * 0.52, rSnowRX, rSnowRY);
+        g.quadraticCurveTo(w * 0.76, -h * 0.48, rSnowLX, rSnowLY);
         g.closePath();
         g.fill(dc(0xd8dde4, 0.65));
 
-        // Layer 8: Base atmospheric haze
+        // Layer 6: Base atmospheric haze
         g.moveTo(0, 0);
         g.lineTo(w, 0);
         g.lineTo(w, -h * 0.08);
@@ -3101,24 +3115,40 @@ state.frogGhostPlayer.scale.set(0.28);
       state.sharkEmergeTextures = createAnimationTextures2('shark_emerge', 5, 398, 699, 1990);
       // Procedural cloud generation
       function drawCloud(g, cw, ch, complexity) {
-        // Core body — 3 overlapping opaque white ellipses
-        g.ellipse(-cw * 0.1, ch * 0.01, cw * 0.36, ch * 0.22).fill({ color: 0xffffff, alpha: 1.0 });
-        g.ellipse(0, 0, cw * 0.38, ch * 0.24).fill({ color: 0xffffff, alpha: 1.0 });
-        g.ellipse(cw * 0.1, ch * 0.01, cw * 0.34, ch * 0.21).fill({ color: 0xffffff, alpha: 1.0 });
+        // Procedural cumulus — many small overlapping circles for organic puffy shapes
+        const fill = { color: 0xffffff, alpha: 1.0 };
 
-        // Upper billows — opaque white
-        const billows = complexity + 2;
-        for (let i = 0; i < billows; i++) {
-          const t = (i + 0.5) / billows;
-          const bx = -cw * 0.35 + t * cw * 0.7;
-          const by = -ch * 0.12 - Math.sin(t * Math.PI) * ch * 0.38;
-          const rx = cw * (0.1 + Math.sin(t * Math.PI) * 0.14);
-          const ry = ch * (0.16 + Math.sin(t * Math.PI) * 0.18);
-          g.ellipse(bx, by, rx, ry).fill({ color: 0xffffff, alpha: 1.0 });
+        // Bottom row: 4-5 circles forming the flat-ish base
+        const bottomCount = 4 + Math.min(complexity, 1);
+        for (let i = 0; i < bottomCount; i++) {
+          const t = (i + 0.5) / bottomCount;
+          const bx = -cw * 0.38 + t * cw * 0.76;
+          const r = cw * (0.18 + Math.sin(t * Math.PI) * 0.07);
+          g.circle(bx, ch * 0.02, r).fill(fill);
         }
 
-        // Bottom shadow — single lighter ellipse
-        g.ellipse(cw * 0.05, ch * 0.06, cw * 0.34, ch * 0.1).fill({ color: 0xe8ecf4, alpha: 1.0 });
+        // Middle row: 3-4 circles slightly above and overlapping, larger
+        const midCount = 3 + Math.min(complexity, 1);
+        for (let i = 0; i < midCount; i++) {
+          const t = (i + 0.5) / midCount;
+          const mx = -cw * 0.30 + t * cw * 0.60;
+          const my = -ch * 0.12 - Math.sin(t * Math.PI) * ch * 0.08;
+          const r = cw * (0.16 + Math.sin(t * Math.PI) * 0.10);
+          g.circle(mx, my, r).fill(fill);
+        }
+
+        // Top bumps: 2-3 circles forming the puffy billowy top
+        const topCount = 2 + Math.min(complexity, 1);
+        for (let i = 0; i < topCount; i++) {
+          const t = (i + 0.5) / topCount;
+          const tx = -cw * 0.20 + t * cw * 0.40;
+          const ty = -ch * 0.28 - Math.sin(t * Math.PI) * ch * 0.14 - (i % 2) * ch * 0.04;
+          const r = cw * (0.12 + Math.sin(t * Math.PI) * 0.08);
+          g.circle(tx, ty, r).fill(fill);
+        }
+
+        // Single bottom shadow — wider, positioned at the bottom
+        g.ellipse(cw * 0.02, ch * 0.10, cw * 0.40, ch * 0.06).fill({ color: 0xe8ecf4, alpha: 1.0 });
       }
 
       const clouds = new PIXI.Container();

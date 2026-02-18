@@ -2355,7 +2355,8 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     const depthOffset = endlessGroundRandom() * 22 * treeScale; // slight Y offset for depth
     const treeY = terrainTopY(tx) + depthOffset; // follow terrain curve + depth
     const canopyColor = palette.canopy[Math.floor(endlessGroundRandom() * palette.canopy.length)];
-    const darkCanopy = palette.canopy[Math.min(3, palette.canopy.length - 1)];
+    // Derive dark canopy from the actual canopy color (darken by 40%) so base layer always matches
+    const darkCanopy = ((canopyColor >> 16 & 0xff) * 0.6 | 0) << 16 | ((canopyColor >> 8 & 0xff) * 0.6 | 0) << 8 | ((canopyColor & 0xff) * 0.6 | 0);
     const darkTrunk = 0x2a1a0a;
 
     if (weather === 'wind' && treeType < 0.35) {
@@ -2769,7 +2770,7 @@ endlessGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
 endlessGroundDecor.zIndex = 6;
 endlessGroundDecorFG = new PIXI.Container();
 endlessGroundDecorFG.position.set(0, app.screen.height - endlessGroundHeight);
-endlessGroundDecorFG.zIndex = 11;
+endlessGroundDecorFG.zIndex = 8; // behind character (10) but above ground decor (6)
 const initialWeather = getWeatherType();
 drawEndlessGround(initialWeather);
 endlessGroundCurrentWeather = initialWeather;
@@ -2857,7 +2858,7 @@ function transitionWeather(newWeather) {
 
   const newGroundDecorFG = new PIXI.Container();
   newGroundDecorFG.position.set(0, app.screen.height - endlessGroundHeight);
-  newGroundDecorFG.zIndex = 11;
+  newGroundDecorFG.zIndex = 8;
   newGroundDecorFG.alpha = 0;
   app.stage.addChild(newGroundDecorFG);
 

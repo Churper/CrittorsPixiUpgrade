@@ -1653,79 +1653,72 @@ console.log("PIXIVERSION:",PIXI.VERSION);
 
   let _swapLock = false; // debounce guard for swap clicks
 
-  // Skin filter builders — each returns an array of PIXI filters (or empty for default)
+  // Skin filter builders — each returns an array of PIXI filters
+  // Uses separate ColorMatrixFilter per effect to avoid the multiply=true
+  // normalization bug in PixiJS 8 (Issue #8359). Method is .hue() not .hueRotate().
   const skinFilterBuilders = {
     // ── Frog ──
     'frog-ice': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.hueRotate(160, false);
-      f.saturate(-0.3, true);
-      f.brightness(1.15, true);
-      return [f];
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(160, false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(-0.3, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.15, false);
+      return [hue, sat, brt];
     },
     'frog-golden': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.sepia(false);
-      f.saturate(0.6, true);
-      f.brightness(1.2, true);
-      return [f];
+      const sep = new PIXI.ColorMatrixFilter(); sep.sepia(false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(0.6, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.2, false);
+      return [sep, sat, brt];
     },
     'frog-shadow': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.brightness(0.55, false);
-      f.contrast(1.5, true);
-      f.saturate(-0.5, true);
-      f.hueRotate(270, true);
-      return [f];
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(0.55, false);
+      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.5, false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(-0.5, false);
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(270, false);
+      return [brt, con, sat, hue];
     },
     // ── Snail ──
     'snail-crystal': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.hueRotate(190, false);
-      f.brightness(1.25, true);
-      f.saturate(0.4, true);
-      f.contrast(1.2, true);
-      return [f];
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(190, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.25, false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(0.4, false);
+      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.2, false);
+      return [hue, brt, sat, con];
     },
     'snail-magma': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.hueRotate(-30, false);
-      f.saturate(1.2, true);
-      f.brightness(1.1, true);
-      return [f];
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(-30, false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(1.2, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.1, false);
+      return [hue, sat, brt];
     },
     // ── Bird ──
     'bird-phoenix': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.hueRotate(-50, false);
-      f.saturate(1.0, true);
-      f.brightness(1.15, true);
-      f.contrast(1.15, true);
-      return [f];
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(-50, false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(1.0, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.15, false);
+      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.15, false);
+      return [hue, sat, brt, con];
     },
     'bird-arctic': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.saturate(-0.6, false);
-      f.hueRotate(180, true);
-      f.brightness(1.3, true);
-      return [f];
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(-0.6, false);
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(180, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.3, false);
+      return [sat, hue, brt];
     },
     // ── Bee ──
     'bee-neon': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.hueRotate(90, false);
-      f.saturate(1.5, true);
-      f.brightness(1.2, true);
-      return [f];
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(90, false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(1.5, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.2, false);
+      return [hue, sat, brt];
     },
     'bee-royal': () => {
-      const f = new PIXI.ColorMatrixFilter();
-      f.sepia(false);
-      f.saturate(0.8, true);
-      f.hueRotate(-20, true);
-      f.brightness(1.1, true);
-      f.contrast(1.1, true);
-      return [f];
+      const sep = new PIXI.ColorMatrixFilter(); sep.sepia(false);
+      const sat = new PIXI.ColorMatrixFilter(); sat.saturate(0.8, false);
+      const hue = new PIXI.ColorMatrixFilter(); hue.hue(-20, false);
+      const brt = new PIXI.ColorMatrixFilter(); brt.brightness(1.1, false);
+      const con = new PIXI.ColorMatrixFilter(); con.contrast(1.1, false);
+      return [sep, sat, hue, brt, con];
     },
   };
 

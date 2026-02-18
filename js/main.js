@@ -2800,9 +2800,17 @@ function updateBiomeTransition() {
   clouds.tint = cloudTint;
   clouds2.tint = cloudTint;
 
-  // Crossfade ground — new fades in on top, old stays solid underneath until removed at p=1
+  // Ground fill crossfades smoothly
   if (t.newGround) t.newGround.alpha = Math.min(1, p / 0.6);
-  if (t.newGroundDecor) t.newGroundDecor.alpha = Math.min(1, p / 0.6);
+  if (t.oldGround) t.oldGround.alpha = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.3);
+  // Trees swap style instantly at midpoint — same positions, different look
+  if (p < 0.5) {
+    if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1;
+    if (t.newGroundDecor) t.newGroundDecor.alpha = 0;
+  } else {
+    if (t.oldGroundDecor) t.oldGroundDecor.alpha = 0;
+    if (t.newGroundDecor) t.newGroundDecor.alpha = 1;
+  }
 
   // Transition old weather out
   if (t.oldWeather) {

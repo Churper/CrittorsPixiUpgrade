@@ -266,6 +266,10 @@ export function updateCurrentLevels() {
   const shopDefense = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
   const defEl = document.getElementById('defense-level');
   if (defEl) defEl.textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
+  // Speed
+  const speed = ch === 'frog' ? state.speed : (state[ch + 'Speed'] || 1);
+  const spdEl = document.getElementById('speed-level');
+  if (spdEl) spdEl.textContent = speed.toFixed(1);
   if (characterLevelElement) characterLevelElement.textContent = 'Lvl. ' + getCharLevel(state.currentCharacter);
   state.isCharacterMenuOpen = false;
 }

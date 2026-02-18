@@ -1660,55 +1660,160 @@ document.addEventListener('DOMContentLoaded', function () {
 
   let _swapLock = false; // debounce guard for swap clicks
 
-  // Skin configs: tint gives clean directional color, brightness filter compensates darkening.
-  // Tint multiplies in sRGB: darks stay dark, lights get colored. Much cleaner than matrix recolor.
-  const skinConfigs = {
-    // ── Frog ──
-    'frog-ice':     { tint: 0x44ccff, bright: 1.6 },  // bright cyan-blue
-    'frog-golden':  { tint: 0xffbb11, bright: 1.4 },  // rich warm gold
-    'frog-shadow':  { tint: 0x8833cc, bright: 0.9 },  // dark mystic purple
-    // ── Snail ──
-    'snail-crystal': { tint: 0x33ddff, bright: 1.6 },  // bright crystal cyan
-    'snail-magma':   { tint: 0xff3311, bright: 1.4 },  // fiery deep red
-    // ── Bird ──
-    'bird-phoenix': { tint: 0xff5500, bright: 1.5 },  // hot orange fire
-    'bird-arctic':  { tint: 0xbbddff, bright: 1.5 },  // icy pale blue
-    // ── Bee ──
-    'bee-neon':     { tint: 0x22ff66, bright: 1.5 },  // electric green
-    'bee-royal':    { tint: 0xaa33ff, bright: 1.3 },  // deep regal purple
-  };
+  // --- Pixel-level skin recoloring via HSL hue shifts on spritesheets ---
+  // Each skin defines hue ranges to remap. Applied once at load time to the spritesheet pixels.
+  // Much better than tint/filter because we can target specific colors (e.g. only green on frog,
+  // leaving eyes/outlines untouched) and do true hue rotation with proper saturation/lightness.
 
-  // Apply skin: tint for color, brightness filter to compensate tint darkening
-  function applySkinFilter(critterSprite, charType) {
-    const charName = charType ? charType.replace('character-', '') : '';
-    const skinId = state.equippedSkins[charName];
-    if (skinId && skinConfigs[skinId]) {
-      const cfg = skinConfigs[skinId];
-      critterSprite.tint = cfg.tint;
-      state.skinBaseTint = cfg.tint;
-      const f = new PIXI.ColorMatrixFilter();
-      f.brightness(cfg.bright, false);
-      critterSprite.filters = [f];
-    } else {
-      critterSprite.tint = 0xffffff;
-      state.skinBaseTint = 0xffffff;
-      critterSprite.filters = [];
+  function _rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    let h, s, l = (max + min) / 2;
+    if (max === min) { h = s = 0; }
+    else {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
     }
+    return [h * 360, s, l];
   }
 
-  // Update the attack + defense infoboxes for the given character
+  function _hslToRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360 / 360;
+    let r, g, b;
+    if (s === 0) { r = g = b = l; }
+    else {
+      const hue2rgb = (p, q, t) => {
+        if (t < 0) t += 1; if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      r = hue2rgb(p, q, h + 1/3);
+      g = hue2rgb(p, q, h);
+      b = hue2rgb(p, q, h - 1/3);
+    }
+    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
+  }
+
+  // Hue shift configs per skin — each shift targets a hue range and remaps it
+  // from/to = source hue range (degrees), targetFrom/targetTo = destination hue range
+  // sat/lit = multipliers for saturation and lightness (optional, default 1.0)
+  const skinHueConfigs = {
+    // ── Frog (base: green body hue ~90-155) ──
+    'frog-ice': [
+      { from: 70, to: 160, targetFrom: 185, targetTo: 215, sat: 1.0, lit: 1.15 },
+    ],
+    'frog-golden': [
+      { from: 70, to: 160, targetFrom: 38, targetTo: 52, sat: 1.3, lit: 1.0 },
+    ],
+    'frog-shadow': [
+      { from: 70, to: 160, targetFrom: 270, targetTo: 300, sat: 0.85, lit: 0.7 },
+    ],
+    // ── Snail (blue shell ~200-270, red spiral ~340-20, yellow body ~35-60) ──
+    'snail-crystal': [
+      { from: 190, to: 275, targetFrom: 170, targetTo: 200, sat: 1.2, lit: 1.15 },
+      { from: 330, to: 360, targetFrom: 175, targetTo: 195, sat: 0.5, lit: 1.3 },
+      { from: 0, to: 25, targetFrom: 175, targetTo: 195, sat: 0.5, lit: 1.3 },
+    ],
+    'snail-magma': [
+      { from: 190, to: 275, targetFrom: 0, targetTo: 18, sat: 1.3, lit: 0.9 },
+      { from: 35, to: 65, targetFrom: 15, targetTo: 35, sat: 1.2, lit: 1.0 },
+    ],
+    // ── Bird (green body ~80-160, purple crest ~260-330) ──
+    'bird-phoenix': [
+      { from: 80, to: 160, targetFrom: 5, targetTo: 25, sat: 1.3, lit: 1.0 },
+      { from: 260, to: 330, targetFrom: 35, targetTo: 55, sat: 1.2, lit: 1.1 },
+    ],
+    'bird-arctic': [
+      { from: 80, to: 160, targetFrom: 195, targetTo: 220, sat: 0.7, lit: 1.2 },
+      { from: 260, to: 330, targetFrom: 200, targetTo: 225, sat: 0.5, lit: 1.3 },
+    ],
+    // ── Bee (yellow body ~35-65) ──
+    'bee-neon': [
+      { from: 30, to: 70, targetFrom: 110, targetTo: 145, sat: 1.4, lit: 1.0 },
+    ],
+    'bee-royal': [
+      { from: 30, to: 70, targetFrom: 265, targetTo: 290, sat: 1.1, lit: 0.85 },
+    ],
+  };
+
+  // Recolor a spritesheet's pixels using HSL hue shifts. Returns a new PIXI.Texture.
+  function recolorSheet(baseTex, shifts) {
+    const src = baseTex.source;
+    const resource = src.resource; // HTMLImageElement, ImageBitmap, or HTMLCanvasElement
+    const w = src.pixelWidth || src.width;
+    const h = src.pixelHeight || src.height;
+    const cvs = document.createElement('canvas');
+    cvs.width = w; cvs.height = h;
+    const ctx = cvs.getContext('2d');
+    ctx.drawImage(resource, 0, 0, w, h);
+    const imgData = ctx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 10) continue; // skip transparent
+      let [hue, sat, lit] = _rgbToHsl(d[i], d[i + 1], d[i + 2]);
+      if (sat < 0.08 || lit < 0.06 || lit > 0.94) continue; // skip grays/blacks/whites
+      for (const s of shifts) {
+        const hN = ((hue % 360) + 360) % 360;
+        if (hN >= s.from && hN <= s.to) {
+          const pct = (hN - s.from) / Math.max(1, s.to - s.from);
+          hue = s.targetFrom + pct * (s.targetTo - s.targetFrom);
+          if (s.sat !== undefined) sat = Math.min(1, sat * s.sat);
+          if (s.lit !== undefined) lit = Math.min(1, Math.max(0, lit * s.lit));
+          break;
+        }
+      }
+      const [nr, ng, nb] = _hslToRgb(hue, sat, lit);
+      d[i] = nr; d[i + 1] = ng; d[i + 2] = nb;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    return PIXI.Texture.from(cvs);
+  }
+
+  // Cache for recolored texture arrays: skinTextureCache['frog-ice_walk'] = [...frames]
+  const skinTextureCache = {};
+
+  // Apply skin — with canvas recoloring, textures are swapped directly, no tint/filter needed
+  function applySkinFilter(critterSprite, charType) {
+    critterSprite.tint = 0xffffff;
+    critterSprite.filters = [];
+    state.skinBaseTint = 0xffffff;
+  }
+
+  // Get skin texture arrays for a character (or null if no skin equipped)
+  function getSkinTextures(charName, type) {
+    const skinId = state.equippedSkins[charName];
+    if (skinId && skinTextureCache[skinId + '_' + type]) {
+      return skinTextureCache[skinId + '_' + type];
+    }
+    return null;
+  }
+
+  // Update the attack + defense + speed infoboxes for the given character
   function updateStatInfoboxes(charType) {
     const ch = charType ? charType.replace('character-', '') : 'frog';
     // Attack: base damage + shop bonus
     const baseDmg = state.characterStats[charType] ? state.characterStats[charType].attack : 16;
     const shopDmg = (state.layoutUpgrades[ch] && state.layoutUpgrades[ch].damage) || 0;
     const dmgEl = document.getElementById('swords-level');
-    dmgEl.textContent = shopDmg > 0 ? `${baseDmg} (+${shopDmg})` : `${baseDmg}`;
+    if (dmgEl) dmgEl.textContent = shopDmg > 0 ? `${baseDmg} (+${shopDmg})` : `${baseDmg}`;
     // Defense: base (= level) + shop bonus
     const baseDefense = state[ch + 'Level'] || 1;
     const shopDefense = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
     const defEl = document.getElementById('defense-level');
-    defEl.textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
+    if (defEl) defEl.textContent = shopDefense > 0 ? `${baseDefense} (+${shopDefense})` : `${baseDefense}`;
+    // Speed
+    const speed = ch === 'frog' ? state.speed : (state[ch + 'Speed'] || 1);
+    const spdEl = document.getElementById('speed-level');
+    if (spdEl) spdEl.textContent = speed.toFixed(1);
   }
 
   // Hat rendering — draws a hat graphic as a child of the critter sprite
@@ -3869,6 +3974,71 @@ state.frogGhostPlayer.scale.set(0.28);
       const beeAttackTextures = createAnimationTextures2('bee_attack', 18, 256, 1950, 1024);
       const birdWalkTextures = createAnimationTextures2('bird_walk', 13, 403, 2541, 806);
       const birdAttackTextures = createAnimationTextures2('bird_attack', 13, 403, 2541, 806);
+
+      // --- Generate recolored skin textures for equipped skins ---
+      // Frame params per character for recoloring (matches createAnimationTextures/2 calls above)
+      const _skinFrameParams = {
+        frog:  { type: 1, walk: { n: 10, fh: 351 }, attack: { n: 12, fh: 351 } },
+        snail: { type: 2, walk: { n: 20, fh: 562, sw: 3560, sh: 2248 }, attack: { n: 20, fh: 562, sw: 2848, sh: 3372 } },
+        bee:   { type: 2, walk: { n: 9,  fh: 256, sw: 2753, sh: 256 },  attack: { n: 18, fh: 256, sw: 1950, sh: 1024 } },
+        bird:  { type: 2, walk: { n: 13, fh: 403, sw: 2541, sh: 806 },  attack: { n: 13, fh: 403, sw: 2541, sh: 806 } },
+      };
+      for (const ch of ['frog', 'snail', 'bee', 'bird']) {
+        const skinId = state.equippedSkins[ch];
+        if (!skinId || !skinHueConfigs[skinId]) continue;
+        const shifts = skinHueConfigs[skinId];
+        const fp = _skinFrameParams[ch];
+        const walkSheet = ch + '_walk';
+        const atkSheet = ch + '_attack';
+        // Recolor the spritesheet source and create frame arrays
+        const recoloredWalk = recolorSheet(textures[walkSheet], shifts);
+        const recoloredAtk = recolorSheet(textures[atkSheet], shifts);
+        if (fp.type === 1) {
+          // Single-row layout (frog)
+          const wFrames = [], aFrames = [];
+          const wScale = textureScaleFactors[walkSheet] || 1;
+          const aScale = textureScaleFactors[atkSheet] || 1;
+          const wFw = recoloredWalk.width / fp.walk.n;
+          const wFh = Math.floor(fp.walk.fh * wScale);
+          for (let i = 0; i < fp.walk.n; i++) {
+            wFrames.push(new PIXI.Texture({ source: recoloredWalk.source, frame: new PIXI.Rectangle(i * wFw, 0, wFw, wFh) }));
+          }
+          const aFw = recoloredAtk.width / fp.attack.n;
+          const aFh = Math.floor(fp.attack.fh * aScale);
+          for (let i = 0; i < fp.attack.n; i++) {
+            aFrames.push(new PIXI.Texture({ source: recoloredAtk.source, frame: new PIXI.Rectangle(i * aFw, 0, aFw, aFh) }));
+          }
+          skinTextureCache[skinId + '_walk'] = wFrames;
+          skinTextureCache[skinId + '_attack'] = aFrames;
+        } else {
+          // Grid layout (snail, bee, bird)
+          for (const mode of ['walk', 'attack']) {
+            const recolored = mode === 'walk' ? recoloredWalk : recoloredAtk;
+            const sheetName = mode === 'walk' ? walkSheet : atkSheet;
+            const p = fp[mode];
+            const scale = textureScaleFactors[sheetName] || 1;
+            const fh = Math.floor(p.fh * scale);
+            const sw = Math.floor(p.sw * scale);
+            const sh = Math.floor(p.sh * scale);
+            const fw = sw / Math.ceil(p.n / (sh / fh));
+            const frames = [];
+            for (let i = 0; i < p.n; i++) {
+              const row = Math.floor(i / (sw / fw));
+              const col = i % (sw / fw);
+              frames.push(new PIXI.Texture({ source: recolored.source, frame: new PIXI.Rectangle(col * fw, row * fh, fw, fh) }));
+            }
+            skinTextureCache[skinId + '_' + mode] = frames;
+          }
+        }
+      }
+
+      // Apply skin textures for frog (default starting character) if equipped
+      if (getSkinTextures('frog', 'walk')) {
+        state.frogWalkTextures = getSkinTextures('frog', 'walk');
+        state.frogAttackTextures = getSkinTextures('frog', 'attack');
+        frogIdleTextures = state.frogWalkTextures;
+      }
+
       const cloudsTexture = textures.clouds;
       const clouds2Texture = textures.clouds2;
       const scorpWalkTextures = createAnimationTextures2('scorp_walk', 6, 499, 2202, 499);
@@ -4884,41 +5054,36 @@ state.demiSpawned = 0;
             playerSpawn.tint = 0x0000ff; // Blue
             playerSpawn.blendMode = 'add';
             playSpawnAnimation(critter, playerSpawn);
-            state.frogWalkTextures = birdWalkTextures;
-            frogIdleTextures = birdWalkTextures;
-            state.frogAttackTextures = birdAttackTextures;
+            state.frogWalkTextures = getSkinTextures('bird', 'walk') || birdWalkTextures;
+            frogIdleTextures = state.frogWalkTextures;
+            state.frogAttackTextures = getSkinTextures('bird', 'attack') || birdAttackTextures;
 
           }
           else if (getCurrentCharacter() === "character-frog") {
             playerSpawn.blendMode = 'add';
             playerSpawn.tint = 0x00ff80; // Light green
             playSpawnAnimation(critter, playerSpawn);
-            state.frogWalkTextures = frogWalkTextures1;
-            frogIdleTextures = frogIdleTextures1;
-            state.frogAttackTextures = frogAttackTextures1;
-
+            state.frogWalkTextures = getSkinTextures('frog', 'walk') || frogWalkTextures1;
+            frogIdleTextures = state.equippedSkins['frog'] ? state.frogWalkTextures : frogIdleTextures1;
+            state.frogAttackTextures = getSkinTextures('frog', 'attack') || frogAttackTextures1;
 
           }
           else if (getCurrentCharacter() === "character-snail") {
             playerSpawn.blendMode = 'add';
             playerSpawn.tint = 0x800080; // Dark purple
-
             playSpawnAnimation(critter, playerSpawn);
-            state.frogWalkTextures = snailWalkTextures;
-            frogIdleTextures = snailWalkTextures;
-            state.frogAttackTextures = snailAttackTextures;
-
+            state.frogWalkTextures = getSkinTextures('snail', 'walk') || snailWalkTextures;
+            frogIdleTextures = state.frogWalkTextures;
+            state.frogAttackTextures = getSkinTextures('snail', 'attack') || snailAttackTextures;
 
           }
           else if (getCurrentCharacter() === "character-bee") {
             playerSpawn.tint = 0xffff00; // Yellow
-
             playerSpawn.blendMode = 'add';
             playSpawnAnimation(critter, playerSpawn);
-            state.frogWalkTextures = beeWalkTextures;
-            frogIdleTextures = beeWalkTextures;
-            state.frogAttackTextures = beeAttackTextures;
-
+            state.frogWalkTextures = getSkinTextures('bee', 'walk') || beeWalkTextures;
+            frogIdleTextures = state.frogWalkTextures;
+            state.frogAttackTextures = getSkinTextures('bee', 'attack') || beeAttackTextures;
 
           }
           // Character swap: apply correct textures before showing critter

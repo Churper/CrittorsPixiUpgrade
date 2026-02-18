@@ -155,11 +155,14 @@ export function levelUp() {
   if (state.charDefense) state.charDefense[ch] = newLevel + shopBonus;
   state.defense = newLevel + shopBonus;
 
-  // Update attack + defense infoboxes
+  // Update attack + defense + speed infoboxes
   const shopDmg = (state.layoutUpgrades[ch] && state.layoutUpgrades[ch].damage) || 0;
   document.getElementById('swords-level').textContent = shopDmg > 0 ? `${stats.attack} (+${shopDmg})` : `${stats.attack}`;
   const defEl = document.getElementById('defense-level');
   defEl.textContent = shopBonus > 0 ? `${newLevel} (+${shopBonus})` : `${newLevel}`;
+  const speed = ch === 'frog' ? state.speed : (state[ch + 'Speed'] || 1);
+  const spdEl = document.getElementById('speed-level');
+  if (spdEl) spdEl.textContent = speed.toFixed(1);
 
   state.leveling = false;
 

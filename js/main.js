@@ -2921,13 +2921,10 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('snail').style.display = 'none';
       document.getElementById('progress').style.display = 'none';
       document.getElementById('progress-filled').style.display = 'none';
-      // Show endless timer + bones counter
+      // Show bones counter (replaces kill count in endless-timer)
       document.getElementById('endless-timer').style.display = 'flex';
-      const bonesDisplay = document.getElementById('bones-display');
-      if (bonesDisplay) {
-        bonesDisplay.style.display = 'block';
-        document.getElementById('bones-amount').textContent = state.bones;
-      }
+      const bonesAmountEl = document.getElementById('bones-amount');
+      if (bonesAmountEl) bonesAmountEl.textContent = state.bones;
       // Wire auto-attack button (shown after loading finishes)
       const autoBtn = document.getElementById('auto-attack-btn');
       autoBtn.addEventListener('click', () => {
@@ -4889,7 +4886,6 @@ let cantGainEXP = false;
         // Endless mode: update kill counter + track elapsed for weather cycling
         if (state.gameMode === 'endless' && state.endlessStartTime && !getisPaused()) {
           state.endlessElapsed = Math.floor((Date.now() - state.endlessStartTime) / 1000);
-          document.getElementById('endless-kill-count').textContent = state.endlessKillCount;
 
           // Cycle weather every 60s — crossfade ground + weather effects
           const currentWeather = getWeatherType();

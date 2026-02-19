@@ -1246,8 +1246,8 @@ export function awardBones(enemy) {
     state.app.ticker.add(ticker);
   }
   // Update layout UI if open
-  const bonesEl = document.getElementById('layout-bones');
-  if (bonesEl) bonesEl.textContent = `🦴 ${getBones()}`;
+  const layoutBonesEl = document.getElementById('layout-bones');
+  if (layoutBonesEl) layoutBonesEl.textContent = `🦴 ${getBones()}`;
 }
 
 // --- Item Drop System (Shield + Bomb) ---

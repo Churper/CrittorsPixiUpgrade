@@ -446,11 +446,9 @@ function siegeCastleDestroyed(critter, app) {
     }, 200 + i * 150);
   });
 
-  // Castle awards half a level of kill progress
-  const killsToAward = Math.max(1, Math.floor(state.killsToNextLevel / 2));
-  for (let i = 0; i < killsToAward; i++) {
-    checkSharedLevelUp();
-  }
+  // Castle awards half a level of kill progress (single chunk)
+  const halfProgress = Math.max(1, Math.floor(state.killsToNextLevel / 2));
+  checkSharedLevelUp(halfProgress);
   updateKillProgressBar();
 
   // Remove castle + HP bars

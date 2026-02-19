@@ -173,13 +173,13 @@ export function levelUp() {
 
 // --- Shared Kill-Milestone Level System (Endless Mode) ---
 
-export function checkSharedLevelUp() {
-  state.killsToNextLevel--;
+export function checkSharedLevelUp(amount = 10) {
+  state.killsToNextLevel -= amount;
   if (state.killsToNextLevel > 0) return;
 
-  // Level up! Reset with scaling: 5 + sieges passed
+  // Level up! Reset with scaling: (5 + sieges passed) * 10
   state.sharedLevel++;
-  state.killsToNextLevel = 5 + (state.lastSiegeCastleLevel || 0);
+  state.killsToNextLevel = (5 + (state.lastSiegeCastleLevel || 0)) * 10;
 
   const characters = ['frog', 'snail', 'bird', 'bee'];
   // Apply stat gains to ALL 4 characters
@@ -220,7 +220,7 @@ export function checkSharedLevelUp() {
     if (state.charDefense) state.charDefense[ch] = newLevel + shopBonus;
 
     // Update EXP indicator on portrait to show shared level
-    const killsPerLevel = 5 + (state.lastSiegeCastleLevel || 0);
+    const killsPerLevel = (5 + (state.lastSiegeCastleLevel || 0)) * 10;
     updateEXPIndicator(charKey, 0, killsPerLevel);
     updateEXPIndicatorText(charKey, newLevel);
   }
@@ -255,7 +255,7 @@ export function checkSharedLevelUp() {
 }
 
 export function updateKillProgressBar() {
-  const killsPerLevel = 5 + (state.lastSiegeCastleLevel || 0);
+  const killsPerLevel = (5 + (state.lastSiegeCastleLevel || 0)) * 10;
   const killsDone = killsPerLevel - state.killsToNextLevel;
   const playerEXPBarFill = document.getElementById('exp-bar-fill');
   playerEXPBarFill.style.width = (killsDone / killsPerLevel) * 100 + '%';

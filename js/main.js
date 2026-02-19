@@ -2935,7 +2935,7 @@ document.addEventListener('DOMContentLoaded', function () {
       state.endlessSpawnCount = 0;
       state.endlessKillCount = 0;
       state.sharedLevel = 1;
-      state.killsToNextLevel = 5;
+      state.killsToNextLevel = 50;
 
       // Checkpoint start — if starting from a castle checkpoint, fast-forward state
       // spawnCount uses cpLevel*7 (not *10) so enemies are softer when resuming
@@ -2946,8 +2946,8 @@ document.addEventListener('DOMContentLoaded', function () {
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
 
-        // Shared level: cpLevel * 2 — apply levels to ALL 4 characters
-        const targetLevel = cpLevel * 2;
+        // Shared level: cpLevel — apply levels to ALL 4 characters
+        const targetLevel = cpLevel;
         state.sharedLevel = targetLevel;
         const characters = ['frog', 'snail', 'bird', 'bee'];
         for (const ch of characters) {
@@ -2977,7 +2977,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.defense = (state.charDefense && state.charDefense[activeCh]) || 0;
 
         // Set kills-to-next-level with checkpoint scaling
-        state.killsToNextLevel = 5 + cpLevel;
+        state.killsToNextLevel = (5 + cpLevel) * 10;
 
         state.endlessCheckpointStart = 0;
       }

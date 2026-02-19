@@ -1842,39 +1842,146 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Per-character hat base Y offsets (fraction of texture height above center)
   const _hatYOffsets = {
-    frog:  { tophat: 0.16, partyhat: 0.10 },
+    frog:  { tophat: 0.19, partyhat: 0.13 },
     snail: { tophat: 0.40, partyhat: 0.34 },
-    bird:  { tophat: 0.34, partyhat: 0.28 },
-    bee:   { tophat: 0.34, partyhat: 0.28 },
+    bird:  { tophat: 0.36, partyhat: 0.30 },
+    bee:   { tophat: 0.36, partyhat: 0.30 },
   };
 
-  // Per-frame hat Y deltas (texture-space pixels, added to base offset)
-  // Positive = hat moves down, negative = hat moves up
-  // Derived from studying each spritesheet's head position per frame
+  // Per-frame hat offsets [dx, dy] in texture-space pixels (added to base position)
+  // null = hide hat for that frame (e.g. snail shell-spin)
+  // Derived frame-by-frame from each spritesheet
   const _hatFrameDeltas = {
     frog: {
-      // 10-frame hop: crouch → launch → airborne → land → tumble
-      walk:   [0, 4, 10, 3, -10, -15, -12, -4, 8, 5],
-      // 12-frame swing: relatively stable body
-      attack: [0, -2, -4, -3, 0, 2, 3, 2, 0, -2, -3, -1],
+      // 10-frame hop: stand → crouch → launch → airborne → land → tumble
+      walk: [
+        [0, 0],       // 0: standing upright
+        [0, 5],       // 1: slight forward lean
+        [5, 20],      // 2: deep crouch, head drops + shifts right
+        [3, 10],      // 3: pushing off ground
+        [-2, -20],    // 4: airborne, head rises
+        [-5, -28],    // 5: peak of jump, head highest
+        [-4, -22],    // 6: still airborne
+        [0, -8],      // 7: descending
+        [28, 20],     // 8: tumble, body rotated, head shifted right+down
+        [32, 25],     // 9: tumble end, head far right
+      ],
+      // 12-frame sword swing: body fairly stable
+      attack: [
+        [0, 0],       // 0: neutral
+        [-3, -2],     // 1: windup
+        [-6, -4],     // 2: arm back
+        [-4, -3],     // 3: starting swing
+        [0, 0],       // 4: mid-swing
+        [4, 2],       // 5: extending
+        [6, 4],       // 6: full extension
+        [4, 3],       // 7: follow through
+        [0, 0],       // 8: returning
+        [-3, -2],     // 9
+        [-4, -3],     // 10
+        [-2, -1],     // 11: back to neutral
+      ],
     },
     snail: {
-      // 20-frame slide: barely any vertical movement
-      walk:   [0, 0, 1, 1, 2, 1, 0, 0, -1, -1, 0, 0, 1, 1, 2, 1, 0, 0, -1, -1],
-      // 20-frame shell spin: head retracts into shell then re-emerges
-      attack: [0, 0, 5, 12, 20, 30, 35, 35, 35, 35, 30, 25, 18, 12, 6, 3, 1, 0, 0, 0],
+      // 20-frame slide: head barely moves
+      walk: [
+        [0,0],[0,0],[0,1],[0,1],[0,2],
+        [0,1],[0,0],[0,0],[0,-1],[0,-1],
+        [0,0],[0,0],[0,1],[0,1],[0,2],
+        [0,1],[0,0],[0,0],[0,-1],[0,-1],
+      ],
+      // 20-frame shell-spin attack: head retracts then re-emerges
+      attack: [
+        [0, 0],       // 0: normal pose
+        [0, 0],       // 1: shell starting to glow
+        [8, 10],      // 2: head tucking in
+        [18, 22],     // 3: almost retracted
+        null,         // 4: spinning shell, no head — hide hat
+        null,         // 5
+        null,         // 6
+        null,         // 7
+        null,         // 8
+        null,         // 9
+        null,         // 10
+        null,         // 11
+        [12, 28],     // 12: starting to emerge
+        [8, 18],      // 13
+        [4, 10],      // 14
+        [0, 5],       // 15
+        [0, 4],       // 16: crystal effects clearing
+        [-4, 2],      // 17
+        [0, 1],       // 18
+        [0, 0],       // 19: back to normal
+      ],
     },
     bird: {
-      // 13-frame walk: gentle bobbing stride
-      walk:   [0, -2, -4, -5, -3, -1, 1, 3, 5, 4, 2, 0, -1],
-      // 13-frame attack: bob with forward lean
-      attack: [0, -2, -5, -6, -4, -1, 2, 4, 3, 1, -1, -3, -1],
+      // 13-frame walking stride: gentle head bob
+      walk: [
+        [0, 0],       // 0: neutral
+        [0, -4],      // 1: stepping up
+        [0, -7],      // 2
+        [0, -8],      // 3: highest step
+        [0, -5],      // 4
+        [0, -2],      // 5
+        [0, 2],       // 6: stepping down
+        [0, 6],       // 7
+        [0, 8],       // 8: lowest step
+        [0, 5],       // 9
+        [0, 2],       // 10
+        [0, -2],      // 11
+        [0, -1],      // 12
+      ],
+      // 13-frame peck/attack: forward lean + bob
+      attack: [
+        [0, 0],       // 0
+        [-2, -4],     // 1
+        [-5, -8],     // 2: leaning in
+        [-7, -10],    // 3: pecking forward
+        [-5, -7],     // 4
+        [-2, -3],     // 5
+        [2, 2],       // 6: recoil
+        [5, 6],       // 7
+        [4, 4],       // 8
+        [2, 1],       // 9
+        [0, -1],      // 10
+        [-2, -3],     // 11
+        [-1, -1],     // 12
+      ],
     },
     bee: {
-      // 9-frame hover: gentle floating oscillation
-      walk:   [0, -3, -5, -4, -1, 2, 4, 5, 2],
-      // 18-frame sting: lunge forward and back
-      attack: [0, -3, -6, -8, -6, -3, 0, 3, 6, 8, 6, 3, 0, -2, -4, -3, -1, 0],
+      // 9-frame hover: body tilts nose-down then nose-up
+      walk: [
+        [0, 0],       // 0: level hover
+        [4, 6],       // 1: tilting nose-down
+        [7, 10],      // 2
+        [5, 8],       // 3
+        [0, 3],       // 4: transitioning
+        [-4, -4],     // 5: tilting nose-up
+        [-7, -8],     // 6
+        [-5, -6],     // 7
+        [-2, -2],     // 8
+      ],
+      // 18-frame sting attack: dramatic lunging
+      attack: [
+        [0, 0],       // 0
+        [6, 6],       // 1: lunging forward
+        [12, 12],     // 2
+        [15, 15],     // 3: peak lunge
+        [12, 10],     // 4
+        [6, 5],       // 5
+        [0, 0],       // 6
+        [-6, -6],     // 7: pulling back
+        [-10, -10],   // 8
+        [-6, -7],     // 9
+        [0, -3],      // 10
+        [6, 3],       // 11: second lunge
+        [10, 8],      // 12
+        [6, 5],       // 13
+        [0, 0],       // 14
+        [-4, -4],     // 15
+        [-6, -5],     // 16
+        [-2, -2],     // 17
+      ],
     },
   };
 
@@ -1896,9 +2003,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (hatId === 'tophat') {
       const hat = new PIXI.Graphics();
-      hat.roundRect(-22, -4, 44, 8, 3).fill({ color: 0x1a1a2e });
-      hat.roundRect(-14, -34, 28, 32, 4).fill({ color: 0x1a1a2e });
-      hat.rect(-14, -10, 28, 5).fill({ color: 0x8b0000 });
+      // Bigger tophat: wide brim + tall crown + red band
+      hat.roundRect(-30, -5, 60, 10, 4).fill({ color: 0x1a1a2e });
+      hat.roundRect(-20, -48, 40, 45, 5).fill({ color: 0x1a1a2e });
+      hat.rect(-20, -13, 40, 7).fill({ color: 0x8b0000 });
       hat.position.set(0, baseYOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
@@ -1906,44 +2014,55 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (hatId === 'partyhat') {
       const hat = new PIXI.Graphics();
       const blue = 0x0070DD;
-      // OSRS-style: thick blocky base band + crown points on top
-      hat.roundRect(-34, -2, 68, 12, 2).fill({ color: blue });
+      // Bigger OSRS-style: thick blocky base band + taller crown points
+      hat.roundRect(-42, -3, 84, 16, 3).fill({ color: blue });
       // Crown points rising from top of band
-      hat.moveTo(-34, -2);
-      hat.lineTo(-26, -16);
-      hat.lineTo(-17, -2);
-      hat.lineTo(-9, -16);
-      hat.lineTo(0, -2);
-      hat.lineTo(9, -16);
-      hat.lineTo(17, -2);
-      hat.lineTo(26, -16);
-      hat.lineTo(34, -2);
+      hat.moveTo(-42, -3);
+      hat.lineTo(-32, -22);
+      hat.lineTo(-21, -3);
+      hat.lineTo(-11, -22);
+      hat.lineTo(0, -3);
+      hat.lineTo(11, -22);
+      hat.lineTo(21, -3);
+      hat.lineTo(32, -22);
+      hat.lineTo(42, -3);
       hat.closePath();
       hat.fill({ color: blue });
-      hat.stroke({ width: 1, color: 0x005bb5, alpha: 0.5 });
-      hat.scale.set(1.15);
+      hat.stroke({ width: 1.5, color: 0x005bb5, alpha: 0.5 });
+      hat.scale.set(1.3);
       hat.position.set(0, baseYOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;
     }
 
-    // Wire up per-frame hat tracking so it follows the head through animations
+    // Wire up per-frame hat tracking so it follows the head through all animations
     const deltas = _hatFrameDeltas[charName];
     if (deltas && currentHatGraphic) {
       const hat = currentHatGraphic;
       const walkDeltas = deltas.walk;
       const attackDeltas = deltas.attack;
-      // Apply immediately for the current frame
-      const initDelta = walkDeltas[critterSprite.currentFrame % walkDeltas.length] || 0;
-      hat.position.y = baseYOff + initDelta;
 
-      critterSprite.onFrameChange = (frameIndex) => {
+      // Helper: apply a single frame's offset
+      function applyFrame(frameIndex) {
         if (!hat || hat.destroyed) return;
         const deltaArr = state.isAttackingChar ? attackDeltas : walkDeltas;
-        const delta = deltaArr[frameIndex % deltaArr.length] || 0;
-        hat.position.y = baseYOff + delta;
-      };
+        const entry = deltaArr[frameIndex % deltaArr.length];
+        if (entry === null) {
+          // null = hide hat (e.g. snail shell spin — no head visible)
+          hat.visible = false;
+        } else {
+          hat.visible = true;
+          const dx = entry ? entry[0] : 0;
+          const dy = entry ? entry[1] : 0;
+          hat.position.set(dx, baseYOff + dy);
+        }
+      }
+
+      // Apply for current frame immediately
+      applyFrame(critterSprite.currentFrame);
+
+      critterSprite.onFrameChange = applyFrame;
     }
   }
 

@@ -315,10 +315,7 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
   if (enemy.isAlive && enemy.position.x - critter.position.x > 100 && enemy.position.x > 250) {
     // Queue gate: hold position when an enemy is already engaged and this one is close
     if (getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250 && !enemy.isBaby) {
-      // Stand still — freeze on current frame (baby siege mobs bypass the queue)
-      if (enemy.playing) {
-        enemy.stop();
-      }
+      // Stand still but keep walking animation playing (baby siege mobs bypass the queue)
       enemy.isQueued = true;
       return;
     }
@@ -1565,18 +1562,26 @@ export function playGoldenBeanSound() {
   });
 }
 
+// Shared filter for golden beans — brightens + gold tint so the brown bean sprite looks truly gold
+const _goldenBeanFilter = (() => {
+  const f = new PIXI.ColorMatrixFilter();
+  f.brightness(1.8, false);
+  return f;
+})();
+
 export function playGoldenBeanFlyEffect(critter, totalCoffee) {
+  const beanTexture = PIXI.Assets.get('bean');
   const numBeans = 20;
   const coffeePerBean = totalCoffee / numBeans;
   const flyDuration = 700;
   const stagger = 30;
 
   for (let i = 0; i < numBeans; i++) {
-    // Draw bright gold bean with Graphics instead of tinting brown sprite
-    const bean = new PIXI.Graphics();
-    const beanSize = 5 + Math.random() * 3;
-    bean.ellipse(0, 0, beanSize, beanSize * 0.7).fill({ color: 0xFFD700 });
-    bean.ellipse(0, 0, beanSize * 0.5, beanSize * 0.35).fill({ color: 0xFFFF88, alpha: 0.6 });
+    const bean = new PIXI.Sprite(beanTexture);
+    bean.anchor.set(0.5);
+    bean.scale.set(0.12 + Math.random() * 0.08);
+    bean.tint = 0xFFD700;
+    bean.filters = [_goldenBeanFilter];
     bean.zIndex = 15;
     bean.position.set(
       critter.position.x + (Math.random() * 60 - 30),
@@ -1649,9 +1654,12 @@ function updateItemButtonState(itemType) {
 export function createItemDrop(x, y, itemType) {
   let itemSprite;
   if (itemType === 'goldenBean') {
-    itemSprite = new PIXI.Graphics();
-    itemSprite.ellipse(0, 0, 10, 7).fill({ color: 0xFFD700 });
-    itemSprite.ellipse(0, 0, 5, 3.5).fill({ color: 0xFFFF88, alpha: 0.6 });
+    const beanTexture = PIXI.Assets.get('bean');
+    itemSprite = new PIXI.Sprite(beanTexture);
+    itemSprite.anchor.set(0.5);
+    itemSprite.scale.set(0.2);
+    itemSprite.tint = 0xFFD700;
+    itemSprite.filters = [_goldenBeanFilter];
   } else {
     const emojiMap = { 'shield': '🛡️', 'bomb': '💣', 'rage': '🧃', 'feather': '🪶' };
     const emoji = emojiMap[itemType] || '❓';

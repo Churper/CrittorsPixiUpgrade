@@ -18,6 +18,7 @@ import {
 } from './combat.js';
 import { getCharacterDamage, setPlayerCurrentHealth } from './characters.js';
 import { updatePlayerHealthBar } from './ui.js';
+import { checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
 
 // --- Detection ---
@@ -132,9 +133,18 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   createSiegeCastle(critter, app);
 
   const level = state.siegeCastleLevel;
-  const totalMobs = Math.min(4 + level * 2, 16);
+  const totalMobs = Math.min(2 + level, 8);
   const waves = Math.min(1 + Math.floor(level / 3), 4);
   const mobsPerWave = Math.ceil(totalMobs / waves);
+
+  // Pick a second baby type at level 3+
+  let secondType = null;
+  if (level >= 3 && state.enemyTypes && state.enemyTypes.length > 1) {
+    const candidates = state.enemyTypes.filter(e => e.name !== 'imp');
+    if (candidates.length > 0) {
+      secondType = candidates[Math.floor(Math.random() * candidates.length)];
+    }
+  }
 
   // Add 1-2 normal mobs to the siege
   const normalMobCount = Math.min(1 + Math.floor(level / 3), 2);
@@ -151,10 +161,16 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
 
     for (let m = 0; m < mobsThisWave; m++) {
       const delay = waveDelay + m * 500;
+      const spawnIdx = spawned;
+      // Alternate: even-indexed babies are imp, odd-indexed are second type (if available)
+      const useSecondType = secondType && spawnIdx % 2 === 1;
+      const walkTex = useSecondType ? secondType.walkTextures : impWalkTextures;
+      const atkTex = useSecondType ? secondType.attackTextures : impAttackTextures;
+      const typeName = useSecondType ? secondType.name : 'imp';
+      spawned++;
       setTimeout(() => {
         if (!state.siegeActive) return;
-        spawnBabyEnemy(critter, app, impWalkTextures, impAttackTextures, spawned);
-        spawned++;
+        spawnBabyEnemy(critter, app, walkTex, atkTex, spawnIdx, typeName);
       }, delay);
     }
   }
@@ -173,14 +189,14 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   }
 }
 
-function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex) {
+function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, typeName) {
   const level = state.siegeCastleLevel;
   const sc = state.endlessSpawnCount || 0;
 
   const enemy = new PIXI.AnimatedSprite(walkTextures);
   enemy.scale.set(0.25);
   enemy.anchor.set(0.5, 0.5);
-  enemy.type = 'imp';
+  enemy.type = typeName || 'imp';
   enemy.isAttacking = false;
   enemy.enemyAdded = false;
   enemy.resett = false;
@@ -188,8 +204,8 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex) 
   enemy.isBaby = true;
   enemy.isSiegeMob = true;
 
-  // Stats scale with level — babies should be 1-shottable
-  enemy.maxHP = 10 + level * 5;
+  // Stats scale with level — 2-hit normal, 1-hit with type advantage
+  enemy.maxHP = 20 + level * 4;
   enemy.currentHP = enemy.maxHP;
   enemy.attackDamage = Math.max(1, Math.round(sc / 5 + level * 0.4));
   enemy.exp = 8 + level * 2;
@@ -217,10 +233,11 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex) 
   handleEnemySorting(enemy);
 
   // Register on ticker — same pattern as spawnEnemy
+  const enemyTypeName = enemy.type;
   app.ticker.add(() => {
     if (getisPaused()) return;
     if (app.stage.children.includes(enemy)) {
-      handleEnemyActions(critter, attackTextures, walkTextures, enemy, 'imp');
+      handleEnemyActions(critter, attackTextures, walkTextures, enemy, enemyTypeName);
     }
   });
 }
@@ -428,6 +445,13 @@ function siegeCastleDestroyed(critter, app) {
       createItemDrop(dropX + (i - count / 2) * 40, dropY - 20, item);
     }, 200 + i * 150);
   });
+
+  // Castle awards half a level of kill progress
+  const killsToAward = Math.max(1, Math.floor(state.killsToNextLevel / 2));
+  for (let i = 0; i < killsToAward; i++) {
+    checkSharedLevelUp();
+  }
+  updateKillProgressBar();
 
   // Remove castle + HP bars
   removeSiegeCastleSprites(app);

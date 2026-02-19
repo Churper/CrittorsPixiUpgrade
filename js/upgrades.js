@@ -131,20 +131,20 @@ export function levelUp() {
   // Auto-apply all 3 stat upgrades
   const stats = state.characterStats[state.currentCharacter];
 
-  // Speed +0.15 (hidden stat — still applied but not displayed)
-  stats.speed += 0.15;
+  // Speed +0.2 (hidden stat — still applied but not displayed)
+  stats.speed += 0.2;
   setCharacterSpeed(state.currentCharacter, stats.speed);
   setSpeedChanged(true);
 
-  // Damage +2
-  stats.attack += 2;
+  // Damage +4
+  stats.attack += 4;
   setCharacterDamage(state.currentCharacter, stats.attack);
 
-  // Health +12
-  stats.health += 12;
-  setCharacterHealth(state.currentCharacter, getPlayerHealth() + 12);
+  // Health +20
+  stats.health += 20;
+  setCharacterHealth(state.currentCharacter, getPlayerHealth() + 20);
   if (!getisDead() && getPlayerCurrentHealth() > 0) {
-    setPlayerCurrentHealth(getPlayerCurrentHealth() + 12);
+    setPlayerCurrentHealth(getPlayerCurrentHealth() + 20);
   }
   updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
 
@@ -187,16 +187,16 @@ export function checkSharedLevelUp() {
     const charKey = 'character-' + ch;
     const stats = state.characterStats[charKey];
 
-    // Speed +0.15
-    stats.speed += 0.15;
+    // Speed +0.2
+    stats.speed += 0.2;
     setCharacterSpeed(charKey, stats.speed);
 
-    // Damage +2
-    stats.attack += 2;
+    // Damage +4
+    stats.attack += 4;
     setCharacterDamage(charKey, stats.attack);
 
-    // Health +12
-    stats.health += 12;
+    // Health +20
+    stats.health += 20;
     setCharacterHealth(charKey, stats.health);
 
     // Increment level
@@ -208,10 +208,10 @@ export function checkSharedLevelUp() {
     state[ch + 'Damage'] = stats.attack;
     state[ch + 'Health'] = stats.health;
 
-    // Heal current HP +12 if alive
+    // Heal current HP +20 if alive
     const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
     if (state[hpKey] > 0) {
-      state[hpKey] = Math.min(state[hpKey] + 12, stats.health);
+      state[hpKey] = Math.min(state[hpKey] + 20, stats.health);
     }
 
     // Defense goes up with level

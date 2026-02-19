@@ -1868,7 +1868,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Pixel-analyzed from spritesheets: x = head center-of-mass X, y = head bulk-top Y
   const _hatBasePos = {
     frog:  [0, -36],      // head roughly centered; lowered to sit on head
-    snail: [-104, 10],    // head far left of frame center; lowered to rest on head
+    snail: [-200, 80],    // head far left and below shell; sits between eye stalks
     bird:  [-82, -200],   // crest left of center, near frame top
     bee:   [-6, -51],     // nearly centered
   };
@@ -2184,6 +2184,19 @@ document.addEventListener('DOMContentLoaded', function () {
         setisPaused(false);
       }
       startCooldown();
+
+      // Reset enemy combat state so enemies re-engage the new character cleanly
+      for (const enemy of state.enemies) {
+        enemy.enemyAdded = false;
+        enemy.isAttacking = false;
+        enemy.onFrameChange = null;
+        if (!enemy.playing && enemy.isAlive) enemy.play();
+      }
+      state.isCombat = false;
+      setEnemiesInRange(0);
+      state.isAttackingChar = false;
+      state.isCharAttacking = false;
+      state.hasAttackedThisFrame = false;
 
       // Break shield on character swap
       if (state.shieldActive) {
@@ -2942,9 +2955,9 @@ document.addEventListener('DOMContentLoaded', function () {
           const stats = state.characterStats[charKey];
           const levelsToGain = targetLevel - 1; // from level 1
           if (levelsToGain > 0) {
-            stats.speed += 0.15 * levelsToGain;
-            stats.attack += 2 * levelsToGain;
-            stats.health += 12 * levelsToGain;
+            stats.speed += 0.2 * levelsToGain;
+            stats.attack += 4 * levelsToGain;
+            stats.health += 20 * levelsToGain;
             state[ch + 'Level'] = targetLevel;
             // Sync state properties with characterStats
             if (ch === 'frog') { state.speed = stats.speed; }

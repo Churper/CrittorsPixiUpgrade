@@ -21,6 +21,55 @@ import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
 import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
 
+// --- Baby Cleave (type advantage) ---
+
+function hasTypeAdvantage(charType, enemyType) {
+  const adv = {
+    'character-snail': ['imp', 'toofer'],
+    'character-bird': ['shark', 'puffer'],
+    'character-frog': ['pig', 'scorp'],
+    'character-bee': ['ele', 'octo'],
+  };
+  return (adv[charType] || []).includes(enemyType);
+}
+
+function cleaveNearbyBaby(critter, killedEnemy) {
+  if (!killedEnemy.isBaby) return;
+  if (!hasTypeAdvantage(getCurrentCharacter(), killedEnemy.type)) return;
+
+  // Find the nearest alive baby within 150px of the killed baby
+  const enemies = getEnemies();
+  let nearest = null;
+  let nearestDist = Infinity;
+  for (const e of enemies) {
+    if (!e.isBaby || !e.isAlive || e === killedEnemy) continue;
+    const dx = e.position.x - killedEnemy.position.x;
+    const dy = e.position.y - killedEnemy.position.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 150 && dist < nearestDist) {
+      nearest = e;
+      nearestDist = dist;
+    }
+  }
+
+  if (!nearest) return;
+
+  // Kill the cleaved baby
+  nearest.currentHP = 0;
+  nearest.isAlive = false;
+  if (state.app.stage.children.includes(nearest)) {
+    state.app.stage.removeChild(nearest);
+  }
+  const idx = enemies.indexOf(nearest);
+  if (idx !== -1) enemies.splice(idx, 1);
+  awardBones(nearest);
+  createCoffeeDrop(nearest.position.x + 20, nearest.position.y);
+  if (nearest.isSiegeMob && state.siegeActive) {
+    document.dispatchEvent(new Event('siegeMobKilled'));
+  }
+  playDeathAnimation(nearest, critter);
+}
+
 // --- Synthesized SFX via Web Audio API ---
 let _audioCtx = null;
 function getAudioCtx() {
@@ -460,6 +509,7 @@ export function rangedAttack(critter, enemy) {
           state.isCombat = false;
           setIsCharAttacking(false);
           playDeathAnimation(enemy, critter);
+          cleaveNearbyBaby(critter, enemy);
 
           critter.play();
       }
@@ -1047,6 +1097,7 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       getEnemies().splice(getEnemies().indexOf(enemy), 1);
 
       playDeathAnimation(enemy, critter);
+      cleaveNearbyBaby(critter, enemy);
     }
   }
 }
@@ -1787,40 +1838,43 @@ export function playDeathAnimation(enemy, critter) {
   state.enemyDeath.zIndex = 15;
   state.app.stage.addChild(state.enemyDeath);
 
-  const expDrop = new PIXI.Text("+" + enemy.exp + " EXP", {
-    fontSize: 18,
-    fill: "orange",
-    fontWeight: "bold",
-    stroke: "#000",
-    strokeThickness: 3,
-    strokeOutside: true
-  });
-  expDrop.position.set(enemy.position.x + 20, enemy.position.y - 20);
-  expDrop.zIndex = 9999999999;
-  state.app.stage.addChild(expDrop);
+  // Skip EXP floating text for baby siege mobs (they don't award character EXP)
+  if (!enemy.isBaby) {
+    const expDrop = new PIXI.Text("+" + enemy.exp + " EXP", {
+      fontSize: 18,
+      fill: "orange",
+      fontWeight: "bold",
+      stroke: "#000",
+      strokeThickness: 3,
+      strokeOutside: true
+    });
+    expDrop.position.set(enemy.position.x + 20, enemy.position.y - 20);
+    expDrop.zIndex = 9999999999;
+    state.app.stage.addChild(expDrop);
 
-  // Animate the floating text
-  const startY = enemy.position.y - 20;
+    // Animate the floating text
+    const startY = enemy.position.y - 20;
 
-  const endY = startY - 50; // Adjust the value to control the floating height
-  const duration = 2600; // Animation duration in milliseconds
-  const startTime = performance.now();
+    const endY = startY - 50; // Adjust the value to control the floating height
+    const duration = 2600; // Animation duration in milliseconds
+    const startTime = performance.now();
 
-  const animateExpDrop = (currentTime) => {
-    const elapsed = currentTime - startTime;
+    const animateExpDrop = (currentTime) => {
+      const elapsed = currentTime - startTime;
 
-    if (elapsed < duration) {
-      const progress = elapsed / duration;
-      const newY = startY - (progress * (startY - endY));
-      expDrop.position.y = newY;
-      requestAnimationFrame(animateExpDrop);
-    } else {
-      // Animation complete, remove the floating text
-      state.app.stage.removeChild(expDrop);
-    }
-  };
+      if (elapsed < duration) {
+        const progress = elapsed / duration;
+        const newY = startY - (progress * (startY - endY));
+        expDrop.position.y = newY;
+        requestAnimationFrame(animateExpDrop);
+      } else {
+        // Animation complete, remove the floating text
+        if (expDrop.parent) state.app.stage.removeChild(expDrop);
+      }
+    };
 
-  requestAnimationFrame(animateExpDrop);
+    requestAnimationFrame(animateExpDrop);
+  }
   // Play the death animation
   state.enemyDeath.gotoAndPlay(0);
 

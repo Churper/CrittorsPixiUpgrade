@@ -622,11 +622,11 @@ export function cleanupSiege() {
 
 // Biome definitions — every 20 checkpoints changes biome
 const MAP_BIOMES = [
-  { name: 'forest',  label: '\u{1F332} Forest',  range: [0, 20] },
-  { name: 'desert',  label: '\u{1F3DC}\uFE0F Desert',  range: [21, 40] },
-  { name: 'tundra',  label: '\u{2744}\uFE0F Tundra',  range: [41, 60] },
-  { name: 'volcano', label: '\u{1F30B} Volcano', range: [61, 80] },
-  { name: 'void',    label: '\u{1F30C} Void',    range: [81, 100] },
+  { name: 'forest',  label: '\u{1F332} Forest',  range: [0, 19] },
+  { name: 'desert',  label: '\u{1F3DC}\uFE0F Desert',  range: [20, 39] },
+  { name: 'tundra',  label: '\u{2744}\uFE0F Tundra',  range: [40, 59] },
+  { name: 'volcano', label: '\u{1F30B} Volcano', range: [60, 79] },
+  { name: 'void',    label: '\u{1F30C} Void',    range: [80, 99] },
 ];
 
 let currentMapBiome = 0;

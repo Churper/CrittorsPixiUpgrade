@@ -966,14 +966,15 @@ export function drawHitSplat(enemy) {
   damageText.zIndex = 99999;
   state.app.stage.addChild(damageText);
 
-  // Crit: fling direction (upper-right diagonal) + spark particles
-  const flingVX = isCrit ? 2.5 : 0;
-  const flingVY = isCrit ? -1.8 : -0.3;
-  const animDuration = isCrit ? 60 : 100;
+  // Crit: fling direction (upper-right diagonal) + spark particles (skip effects in low detail)
+  const lowDetail = state.detailMode === 'low';
+  const flingVX = (isCrit && !lowDetail) ? 2.5 : 0;
+  const flingVY = (isCrit && !lowDetail) ? -1.8 : -0.3;
+  const animDuration = (isCrit && !lowDetail) ? 60 : 100;
 
-  // Spawn crit spark particles
+  // Spawn crit spark particles (skip in low detail)
   let critSparks = null;
-  if (isCrit) {
+  if (isCrit && !lowDetail) {
     critSparks = new PIXI.Container();
     critSparks.zIndex = 99998;
     state.app.stage.addChild(critSparks);
@@ -983,7 +984,6 @@ export function drawHitSplat(enemy) {
       const color = sparkColors[Math.floor(Math.random() * sparkColors.length)];
       spark.circle(0, 0, 2 + Math.random() * 2).fill({ color: color });
       spark.position.set(enemy.position.x + 20, enemy.position.y - 10);
-      // Spray mostly to the right (attack direction)
       const angle = -Math.PI * 0.8 + Math.random() * Math.PI * 0.6;
       const speed = 3 + Math.random() * 5;
       spark.vx = Math.cos(angle) * speed;
@@ -1012,7 +1012,7 @@ export function drawHitSplat(enemy) {
       damageText.position.x = startX + elapsed * flingVX;
       damageText.position.y = startY + elapsed * flingVY;
       damageText.alpha = 1 - progress;
-      if (isCrit) {
+      if (isCrit && !lowDetail) {
         // Scale up slightly then down for impact feel
         const scale = progress < 0.2 ? 1 + progress * 3 : 1.6 - progress * 0.8;
         damageText.scale.set(scale);
@@ -1221,7 +1221,7 @@ export function awardBones(enemy) {
   if (bonesEl) bonesEl.textContent = getBones();
   // Visual popup near the kill
   if (state.app) {
-    const txt = new PIXI.Text({ text: `+${amount} 🦴`, style: {
+    const txt = new PIXI.Text({ text: `+${amount} 🍓`, style: {
       fontFamily: 'Luckiest Guy, cursive',
       fontSize: 18,
       fill: '#f0e8d0',
@@ -1247,7 +1247,7 @@ export function awardBones(enemy) {
   }
   // Update layout UI if open
   const layoutBonesEl = document.getElementById('layout-bones');
-  if (layoutBonesEl) layoutBonesEl.textContent = `🦴 ${getBones()}`;
+  if (layoutBonesEl) layoutBonesEl.textContent = `🍓 ${getBones()}`;
 }
 
 // --- Item Drop System (Shield + Bomb) ---
@@ -1566,17 +1566,17 @@ export function playGoldenBeanSound() {
 }
 
 export function playGoldenBeanFlyEffect(critter, totalCoffee) {
-  const beanTexture = PIXI.Assets.get('bean');
   const numBeans = 20;
   const coffeePerBean = totalCoffee / numBeans;
   const flyDuration = 700;
   const stagger = 30;
 
   for (let i = 0; i < numBeans; i++) {
-    const bean = new PIXI.Sprite(beanTexture);
-    bean.anchor.set(0.5);
-    bean.scale.set(0.12 + Math.random() * 0.08);
-    bean.tint = 0xFFD700;
+    // Draw bright gold bean with Graphics instead of tinting brown sprite
+    const bean = new PIXI.Graphics();
+    const beanSize = 5 + Math.random() * 3;
+    bean.ellipse(0, 0, beanSize, beanSize * 0.7).fill({ color: 0xFFD700 });
+    bean.ellipse(0, 0, beanSize * 0.5, beanSize * 0.35).fill({ color: 0xFFFF88, alpha: 0.6 });
     bean.zIndex = 15;
     bean.position.set(
       critter.position.x + (Math.random() * 60 - 30),
@@ -1649,11 +1649,9 @@ function updateItemButtonState(itemType) {
 export function createItemDrop(x, y, itemType) {
   let itemSprite;
   if (itemType === 'goldenBean') {
-    const beanTexture = PIXI.Assets.get('bean');
-    itemSprite = new PIXI.Sprite(beanTexture);
-    itemSprite.anchor.set(0.5);
-    itemSprite.scale.set(0.2);
-    itemSprite.tint = 0xFFD700;
+    itemSprite = new PIXI.Graphics();
+    itemSprite.ellipse(0, 0, 10, 7).fill({ color: 0xFFD700 });
+    itemSprite.ellipse(0, 0, 5, 3.5).fill({ color: 0xFFFF88, alpha: 0.6 });
   } else {
     const emojiMap = { 'shield': '🛡️', 'bomb': '💣', 'rage': '🧃', 'feather': '🪶' };
     const emoji = emojiMap[itemType] || '❓';
@@ -1796,6 +1794,9 @@ export function playSpawnAnimation(critter, critterSpawn) {
 
 }
 export function createCoffeeDropText(x, y, coffeeAmount) {
+  // Skip floating text animation in low detail
+  if (state.detailMode === 'low') return;
+
   // create the state.coffee drop text
   const coffeeDropText = "+" + coffeeAmount;
   const coffeeDrop = new PIXI.Text(coffeeDropText, {

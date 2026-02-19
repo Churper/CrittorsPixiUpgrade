@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function () {
   function updateLayoutUI() {
     const bones = state.bones;
     const upgrades = state.layoutUpgrades;
-    layoutBonesEl.textContent = `🦴 ${bones}`;
+    layoutBonesEl.textContent = `🍓 ${bones}`;
 
     // Update each card's stat rows
     layoutCards.forEach(card => {
@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const cost = 10 + level * 5;
         const btn = row.querySelector('.layout-buy-btn');
         btn.dataset.cost = cost;
-        btn.textContent = `🦴${cost}`;
+        btn.textContent = `🍓${cost}`;
         btn.classList.toggle('cant-afford', bones < cost);
       });
     });
@@ -770,7 +770,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${hat.icon}</span>`
-        : `<span>${hat.icon}</span><span class="subview-cost">🦴${hat.cost}</span>`;
+        : `<span>${hat.icon}</span><span class="subview-cost">🍓${hat.cost}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.bones < hat.cost) return;
@@ -816,7 +816,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span>`
-        : `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span><span class="subview-cost">🦴${skin.cost}</span>`;
+        : `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span><span class="subview-cost">🍓${skin.cost}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.bones < skin.cost) return;
@@ -846,7 +846,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'layout-subview-item';
       const label = item.suffix ? `<span class="subview-label">${item.suffix}</span>` : '';
       const iconHtml = item.icon === 'potion-svg' ? potionSVG : item.icon;
-      el.innerHTML = `<span>${iconHtml}</span><span class="subview-count">x${count}</span>${label}<span class="subview-cost">🦴${item.costPer}</span>`;
+      el.innerHTML = `<span>${iconHtml}</span><span class="subview-count">x${count}</span>${label}<span class="subview-cost">🍓${item.costPer}</span>`;
       el.addEventListener('click', () => {
         if (state.bones < item.costPer) return;
         state.bones -= item.costPer;
@@ -914,7 +914,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${hat.icon}</span><span class="inline-picker-label">${hat.name}</span>`
-        : `<span>${hat.icon}</span><span class="inline-picker-cost">🦴${hat.cost}</span><span class="inline-picker-label">${hat.name}</span>`;
+        : `<span>${hat.icon}</span><span class="inline-picker-cost">🍓${hat.cost}</span><span class="inline-picker-label">${hat.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.bones < hat.cost) return;
@@ -958,7 +958,7 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${skin.icon}</span><span class="inline-picker-label">${skin.name}</span>`
-        : `<span>${skin.icon}</span><span class="inline-picker-cost">🦴${skin.cost}</span><span class="inline-picker-label">${skin.name}</span>`;
+        : `<span>${skin.icon}</span><span class="inline-picker-cost">🍓${skin.cost}</span><span class="inline-picker-label">${skin.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.bones < skin.cost) return;
@@ -1313,18 +1313,13 @@ document.addEventListener('DOMContentLoaded', function () {
       // Sun glow orb — larger with layered glow
       weatherSun = new PIXI.Container();
       const glow = new PIXI.Graphics();
-      if (lowDetail) {
-        glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
-        glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
-      } else {
-        glow.circle(0, 0, 80).fill({ color: 0xFFDD44, alpha: 0.15 });
-        glow.circle(0, 0, 55).fill({ color: 0xFFDD44, alpha: 0.25 });
-        glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
-        glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
-      }
+      glow.circle(0, 0, 80).fill({ color: 0xFFDD44, alpha: 0.15 });
+      glow.circle(0, 0, 55).fill({ color: 0xFFDD44, alpha: 0.25 });
+      glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
+      glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
       weatherSun.addChild(glow);
-      // Big extruding beams (fewer in low detail)
-      const beamCount = lowDetail ? 4 : 8;
+      // Big extruding beams
+      const beamCount = 8;
       for (let i = 0; i < beamCount; i++) {
         const beam = new PIXI.Graphics();
         const angle = (i / beamCount) * Math.PI * 2;
@@ -1335,17 +1330,15 @@ document.addEventListener('DOMContentLoaded', function () {
         beam.isBeam = true;
         weatherSun.addChild(beam);
       }
-      // Thinner accent rays between beams (skip in low detail)
-      if (!lowDetail) {
-        for (let i = 0; i < 8; i++) {
-          const ray = new PIXI.Graphics();
-          const angle = ((i + 0.5) / 8) * Math.PI * 2;
-          const len = 60 + Math.random() * 40;
-          ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
-          ray.rayAngle = angle;
-          ray.rayLen = len;
-          weatherSun.addChild(ray);
-        }
+      // Thinner accent rays between beams
+      for (let i = 0; i < 8; i++) {
+        const ray = new PIXI.Graphics();
+        const angle = ((i + 0.5) / 8) * Math.PI * 2;
+        const len = 60 + Math.random() * 40;
+        ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
+        ray.rayAngle = angle;
+        ray.rayLen = len;
+        weatherSun.addChild(ray);
       }
       weatherSun.startTime = Date.now();
       weatherContainer.addChild(weatherSun);
@@ -2465,9 +2458,9 @@ document.addEventListener('DOMContentLoaded', function () {
         core.fill({ color: 0xffffcc, alpha: 1 });
         explosionContainer.addChild(core);
 
-        // Explosion particles — fiery debris
+        // Explosion particles — fiery debris (fewer in low detail)
         const particles = [];
-        const particleCount = 24;
+        const particleCount = state.detailMode === 'low' ? 8 : 24;
         for (let i = 0; i < particleCount; i++) {
           const p = new PIXI.Graphics();
           const size = 3 + Math.random() * 5;
@@ -2486,28 +2479,33 @@ document.addEventListener('DOMContentLoaded', function () {
           particles.push(p);
         }
 
-        // Smoke puffs
+        // Smoke puffs (skip in low detail)
         const smokes = [];
-        for (let i = 0; i < 8; i++) {
-          const s = new PIXI.Graphics();
-          const smokeSize = 8 + Math.random() * 12;
-          const grey = Math.floor(80 + Math.random() * 80);
-          s.circle(0, 0, smokeSize);
-          s.fill({ color: (grey << 16) | (grey << 8) | grey, alpha: 0.5 });
-          s.position.set((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 20);
-          s.vx = (Math.random() - 0.5) * 1.5;
-          s.vy = -1 - Math.random() * 2;
-          explosionContainer.addChild(s);
-          smokes.push(s);
+        if (state.detailMode !== 'low') {
+          for (let i = 0; i < 8; i++) {
+            const s = new PIXI.Graphics();
+            const smokeSize = 8 + Math.random() * 12;
+            const grey = Math.floor(80 + Math.random() * 80);
+            s.circle(0, 0, smokeSize);
+            s.fill({ color: (grey << 16) | (grey << 8) | grey, alpha: 0.5 });
+            s.position.set((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 20);
+            s.vx = (Math.random() - 0.5) * 1.5;
+            s.vy = -1 - Math.random() * 2;
+            explosionContainer.addChild(s);
+            smokes.push(s);
+          }
         }
 
-        // Screen flash overlay
-        const overlay = new PIXI.Graphics();
-        overlay.rect(0, 0, app.screen.width, app.screen.height);
-        overlay.fill({ color: 0xffffff, alpha: 0.7 });
-        overlay.zIndex = 10000;
-        overlay.position.set(-app.stage.x, -app.stage.y);
-        app.stage.addChild(overlay);
+        // Screen flash overlay (skip in low detail)
+        const overlay = state.detailMode !== 'low' ? (() => {
+          const o = new PIXI.Graphics();
+          o.rect(0, 0, app.screen.width, app.screen.height);
+          o.fill({ color: 0xffffff, alpha: 0.7 });
+          o.zIndex = 10000;
+          o.position.set(-app.stage.x, -app.stage.y);
+          app.stage.addChild(o);
+          return o;
+        })() : null;
 
         // Animate explosion
         const explosionStart = Date.now();
@@ -2544,11 +2542,13 @@ document.addEventListener('DOMContentLoaded', function () {
           }
 
           // Fade flash overlay
-          const flashAlpha = Math.max(0, 0.7 - progress * 1.4);
-          overlay.clear();
-          overlay.rect(0, 0, app.screen.width, app.screen.height);
-          overlay.fill({ color: 0xffffff, alpha: flashAlpha });
-          overlay.position.set(-app.stage.x, -app.stage.y);
+          if (overlay) {
+            const flashAlpha = Math.max(0, 0.7 - progress * 1.4);
+            overlay.clear();
+            overlay.rect(0, 0, app.screen.width, app.screen.height);
+            overlay.fill({ color: 0xffffff, alpha: flashAlpha });
+            overlay.position.set(-app.stage.x, -app.stage.y);
+          }
 
           if (progress < 1) {
             requestAnimationFrame(animateExplosion);
@@ -2558,10 +2558,12 @@ document.addEventListener('DOMContentLoaded', function () {
               app.stage.removeChild(explosionContainer);
             }
             explosionContainer.destroy({ children: true });
-            if (app.stage.children.includes(overlay)) {
-              app.stage.removeChild(overlay);
+            if (overlay) {
+              if (app.stage.children.includes(overlay)) {
+                app.stage.removeChild(overlay);
+              }
+              overlay.destroy();
             }
-            overlay.destroy();
           }
         };
         requestAnimationFrame(animateExplosion);
@@ -3477,6 +3479,13 @@ function drawEndlessGround(weather) {
   for (let px = 0; px <= w; px += step) g.lineTo(px, pathCenterY + pathOffset(px) + 5);
   for (let px = w; px >= 0; px -= step) g.lineTo(px, pathCenterY + pathOffset(px) + 9);
   g.closePath().fill({ color: palette.path, alpha: 0.3 });
+
+  // Low detail: skip rocks, pebbles, grass, and tree/rock decor
+  if (state.detailMode === 'low') {
+    if (endlessGroundDecor) endlessGroundDecor.removeChildren();
+    if (endlessGroundDecorFG) endlessGroundDecorFG.removeChildren();
+    return;
+  }
 
   // 5. Scattered rocks embedded in the ground
   _endlessGroundSeed = 99999;
@@ -5600,6 +5609,7 @@ state.demiSpawned = 0;
 
         // Update cloud position
         clouds.position.x -= cloudSpeed * state.dt;
+        clouds2.visible = state.detailMode !== 'low';
         clouds2.position.x -= cloud2Speed * state.dt;
         // Check if cloud has gone offscreen and move it to the right side
         if (clouds.x + clouds.width / 2 < -3000) {

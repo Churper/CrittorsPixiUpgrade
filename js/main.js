@@ -1840,150 +1840,140 @@ document.addEventListener('DOMContentLoaded', function () {
   // Hat rendering — draws a hat graphic as a child of the critter sprite
   let currentHatGraphic = null;
 
-  // Per-character hat base Y offsets (fraction of texture height above center)
-  // Calibrated to walk frame 0 head-top position per sprite pixel analysis
-  const _hatYOffsets = {
-    frog:  { tophat: 0.19, partyhat: 0.23 },
-    snail: { tophat: 0.40, partyhat: 0.34 },
-    bird:  { tophat: 0.36, partyhat: 0.30 },
-    bee:   { tophat: 0.36, partyhat: 0.30 },
+  // Base hat position [x, y] in texture-space pixels from sprite center (walk frame 0 head)
+  // Pixel-analyzed from spritesheets: x = head center-of-mass X, y = head bulk-top Y
+  const _hatBasePos = {
+    frog:  [0, -46],      // head roughly centered; y at eyeball level (~20px below antenna tip)
+    snail: [-104, -30],   // head far left of frame center
+    bird:  [-82, -200],   // crest left of center, near frame top
+    bee:   [-6, -51],     // nearly centered
   };
 
   // Per-frame hat offsets [dx, dy] in texture-space pixels (added to base position)
   // null = hide hat for that frame (e.g. snail shell-spin)
-  // Frog values derived from pixel analysis of spritesheet head positions
+  // All values pixel-analyzed from spritesheets using head center-of-mass & bulk-top
   const _hatFrameDeltas = {
     frog: {
-      // 10-frame hop cycle: stand → rise → peak → descend → tumble
-      // Pixel-analyzed: head rises ~112px from frame 0 to frame 4, drops ~75px below at frame 9
+      // 10-frame hop: head rises 112px then drops 75px below baseline
       walk: [
-        [0, 0],       // 0: standing (headY=-62.5 from center — baseline)
-        [0, -48],     // 1: rising (headY=-110.5)
-        [0, -83],     // 2: high (headY=-145.5)
-        [0, -105],    // 3: near peak (headY=-167.5)
-        [0, -112],    // 4: peak of hop (headY=-174.5)
-        [0, -104],    // 5: descending (headY=-166.5)
-        [0, -81],     // 6: mid descent (headY=-143.5)
-        [0, -43],     // 7: lower (headY=-105.5)
-        [0, 9],       // 8: near ground (headY=-53.5)
-        [0, 75],      // 9: tumble, body drops below center (headY=+12.5)
+        [0, 0],       // 0: standing baseline
+        [0, -48],     // 1: rising
+        [0, -83],     // 2: high
+        [0, -105],    // 3: near peak
+        [0, -112],    // 4: peak of hop
+        [0, -104],    // 5: descending
+        [0, -81],     // 6: mid descent
+        [0, -43],     // 7: lower
+        [0, 9],       // 8: near ground
+        [0, 75],      // 9: tumble
       ],
-      // 12-frame attack: head stays at constant height (headY=-40.5)
-      // +22 delta because attack pose head is 22px lower than walk standing pose
+      // 12-frame attack: head steady ~22px lower than walk baseline
       attack: [
-        [0, 22],      // 0
-        [0, 22],      // 1
-        [0, 22],      // 2
-        [0, 22],      // 3
-        [0, 22],      // 4
-        [0, 22],      // 5
-        [0, 22],      // 6
-        [0, 22],      // 7
-        [0, 22],      // 8
-        [0, 22],      // 9
-        [0, 22],      // 10
-        [0, 23],      // 11
+        [0,22],[0,22],[0,22],[0,22],[0,22],[0,22],
+        [0,22],[0,22],[0,22],[0,22],[0,22],[0,23],
       ],
     },
     snail: {
-      // 20-frame slide: head barely moves
+      // 20-frame slide: head drifts right then back, gentle Y bob (18px range)
       walk: [
-        [0,0],[0,0],[0,1],[0,1],[0,2],
-        [0,1],[0,0],[0,0],[0,-1],[0,-1],
-        [0,0],[0,0],[0,1],[0,1],[0,2],
-        [0,1],[0,0],[0,0],[0,-1],[0,-1],
+        [0, 0],       // 0: baseline
+        [0, -2],      // 1
+        [4, -5],      // 2: head shifting right
+        [12, -7],     // 3
+        [20, -10],    // 4
+        [24, -6],     // 5
+        [26, -3],     // 6
+        [28, 0],      // 7
+        [30, 4],      // 8
+        [32, 8],      // 9: rightmost
+        [30, 9],      // 10
+        [26, 9],      // 11
+        [17, 7],      // 12: returning left
+        [9, 5],       // 13
+        [4, 4],       // 14
+        [1, 3],       // 15
+        [0, 2],       // 16
+        [0, 1],       // 17
+        [0, 0],       // 18
+        [0, 0],       // 19: back to baseline
       ],
-      // 20-frame shell-spin attack: head retracts then re-emerges
+      // 20-frame shell-spin attack: hat hidden during spin + crystal effects
       attack: [
         [0, 0],       // 0: normal pose
-        [0, 0],       // 1: shell starting to glow
-        [8, 10],      // 2: head tucking in
-        [18, 22],     // 3: almost retracted
-        null,         // 4: spinning shell, no head — hide hat
-        null,         // 5
-        null,         // 6
-        null,         // 7
-        null,         // 8
-        null,         // 9
-        null,         // 10
-        null,         // 11
-        [12, 28],     // 12: starting to emerge
-        [8, 18],      // 13
-        [4, 10],      // 14
-        [0, 5],       // 15
-        [0, 4],       // 16: crystal effects clearing
-        [-4, 2],      // 17
-        [0, 1],       // 18
-        [0, 0],       // 19: back to normal
+        [0, 0],       // 1: shell glow starts
+        null, null, null, null, null, null, null, null,  // 2-9: shell spin
+        null, null, null, null, null, null, null, null,  // 10-17: spin + crystals
+        null, null,   // 18-19: crystal aftermath
       ],
     },
     bird: {
-      // 13-frame walking stride: gentle head bob
+      // 13-frame walk: gentle 10px Y bob, X nearly constant
       walk: [
-        [0, 0],       // 0: neutral
-        [0, -4],      // 1: stepping up
-        [0, -7],      // 2
-        [0, -8],      // 3: highest step
-        [0, -5],      // 4
-        [0, -2],      // 5
-        [0, 2],       // 6: stepping down
-        [0, 6],       // 7
-        [0, 8],       // 8: lowest step
-        [0, 5],       // 9
-        [0, 2],       // 10
-        [0, -2],      // 11
-        [0, -1],      // 12
+        [0, 0],       // 0: baseline
+        [0, 3],       // 1
+        [0, 6],       // 2
+        [0, 10],      // 3: lowest step
+        [0, 6],       // 4
+        [0, 3],       // 5
+        [0, 0],       // 6
+        [0, 2],       // 7
+        [0, 5],       // 8
+        [0, 7],       // 9
+        [0, 10],      // 10: lowest
+        [0, 6],       // 11
+        [0, 4],       // 12
       ],
-      // 13-frame peck/attack: forward lean + bob
+      // 13-frame peck: bird leans forward (X+33, Y+27 at peak) then returns
       attack: [
-        [0, 0],       // 0
-        [-2, -4],     // 1
-        [-5, -8],     // 2: leaning in
-        [-7, -10],    // 3: pecking forward
-        [-5, -7],     // 4
-        [-2, -3],     // 5
-        [2, 2],       // 6: recoil
-        [5, 6],       // 7
-        [4, 4],       // 8
-        [2, 1],       // 9
-        [0, -1],      // 10
-        [-2, -3],     // 11
-        [-1, -1],     // 12
+        [0, 4],       // 0: starting pose
+        [11, 11],     // 1: leaning forward
+        [21, 19],     // 2
+        [33, 27],     // 3: peak forward lean
+        [33, 27],     // 4: holding
+        [33, 27],     // 5: holding
+        [33, 27],     // 6: holding
+        [49, 27],     // 7: furthest reach
+        [39, 27],     // 8: pulling back
+        [33, 28],     // 9
+        [21, 19],     // 10: returning
+        [11, 11],     // 11
+        [0, 3],       // 12: back to neutral
       ],
     },
     bee: {
-      // 9-frame hover: body tilts nose-down then nose-up
+      // 9-frame hover: body tilts, head shifts right + drops up to 16px
       walk: [
-        [0, 0],       // 0: level hover
-        [4, 6],       // 1: tilting nose-down
-        [7, 10],      // 2
-        [5, 8],       // 3
-        [0, 3],       // 4: transitioning
-        [-4, -4],     // 5: tilting nose-up
-        [-7, -8],     // 6
-        [-5, -6],     // 7
-        [-2, -2],     // 8
+        [0, 0],       // 0: baseline
+        [7, 9],       // 1: tilting
+        [15, 15],     // 2: most tilted
+        [8, 13],      // 3
+        [3, 8],       // 4
+        [10, 13],     // 5
+        [18, 16],     // 6: most tilted (alt)
+        [12, 10],     // 7
+        [13, 9],      // 8
       ],
-      // 18-frame sting attack: dramatic lunging
+      // 18-frame sting: dramatic lunge left then right (200px X range, 80px Y range)
+      // Deltas account for wider attack frame (390px vs 306px walk)
       attack: [
-        [0, 0],       // 0
-        [6, 6],       // 1: lunging forward
-        [12, 12],     // 2
-        [15, 15],     // 3: peak lunge
-        [12, 10],     // 4
-        [6, 5],       // 5
-        [0, 0],       // 6
-        [-6, -6],     // 7: pulling back
-        [-10, -10],   // 8
-        [-6, -7],     // 9
-        [0, -3],      // 10
-        [6, 3],       // 11: second lunge
-        [10, 8],      // 12
-        [6, 5],       // 13
-        [0, 0],       // 14
-        [-4, -4],     // 15
-        [-6, -5],     // 16
-        [-2, -2],     // 17
+        [-16, -12],   // 0: winding up
+        [-52, -20],   // 1: lunging left
+        [-79, -50],   // 2
+        [-89, -62],   // 3: deep lunge
+        [-111, -74],  // 4: peak left lunge
+        [-64, -56],   // 5: pulling back
+        [-3, -39],    // 6: crossing center
+        [44, -22],    // 7: swinging right
+        [71, -39],    // 8
+        [95, -54],    // 9
+        [110, -66],   // 10: peak right lunge
+        [87, -54],    // 11: returning
+        [71, -39],    // 12
+        [51, -22],    // 13
+        [46, -22],    // 14
+        [1, -10],     // 15: settling
+        [17, -2],     // 16
+        [19, 5],      // 17: back near rest
       ],
     },
   };
@@ -2001,8 +1991,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const charName = charType ? charType.replace('character-', '') : '';
     const hatId = state.equippedHats[charName];
     if (!hatId || !critterSprite) return;
-    const offsets = _hatYOffsets[charName] || _hatYOffsets.frog;
-    const baseYOff = -(critterSprite.texture.height * (offsets[hatId] || 0.16));
+    const pos = _hatBasePos[charName] || _hatBasePos.frog;
+    const baseXOff = pos[0];
+    const baseYOff = pos[1];
 
     if (hatId === 'tophat') {
       const hat = new PIXI.Graphics();
@@ -2010,7 +2001,7 @@ document.addEventListener('DOMContentLoaded', function () {
       hat.roundRect(-30, -5, 60, 10, 4).fill({ color: 0x1a1a2e });
       hat.roundRect(-20, -48, 40, 45, 5).fill({ color: 0x1a1a2e });
       hat.rect(-20, -13, 40, 7).fill({ color: 0x8b0000 });
-      hat.position.set(0, baseYOff);
+      hat.position.set(baseXOff, baseYOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;
@@ -2033,7 +2024,7 @@ document.addEventListener('DOMContentLoaded', function () {
       hat.fill({ color: blue });
       hat.stroke({ width: 1.5, color: 0x005bb5, alpha: 0.5 });
       hat.scale.set(1.3);
-      hat.position.set(0, baseYOff);
+      hat.position.set(baseXOff, baseYOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;
@@ -2058,7 +2049,7 @@ document.addEventListener('DOMContentLoaded', function () {
           hat.visible = true;
           const dx = entry ? entry[0] : 0;
           const dy = entry ? entry[1] : 0;
-          hat.position.set(dx, baseYOff + dy);
+          hat.position.set(baseXOff + dx, baseYOff + dy);
         }
       }
 

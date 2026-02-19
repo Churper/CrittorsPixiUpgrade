@@ -151,7 +151,7 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
     const mobsThisWave = Math.min(mobsPerWave, totalMobs - w * mobsPerWave);
 
     for (let m = 0; m < mobsThisWave; m++) {
-      const delay = waveDelay + m * 300;
+      const delay = waveDelay + m * 500;
       setTimeout(() => {
         if (!state.siegeActive) return;
         spawnBabyEnemy(critter, app, impWalkTextures, impAttackTextures, spawned);
@@ -164,7 +164,7 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   const enemyTypes = state.enemyTypes || [];
   if (enemyTypes.length > 0) {
     for (let n = 0; n < normalMobCount; n++) {
-      const delay = 1000 + n * 2500; // stagger between waves
+      const delay = 4000 + n * 3000; // arrive after baby wave has thinned out
       setTimeout(() => {
         if (!state.siegeActive) return;
         const picked = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
@@ -192,7 +192,7 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex) 
   // Stats scale with level
   enemy.maxHP = 30 + sc * 2 + level * 15;
   enemy.currentHP = enemy.maxHP;
-  enemy.attackDamage = Math.round(1 + sc / 4 + level * 0.5);
+  enemy.attackDamage = Math.max(1, Math.round(sc / 5 + level * 0.4));
   enemy.exp = 8 + level * 2;
 
   // Position off-screen right, with vertical variance

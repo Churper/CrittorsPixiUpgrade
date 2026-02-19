@@ -2723,12 +2723,10 @@ document.addEventListener('DOMContentLoaded', function () {
       const featherBtn = document.getElementById('feather-btn');
       const goldenBeanBtn = document.getElementById('golden-bean-btn');
 
-      // Show buttons + counts for all starting items
+      // Show buttons + counts for all starting items (only if count > 0)
       if (getShieldCount() > 0) { shieldBtn.style.display = 'flex'; document.getElementById('shield-count').textContent = getShieldCount(); }
-      bombBtn.style.display = 'flex';
-      rageBtn.style.display = 'flex';
-      document.getElementById('bomb-count').textContent = getBombCount();
-      document.getElementById('rage-count').textContent = getRageCount();
+      if (getBombCount() > 0) { bombBtn.style.display = 'flex'; document.getElementById('bomb-count').textContent = getBombCount(); }
+      if (getRageCount() > 0) { rageBtn.style.display = 'flex'; document.getElementById('rage-count').textContent = getRageCount(); }
       if (getFeatherCount() > 0) { featherBtn.style.display = 'flex'; document.getElementById('feather-count').textContent = getFeatherCount(); }
       if (getGoldenBeanCount() > 0) { goldenBeanBtn.style.display = 'flex'; document.getElementById('golden-bean-count').textContent = getGoldenBeanCount(); }
       repositionItemButtons();

@@ -496,10 +496,6 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // --- Map panel ---
-  document.getElementById('map-btn').addEventListener('click', function() {
-    renderOverworldMap();
-    showPanel('map');
-  });
   document.getElementById('map-close-btn').addEventListener('click', function() {
     hidePanel('map');
   });
@@ -1011,12 +1007,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-  document.getElementById('info-btn').addEventListener('click', function() {
-    showPanel('info');
+  // --- Settings panel ---
+  document.getElementById('settings-btn').addEventListener('click', function() {
+    // Sync toggle buttons with current state
+    document.getElementById('detail-high-btn').classList.toggle('active', state.detailMode === 'high');
+    document.getElementById('detail-low-btn').classList.toggle('active', state.detailMode === 'low');
+    showPanel('settings');
   });
-
-  document.getElementById('info-close-btn').addEventListener('click', function() {
-    hidePanel('info');
+  document.getElementById('settings-close-btn').addEventListener('click', function() {
+    hidePanel('settings');
+  });
+  document.getElementById('detail-high-btn').addEventListener('click', function() {
+    state.detailMode = 'high';
+    this.classList.add('active');
+    document.getElementById('detail-low-btn').classList.remove('active');
+    saveBones();
+  });
+  document.getElementById('detail-low-btn').addEventListener('click', function() {
+    state.detailMode = 'low';
+    this.classList.add('active');
+    document.getElementById('detail-high-btn').classList.remove('active');
+    saveBones();
   });
 
   document.getElementById('leaderboard-btn').addEventListener('click', function() {
@@ -1286,6 +1297,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const w = app.screen.width;
     const h = app.screen.height;
     const type = getWeatherType();
+    const lowDetail = state.detailMode === 'low';
 
     // Sun renders behind mountains (zIndex 0.5) so it sets behind them
     // Other weather renders in front of everything
@@ -1295,15 +1307,21 @@ document.addEventListener('DOMContentLoaded', function () {
       // Sun glow orb — larger with layered glow
       weatherSun = new PIXI.Container();
       const glow = new PIXI.Graphics();
-      glow.circle(0, 0, 80).fill({ color: 0xFFDD44, alpha: 0.15 });
-      glow.circle(0, 0, 55).fill({ color: 0xFFDD44, alpha: 0.25 });
-      glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
-      glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
+      if (lowDetail) {
+        glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
+        glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
+      } else {
+        glow.circle(0, 0, 80).fill({ color: 0xFFDD44, alpha: 0.15 });
+        glow.circle(0, 0, 55).fill({ color: 0xFFDD44, alpha: 0.25 });
+        glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
+        glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
+      }
       weatherSun.addChild(glow);
-      // Big extruding beams
-      for (let i = 0; i < 8; i++) {
+      // Big extruding beams (fewer in low detail)
+      const beamCount = lowDetail ? 4 : 8;
+      for (let i = 0; i < beamCount; i++) {
         const beam = new PIXI.Graphics();
-        const angle = (i / 8) * Math.PI * 2;
+        const angle = (i / beamCount) * Math.PI * 2;
         const len = 120 + Math.random() * 80;
         beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 4, color: 0xFFEE44, alpha: 0.25 });
         beam.rayAngle = angle;
@@ -1311,15 +1329,17 @@ document.addEventListener('DOMContentLoaded', function () {
         beam.isBeam = true;
         weatherSun.addChild(beam);
       }
-      // Thinner accent rays between beams
-      for (let i = 0; i < 8; i++) {
-        const ray = new PIXI.Graphics();
-        const angle = ((i + 0.5) / 8) * Math.PI * 2;
-        const len = 60 + Math.random() * 40;
-        ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
-        ray.rayAngle = angle;
-        ray.rayLen = len;
-        weatherSun.addChild(ray);
+      // Thinner accent rays between beams (skip in low detail)
+      if (!lowDetail) {
+        for (let i = 0; i < 8; i++) {
+          const ray = new PIXI.Graphics();
+          const angle = ((i + 0.5) / 8) * Math.PI * 2;
+          const len = 60 + Math.random() * 40;
+          ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
+          ray.rayAngle = angle;
+          ray.rayLen = len;
+          weatherSun.addChild(ray);
+        }
       }
       weatherSun.startTime = Date.now();
       weatherContainer.addChild(weatherSun);
@@ -1334,8 +1354,9 @@ document.addEventListener('DOMContentLoaded', function () {
       app.stage.addChild(sunLightOverlay);
 
     } else if (type === 'rain') {
-      // Rain drops
-      for (let i = 0; i < 80; i++) {
+      // Rain drops (fewer in low detail)
+      const rainCount = lowDetail ? 25 : 80;
+      for (let i = 0; i < rainCount; i++) {
         const drop = new PIXI.Graphics();
         const alpha = 0.3 + Math.random() * 0.4;
         const length = 8 + Math.random() * 14;
@@ -1348,8 +1369,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }
 
     } else if (type === 'wind') {
-      // Wind streaks and leaf-like particles
-      for (let i = 0; i < 25; i++) {
+      // Wind streaks (fewer in low detail)
+      const streakCount = lowDetail ? 10 : 25;
+      for (let i = 0; i < streakCount; i++) {
         const streak = new PIXI.Graphics();
         const len = 20 + Math.random() * 40;
         const alpha = 0.1 + Math.random() * 0.2;
@@ -1361,24 +1383,27 @@ document.addEventListener('DOMContentLoaded', function () {
         streak.isStreak = true;
         weatherContainer.addChild(streak);
       }
-      // Leaf particles
-      const leafColors = [0x66AA44, 0x88CC55, 0xAABB44, 0xCC9933, 0xDD8822];
-      for (let i = 0; i < 15; i++) {
-        const leaf = new PIXI.Graphics();
-        const color = leafColors[Math.floor(Math.random() * leafColors.length)];
-        leaf.ellipse(0, 0, 4, 2.5).fill({ color: color, alpha: 0.7 });
-        leaf.position.set(Math.random() * w, Math.random() * h);
-        leaf.vx = 5 + Math.random() * 5;
-        leaf.vy = -1 + Math.random() * 2;
-        leaf.spinSpeed = (Math.random() - 0.5) * 0.2;
-        leaf.wobble = Math.random() * Math.PI * 2;
-        leaf.isLeaf = true;
-        weatherContainer.addChild(leaf);
+      // Leaf particles (skip in low detail)
+      if (!lowDetail) {
+        const leafColors = [0x66AA44, 0x88CC55, 0xAABB44, 0xCC9933, 0xDD8822];
+        for (let i = 0; i < 15; i++) {
+          const leaf = new PIXI.Graphics();
+          const color = leafColors[Math.floor(Math.random() * leafColors.length)];
+          leaf.ellipse(0, 0, 4, 2.5).fill({ color: color, alpha: 0.7 });
+          leaf.position.set(Math.random() * w, Math.random() * h);
+          leaf.vx = 5 + Math.random() * 5;
+          leaf.vy = -1 + Math.random() * 2;
+          leaf.spinSpeed = (Math.random() - 0.5) * 0.2;
+          leaf.wobble = Math.random() * Math.PI * 2;
+          leaf.isLeaf = true;
+          weatherContainer.addChild(leaf);
+        }
       }
 
     } else if (type === 'snow') {
-      // Snowflakes
-      for (let i = 0; i < 60; i++) {
+      // Snowflakes (fewer in low detail)
+      const snowCount = lowDetail ? 20 : 60;
+      for (let i = 0; i < snowCount; i++) {
         const flake = new PIXI.Graphics();
         const size = 1.5 + Math.random() * 3;
         const alpha = 0.4 + Math.random() * 0.5;
@@ -1399,11 +1424,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
       weatherMoon = new PIXI.Container();
 
-      // Outer glow — soft, layered halo
+      // Outer glow — soft, layered halo (simplified in low detail)
       const outerGlow = new PIXI.Graphics();
-      outerGlow.circle(0, 0, 70).fill({ color: 0xCCDDFF, alpha: 0.06 });
-      outerGlow.circle(0, 0, 52).fill({ color: 0xCCDDFF, alpha: 0.08 });
-      outerGlow.circle(0, 0, 38).fill({ color: 0xDDEEFF, alpha: 0.1 });
+      if (lowDetail) {
+        outerGlow.circle(0, 0, 38).fill({ color: 0xDDEEFF, alpha: 0.1 });
+      } else {
+        outerGlow.circle(0, 0, 70).fill({ color: 0xCCDDFF, alpha: 0.06 });
+        outerGlow.circle(0, 0, 52).fill({ color: 0xCCDDFF, alpha: 0.08 });
+        outerGlow.circle(0, 0, 38).fill({ color: 0xDDEEFF, alpha: 0.1 });
+      }
       weatherMoon.addChild(outerGlow);
 
       // Moon body — gradient-like concentric fills
@@ -1434,7 +1463,9 @@ document.addEventListener('DOMContentLoaded', function () {
       nightOverlay.eventMode = 'none';
       app.stage.addChild(nightOverlay);
 
-      // Animated fire glows — placed at campfire and lantern positions
+      // Animated fire glows — placed at campfire and lantern positions (skip in low detail)
+      if (lowDetail) { /* no fire glows in low detail */ }
+      else {
       // (must match seeds 99222 and 99333 from drawEndlessGroundDecor)
       nightFireGlows = new PIXI.Container();
       nightFireGlows.zIndex = 7; // above decor (6), below critter (10)
@@ -1476,6 +1507,7 @@ document.addEventListener('DOMContentLoaded', function () {
         lnx += 1100 + _fgr() * 1200; // matches endlessGroundRandom() call in decor
       }
       app.stage.addChild(nightFireGlows);
+      } // end if !lowDetail
     }
   }
 
@@ -2948,8 +2980,8 @@ document.addEventListener('DOMContentLoaded', function () {
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
 
-        // Shared level: cpLevel — apply levels to ALL 4 characters
-        const targetLevel = cpLevel;
+        // Shared level: cpLevel * 2 — matches expected progression with +3/+15 gains
+        const targetLevel = cpLevel * 2;
         state.sharedLevel = targetLevel;
         const characters = ['frog', 'snail', 'bird', 'bee'];
         for (const ch of characters) {
@@ -4868,7 +4900,9 @@ let cantGainEXP = false;
           }
         }
 
-        updateSkinEffects(critter, Date.now());
+        if (state.detailMode === 'high') {
+          updateSkinEffects(critter, Date.now());
+        }
         updateWeatherEffects();
         updateBiomeTransition();
 

@@ -238,6 +238,9 @@ const state = {
   effectsVolume: 0.25,
   themeMusic: null,
 
+  // Detail mode ('high' or 'low')
+  detailMode: 'high',
+
   // Delta time (set each frame by main ticker; 1.0 at 60fps, 2.0 at 30fps)
   dt: 1,
 

@@ -631,14 +631,28 @@ export function renderOverworldMap() {
   const totalNodes = Math.max(20, maxUnlocked + 5);
   const cols = 4; // nodes per row
 
+  // Biome definitions — every 20 checkpoints changes biome
+  const biomes = [
+    { name: 'forest',  label: '\u{1F332} Forest',  range: [1, 20] },
+    { name: 'desert',  label: '\u{1F3DC}\uFE0F Desert',  range: [21, 40] },
+    { name: 'tundra',  label: '\u{2744}\uFE0F Tundra',  range: [41, 60] },
+    { name: 'volcano', label: '\u{1F30B} Volcano', range: [61, 80] },
+    { name: 'void',    label: '\u{1F30C} Void',    range: [81, Infinity] },
+  ];
+  function getBiome(nodeIdx) {
+    if (nodeIdx === 0) return biomes[0];
+    for (const b of biomes) {
+      if (nodeIdx >= b.range[0] && nodeIdx <= b.range[1]) return b;
+    }
+    return biomes[biomes.length - 1];
+  }
+
   // Build a winding snake-path grid: row 0 goes left-to-right, row 1 right-to-left, etc.
   // Start node is at top-left (index 0)
   const rows = Math.ceil((totalNodes + 1) / cols);
+  let lastBiomeName = null;
 
   for (let r = 0; r < rows; r++) {
-    const rowDiv = document.createElement('div');
-    rowDiv.className = 'map-row';
-
     const startIdx = r * cols;
     const endIdx = Math.min(startIdx + cols, totalNodes + 1);
     const indices = [];
@@ -646,21 +660,36 @@ export function renderOverworldMap() {
     // Reverse odd rows for snake pattern
     if (r % 2 === 1) indices.reverse();
 
+    // Check if this row starts a new biome — use the first real node index
+    const firstNodeIdx = Math.min(...indices);
+    const rowBiome = getBiome(firstNodeIdx);
+    if (rowBiome.name !== lastBiomeName) {
+      const biomeLabel = document.createElement('div');
+      biomeLabel.className = 'map-biome-label biome-' + rowBiome.name;
+      biomeLabel.textContent = rowBiome.label;
+      pathEl.appendChild(biomeLabel);
+      lastBiomeName = rowBiome.name;
+    }
+
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'map-row';
+
     for (let ci = 0; ci < indices.length; ci++) {
       const i = indices[ci];
+      const biome = getBiome(i);
       const node = document.createElement('div');
-      node.className = 'map-node';
+      node.className = 'map-node biome-' + biome.name;
 
       if (i === 0) {
         node.classList.add('start');
-        node.textContent = '⚔️';
+        node.textContent = '\u2694\uFE0F';
         node.title = 'Start';
         node.addEventListener('click', () => {
           startFromCheckpoint(0);
         });
       } else {
         const isUnlocked = state.unlockedCastles.includes(i);
-        node.textContent = isUnlocked ? '🏰' : '🔒';
+        node.textContent = isUnlocked ? '\u{1F3F0}' : '\u{1F512}';
         if (isUnlocked) {
           node.classList.add('unlocked');
           node.title = 'Castle ' + i;
@@ -685,7 +714,7 @@ export function renderOverworldMap() {
       // Add horizontal connector between nodes in the same row
       if (ci < indices.length - 1) {
         const hConn = document.createElement('div');
-        hConn.className = 'map-connector-h';
+        hConn.className = 'map-connector-h biome-' + biome.name;
         // Light up connector if both nodes it connects are unlocked/start
         const nextI = indices[ci + 1];
         const curOk = i === 0 || state.unlockedCastles.includes(i);
@@ -697,21 +726,42 @@ export function renderOverworldMap() {
 
     pathEl.appendChild(rowDiv);
 
-    // Add vertical connector between rows
+    // Add vertical connector between rows — aligned to the turning column
     if (r < rows - 1) {
       const vConnRow = document.createElement('div');
       vConnRow.className = 'map-row map-vconn-row';
-      const vConn = document.createElement('div');
-      vConn.className = 'map-connector-v';
-      // Position on the side where the snake turns
-      const turnIdx = r % 2 === 0 ? Math.min(endIdx - 1, totalNodes) : startIdx;
-      const turnOk = turnIdx === 0 || state.unlockedCastles.includes(turnIdx);
-      const nextRowStart = (r + 1) * cols;
-      const nextTurnIdx = r % 2 === 0 ? Math.min(nextRowStart + cols - 1, totalNodes) : nextRowStart;
-      const nextTurnOk = nextTurnIdx === 0 || state.unlockedCastles.includes(nextTurnIdx);
-      if (turnOk && nextTurnOk) vConn.classList.add('active');
-      vConnRow.style.justifyContent = r % 2 === 0 ? 'flex-end' : 'flex-start';
-      vConnRow.appendChild(vConn);
+
+      // The turn happens at the last column of even rows (right side) or first column of odd rows (left side)
+      // Add spacer nodes to push the vertical connector to the correct column
+      const turnCol = r % 2 === 0 ? cols - 1 : 0;
+      const biome = getBiome(r % 2 === 0 ? Math.min(endIdx - 1, totalNodes) : startIdx);
+
+      for (let c = 0; c < cols; c++) {
+        if (c === turnCol) {
+          const vConn = document.createElement('div');
+          vConn.className = 'map-connector-v biome-' + biome.name;
+          // Check if both endpoints are unlocked
+          const turnIdx = r % 2 === 0 ? Math.min(endIdx - 1, totalNodes) : startIdx;
+          const turnOk = turnIdx === 0 || state.unlockedCastles.includes(turnIdx);
+          const nextRowStart = (r + 1) * cols;
+          const nextTurnIdx = r % 2 === 0 ? Math.min(nextRowStart + cols - 1, totalNodes) : nextRowStart;
+          const nextTurnOk = nextTurnIdx === 0 || state.unlockedCastles.includes(nextTurnIdx);
+          if (turnOk && nextTurnOk) vConn.classList.add('active');
+          vConnRow.appendChild(vConn);
+        } else {
+          // Invisible spacer to keep column alignment
+          const spacer = document.createElement('div');
+          spacer.className = 'map-vconn-spacer';
+          vConnRow.appendChild(spacer);
+        }
+        // Add gap spacer for horizontal connectors between columns
+        if (c < cols - 1) {
+          const gapSpacer = document.createElement('div');
+          gapSpacer.className = 'map-connector-h-spacer';
+          vConnRow.appendChild(gapSpacer);
+        }
+      }
+
       pathEl.appendChild(vConnRow);
     }
   }

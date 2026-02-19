@@ -23,10 +23,9 @@ import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js'
 import { getRandomColor, getRandomColor3 } from './utils.js';
 import {
   stopFlashing,
-  setCurrentFrogHealth, setCurrentBeeHealth, setCurrentSnailHealth, setCurrentBirdHealth,
   setPlayerCurrentHealth, setCharEXP,
   updateEXPIndicator, updateEXPIndicatorText,
-  getCharacterName, getCharacterPortraitUrl, updateCharacterStats,
+  getCharacterPortraitUrl, updateCharacterStats,
   getCharacterDamage, updateCurrentLevels,
 } from './characters.js';
 import {
@@ -36,14 +35,13 @@ import {
 } from './ui.js';
 import {
   spawnEnemyDemi, spawnEnemy,
-  resetEnemiesState, addCoffee, playSpawnAnimation,
+  resetEnemiesState, playSpawnAnimation,
   createCoffeeDrop, collectGroundItem, drawEnemyHPBar,
   playShieldActivateSound, playShieldBreakSound,
   playBombDropSound, playExplosionSound,
   createItemDrop,
   playRageSound, playFeatherReviveSound, playGoldenBeanSound,
   playGoldenBeanFlyEffect,
-  playPotionChugSound, playPotionBottleAnimation,
 } from './combat.js';
 import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveGame, loadGame, saveBones, loadBones } from './save.js';
@@ -62,9 +60,16 @@ import {
   skyGradients,
   getWeatherType, updateWeatherIcon,
   clearWeatherEffects, createWeatherEffects, updateWeatherEffects,
-  initWeather, getWeatherRefs, resetWeatherRefs,
+  initWeather,
 } from './weather.js';
 import { initTerrain, drawEndlessGround } from './terrain.js';
+import { applyHat } from './hats.js';
+import { initPotion, wirePotionListeners, updatePotionUI } from './potion.js';
+import { initReviveDialog, createReviveDialog } from './reviveDialog.js';
+import {
+  initBiomeTransition, transitionWeather, updateBiomeTransition,
+  drawSkyGradient,
+} from './biomeTransition.js';
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -1067,12 +1072,12 @@ document.addEventListener('DOMContentLoaded', function () {
   deleteSaveBtn.addEventListener('click', function() {
     if (!deleteSaveConfirm) {
       deleteSaveConfirm = true;
-      deleteSaveBtn.textContent = '?';
+      deleteSaveBtn.textContent = 'Are you sure?';
       deleteSaveBtn.style.background = '#771122';
       deleteSaveBtn.style.borderColor = '#ff4444';
       deleteSaveTimeout = setTimeout(() => {
         deleteSaveConfirm = false;
-        deleteSaveBtn.innerHTML = '&#128465;';
+        deleteSaveBtn.innerHTML = '&#128465; Delete Save';
         deleteSaveBtn.style.background = '';
         deleteSaveBtn.style.borderColor = '';
       }, 3000);
@@ -1234,74 +1239,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Weather system moved to weather.js
 
-  // Health potion system (up to 3 doses)
-  function updatePotionUI() {
-    const btn = document.getElementById('potion-button');
-    const fill = document.getElementById('potion-fill');
-    const doseText = document.getElementById('potion-doses');
-    const shop = document.getElementById('potion-shop');
-    const doses = state.potionDoses || 0;
-    const max = state.potionMaxDoses || 3;
-    const fillPct = (doses / max) * 100;
-    fill.style.height = fillPct + '%';
-    doseText.textContent = doses > 0 ? doses + '/' + max : '';
-    if (doses > 0) {
-      btn.classList.add('filled');
-    } else {
-      btn.classList.remove('filled');
-    }
-    // Update shop button state
-    shop.classList.remove('cant-afford', 'maxed');
-    if (doses >= max) {
-      shop.classList.add('maxed');
-    } else if (getCoffee() < 20) {
-      shop.classList.add('cant-afford');
-    }
-  }
-
-  // Shop button — BUY a dose (20 coffee)
-  document.getElementById('potion-shop').addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    const doses = state.potionDoses || 0;
-    if (doses >= state.potionMaxDoses) return;
-    if (getCoffee() < 20) return;
-
-    addCoffee(-20);
-    state.potionDoses = doses + 1;
-    updatePotionUI();
-
-    // Fill animation on potion
-    const icon = document.getElementById('potion-icon');
-    icon.style.transform = 'scale(1.3)';
-    icon.style.transition = 'transform 0.2s';
-    setTimeout(() => { icon.style.transform = 'scale(1)'; }, 200);
-  });
-
-  // Potion button — USE a dose (heal 70 HP)
-  document.getElementById('potion-button').addEventListener('pointerdown', (e) => {
-    e.stopPropagation();
-    if (getisDead()) return; // Can't heal a dead character
-    const doses = state.potionDoses || 0;
-    const isHurt = getPlayerCurrentHealth() < getPlayerHealth();
-    if (doses <= 0 || !isHurt) return;
-
-    const healAmt = state.potionHealAmount || 70;
-    setPlayerCurrentHealth(Math.min(getPlayerCurrentHealth() + healAmt, getPlayerHealth()));
-    updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
-    state.potionDoses--;
-    updatePotionUI();
-
-    // Chug sound + bottle animation at character
-    playPotionChugSound();
-    playPotionBottleAnimation(critter, app);
-
-    // Button feedback
-    const gulpText = document.getElementById('potion-icon');
-    gulpText.style.transform = 'scale(1.4)';
-    gulpText.style.transition = 'transform 0.15s';
-    setTimeout(() => { gulpText.style.transform = 'scale(0.9)'; }, 150);
-    setTimeout(() => { gulpText.style.transform = 'scale(1)'; }, 300);
-  });
+  // Potion system moved to potion.js
 
 
   
@@ -1451,228 +1389,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (spdEl) spdEl.textContent = speed.toFixed(1);
   }
 
-  // Hat rendering — draws a hat graphic as a child of the critter sprite
-  let currentHatGraphic = null;
-
-  // Base hat position [x, y] in texture-space pixels from sprite center (walk frame 0 head)
-  // Pixel-analyzed from spritesheets: x = head center-of-mass X, y = head bulk-top Y
-  const _hatBasePos = {
-    frog:  [0, -36],      // head roughly centered; lowered to sit on head
-    snail: [-8, 80],      // head right of shell center; sits between eye stalks
-    bird:  [-82, -200],   // crest left of center, near frame top
-    bee:   [-6, -51],     // nearly centered
-  };
-
-  // Per-frame hat offsets [dx, dy] in texture-space pixels (added to base position)
-  // null = hide hat for that frame (e.g. snail shell-spin)
-  // All values pixel-analyzed from spritesheets using head center-of-mass & bulk-top
-  const _hatFrameDeltas = {
-    frog: {
-      // 10-frame hop: head rises 112px then drops 75px below baseline
-      walk: [
-        [0, 0],       // 0: standing baseline
-        [0, -48],     // 1: rising
-        [0, -83],     // 2: high
-        [0, -105],    // 3: near peak
-        [0, -112],    // 4: peak of hop
-        [0, -104],    // 5: descending
-        [0, -81],     // 6: mid descent
-        [0, -43],     // 7: lower
-        [0, 9],       // 8: near ground
-        [0, 75],      // 9: tumble
-      ],
-      // 12-frame attack: head steady ~22px lower than walk baseline
-      attack: [
-        [0,22],[0,22],[0,22],[0,22],[0,22],[0,22],
-        [0,22],[0,22],[0,22],[0,22],[0,22],[0,23],
-      ],
-    },
-    snail: {
-      // 20-frame slide: head drifts right then back, gentle Y bob (18px range)
-      walk: [
-        [0, 0],       // 0: baseline
-        [0, -2],      // 1
-        [4, -5],      // 2: head shifting right
-        [12, -7],     // 3
-        [20, -10],    // 4
-        [24, -6],     // 5
-        [26, -3],     // 6
-        [28, 0],      // 7
-        [30, 4],      // 8
-        [32, 8],      // 9: rightmost
-        [30, 9],      // 10
-        [26, 9],      // 11
-        [17, 7],      // 12: returning left
-        [9, 5],       // 13
-        [4, 4],       // 14
-        [1, 3],       // 15
-        [0, 2],       // 16
-        [0, 1],       // 17
-        [0, 0],       // 18
-        [0, 0],       // 19: back to baseline
-      ],
-      // 20-frame shell-spin attack: hat hidden during spin + crystal effects
-      attack: [
-        [0, 0],       // 0: normal pose
-        [0, 0],       // 1: shell glow starts
-        null, null, null, null, null, null, null, null,  // 2-9: shell spin
-        null, null, null, null, null, null, null, null,  // 10-17: spin + crystals
-        null, null,   // 18-19: crystal aftermath
-      ],
-    },
-    bird: {
-      // 13-frame walk: smooth gentle Y bob, reduced amplitude
-      walk: [
-        [0, 0],       // 0: baseline
-        [0, 1],       // 1
-        [0, 3],       // 2
-        [0, 5],       // 3: lowest step
-        [0, 3],       // 4
-        [0, 1],       // 5
-        [0, 0],       // 6
-        [0, 1],       // 7
-        [0, 2],       // 8
-        [0, 4],       // 9
-        [0, 5],       // 10: lowest
-        [0, 3],       // 11
-        [0, 1],       // 12
-      ],
-      // 13-frame peck: bird leans forward (X+33, Y+27 at peak) then returns
-      attack: [
-        [0, 4],       // 0: starting pose
-        [11, 11],     // 1: leaning forward
-        [21, 19],     // 2
-        [33, 27],     // 3: peak forward lean
-        [33, 27],     // 4: holding
-        [33, 27],     // 5: holding
-        [33, 27],     // 6: holding
-        [49, 27],     // 7: furthest reach
-        [39, 27],     // 8: pulling back
-        [33, 28],     // 9
-        [21, 19],     // 10: returning
-        [11, 11],     // 11
-        [0, 3],       // 12: back to neutral
-      ],
-    },
-    bee: {
-      // 9-frame hover: smooth gentle bob, reduced X jitter
-      walk: [
-        [0, 0],       // 0: baseline
-        [2, 3],       // 1: tilting
-        [5, 6],       // 2: most tilted
-        [3, 5],       // 3
-        [1, 3],       // 4
-        [3, 5],       // 5
-        [6, 6],       // 6: most tilted (alt)
-        [4, 4],       // 7
-        [2, 3],       // 8
-      ],
-      // 18-frame sting: dramatic lunge left then right (200px X range, 80px Y range)
-      // Deltas account for wider attack frame (390px vs 306px walk)
-      attack: [
-        [-16, -12],   // 0: winding up
-        [-52, -20],   // 1: lunging left
-        [-79, -50],   // 2
-        [-89, -62],   // 3: deep lunge
-        [-111, -74],  // 4: peak left lunge
-        [-64, -56],   // 5: pulling back
-        [-3, -39],    // 6: crossing center
-        [44, -22],    // 7: swinging right
-        [71, -39],    // 8
-        [95, -54],    // 9
-        [110, -66],   // 10: peak right lunge
-        [87, -54],    // 11: returning
-        [71, -39],    // 12
-        [51, -22],    // 13
-        [46, -22],    // 14
-        [1, -10],     // 15: settling
-        [17, -2],     // 16
-        [19, 5],      // 17: back near rest
-      ],
-    },
-  };
-
-  function applyHat(critterSprite, charType) {
-    // Remove existing hat
-    if (currentHatGraphic) {
-      if (currentHatGraphic.parent) currentHatGraphic.parent.removeChild(currentHatGraphic);
-      currentHatGraphic.destroy();
-      currentHatGraphic = null;
-    }
-    // Clear previous frame-change handler
-    if (critterSprite) critterSprite.onFrameChange = null;
-
-    const charName = charType ? charType.replace('character-', '') : '';
-    const hatId = state.equippedHats[charName];
-    if (!hatId || !critterSprite) return;
-    const pos = _hatBasePos[charName] || _hatBasePos.frog;
-    const baseXOff = pos[0];
-    const baseYOff = pos[1];
-
-    if (hatId === 'tophat') {
-      const hat = new PIXI.Graphics();
-      // Bigger tophat: wide brim + tall crown + red band
-      hat.roundRect(-30, -5, 60, 10, 4).fill({ color: 0x1a1a2e });
-      hat.roundRect(-20, -48, 40, 45, 5).fill({ color: 0x1a1a2e });
-      hat.rect(-20, -13, 40, 7).fill({ color: 0x8b0000 });
-      hat.position.set(baseXOff, baseYOff);
-      hat.zIndex = 100;
-      critterSprite.addChild(hat);
-      currentHatGraphic = hat;
-    } else if (hatId === 'partyhat') {
-      const hat = new PIXI.Graphics();
-      const blue = 0x0070DD;
-      // Bigger OSRS-style: thick blocky base band + taller crown points
-      hat.roundRect(-42, -3, 84, 16, 3).fill({ color: blue });
-      // Crown points rising from top of band
-      hat.moveTo(-42, -3);
-      hat.lineTo(-32, -22);
-      hat.lineTo(-21, -3);
-      hat.lineTo(-11, -22);
-      hat.lineTo(0, -3);
-      hat.lineTo(11, -22);
-      hat.lineTo(21, -3);
-      hat.lineTo(32, -22);
-      hat.lineTo(42, -3);
-      hat.closePath();
-      hat.fill({ color: blue });
-      hat.stroke({ width: 1.5, color: 0x005bb5, alpha: 0.5 });
-      hat.scale.set(1.3);
-      hat.position.set(baseXOff, baseYOff);
-      hat.zIndex = 100;
-      critterSprite.addChild(hat);
-      currentHatGraphic = hat;
-    }
-
-    // Wire up per-frame hat tracking so it follows the head through all animations
-    const deltas = _hatFrameDeltas[charName];
-    if (deltas && currentHatGraphic) {
-      const hat = currentHatGraphic;
-      const walkDeltas = deltas.walk;
-      const attackDeltas = deltas.attack;
-
-      // Helper: apply a single frame's offset
-      function applyFrame(frameIndex) {
-        if (!hat || hat.destroyed) return;
-        const deltaArr = state.isAttackingChar ? attackDeltas : walkDeltas;
-        const entry = deltaArr[frameIndex % deltaArr.length];
-        if (entry === null) {
-          // null = hide hat (e.g. snail shell spin — no head visible)
-          hat.visible = false;
-        } else {
-          hat.visible = true;
-          const dx = entry ? entry[0] : 0;
-          const dy = entry ? entry[1] : 0;
-          hat.position.set(baseXOff + dx, baseYOff + dy);
-        }
-      }
-
-      // Apply for current frame immediately
-      applyFrame(critterSprite.currentFrame);
-
-      critterSprite.onFrameChange = applyFrame;
-    }
-  }
+  // Hat system moved to hats.js
 
   function handleCharacterClick(characterType) {
     // --- Guard: prevent rapid double-clicks ---
@@ -2201,242 +1918,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-  function createReviveDialog(characterType) {
-    if (state.reviveDialogContainer && app.stage.children.includes(state.reviveDialogContainer)) {
-      return;
-    }
-
-    state.reviveDialogContainer = new PIXI.Container();
-    state.reviveDialogContainer.zIndex = 999999;
-
-    const dialogW = Math.min(app.screen.width * 0.55, 320);
-    const dialogH = Math.min(app.screen.height * 0.35, 200);
-    const cornerRadius = 16;
-    const canAfford = getCoffee() >= 50;
-    const characterName = getCharacterName(characterType);
-
-    // --- Background panel with rounded corners ---
-    const panel = new PIXI.Graphics();
-    panel.roundRect(0, 0, dialogW, dialogH, cornerRadius);
-    panel.fill({ color: 0x0a0f19, alpha: 0.92 });
-    panel.roundRect(0, 0, dialogW, dialogH, cornerRadius);
-    panel.stroke({ width: 2, color: 0x64a0c8, alpha: 0.6 });
-    state.reviveDialogContainer.addChild(panel);
-
-    // --- Title text ---
-    const titleStyle = new PIXI.TextStyle({
-      fontFamily: 'Luckiest Guy',
-      fontSize: Math.max(16, Math.min(24, dialogW * 0.07)),
-      fill: '#e0e8f0',
-      stroke: '#000000',
-      strokeThickness: 3,
-      dropShadow: true,
-      dropShadowColor: '#000000',
-      dropShadowBlur: 4,
-      dropShadowDistance: 1,
-    });
-    const title = new PIXI.Text(`Revive ${characterName}?`, titleStyle);
-    title.anchor.set(0.5, 0);
-    title.position.set(dialogW / 2, 14);
-    state.reviveDialogContainer.addChild(title);
-
-    // --- Cost line: bean icon + "50" ---
-    const costStyle = new PIXI.TextStyle({
-      fontFamily: 'Patrick Hand',
-      fontSize: Math.max(14, Math.min(20, dialogW * 0.055)),
-      fill: canAfford ? '#aaddaa' : '#ff8888',
-      stroke: '#000000',
-      strokeThickness: 2,
-    });
-    const costText = new PIXI.Text(`Cost: 50`, costStyle);
-    costText.anchor.set(0.5, 0);
-    costText.position.set(dialogW / 2 + 12, title.position.y + title.height + 6);
-    state.reviveDialogContainer.addChild(costText);
-
-    const beanSprite = new PIXI.Sprite(PIXI.Assets.get('bean'));
-    beanSprite.anchor.set(0.5);
-    beanSprite.scale.set(0.5);
-    beanSprite.position.set(costText.position.x - costText.width / 2 - 14, costText.position.y + costText.height / 2);
-    state.reviveDialogContainer.addChild(beanSprite);
-
-    if (!canAfford) {
-      const warnStyle = new PIXI.TextStyle({
-        fontFamily: 'Patrick Hand',
-        fontSize: Math.max(11, Math.min(15, dialogW * 0.04)),
-        fill: '#ff6666',
-        stroke: '#000000',
-        strokeThickness: 2,
-      });
-      const warnText = new PIXI.Text(`(Not enough coffee!)`, warnStyle);
-      warnText.anchor.set(0.5, 0);
-      warnText.position.set(dialogW / 2, costText.position.y + costText.height + 2);
-      state.reviveDialogContainer.addChild(warnText);
-    }
-
-    // --- Buttons ---
-    const btnW = dialogW * 0.35;
-    const btnH = 40;
-    const btnY = dialogH - btnH - 16;
-    const btnGap = 16;
-
-    // Yes button
-    const yesBg = new PIXI.Graphics();
-    yesBg.roundRect(0, 0, btnW, btnH, 8);
-    yesBg.fill({ color: canAfford ? 0x1a6630 : 0x333333, alpha: 0.85 });
-    yesBg.roundRect(0, 0, btnW, btnH, 8);
-    yesBg.stroke({ width: 2, color: canAfford ? 0x44cc66 : 0x666666, alpha: 0.7 });
-    yesBg.position.set(dialogW / 2 - btnW - btnGap / 2, btnY);
-    state.reviveDialogContainer.addChild(yesBg);
-
-    const yesBtnStyle = new PIXI.TextStyle({
-      fontFamily: 'Luckiest Guy',
-      fontSize: Math.max(14, Math.min(18, dialogW * 0.05)),
-      fill: canAfford ? '#88ff88' : '#888888',
-      stroke: '#000000',
-      strokeThickness: 2,
-    });
-    const yesLabel = new PIXI.Text('Revive', yesBtnStyle);
-    yesLabel.anchor.set(0.5);
-    yesLabel.position.set(yesBg.position.x + btnW / 2, btnY + btnH / 2);
-    state.reviveDialogContainer.addChild(yesLabel);
-
-    // No button
-    const noBg = new PIXI.Graphics();
-    noBg.roundRect(0, 0, btnW, btnH, 8);
-    noBg.fill({ color: 0x661a1a, alpha: 0.85 });
-    noBg.roundRect(0, 0, btnW, btnH, 8);
-    noBg.stroke({ width: 2, color: 0xcc4444, alpha: 0.7 });
-    noBg.position.set(dialogW / 2 + btnGap / 2, btnY);
-    state.reviveDialogContainer.addChild(noBg);
-
-    const noBtnStyle = new PIXI.TextStyle({
-      fontFamily: 'Luckiest Guy',
-      fontSize: Math.max(14, Math.min(18, dialogW * 0.05)),
-      fill: '#ff8888',
-      stroke: '#000000',
-      strokeThickness: 2,
-    });
-    const noLabel = new PIXI.Text('Cancel', noBtnStyle);
-    noLabel.anchor.set(0.5);
-    noLabel.position.set(noBg.position.x + btnW / 2, btnY + btnH / 2);
-    state.reviveDialogContainer.addChild(noLabel);
-
-    // Position dialog centered on screen (in stage coords)
-    const dialogX = -app.stage.x + (app.screen.width - dialogW) / 2;
-    const dialogY = -app.stage.y + (app.screen.height - dialogH) / 2;
-    state.reviveDialogContainer.position.set(dialogX, dialogY);
-
-    app.stage.addChild(state.reviveDialogContainer);
-    setisPaused(true);
-
-    // --- Button interactivity ---
-    yesBg.eventMode = 'static';
-    yesBg.cursor = 'pointer';
-    yesLabel.eventMode = 'static';
-    yesLabel.cursor = 'pointer';
-    noBg.eventMode = 'static';
-    noBg.cursor = 'pointer';
-    noLabel.eventMode = 'static';
-    noLabel.cursor = 'pointer';
-
-    let reviveProcessing = false; // prevent double-click
-
-    const doRevive = () => {
-      if (reviveProcessing) return;
-      if (getCoffee() >= 50) {
-        reviveProcessing = true;
-        // Restore health
-        if (characterType === 'character-snail') {
-          setCurrentSnailHealth(getSnailHealth());
-        } else if (characterType === 'character-bird') {
-          setCurrentBirdHealth(getBirdHealth());
-        } else if (characterType === 'character-frog') {
-          setCurrentFrogHealth(getFrogHealth());
-        } else if (characterType === 'character-bee') {
-          setCurrentBeeHealth(getBeeHealth());
-        }
-        addCoffee(-50);
-        app.stage.removeChild(state.reviveDialogContainer);
-        state.reviveDialogContainer = null;
-        const revivingSelf = characterType === state.selectedCharacter;
-
-        // --- Ghost cleanup (shared by both paths) ---
-        setIsDead(false);
-        if (state.ghostFlyInterval) {
-          clearInterval(state.ghostFlyInterval);
-          state.ghostFlyInterval = null;
-        }
-        if (state.frogGhostPlayer && state.app.stage.children.includes(state.frogGhostPlayer)) {
-          state.app.stage.removeChild(state.frogGhostPlayer);
-        }
-        // Reset enemies so they re-engage cleanly (keep them on the field)
-        for (const enemy of state.enemies) {
-          enemy.play();
-          enemy.enemyAdded = false;
-          enemy.isAttacking = false;
-          enemy.onFrameChange = null;
-        }
-
-        // Reset combat flags
-        state.roundOver = false;
-        state.isCombat = false;
-        setEnemiesInRange(0);
-        state.isAttackingChar = false;
-        state.isCharAttacking = false;
-        state.hasAttackedThisFrame = false;
-        state.isPointerDown = false;
-        state.isPaused = false;
-
-        // Hide enemy portrait
-        const enemyPortrait = document.getElementById('enemy-portrait');
-        if (enemyPortrait) enemyPortrait.style.display = 'none';
-        // Unify both self-revive and cross-revive through handleCharacterClick.
-        // For self-revive, clear selectedCharacter so handleCharacterClick runs
-        // the full swap path (prevSelected !== characterType).
-        if (revivingSelf) {
-          state.selectedCharacter = '';
-        }
-        handleCharacterClick(characterType);
-        // Reset spawner AFTER setisPaused — setisPaused adjusts timeOfLastSpawn
-        // by adding pause duration, which can push it into the future and stall spawns
-        if (state.enemySpawnTimeout) {
-          clearTimeout(state.enemySpawnTimeout);
-          state.enemySpawnTimeout = null;
-        }
-        state.isSpawning = false;
-        state.timeOfLastSpawn = Date.now();
-        spawnEnemies();
-      } else {
-        // Can't afford — shake dialog
-        state.hitSound.volume = state.effectsVolume;
-        state.hitSound.play();
-        if (!state.reviveDialogContainer) return;
-        const origX = state.reviveDialogContainer.position.x;
-        let shakeCount = 0;
-        const shakeInterval = setInterval(() => {
-          if (!state.reviveDialogContainer) { clearInterval(shakeInterval); return; }
-          state.reviveDialogContainer.position.x = origX + (shakeCount % 2 === 0 ? 8 : -8);
-          shakeCount++;
-          if (shakeCount >= 6) {
-            clearInterval(shakeInterval);
-            if (state.reviveDialogContainer) state.reviveDialogContainer.position.x = origX;
-          }
-        }, 50);
-      }
-    };
-
-    const doCancel = () => {
-      if (!state.reviveDialogContainer) return;
-      app.stage.removeChild(state.reviveDialogContainer);
-      state.reviveDialogContainer = null;
-      openCharacterMenu();
-    };
-
-    yesBg.on('pointerdown', (e) => { e.stopPropagation(); doRevive(); });
-    yesLabel.on('pointerdown', (e) => { e.stopPropagation(); doRevive(); });
-    noBg.on('pointerdown', (e) => { e.stopPropagation(); doCancel(); });
-    noLabel.on('pointerdown', (e) => { e.stopPropagation(); doCancel(); });
-  }
+  // Revive dialog moved to reviveDialog.js
 
 
 
@@ -2977,238 +2459,7 @@ endlessGroundCurrentWeather = initialWeather;
 foreground.visible = false;
 
 
-function lerpColor(a, b, t) {
-  const ar = (a >> 16) & 0xff, ag = (a >> 8) & 0xff, ab = a & 0xff;
-  const br = (b >> 16) & 0xff, bg = (b >> 8) & 0xff, bb = b & 0xff;
-  const r = Math.round(ar + (br - ar) * t);
-  const g = Math.round(ag + (bg - ag) * t);
-  const bl = Math.round(ab + (bb - ab) * t);
-  return (r << 16) | (g << 8) | bl;
-}
-
-function drawSkyGradient(gfx, topColor, bottomColor, width, height) {
-  gfx.clear();
-  const BANDS = 32;
-  const bandHeight = Math.ceil(height / BANDS);
-  for (let i = 0; i < BANDS; i++) {
-    const t = i / (BANDS - 1);
-    const color = lerpColor(topColor, bottomColor, t);
-    gfx.rect(0, i * bandHeight, width, bandHeight + 1).fill({ color });
-  }
-}
-
-function transitionWeather(newWeather) {
-  const app = state.app;
-  if (!app) return;
-
-  // Force-complete any existing transition
-  if (state.biomeTransition) {
-    const t = state.biomeTransition;
-    if (t.oldWeather && t.oldWeather.parent) { app.stage.removeChild(t.oldWeather); t.oldWeather.destroy({ children: true }); }
-    if (t.oldGround && t.oldGround.parent) { app.stage.removeChild(t.oldGround); t.oldGround.destroy({ children: true }); }
-    if (t.oldGroundDecor && t.oldGroundDecor.parent) { app.stage.removeChild(t.oldGroundDecor); t.oldGroundDecor.destroy({ children: true }); }
-    if (t.oldGroundDecorFG && t.oldGroundDecorFG.parent) { app.stage.removeChild(t.oldGroundDecorFG); t.oldGroundDecorFG.destroy({ children: true }); }
-    for (const o of (t.oldOverlays || [])) { if (o && o.parent) { app.stage.removeChild(o); o.destroy({ children: true }); } }
-    if (t.newWeather) t.newWeather.alpha = 1;
-    if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha;
-    if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha;
-    if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha;
-    currentSkyTop = t.newSkyTop;
-    currentSkyBottom = t.newSkyBottom;
-    drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);
-    persistentStars.alpha = t.newStarsAlpha;
-    mountain1.tint = t.newMtnTint; mountain2.tint = t.newMtnTint;
-    mountain3.tint = t.newMtnTint; mountain4.tint = t.newMtnTint;
-    if (t.newCloudTint !== undefined) { clouds.tint = t.newCloudTint; clouds2.tint = t.newCloudTint; }
-    state.biomeTransition = null;
-  }
-
-  // Save old elements
-  const _oldRefs = getWeatherRefs();
-  const oldWeather = _oldRefs.weatherContainer;
-  const oldGround = endlessGround;
-  const oldGroundDecor = endlessGroundDecor;
-  const oldGroundDecorFG = endlessGroundDecorFG;
-  const oldOverlays = [_oldRefs.sunLightOverlay, _oldRefs.nightOverlay, _oldRefs.nightFireGlows];
-  const oldSkyTop = currentSkyTop;
-  const oldSkyBottom = currentSkyBottom;
-  const oldStarsAlpha = persistentStars.alpha;
-  const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
-  const oldCloudTint = clouds.tint ?? 0xFFFFFF;
-
-  // Create new ground on top — no masks, just alpha crossfade
-  const newGround = new PIXI.Graphics();
-  newGround.position.set(0, app.screen.height - endlessGroundHeight);
-  newGround.zIndex = 5;
-  newGround.alpha = 0;
-  app.stage.addChild(newGround);
-
-  const newGroundDecor = new PIXI.Container();
-  newGroundDecor.position.set(0, app.screen.height - endlessGroundHeight);
-  newGroundDecor.zIndex = 6;
-  newGroundDecor.alpha = 0;
-  app.stage.addChild(newGroundDecor);
-
-  const newGroundDecorFG = new PIXI.Container();
-  newGroundDecorFG.position.set(0, app.screen.height - endlessGroundHeight);
-  newGroundDecorFG.zIndex = 8;
-  newGroundDecorFG.alpha = 0;
-  app.stage.addChild(newGroundDecorFG);
-
-  // Draw new biome ground
-  endlessGround = newGround;
-  endlessGroundDecor = newGroundDecor;
-  endlessGroundDecorFG = newGroundDecorFG;
-  initTerrain(endlessGround, endlessGroundDecor, endlessGroundDecorFG, endlessGroundHeight, foreground.width);
-  drawEndlessGround(newWeather);
-  endlessGroundCurrentWeather = newWeather;
-
-  // Capture old sun/moon BEFORE creating new effects (createWeatherEffects resets them)
-  const _preRefs = getWeatherRefs();
-  const oldWasSun = !!_preRefs.weatherSun;
-  const oldSun = _preRefs.weatherSun;
-  const oldWasMoon = !!_preRefs.weatherMoon;
-  const oldMoon = _preRefs.weatherMoon;
-
-  // Detach old overlays so createWeatherEffects makes fresh ones
-  resetWeatherRefs();
-
-  // Create new weather at alpha 0
-  createWeatherEffects();
-  const _newRefs = getWeatherRefs();
-  if (_newRefs.weatherContainer) _newRefs.weatherContainer.alpha = 0;
-  if (_newRefs.sunLightOverlay) _newRefs.sunLightOverlay.alpha = 0;
-  if (_newRefs.nightOverlay) _newRefs.nightOverlay.alpha = 0;
-  if (_newRefs.nightFireGlows) _newRefs.nightFireGlows.alpha = 0;
-
-  const targetNightAlpha = _newRefs.nightOverlay ? 0.35 : 0;
-  const targetSunLightAlpha = _newRefs.sunLightOverlay ? 0.12 : 0;
-  const targetFireGlowsAlpha = _newRefs.nightFireGlows ? 1 : 0;
-  const newGrad = skyGradients[newWeather] || skyGradients.sun;
-
-  updateWeatherIcon();
-
-  state.biomeTransition = {
-    oldWeather, oldGround, oldGroundDecor, oldGroundDecorFG, oldOverlays,
-    oldWasSun, oldSun, oldWasMoon, oldMoon,
-    progress: 0,
-    newWeather: _newRefs.weatherContainer,
-    newSunLight: _newRefs.sunLightOverlay,
-    newNightOverlay: _newRefs.nightOverlay,
-    newFireGlows: _newRefs.nightFireGlows,
-    newGround, newGroundDecor, newGroundDecorFG,
-    targetNightAlpha, targetSunLightAlpha,
-    targetFireGlowsAlpha,
-    oldSkyTop, oldSkyBottom, oldStarsAlpha,
-    newSkyTop: newGrad.top, newSkyBottom: newGrad.bottom, newStarsAlpha: newGrad.starsAlpha,
-    oldMtnTint, newMtnTint: newGrad.mountain,
-    oldCloudTint, newCloudTint: newGrad.cloud,
-  };
-}
-
-function updateBiomeTransition() {
-  const t = state.biomeTransition;
-  if (!t) return;
-
-  // Simple time-based crossfade (~3s at 60fps)
-  t.progress += 0.002;
-  const p = Math.min(1, t.progress);
-
-  // Lerp sky gradient + mountain tints
-  currentSkyTop = lerpColor(t.oldSkyTop, t.newSkyTop, p);
-  currentSkyBottom = lerpColor(t.oldSkyBottom, t.newSkyBottom, p);
-  drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);
-  persistentStars.alpha = t.oldStarsAlpha + (t.newStarsAlpha - t.oldStarsAlpha) * p;
-  const mtnTint = lerpColor(t.oldMtnTint, t.newMtnTint, p);
-  mountain1.tint = mtnTint;
-  mountain2.tint = mtnTint;
-  mountain3.tint = mtnTint;
-  mountain4.tint = mtnTint;
-  const cloudTint = lerpColor(t.oldCloudTint, t.newCloudTint, p);
-  clouds.tint = cloudTint;
-  clouds2.tint = cloudTint;
-
-  // Ground fill crossfades smoothly
-  if (t.newGround) t.newGround.alpha = Math.min(1, p / 0.6);
-  if (t.oldGround) t.oldGround.alpha = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.3);
-  // Trees swap style instantly at midpoint — same positions, different look
-  if (p < 0.5) {
-    if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1;
-    if (t.newGroundDecor) t.newGroundDecor.alpha = 0;
-    if (t.oldGroundDecorFG) t.oldGroundDecorFG.alpha = 1;
-    if (t.newGroundDecorFG) t.newGroundDecorFG.alpha = 0;
-  } else {
-    if (t.oldGroundDecor) t.oldGroundDecor.alpha = 0;
-    if (t.newGroundDecor) t.newGroundDecor.alpha = 1;
-    if (t.oldGroundDecorFG) t.oldGroundDecorFG.alpha = 0;
-    if (t.newGroundDecorFG) t.newGroundDecorFG.alpha = 1;
-  }
-
-  // Transition old weather out
-  if (t.oldWeather) {
-    // Keep old weather container tracking the camera
-    t.oldWeather.position.set(-app.stage.x, -app.stage.y);
-
-    if (t.oldWasSun && t.oldSun) {
-      // Sun: sink behind the ground naturally (foreground occludes it at zIndex 5)
-      const w = app.screen.width;
-      const h = app.screen.height;
-      // Continue the sun's arc — advance elapsed time so it keeps moving
-      if (t.sunSinkStart === undefined) {
-        t.sunSinkStart = Date.now();
-        t.sunBaseElapsed = Date.now() - t.oldSun.startTime - (t.oldSun.totalPaused || 0);
-      }
-      const sinkElapsed = t.sunBaseElapsed + (Date.now() - t.sunSinkStart) * 1.5; // 1.5x speed for snappy sink
-      const progress = sinkElapsed / 60000;
-      const parallaxX = app.stage.x * 0.04;
-      const parallaxY = app.stage.y * 0.02;
-      const arcX = w * 0.1 + Math.min(progress, 1.3) * w * 0.8 + parallaxX;
-      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
-      t.oldSun.position.set(arcX, arcY);
-      t.oldSun.rotation = sinkElapsed * 0.0003;
-      // Sun sinks behind foreground naturally via z-ordering
-      t.oldWeather.alpha = 1;
-    } else if (t.oldWasMoon && t.oldMoon) {
-      // Moon: sink behind the ground the same way
-      const w = app.screen.width;
-      const h = app.screen.height;
-      if (t.moonSinkStart === undefined) {
-        t.moonSinkStart = Date.now();
-        t.moonBaseElapsed = Date.now() - t.oldMoon.startTime - (t.oldMoon.totalPaused || 0);
-      }
-      const sinkElapsed = t.moonBaseElapsed + (Date.now() - t.moonSinkStart) * 1.5;
-      const progress = sinkElapsed / 60000;
-      const parallaxX = app.stage.x * 0.04;
-      const parallaxY = app.stage.y * 0.02;
-      const arcX = w * 0.9 - Math.min(progress, 1.3) * w * 0.8 + parallaxX;
-      const arcY = h * 0.7 - Math.sin(progress * Math.PI) * h * 0.55 + parallaxY;
-      t.oldMoon.position.set(arcX, arcY);
-      // Moon sinks behind foreground naturally via z-ordering
-      t.oldWeather.alpha = 1;
-    } else {
-      t.oldWeather.alpha = 1 - p;
-    }
-  }
-  for (const o of (t.oldOverlays || [])) {
-    if (o && o.parent) o.alpha *= (1 - p * 0.05);
-  }
-
-  // Crossfade new weather/overlays in
-  if (t.newWeather) t.newWeather.alpha = p;
-  if (t.newSunLight) t.newSunLight.alpha = t.targetSunLightAlpha * p;
-  if (t.newNightOverlay) t.newNightOverlay.alpha = t.targetNightAlpha * p;
-  if (t.newFireGlows) t.newFireGlows.alpha = t.targetFireGlowsAlpha * p;
-
-  if (p >= 1) {
-    // Destroy old elements
-    if (t.oldWeather && t.oldWeather.parent) { state.app.stage.removeChild(t.oldWeather); t.oldWeather.destroy({ children: true }); }
-    if (t.oldGround && t.oldGround.parent) { state.app.stage.removeChild(t.oldGround); t.oldGround.destroy({ children: true }); }
-    if (t.oldGroundDecor && t.oldGroundDecor.parent) { state.app.stage.removeChild(t.oldGroundDecor); t.oldGroundDecor.destroy({ children: true }); }
-    if (t.oldGroundDecorFG && t.oldGroundDecorFG.parent) { state.app.stage.removeChild(t.oldGroundDecorFG); t.oldGroundDecorFG.destroy({ children: true }); }
-    for (const o of (t.oldOverlays || [])) { if (o && o.parent) { state.app.stage.removeChild(o); o.destroy({ children: true }); } }
-    state.biomeTransition = null;
-  }
-}
+// Biome transition moved to biomeTransition.js
 
 const frogGhostTextures = textures.frog_ghost;
 state.frogGhostPlayer = new PIXI.Sprite(frogGhostTextures);
@@ -3335,6 +2586,29 @@ state.frogGhostPlayer.scale.set(0.28);
       // Apply initial cloud tint from weather
       clouds.tint = _initGrad.cloud;
       clouds2.tint = _initGrad.cloud;
+
+      // Wire biome transition module with getter/setter closures for reassignable variables
+      initBiomeTransition({
+        getEndlessGround: () => endlessGround,
+        setEndlessGround: (v) => { endlessGround = v; },
+        getEndlessGroundDecor: () => endlessGroundDecor,
+        setEndlessGroundDecor: (v) => { endlessGroundDecor = v; },
+        getEndlessGroundDecorFG: () => endlessGroundDecorFG,
+        setEndlessGroundDecorFG: (v) => { endlessGroundDecorFG = v; },
+        getEndlessGroundCurrentWeather: () => endlessGroundCurrentWeather,
+        setEndlessGroundCurrentWeather: (v) => { endlessGroundCurrentWeather = v; },
+        getCurrentSkyTop: () => currentSkyTop,
+        setCurrentSkyTop: (v) => { currentSkyTop = v; },
+        getCurrentSkyBottom: () => currentSkyBottom,
+        setCurrentSkyBottom: (v) => { currentSkyBottom = v; },
+        background,
+        persistentStars,
+        mountains: [mountain1, mountain2, mountain3, mountain4],
+        clouds: [clouds, clouds2],
+        foreground,
+        endlessGroundHeight,
+      });
+
       const enemyDeathTextures = createAnimationTextures('enemy_death', 8, 317);
       state.enemyDeath = createAnimatedSprite(enemyDeathTextures);
       const castleDeathTextures = createAnimationTextures('enemy_death', 8, 317);
@@ -3353,6 +2627,11 @@ state.frogGhostPlayer.scale.set(0.28);
       critter.textures = state.frogWalkTextures;
       critter.loop = true;
       critter.play();
+
+      // Wire potion system (needs critter + app refs)
+      initPotion(critter, app);
+      wirePotionListeners();
+
       // Define the desired color in hexadecimal format
       const desiredColor = 0x00ff00; // Green color
 
@@ -4917,6 +4196,9 @@ state.demiSpawned = 0;
       spawnEnemies();
     }, currentInterval);
   }
+
+  // Wire revive dialog (needs setisPaused, handleCharacterClick, spawnEnemies)
+  initReviveDialog({ setisPaused, handleCharacterClick, spawnEnemies });
 
   // Siege ended event — resume walk animation + spawning
   document.addEventListener('siegeEnded', function() {

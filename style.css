@@ -121,14 +121,24 @@ body {
   box-shadow: 0 0 10px rgba(60, 140, 200, 0.2), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
-#delete-save-btn {
-  border-color: rgba(170, 85, 102, 0.5);
+.settings-delete-btn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 0;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 1em;
   color: #ff8888;
+  background: rgba(60, 15, 25, 0.6);
+  border: 2px solid rgba(170, 85, 102, 0.5);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
 }
-#delete-save-btn:hover {
+.settings-delete-btn:hover {
   border-color: rgba(255, 80, 80, 0.7);
-  background: rgba(60, 15, 25, 0.9);
-  box-shadow: 0 0 10px rgba(200, 60, 60, 0.2), 0 2px 6px rgba(0, 0, 0, 0.4);
+  background: rgba(80, 15, 25, 0.9);
+  box-shadow: 0 0 10px rgba(200, 60, 60, 0.2);
 }
 
 /* ── Panel backdrop (click-outside-to-close) ─────────── */
@@ -179,6 +189,31 @@ body {
   justify-content: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+.us-flag {
+  display: inline-block;
+  width: 16px;
+  height: 10px;
+  border-radius: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    #B22234 0px, #B22234 1.4px,
+    #fff 1.4px, #fff 2.8px
+  );
+  position: relative;
+  overflow: hidden;
+  vertical-align: middle;
+  margin-left: 2px;
+}
+.us-flag::before {
+  content: '';
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 7px;
+  height: 5.5px;
+  background: #3C3B6E;
 }
 .ua-flag {
   display: inline-block;

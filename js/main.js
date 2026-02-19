@@ -2316,7 +2316,8 @@ document.addEventListener('DOMContentLoaded', function () {
         for (let i = enemies.length - 1; i >= 0; i--) {
           const enemy = enemies[i];
           if (!enemy.isAlive) continue;
-          const damage = Math.round(enemy.maxHP * 0.75);
+          // Bombs instantly kill baby/small siege mobs
+          const damage = enemy.isBaby ? enemy.currentHP : Math.round(enemy.maxHP * 0.75);
           enemy.currentHP -= damage;
           enemy.tint = 0xffffff;
           setTimeout(() => { if (enemy && enemy.isAlive) enemy.tint = 0xffffff; }, 150);
@@ -2334,9 +2335,13 @@ document.addEventListener('DOMContentLoaded', function () {
             enemy.tint = 0xFF0000;
             createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
             if (state.gameMode === 'endless') {
+              if (!enemy.isSiegeMob) state.endlessKillCount++;
               const roll = Math.random();
               if (roll < 0.025) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
               else if (roll < 0.05) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+            }
+            if (enemy.isSiegeMob && state.siegeActive) {
+              document.dispatchEvent(new Event('siegeMobKilled'));
             }
             app.stage.removeChild(enemy);
             const idx = enemies.indexOf(enemy);

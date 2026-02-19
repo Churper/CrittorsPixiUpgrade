@@ -14,6 +14,7 @@ import {
 import {
   handleEnemySorting, handleEnemyActions,
   createCoffeeDrop, playExplosionSound,
+  createSpawnEnemy,
 } from './combat.js';
 import { getCharacterDamage, setPlayerCurrentHealth, setCharEXP } from './characters.js';
 import { updatePlayerHealthBar } from './ui.js';
@@ -136,8 +137,12 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   const waves = Math.min(1 + Math.floor(level / 3), 4);
   const mobsPerWave = Math.ceil(totalMobs / waves);
 
-  state.siegeMobsTotal = totalMobs;
-  state.siegeMobsRemaining = totalMobs;
+  // Add 1-2 normal mobs to the siege
+  const normalMobCount = Math.min(1 + Math.floor(level / 3), 2);
+  const totalWithNormals = totalMobs + normalMobCount;
+
+  state.siegeMobsTotal = totalWithNormals;
+  state.siegeMobsRemaining = totalWithNormals;
 
   let spawned = 0;
 
@@ -151,6 +156,19 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
         if (!state.siegeActive) return;
         spawnBabyEnemy(critter, app, impWalkTextures, impAttackTextures, spawned);
         spawned++;
+      }, delay);
+    }
+  }
+
+  // Spawn normal-sized enemies mixed into the siege
+  const enemyTypes = state.enemyTypes || [];
+  if (enemyTypes.length > 0) {
+    for (let n = 0; n < normalMobCount; n++) {
+      const delay = 1000 + n * 2500; // stagger between waves
+      setTimeout(() => {
+        if (!state.siegeActive) return;
+        const picked = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+        spawnSiegeNormalEnemy(critter, app, picked);
       }, delay);
     }
   }
@@ -204,6 +222,24 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex) 
     if (getisPaused()) return;
     if (app.stage.children.includes(enemy)) {
       handleEnemyActions(critter, attackTextures, walkTextures, enemy, 'imp');
+    }
+  });
+}
+
+function spawnSiegeNormalEnemy(critter, app, enemyType) {
+  const enemy = createSpawnEnemy(enemyType.walkTextures, enemyType.name, critter);
+  enemy.isSiegeMob = true;
+
+  addEnemies(enemy);
+  if (enemy.isAlive) {
+    app.stage.addChild(enemy);
+  }
+  handleEnemySorting(enemy);
+
+  app.ticker.add(() => {
+    if (getisPaused()) return;
+    if (app.stage.children.includes(enemy)) {
+      handleEnemyActions(critter, enemyType.attackTextures, enemyType.walkTextures, enemy, enemyType.name);
     }
   });
 }
@@ -570,41 +606,91 @@ export function renderOverworldMap() {
     ? Math.max(...state.unlockedCastles)
     : 0;
   const totalNodes = Math.max(10, maxUnlocked + 3);
+  const cols = 4; // nodes per row
 
-  // Build nodes bottom-up: start node + castle nodes
-  for (let i = 0; i <= totalNodes; i++) {
-    // Connector line between nodes (except before first)
-    if (i > 0) {
-      const connector = document.createElement('div');
-      connector.className = 'map-connector';
-      pathEl.appendChild(connector);
-    }
+  // Build a winding snake-path grid: row 0 goes left-to-right, row 1 right-to-left, etc.
+  // Start node is at top-left (index 0)
+  const rows = Math.ceil((totalNodes + 1) / cols);
 
-    const node = document.createElement('div');
-    node.className = 'map-node';
+  for (let r = 0; r < rows; r++) {
+    const rowDiv = document.createElement('div');
+    rowDiv.className = 'map-row';
 
-    if (i === 0) {
-      // Start node
-      node.classList.add('start');
-      node.textContent = 'Start';
-      node.addEventListener('click', () => {
-        startFromCheckpoint(0);
-      });
-    } else {
-      const isUnlocked = state.unlockedCastles.includes(i);
-      node.textContent = isUnlocked ? '🏰 ' + i : '🔒';
-      if (isUnlocked) {
-        node.classList.add('unlocked');
-        const level = i;
+    const startIdx = r * cols;
+    const endIdx = Math.min(startIdx + cols, totalNodes + 1);
+    const indices = [];
+    for (let c = startIdx; c < endIdx; c++) indices.push(c);
+    // Reverse odd rows for snake pattern
+    if (r % 2 === 1) indices.reverse();
+
+    for (let ci = 0; ci < indices.length; ci++) {
+      const i = indices[ci];
+      const node = document.createElement('div');
+      node.className = 'map-node';
+
+      if (i === 0) {
+        node.classList.add('start');
+        node.textContent = '⚔️';
+        node.title = 'Start';
         node.addEventListener('click', () => {
-          startFromCheckpoint(level);
+          startFromCheckpoint(0);
         });
       } else {
-        node.classList.add('locked');
+        const isUnlocked = state.unlockedCastles.includes(i);
+        node.textContent = isUnlocked ? '🏰' : '🔒';
+        if (isUnlocked) {
+          node.classList.add('unlocked');
+          node.title = 'Castle ' + i;
+          const level = i;
+          node.addEventListener('click', () => {
+            startFromCheckpoint(level);
+          });
+        } else {
+          node.classList.add('locked');
+          node.title = 'Locked';
+        }
+      }
+
+      // Node label
+      const label = document.createElement('span');
+      label.className = 'map-node-label';
+      label.textContent = i === 0 ? 'Start' : '#' + i;
+      node.appendChild(label);
+
+      rowDiv.appendChild(node);
+
+      // Add horizontal connector between nodes in the same row
+      if (ci < indices.length - 1) {
+        const hConn = document.createElement('div');
+        hConn.className = 'map-connector-h';
+        // Light up connector if both nodes it connects are unlocked/start
+        const nextI = indices[ci + 1];
+        const curOk = i === 0 || state.unlockedCastles.includes(i);
+        const nextOk = nextI === 0 || state.unlockedCastles.includes(nextI);
+        if (curOk && nextOk) hConn.classList.add('active');
+        rowDiv.appendChild(hConn);
       }
     }
 
-    pathEl.appendChild(node);
+    pathEl.appendChild(rowDiv);
+
+    // Add vertical connector between rows
+    if (r < rows - 1) {
+      const vConnRow = document.createElement('div');
+      vConnRow.className = 'map-row map-vconn-row';
+      const vConn = document.createElement('div');
+      vConn.className = 'map-connector-v';
+      // Position on the side where the snake turns
+      const turnIdx = r % 2 === 0 ? Math.min(endIdx - 1, totalNodes) : startIdx;
+      const turnOk = turnIdx === 0 || state.unlockedCastles.includes(turnIdx);
+      const nextRowStart = (r + 1) * cols;
+      const nextTurnIdx = r % 2 === 0 ? Math.min(nextRowStart + cols - 1, totalNodes) : nextRowStart;
+      const nextTurnOk = nextTurnIdx === 0 || state.unlockedCastles.includes(nextTurnIdx);
+      if (turnOk && nextTurnOk) vConn.classList.add('active');
+      vConnRow.style.justifyContent = r % 2 === 0 ? 'flex-end' : 'flex-start';
+      vConnRow.appendChild(vConn);
+      pathEl.appendChild(vConnRow);
+    }
   }
 }
 

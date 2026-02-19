@@ -89,9 +89,10 @@ const skinHueConfigs = {
     { from: 38, to: 68, targetFrom: 35, targetTo: 45, sat: 1.0, lit: 1.0 },
   ],
   'snail-valentine': [
-    { from: 170, to: 334, targetFrom: 335, targetTo: 348, sat: 1.2, lit: 1.35 },
+    { from: 140, to: 334, targetFrom: 335, targetTo: 348, sat: 1.2, lit: 1.35 },
     { from: 335, to: 360, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.05 },
     { from: 0, to: 20, targetFrom: 318, targetTo: 328, sat: 1.3, lit: 1.05 },
+    { from: 21, to: 37, targetFrom: 330, targetTo: 340, sat: 1.1, lit: 1.2 },
     { from: 38, to: 68, targetFrom: 348, targetTo: 355, sat: 0.35, lit: 1.45 },
   ],
 

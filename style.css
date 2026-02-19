@@ -2192,13 +2192,13 @@ touch-action: manipulation;
 
 /* ── Overworld Map Panel ──────────────────────────────── */
 #map-panel {
-  width: 85%;
-  max-width: 360px;
-  max-height: 80vh;
+  width: 92%;
+  max-width: 420px;
+  max-height: 82vh;
   background: rgba(8, 12, 20, 0.94);
   border: 2px solid rgba(100, 160, 200, 0.5);
   border-radius: 16px;
-  padding: 20px;
+  padding: 16px;
   text-align: center;
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;
@@ -2209,30 +2209,48 @@ touch-action: manipulation;
   font-size: 1.5em;
   color: #e0e8f0;
   text-shadow: 0 0 12px rgba(80, 160, 240, 0.4);
-  margin: 0 0 16px;
+  margin: 0 0 12px;
 }
 #map-content {
-  padding: 10px 0;
+  padding: 6px 0;
 }
 #map-path {
   display: flex;
-  flex-direction: column-reverse;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0;
 }
-.map-node {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
+.map-row {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.8em;
+  gap: 0;
+}
+.map-vconn-row {
+  padding: 0 28px;
+}
+.map-node {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1em;
   font-weight: bold;
   cursor: default;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  flex-shrink: 0;
+}
+.map-node-label {
+  font-size: 0.5em;
+  opacity: 0.7;
+  margin-top: -2px;
+  pointer-events: none;
 }
 .map-node.start {
   background: rgba(40, 160, 80, 0.8);
@@ -2262,9 +2280,24 @@ touch-action: manipulation;
   color: rgba(160, 160, 170, 0.5);
   opacity: 0.5;
 }
-.map-connector {
+.map-connector-h {
+  width: 20px;
+  height: 3px;
+  background: rgba(100, 160, 200, 0.2);
+  flex-shrink: 0;
+}
+.map-connector-h.active {
+  background: rgba(80, 180, 240, 0.5);
+  box-shadow: 0 0 4px rgba(80, 180, 240, 0.3);
+}
+.map-connector-v {
   width: 3px;
-  height: 24px;
-  background: rgba(100, 160, 200, 0.3);
+  height: 18px;
+  background: rgba(100, 160, 200, 0.2);
+  margin: 0 28px;
+}
+.map-connector-v.active {
+  background: rgba(80, 180, 240, 0.5);
+  box-shadow: 0 0 4px rgba(80, 180, 240, 0.3);
 }
 

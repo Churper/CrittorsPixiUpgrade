@@ -1612,14 +1612,14 @@ touch-action: manipulation;
 /* ── Layout panel ──────────────────────────────────────── */
 #layout-panel {
   position: relative;
-  width: 94%;
-  max-width: 440px;
+  width: 96%;
+  max-width: 500px;
   max-height: 94vh;
   overflow-y: auto;
-  background: rgba(8, 12, 20, 0.94);
+  background: rgba(8, 12, 20, 0.96);
   border: 2px solid rgba(100, 160, 200, 0.5);
   border-radius: clamp(10px, 3vmin, 16px);
-  padding: clamp(10px, 2.5vmin, 18px) clamp(8px, 2vmin, 14px);
+  padding: clamp(8px, 2vmin, 14px) clamp(6px, 1.5vmin, 12px);
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;
   text-align: center;
@@ -1647,17 +1647,20 @@ touch-action: manipulation;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(4px, 1.2vmin, 8px);
+  position: relative;
+  gap: 0;
 }
 
 .layout-nav-btn {
-  width: clamp(30px, 8vmin, 40px);
-  height: clamp(30px, 8vmin, 40px);
+  position: absolute;
+  top: 50%;
+  width: clamp(28px, 7vmin, 36px);
+  height: clamp(28px, 7vmin, 36px);
   border-radius: 50%;
   border: 2px solid rgba(100, 160, 200, 0.5);
-  background: rgba(10, 15, 25, 0.6);
+  background: rgba(10, 15, 25, 0.75);
   color: #ccd8e4;
-  font-size: clamp(1.2em, 3.5vmin, 1.8em);
+  font-size: clamp(1.1em, 3vmin, 1.6em);
   line-height: 1;
   cursor: pointer;
   user-select: none;
@@ -1665,21 +1668,25 @@ touch-action: manipulation;
   touch-action: manipulation;
   transition: transform 0.15s, background 0.15s;
   flex-shrink: 0;
+  z-index: 10;
 }
+
+#layout-prev { left: -6px; transform: translateY(-50%); }
+#layout-next { right: -6px; transform: translateY(-50%); }
 
 .layout-nav-btn:hover {
-  transform: scale(1.15);
-  background: rgba(20, 40, 60, 0.8);
+  background: rgba(20, 40, 60, 0.85);
 }
 
-.layout-nav-btn:active {
-  transform: scale(0.92);
-}
+#layout-prev:hover { transform: translateY(-50%) scale(1.15); }
+#layout-next:hover { transform: translateY(-50%) scale(1.15); }
+#layout-prev:active { transform: translateY(-50%) scale(0.92); }
+#layout-next:active { transform: translateY(-50%) scale(0.92); }
 
 .layout-deck {
   position: relative;
-  width: clamp(240px, 58vw, 310px);
-  height: clamp(260px, 76vh, 420px);
+  width: clamp(280px, 82vw, 420px);
+  height: clamp(240px, 58vh, 380px);
   perspective: 600px;
   touch-action: none;
   user-select: none;
@@ -1693,8 +1700,8 @@ touch-action: manipulation;
   height: 100%;
   background: linear-gradient(145deg, rgba(15, 25, 45, 0.95), rgba(10, 18, 30, 0.98));
   border: 2px solid rgba(100, 160, 200, 0.4);
-  border-radius: clamp(10px, 2.5vmin, 14px);
-  padding: clamp(8px, 2vmin, 14px) clamp(10px, 2.5vmin, 16px);
+  border-radius: clamp(8px, 2vmin, 12px);
+  padding: clamp(6px, 1.5vmin, 10px) clamp(8px, 2vmin, 14px);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1884,21 +1891,21 @@ touch-action: manipulation;
 .layout-inline-picker .inline-picker-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(4px, 1vmin, 6px);
+  gap: clamp(3px, 0.8vmin, 5px);
   justify-content: center;
 }
 
 .layout-inline-picker .inline-picker-item {
-  width: clamp(56px, 14vmin, 74px);
-  height: clamp(56px, 14vmin, 74px);
-  border-radius: clamp(8px, 1.8vmin, 10px);
+  width: clamp(48px, 11vmin, 66px);
+  height: clamp(48px, 11vmin, 66px);
+  border-radius: clamp(6px, 1.5vmin, 9px);
   border: 2px solid rgba(100, 160, 200, 0.35);
   background: rgba(15, 25, 45, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: clamp(18px, 4.5vmin, 24px);
+  font-size: clamp(16px, 4vmin, 22px);
   gap: 1px;
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
@@ -2107,32 +2114,50 @@ touch-action: manipulation;
 /* ── Layout landscape tweaks ─────────────────────────── */
 @media (orientation: landscape) and (max-height: 500px) {
   #layout-panel {
-    max-width: 540px;
+    max-width: 600px;
     max-height: 96vh;
-    padding: 6px 10px;
+    padding: 4px 8px;
+  }
+  .layout-header {
+    margin-bottom: 4px;
   }
   .layout-deck {
-    width: clamp(240px, 48vw, 320px);
-    height: clamp(240px, 84vh, 360px);
+    width: clamp(280px, 55vw, 420px);
+    height: clamp(220px, 88vh, 380px);
   }
   .layout-card {
-    padding: clamp(6px, 1.6vh, 10px) clamp(10px, 2.5vw, 16px);
+    padding: clamp(4px, 1.2vh, 8px) clamp(8px, 2vw, 14px);
   }
   .layout-card-portrait {
-    width: clamp(44px, 12vh, 64px);
-    height: clamp(44px, 12vh, 64px);
+    width: clamp(40px, 10vh, 56px);
+    height: clamp(40px, 10vh, 56px);
   }
   .layout-card-name {
-    font-size: clamp(0.55em, 1.8vh, 0.75em);
+    font-size: clamp(0.5em, 1.6vh, 0.7em);
+  }
+  .layout-portrait-row {
+    margin-bottom: 1px;
+    gap: clamp(4px, 1vh, 8px);
   }
   .layout-row {
-    padding: clamp(1px, 0.4vh, 3px) 4px;
+    padding: 1px 4px;
   }
-  .layout-stat-bonus { font-size: clamp(0.65em, 2vh, 0.85em); }
-  .layout-buy-btn { font-size: clamp(0.6em, 1.6vh, 0.75em); padding: 2px 6px; }
+  .layout-stat-bonus { font-size: clamp(0.6em, 1.8vh, 0.8em); }
+  .layout-buy-btn { font-size: clamp(0.55em, 1.4vh, 0.7em); padding: 1px 5px; }
   .layout-cosmetic-slot {
-    width: clamp(28px, 7vh, 36px);
-    height: clamp(28px, 7vh, 36px);
+    width: clamp(24px, 6vh, 32px);
+    height: clamp(24px, 6vh, 32px);
+  }
+  .layout-inline-picker .inline-picker-item {
+    width: clamp(42px, 9vh, 58px);
+    height: clamp(42px, 9vh, 58px);
+    font-size: clamp(14px, 3.5vh, 20px);
+  }
+  .layout-inline-picker .inline-picker-label {
+    font-size: clamp(7px, 1.6vh, 10px);
+  }
+  .layout-inline-picker .inline-picker-cost {
+    font-size: clamp(7px, 1.5vh, 9px);
   }
 }
 

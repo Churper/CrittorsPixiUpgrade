@@ -165,18 +165,17 @@ function recolorSheet(baseTex, shifts, skinId) {
     let [hue, sat, lit] = _rgbToHsl(d[i], d[i + 1], d[i + 2]);
     if (sat < 0.08 || lit < 0.06 || lit > 0.94) continue;
     if (isPride) {
-      // Trans pride flag via Y-position bands on green body pixels
+      // Trans pride flag via lightness bands — follows body contour naturally
       const hN = ((hue % 360) + 360) % 360;
       if (hN >= 70 && hN <= 160) {
-        const pixIdx = i / 4;
-        const yPct = Math.floor(pixIdx / w) / h;
-        // 5 bands: blue / pink / white / pink / blue
-        if (yPct < 0.2 || yPct >= 0.8) {
-          hue = 200; sat = 0.8; lit = Math.min(1, lit * 1.05 + 0.2);
-        } else if (yPct < 0.4 || yPct >= 0.6) {
-          hue = 342; sat = 0.7; lit = Math.min(1, lit * 1.1 + 0.15);
+        // Use original lightness to determine pride color band:
+        // Dark areas (shadows) → light blue, mid → pink, bright → white
+        if (lit < 0.35) {
+          hue = 200; sat = 0.75; lit = Math.min(1, lit + 0.35);
+        } else if (lit < 0.55) {
+          hue = 340; sat = 0.65; lit = Math.min(1, lit + 0.2);
         } else {
-          sat = 0.05; lit = Math.min(0.95, lit * 1.3 + 0.25);
+          hue = 0; sat = 0.08; lit = Math.min(0.95, lit + 0.15);
         }
       }
     } else {

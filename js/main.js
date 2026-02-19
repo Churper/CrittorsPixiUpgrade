@@ -583,11 +583,13 @@ document.addEventListener('DOMContentLoaded', function () {
   // Card deck navigation — flip through characters
   document.getElementById('layout-next').addEventListener('click', function() {
     layoutDeckIndex = (layoutDeckIndex + 1) % layoutCards.length;
+    updateDeckPositions();
     updateLayoutUI();
   });
 
   document.getElementById('layout-prev').addEventListener('click', function() {
     layoutDeckIndex = (layoutDeckIndex - 1 + layoutCards.length) % layoutCards.length;
+    updateDeckPositions();
     updateLayoutUI();
   });
 
@@ -657,6 +659,7 @@ document.addEventListener('DOMContentLoaded', function () {
       } else {
         layoutDeckIndex = (layoutDeckIndex - 1 + layoutCards.length) % layoutCards.length;
       }
+      updateDeckPositions();
       updateLayoutUI();
     }
   }, { passive: true });

@@ -533,11 +533,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const level = charUpgrades[stat] || 0;
         const totalBonus = level * layoutBonusPerLevel[stat];
         const bonusStr = totalBonus;
-        row.querySelector('.layout-stat-bonus').textContent = `+${bonusStr} ${layoutBonusLabel[stat]}`;
+        row.querySelector('.layout-stat-bonus').textContent = `+${bonusStr}`;
         const cost = 10 + level * 5;
         const btn = row.querySelector('.layout-buy-btn');
         btn.dataset.cost = cost;
-        btn.textContent = `🦴 ${cost}`;
+        btn.textContent = `🦴${cost}`;
         btn.classList.toggle('cant-afford', bones < cost);
       });
     });

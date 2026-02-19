@@ -1749,7 +1749,12 @@ touch-action: manipulation;
   justify-content: center;
   gap: clamp(6px, 1.5vmin, 10px);
   flex-shrink: 0;
-  margin-bottom: clamp(1px, 0.4vmin, 4px);
+  margin-bottom: clamp(2px, 0.6vmin, 6px);
+}
+
+.layout-portrait-wrap {
+  position: relative;
+  flex-shrink: 0;
 }
 
 .layout-card-portrait {
@@ -1758,52 +1763,66 @@ touch-action: manipulation;
   border-radius: clamp(8px, 2vmin, 12px);
   border: 2px solid rgba(100, 160, 200, 0.4);
   image-rendering: pixelated;
-  flex-shrink: 0;
+  display: block;
 }
 
 .layout-card-name {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(1em, 3vmin, 1.3em);
+  font-size: clamp(0.65em, 2vmin, 0.85em);
   color: #e0e8f0;
-  text-shadow: 0 0 6px rgba(80, 160, 220, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.8);
-  margin-bottom: clamp(1px, 0.4vmin, 4px);
-  flex-shrink: 0;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.7);
+  background: rgba(8, 14, 26, 0.85);
+  padding: 0 clamp(4px, 1vmin, 8px);
+  border-radius: 4px;
+  white-space: nowrap;
+  line-height: 1.4;
+  z-index: 1;
 }
 
 .layout-card-stats {
+  display: flex;
+  gap: clamp(3px, 0.8vmin, 6px);
+  justify-content: center;
   width: 100%;
-  text-align: left;
   flex-shrink: 0;
 }
 
 .layout-row {
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: clamp(2px, 0.7vmin, 4px) clamp(3px, 0.8vmin, 6px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 1px;
+  padding: clamp(2px, 0.5vmin, 4px) clamp(2px, 0.5vmin, 4px);
+  border-radius: clamp(6px, 1.4vmin, 8px);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .layout-stat-icon {
-  font-size: clamp(16px, 4vmin, 22px);
-  flex-shrink: 0;
-  width: clamp(24px, 6vmin, 30px);
-  text-align: center;
+  font-size: clamp(14px, 3.5vmin, 18px);
+  line-height: 1;
 }
 
 .layout-stat-bonus {
-  flex: 1;
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.85em, 2.6vmin, 1.05em);
+  font-size: clamp(0.6em, 1.8vmin, 0.78em);
   color: #8cc8e8;
   text-shadow: 0 0 4px rgba(80, 160, 220, 0.3);
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .layout-buy-btn {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.75em, 2.2vmin, 0.9em);
-  padding: clamp(4px, 1vmin, 6px) clamp(8px, 2vmin, 12px);
-  border-radius: 8px;
-  border: 2px solid rgba(200, 180, 100, 0.5);
+  font-size: clamp(0.55em, 1.6vmin, 0.72em);
+  padding: clamp(2px, 0.5vmin, 3px) clamp(4px, 1vmin, 8px);
+  border-radius: 5px;
+  border: 1.5px solid rgba(200, 180, 100, 0.5);
   background: rgba(200, 180, 100, 0.12);
   color: #f0e8d0;
   cursor: pointer;
@@ -1811,6 +1830,8 @@ touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 .layout-buy-btn:hover {
@@ -2110,14 +2131,13 @@ touch-action: manipulation;
     height: clamp(44px, 12vh, 64px);
   }
   .layout-card-name {
-    font-size: clamp(0.95em, 3vh, 1.2em);
-    margin-bottom: 2px;
+    font-size: clamp(0.55em, 1.8vh, 0.75em);
   }
   .layout-row {
-    padding: clamp(3px, 1vh, 6px) 4px;
+    padding: clamp(2px, 0.5vh, 3px);
   }
-  .layout-stat-bonus { font-size: clamp(0.8em, 2.6vh, 1em); }
-  .layout-buy-btn { font-size: clamp(0.7em, 2vh, 0.85em); padding: 3px 8px; }
+  .layout-stat-bonus { font-size: clamp(0.55em, 1.6vh, 0.72em); }
+  .layout-buy-btn { font-size: clamp(0.5em, 1.4vh, 0.65em); padding: 2px 4px; }
   .layout-cosmetic-slot {
     width: clamp(28px, 7vh, 36px);
     height: clamp(28px, 7vh, 36px);

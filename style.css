@@ -1784,45 +1784,39 @@ touch-action: manipulation;
 }
 
 .layout-card-stats {
-  display: flex;
-  gap: clamp(3px, 0.8vmin, 6px);
-  justify-content: center;
   width: 100%;
+  text-align: left;
   flex-shrink: 0;
 }
 
 .layout-row {
-  flex: 1;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 1px;
-  padding: clamp(2px, 0.5vmin, 4px) clamp(2px, 0.5vmin, 4px);
-  border-radius: clamp(6px, 1.4vmin, 8px);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: clamp(1px, 0.4vmin, 3px) clamp(3px, 0.8vmin, 6px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .layout-stat-icon {
-  font-size: clamp(14px, 3.5vmin, 18px);
-  line-height: 1;
+  font-size: clamp(13px, 3.2vmin, 17px);
+  flex-shrink: 0;
+  width: clamp(20px, 5vmin, 26px);
+  text-align: center;
 }
 
 .layout-stat-bonus {
+  flex: 1;
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.6em, 1.8vmin, 0.78em);
+  font-size: clamp(0.7em, 2.2vmin, 0.9em);
   color: #8cc8e8;
   text-shadow: 0 0 4px rgba(80, 160, 220, 0.3);
-  white-space: nowrap;
-  line-height: 1;
 }
 
 .layout-buy-btn {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.55em, 1.6vmin, 0.72em);
-  padding: clamp(2px, 0.5vmin, 3px) clamp(4px, 1vmin, 8px);
-  border-radius: 5px;
-  border: 1.5px solid rgba(200, 180, 100, 0.5);
+  font-size: clamp(0.65em, 1.9vmin, 0.8em);
+  padding: clamp(2px, 0.6vmin, 4px) clamp(6px, 1.5vmin, 10px);
+  border-radius: 6px;
+  border: 2px solid rgba(200, 180, 100, 0.5);
   background: rgba(200, 180, 100, 0.12);
   color: #f0e8d0;
   cursor: pointer;
@@ -1830,8 +1824,6 @@ touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  white-space: nowrap;
-  line-height: 1;
 }
 
 .layout-buy-btn:hover {
@@ -1897,16 +1889,16 @@ touch-action: manipulation;
 }
 
 .layout-inline-picker .inline-picker-item {
-  width: clamp(50px, 13vmin, 68px);
-  height: clamp(50px, 13vmin, 68px);
-  border-radius: clamp(6px, 1.4vmin, 8px);
+  width: clamp(56px, 14vmin, 74px);
+  height: clamp(56px, 14vmin, 74px);
+  border-radius: clamp(8px, 1.8vmin, 10px);
   border: 2px solid rgba(100, 160, 200, 0.35);
   background: rgba(15, 25, 45, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: clamp(16px, 4vmin, 20px);
+  font-size: clamp(18px, 4.5vmin, 24px);
   gap: 1px;
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
@@ -1933,7 +1925,7 @@ touch-action: manipulation;
 
 .layout-inline-picker .inline-picker-cost {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(7px, 1.6vmin, 9px);
+  font-size: clamp(8px, 1.8vmin, 10px);
   color: #f0e8d0;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
   line-height: 1;
@@ -1941,8 +1933,8 @@ touch-action: manipulation;
 
 .layout-inline-picker .inline-picker-label {
   font-family: 'Patrick Hand', cursive;
-  font-size: clamp(8px, 1.8vmin, 11px);
-  color: rgba(200, 220, 240, 0.7);
+  font-size: clamp(9px, 2vmin, 12px);
+  color: rgba(200, 220, 240, 0.75);
   line-height: 1;
   text-align: center;
   max-width: 100%;
@@ -2134,10 +2126,10 @@ touch-action: manipulation;
     font-size: clamp(0.55em, 1.8vh, 0.75em);
   }
   .layout-row {
-    padding: clamp(2px, 0.5vh, 3px);
+    padding: clamp(1px, 0.4vh, 3px) 4px;
   }
-  .layout-stat-bonus { font-size: clamp(0.55em, 1.6vh, 0.72em); }
-  .layout-buy-btn { font-size: clamp(0.5em, 1.4vh, 0.65em); padding: 2px 4px; }
+  .layout-stat-bonus { font-size: clamp(0.65em, 2vh, 0.85em); }
+  .layout-buy-btn { font-size: clamp(0.6em, 1.6vh, 0.75em); padding: 2px 6px; }
   .layout-cosmetic-slot {
     width: clamp(28px, 7vh, 36px);
     height: clamp(28px, 7vh, 36px);

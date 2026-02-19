@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const level = charUpgrades[stat] || 0;
         const totalBonus = level * layoutBonusPerLevel[stat];
         const bonusStr = totalBonus;
-        row.querySelector('.layout-stat-bonus').textContent = `+${bonusStr}`;
+        row.querySelector('.layout-stat-bonus').textContent = `+${bonusStr} ${layoutBonusLabel[stat]}`;
         const cost = 10 + level * 5;
         const btn = row.querySelector('.layout-buy-btn');
         btn.dataset.cost = cost;

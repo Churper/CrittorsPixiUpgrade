@@ -159,30 +159,26 @@ body {
 }
 
 
-.guide-about {
-  margin-top: 16px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(100, 160, 200, 0.25);
+.guide-footer {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(100, 160, 200, 0.15);
+  font-size: 0.65em;
+  opacity: 0.45;
+  text-align: center;
 }
-.guide-about p {
-  font-size: 1em;
-  margin: 6px 0;
-  line-height: 1.3;
+.guide-footer-sep {
+  margin: 0 5px;
+  opacity: 0.5;
 }
-.guide-credits {
-  font-size: 0.75em;
-  opacity: 0.7;
-  margin-top: 4px;
-}
-.credit-tag {
+.ua-flag {
   display: inline-block;
-  font-size: 0.7em;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(255,255,255,0.12);
-  color: #7eb8e0;
+  width: 14px;
+  height: 9px;
+  border-radius: 2px;
+  background: linear-gradient(to bottom, #005BBB 50%, #FFD500 50%);
   vertical-align: middle;
-  margin-left: 2px;
+  margin-left: 1px;
 }
 
 #settings-panel {
@@ -1562,58 +1558,83 @@ touch-action: manipulation;
 
 #guide-panel h2 {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 1.8em;
+  font-size: 1.4em;
   color: #e0e8f0;
   text-shadow: 0 0 8px rgba(80, 160, 220, 0.4), 2px 2px 4px rgba(0, 0, 0, 0.8);
-  margin: 0 0 12px 0;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
 }
 
 .guide-items {
   text-align: left;
-  margin-bottom: 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .guide-item {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 0;
-  font-size: 1em;
-  line-height: 1.3;
+  gap: 10px;
+  padding: 6px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .guide-item-icon {
-  font-size: 1.3em;
+  font-size: 1.2em;
   flex-shrink: 0;
-  width: 28px;
+  width: 26px;
   text-align: center;
 }
 
+.guide-item-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.guide-item-text strong {
+  font-size: 0.9em;
+  color: #e8eef4;
+}
+.guide-item-text span {
+  font-size: 0.72em;
+  opacity: 0.55;
+}
+
 .golden-bean-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   filter: sepia(1) saturate(3) hue-rotate(15deg) brightness(1.1);
   flex-shrink: 0;
+  margin-left: 3px;
 }
 
 .guide-matchups {
   text-align: left;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
 .matchup-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 8px;
+  padding: 5px 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .matchup-portrait {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  border: 2px solid rgba(100, 160, 200, 0.4);
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  border: 1.5px solid rgba(100, 160, 200, 0.35);
   flex-shrink: 0;
 }
 
@@ -1621,23 +1642,40 @@ touch-action: manipulation;
   display: flex;
   flex-direction: column;
   gap: 2px;
-  font-size: 0.9em;
+  font-size: 0.8em;
 }
 
 .matchup-strong {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.matchup-strong::before {
+  content: '+';
   color: #88ff88;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-right: 2px;
 }
 
 .matchup-weak {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.matchup-weak::before {
+  content: '\2212';
   color: #ff8888;
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-right: 2px;
 }
 
 .matchup-enemy-portrait {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
   vertical-align: middle;
-  margin-left: 4px;
 }
 
 /* ── Golden bean button icon ───────────────────────────── */

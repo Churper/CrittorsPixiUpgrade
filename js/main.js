@@ -1866,28 +1866,20 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (hatId === 'partyhat') {
       const hat = new PIXI.Graphics();
       const blue = 0x0070DD;
-      const darkBlue = 0x004499;
-      // OSRS-style paper crown: band with triangular peaks
-      hat.moveTo(-34, 0);
-      hat.lineTo(-34, -8);
-      hat.lineTo(-26, -26);
-      hat.lineTo(-18, -8);
-      hat.lineTo(-9, -26);
-      hat.lineTo(0, -8);
-      hat.lineTo(9, -26);
-      hat.lineTo(18, -8);
-      hat.lineTo(26, -26);
-      hat.lineTo(34, -8);
-      hat.lineTo(34, 0);
+      // OSRS-style paper crown: wide flat band with smooth rounded bumps
+      hat.moveTo(-40, 6);
+      hat.lineTo(40, 6);
+      hat.lineTo(40, 0);
+      // 4 smooth rounded bumps from right to left
+      hat.quadraticCurveTo(30, -18, 20, 0);
+      hat.quadraticCurveTo(10, -18, 0, 0);
+      hat.quadraticCurveTo(-10, -18, -20, 0);
+      hat.quadraticCurveTo(-30, -18, -40, 0);
       hat.closePath();
       hat.fill({ color: blue });
-      hat.stroke({ width: 2, color: darkBlue });
-      // Small dots at peak tips
-      for (const px of [-26, -9, 9, 26]) {
-        hat.circle(px, -26, 2.5).fill({ color: 0x40a0ff });
-      }
-      hat.scale.set(1.15);
-      hat.position.set(0, -critterSprite.texture.height * 0.34);
+      hat.stroke({ width: 1.5, color: 0x005bb5 });
+      hat.scale.set(1.2);
+      hat.position.set(0, -critterSprite.texture.height * 0.22);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;

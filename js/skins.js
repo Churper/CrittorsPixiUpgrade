@@ -148,7 +148,7 @@ const skinHueConfigs = {
 
 // ── Spritesheet recoloring ────────────────────────────────────────────────────
 
-function recolorSheet(baseTex, shifts) {
+function recolorSheet(baseTex, shifts, skinId) {
   const src = baseTex.source;
   const resource = src.resource;
   const w = src.pixelWidth || src.width;
@@ -159,19 +159,37 @@ function recolorSheet(baseTex, shifts) {
   ctx.drawImage(resource, 0, 0, w, h);
   const imgData = ctx.getImageData(0, 0, w, h);
   const d = imgData.data;
+  const isPride = skinId === 'frog-pride';
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] < 10) continue;
     let [hue, sat, lit] = _rgbToHsl(d[i], d[i + 1], d[i + 2]);
     if (sat < 0.08 || lit < 0.06 || lit > 0.94) continue;
-    for (const s of shifts) {
+    if (isPride) {
+      // Trans pride flag via Y-position bands on green body pixels
       const hN = ((hue % 360) + 360) % 360;
-      if (hN >= s.from && hN <= s.to) {
-        const pct = (hN - s.from) / Math.max(1, s.to - s.from);
-        hue = s.targetFrom + pct * (s.targetTo - s.targetFrom);
-        if (s.sat !== undefined) sat = Math.min(1, sat * s.sat);
-        if (s.lit !== undefined) lit = Math.min(1, Math.max(0, lit * s.lit));
-        if (s.shine) lit = Math.min(1, lit + s.shine * lit * lit);
-        break;
+      if (hN >= 70 && hN <= 160) {
+        const pixIdx = i / 4;
+        const yPct = Math.floor(pixIdx / w) / h;
+        // 5 bands: blue / pink / white / pink / blue
+        if (yPct < 0.2 || yPct >= 0.8) {
+          hue = 200; sat = 0.8; lit = Math.min(1, lit * 1.05 + 0.2);
+        } else if (yPct < 0.4 || yPct >= 0.6) {
+          hue = 342; sat = 0.7; lit = Math.min(1, lit * 1.1 + 0.15);
+        } else {
+          sat = 0.05; lit = Math.min(0.95, lit * 1.3 + 0.25);
+        }
+      }
+    } else {
+      for (const s of shifts) {
+        const hN = ((hue % 360) + 360) % 360;
+        if (hN >= s.from && hN <= s.to) {
+          const pct = (hN - s.from) / Math.max(1, s.to - s.from);
+          hue = s.targetFrom + pct * (s.targetTo - s.targetFrom);
+          if (s.sat !== undefined) sat = Math.min(1, sat * s.sat);
+          if (s.lit !== undefined) lit = Math.min(1, Math.max(0, lit * s.lit));
+          if (s.shine) lit = Math.min(1, lit + s.shine * lit * lit);
+          break;
+        }
       }
     }
     const [nr, ng, nb] = _hslToRgb(hue, sat, lit);
@@ -216,8 +234,8 @@ export function generateSkinTextures(textures, textureScaleFactors) {
     const fp = _skinFrameParams[ch];
     const walkSheet = ch + '_walk';
     const atkSheet = ch + '_attack';
-    const recoloredWalk = recolorSheet(textures[walkSheet], shifts);
-    const recoloredAtk = recolorSheet(textures[atkSheet], shifts);
+    const recoloredWalk = recolorSheet(textures[walkSheet], shifts, skinId);
+    const recoloredAtk = recolorSheet(textures[atkSheet], shifts, skinId);
     if (fp.type === 1) {
       const wFrames = [], aFrames = [];
       const wScale = textureScaleFactors[walkSheet] || 1;

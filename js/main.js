@@ -2900,6 +2900,32 @@ document.addEventListener('DOMContentLoaded', function () {
         state.endlessSpawnCount = cpLevel * 7;
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
+
+        // Auto-level: grant cpLevel * 2 levels so the player isn't helpless
+        const autoLevels = cpLevel * 2;
+        const ch = getCurrentCharacter().replace('character-', '');
+        const stats = state.characterStats[getCurrentCharacter()];
+        if (stats && autoLevels > 0) {
+          stats.speed += 0.15 * autoLevels;
+          stats.attack += 2 * autoLevels;
+          stats.health += 12 * autoLevels;
+          state[ch + 'Level'] = (state[ch + 'Level'] || 1) + autoLevels;
+          // Sync state properties with characterStats
+          if (ch === 'frog') { state.speed = stats.speed; }
+          else { state[ch + 'Speed'] = stats.speed; }
+          state[ch + 'Damage'] = stats.attack;
+          state[ch + 'Health'] = stats.health;
+          // Set current health to new max
+          const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
+          state[hpKey] = stats.health;
+          // Advance expToLevel threshold to match level
+          for (let i = 0; i < autoLevels; i++) state.expToLevel *= 1.1;
+          // Update defense
+          const shopBonus = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
+          if (state.charDefense) state.charDefense[ch] = state[ch + 'Level'] + shopBonus;
+          state.defense = state[ch + 'Level'] + shopBonus;
+        }
+
         state.endlessCheckpointStart = 0;
       }
 

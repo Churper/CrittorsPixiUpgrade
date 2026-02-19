@@ -6,7 +6,7 @@ import {
   getEnemies, addEnemies,
   getCurrentCharacter, getEnemiesInRange, setEnemiesInRange,
   setIsCharAttacking, getisDead, getisPaused,
-  getPlayerCurrentHealth, getPlayerHealth, getCharEXP,
+  getPlayerCurrentHealth, getPlayerHealth, getCharEXP, getEXPtoLevel,
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
@@ -420,6 +420,12 @@ function siegeCastleDestroyed(critter, app) {
   const newHP = Math.min(curHP + 25, maxHP);
   setPlayerCurrentHealth(newHP);
   updatePlayerHealthBar((newHP / maxHP) * 100);
+
+  // Siege completion EXP bonus — ~2 levels worth to reward the milestone
+  const currentChar = getCurrentCharacter();
+  const bonusEXP = Math.round(getEXPtoLevel(currentChar) * 2);
+  const totalEXP = getCharEXP(currentChar) + bonusEXP;
+  updateEXP(totalEXP);
 
   // Coffee drop + item drops on the floor with animation
   const dropX = castle ? castle.position.x : (critter ? critter.position.x + 100 : 400);

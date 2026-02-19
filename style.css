@@ -2294,8 +2294,6 @@ touch-action: manipulation;
   width: 95%;
   max-width: 500px;
   max-height: 88vh;
-  background: rgb(8, 12, 20);
-  border: 2px solid rgba(100, 160, 200, 0.5);
   border-radius: 16px;
   padding: 20px;
   text-align: center;
@@ -2304,15 +2302,69 @@ touch-action: manipulation;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: background 0.4s ease, border-color 0.4s ease;
+  /* Default (before biome class applied) */
+  background: rgb(8, 12, 20);
+  border: 2px solid rgba(100, 160, 200, 0.5);
 }
-#map-panel h2 {
+/* Biome-themed map panel backgrounds */
+#map-panel.map-biome-forest  { background: linear-gradient(170deg, rgba(8, 20, 10, 0.96), rgba(4, 12, 6, 0.98));  border-color: rgba(60, 160, 80, 0.5); }
+#map-panel.map-biome-desert  { background: linear-gradient(170deg, rgba(24, 18, 8, 0.96), rgba(16, 12, 4, 0.98));  border-color: rgba(200, 160, 60, 0.5); }
+#map-panel.map-biome-tundra  { background: linear-gradient(170deg, rgba(8, 16, 24, 0.96), rgba(4, 10, 18, 0.98));  border-color: rgba(80, 180, 220, 0.5); }
+#map-panel.map-biome-volcano { background: linear-gradient(170deg, rgba(20, 8, 6, 0.96), rgba(14, 4, 2, 0.98));   border-color: rgba(220, 80, 40, 0.5); }
+#map-panel.map-biome-void    { background: linear-gradient(170deg, rgba(12, 6, 20, 0.96), rgba(6, 2, 14, 0.98));   border-color: rgba(140, 60, 220, 0.5); }
+
+#map-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+#map-biome-title {
   font-family: 'Luckiest Guy', cursive;
   font-size: 1.5em;
   color: #e0e8f0;
   text-shadow: 0 0 12px rgba(80, 160, 240, 0.4);
-  margin: 0 0 12px;
+  flex: 1;
+  text-align: center;
+}
+/* Biome-colored titles */
+#map-panel.map-biome-forest  #map-biome-title { color: rgba(120, 220, 140, 0.95); text-shadow: 0 0 12px rgba(60, 160, 80, 0.4); }
+#map-panel.map-biome-desert  #map-biome-title { color: rgba(240, 200, 100, 0.95); text-shadow: 0 0 12px rgba(200, 160, 60, 0.4); }
+#map-panel.map-biome-tundra  #map-biome-title { color: rgba(140, 210, 240, 0.95); text-shadow: 0 0 12px rgba(80, 180, 220, 0.4); }
+#map-panel.map-biome-volcano #map-biome-title { color: rgba(240, 130, 80, 0.95);  text-shadow: 0 0 12px rgba(220, 80, 40, 0.4); }
+#map-panel.map-biome-void    #map-biome-title { color: rgba(180, 120, 240, 0.95); text-shadow: 0 0 12px rgba(140, 60, 220, 0.4); }
+
+.map-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid rgba(100, 160, 200, 0.5);
+  background: rgba(10, 15, 25, 0.75);
+  color: #ccd8e4;
+  font-size: 1.4em;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: transform 0.15s, background 0.15s;
   flex-shrink: 0;
 }
+.map-nav-btn:hover {
+  background: rgba(20, 40, 60, 0.85);
+  transform: scale(1.15);
+}
+.map-nav-btn:active {
+  transform: scale(0.92);
+}
+/* Biome-colored nav buttons */
+#map-panel.map-biome-forest  .map-nav-btn { border-color: rgba(60, 160, 80, 0.5); }
+#map-panel.map-biome-desert  .map-nav-btn { border-color: rgba(200, 160, 60, 0.5); }
+#map-panel.map-biome-tundra  .map-nav-btn { border-color: rgba(80, 180, 220, 0.5); }
+#map-panel.map-biome-volcano .map-nav-btn { border-color: rgba(220, 80, 40, 0.5); }
+#map-panel.map-biome-void    .map-nav-btn { border-color: rgba(140, 60, 220, 0.5); }
 #map-content {
   padding: 6px 0;
   overflow-y: auto;
@@ -2380,8 +2432,14 @@ touch-action: manipulation;
   background: rgba(60, 60, 70, 0.6);
   border: 2px solid rgba(100, 100, 110, 0.4);
   color: rgba(160, 160, 170, 0.5);
-  opacity: 0.5;
+  opacity: 0.45;
 }
+/* Biome-tinted locked nodes */
+.map-node.biome-forest.locked  { background: rgba(30, 60, 35, 0.5);  border-color: rgba(60, 120, 70, 0.25); }
+.map-node.biome-desert.locked  { background: rgba(60, 50, 25, 0.5);  border-color: rgba(120, 100, 40, 0.25); }
+.map-node.biome-tundra.locked  { background: rgba(30, 50, 65, 0.5);  border-color: rgba(60, 110, 140, 0.25); }
+.map-node.biome-volcano.locked { background: rgba(60, 25, 20, 0.5);  border-color: rgba(120, 50, 30, 0.25); }
+.map-node.biome-void.locked    { background: rgba(45, 20, 60, 0.5);  border-color: rgba(80, 40, 120, 0.25); }
 .map-connector-h {
   width: 20px;
   height: 3px;
@@ -2409,21 +2467,6 @@ touch-action: manipulation;
   width: 20px;
   flex-shrink: 0;
 }
-/* Biome label */
-.map-biome-label {
-  font-family: 'Luckiest Guy', cursive;
-  font-size: 0.9em;
-  text-align: center;
-  padding: 6px 0 2px;
-  opacity: 0.8;
-  letter-spacing: 1px;
-}
-.map-biome-label.biome-forest  { color: rgba(80, 200, 100, 0.9); }
-.map-biome-label.biome-desert  { color: rgba(220, 180, 80, 0.9); }
-.map-biome-label.biome-tundra  { color: rgba(100, 200, 240, 0.9); }
-.map-biome-label.biome-volcano { color: rgba(240, 100, 60, 0.9); }
-.map-biome-label.biome-void    { color: rgba(160, 80, 240, 0.9); }
-
 /* Biome node colors (unlocked) */
 .map-node.biome-forest.unlocked  { background: rgba(40, 140, 60, 0.8);  border: 2px solid rgba(80, 200, 100, 0.7);  box-shadow: 0 0 10px rgba(40, 140, 60, 0.3); }
 .map-node.biome-desert.unlocked  { background: rgba(180, 140, 50, 0.8); border: 2px solid rgba(220, 180, 80, 0.7);  box-shadow: 0 0 10px rgba(180, 140, 50, 0.3); }
@@ -2438,9 +2481,16 @@ touch-action: manipulation;
 .map-node.biome-void.unlocked:hover    { box-shadow: 0 0 16px rgba(160, 80, 240, 0.5); }
 
 /* Biome connector colors (active) */
-.map-connector-h.biome-forest.active,  .map-connector-v.biome-forest.active  { background: rgba(80, 200, 100, 0.5); }
-.map-connector-h.biome-desert.active,  .map-connector-v.biome-desert.active  { background: rgba(220, 180, 80, 0.5); }
-.map-connector-h.biome-tundra.active,  .map-connector-v.biome-tundra.active  { background: rgba(100, 200, 240, 0.5); }
-.map-connector-h.biome-volcano.active, .map-connector-v.biome-volcano.active { background: rgba(240, 100, 60, 0.5); }
-.map-connector-h.biome-void.active,    .map-connector-v.biome-void.active    { background: rgba(160, 80, 240, 0.5); }
+.map-connector-h.biome-forest.active,  .map-connector-v.biome-forest.active  { background: rgba(80, 200, 100, 0.5);  box-shadow: 0 0 4px rgba(80, 200, 100, 0.3); }
+.map-connector-h.biome-desert.active,  .map-connector-v.biome-desert.active  { background: rgba(220, 180, 80, 0.5);  box-shadow: 0 0 4px rgba(220, 180, 80, 0.3); }
+.map-connector-h.biome-tundra.active,  .map-connector-v.biome-tundra.active  { background: rgba(100, 200, 240, 0.5); box-shadow: 0 0 4px rgba(100, 200, 240, 0.3); }
+.map-connector-h.biome-volcano.active, .map-connector-v.biome-volcano.active { background: rgba(240, 100, 60, 0.5);  box-shadow: 0 0 4px rgba(240, 100, 60, 0.3); }
+.map-connector-h.biome-void.active,    .map-connector-v.biome-void.active    { background: rgba(160, 80, 240, 0.5);  box-shadow: 0 0 4px rgba(160, 80, 240, 0.3); }
+
+/* Biome-themed close button */
+#map-panel.map-biome-forest  .panel-close-btn { border-color: rgba(60, 160, 80, 0.45); }
+#map-panel.map-biome-desert  .panel-close-btn { border-color: rgba(200, 160, 60, 0.45); }
+#map-panel.map-biome-tundra  .panel-close-btn { border-color: rgba(80, 180, 220, 0.45); }
+#map-panel.map-biome-volcano .panel-close-btn { border-color: rgba(220, 80, 40, 0.45); }
+#map-panel.map-biome-void    .panel-close-btn { border-color: rgba(140, 60, 220, 0.45); }
 

@@ -56,7 +56,7 @@ import {
 import {
   shouldTriggerSiege, startSiege, siegeMobKilled,
   siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards,
-  renderOverworldMap,
+  renderOverworldMap, getMapBiomeIndex, getMapBiomeCount,
 } from './siege.js';
 
 
@@ -498,6 +498,12 @@ document.addEventListener('DOMContentLoaded', function () {
   // --- Map panel ---
   document.getElementById('map-close-btn').addEventListener('click', function() {
     hidePanel('map');
+  });
+  document.getElementById('map-prev').addEventListener('click', function() {
+    renderOverworldMap(Math.max(0, getMapBiomeIndex() - 1));
+  });
+  document.getElementById('map-next').addEventListener('click', function() {
+    renderOverworldMap(Math.min(getMapBiomeCount() - 1, getMapBiomeIndex() + 1));
   });
 
   // --- Siege reward panel ---

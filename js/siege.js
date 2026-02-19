@@ -620,63 +620,73 @@ export function cleanupSiege() {
 
 // --- Overworld Map ---
 
-export function renderOverworldMap() {
+// Biome definitions — every 20 checkpoints changes biome
+const MAP_BIOMES = [
+  { name: 'forest',  label: '\u{1F332} Forest',  range: [0, 20] },
+  { name: 'desert',  label: '\u{1F3DC}\uFE0F Desert',  range: [21, 40] },
+  { name: 'tundra',  label: '\u{2744}\uFE0F Tundra',  range: [41, 60] },
+  { name: 'volcano', label: '\u{1F30B} Volcano', range: [61, 80] },
+  { name: 'void',    label: '\u{1F30C} Void',    range: [81, 100] },
+];
+
+let currentMapBiome = 0;
+export function getMapBiomeIndex() { return currentMapBiome; }
+export function getMapBiomeCount() { return MAP_BIOMES.length; }
+
+export function renderOverworldMap(biomeIdx) {
+  if (biomeIdx !== undefined) currentMapBiome = biomeIdx;
+
   const pathEl = document.getElementById('map-path');
-  if (!pathEl) return;
+  const titleEl = document.getElementById('map-biome-title');
+  const panel = document.getElementById('map-panel');
+  if (!pathEl || !titleEl) return;
   pathEl.innerHTML = '';
 
-  const maxUnlocked = state.unlockedCastles.length > 0
-    ? Math.max(...state.unlockedCastles)
-    : 0;
-  const totalNodes = Math.max(20, maxUnlocked + 5);
-  const cols = 4; // nodes per row
-
-  // Biome definitions — every 20 checkpoints changes biome
-  const biomes = [
-    { name: 'forest',  label: '\u{1F332} Forest',  range: [1, 20] },
-    { name: 'desert',  label: '\u{1F3DC}\uFE0F Desert',  range: [21, 40] },
-    { name: 'tundra',  label: '\u{2744}\uFE0F Tundra',  range: [41, 60] },
-    { name: 'volcano', label: '\u{1F30B} Volcano', range: [61, 80] },
-    { name: 'void',    label: '\u{1F30C} Void',    range: [81, Infinity] },
-  ];
-  function getBiome(nodeIdx) {
-    if (nodeIdx === 0) return biomes[0];
-    for (const b of biomes) {
-      if (nodeIdx >= b.range[0] && nodeIdx <= b.range[1]) return b;
+  // Auto-navigate to the biome containing the player's highest checkpoint
+  if (biomeIdx === undefined) {
+    const maxUnlocked = state.unlockedCastles.length > 0
+      ? Math.max(...state.unlockedCastles)
+      : 0;
+    currentMapBiome = 0;
+    for (let b = MAP_BIOMES.length - 1; b >= 0; b--) {
+      if (maxUnlocked >= MAP_BIOMES[b].range[0]) {
+        currentMapBiome = b;
+        break;
+      }
     }
-    return biomes[biomes.length - 1];
   }
 
-  // Build a winding snake-path grid: row 0 goes left-to-right, row 1 right-to-left, etc.
-  // Start node is at top-left (index 0)
-  const rows = Math.ceil((totalNodes + 1) / cols);
-  let lastBiomeName = null;
+  const biome = MAP_BIOMES[currentMapBiome];
+  titleEl.textContent = biome.label;
+
+  // Apply biome theme to the whole panel
+  for (const b of MAP_BIOMES) panel.classList.remove('map-biome-' + b.name);
+  panel.classList.add('map-biome-' + biome.name);
+
+  // Update nav button visibility
+  const prevBtn = document.getElementById('map-prev');
+  const nextBtn = document.getElementById('map-next');
+  if (prevBtn) prevBtn.style.visibility = currentMapBiome > 0 ? 'visible' : 'hidden';
+  if (nextBtn) nextBtn.style.visibility = currentMapBiome < MAP_BIOMES.length - 1 ? 'visible' : 'hidden';
+
+  const cols = 4;
+  const rangeStart = biome.range[0];
+  const rangeEnd = biome.range[1];
+  const nodeCount = rangeEnd - rangeStart + 1;
+  const rows = Math.ceil(nodeCount / cols);
 
   for (let r = 0; r < rows; r++) {
-    const startIdx = r * cols;
-    const endIdx = Math.min(startIdx + cols, totalNodes + 1);
+    const rowStartNode = rangeStart + r * cols;
+    const rowEndNode = Math.min(rowStartNode + cols - 1, rangeEnd);
     const indices = [];
-    for (let c = startIdx; c < endIdx; c++) indices.push(c);
-    // Reverse odd rows for snake pattern
+    for (let n = rowStartNode; n <= rowEndNode; n++) indices.push(n);
     if (r % 2 === 1) indices.reverse();
-
-    // Check if this row starts a new biome — use the first real node index
-    const firstNodeIdx = Math.min(...indices);
-    const rowBiome = getBiome(firstNodeIdx);
-    if (rowBiome.name !== lastBiomeName) {
-      const biomeLabel = document.createElement('div');
-      biomeLabel.className = 'map-biome-label biome-' + rowBiome.name;
-      biomeLabel.textContent = rowBiome.label;
-      pathEl.appendChild(biomeLabel);
-      lastBiomeName = rowBiome.name;
-    }
 
     const rowDiv = document.createElement('div');
     rowDiv.className = 'map-row';
 
     for (let ci = 0; ci < indices.length; ci++) {
       const i = indices[ci];
-      const biome = getBiome(i);
       const node = document.createElement('div');
       node.className = 'map-node biome-' + biome.name;
 
@@ -684,9 +694,7 @@ export function renderOverworldMap() {
         node.classList.add('start');
         node.textContent = '\u2694\uFE0F';
         node.title = 'Start';
-        node.addEventListener('click', () => {
-          startFromCheckpoint(0);
-        });
+        node.addEventListener('click', () => startFromCheckpoint(0));
       } else {
         const isUnlocked = state.unlockedCastles.includes(i);
         node.textContent = isUnlocked ? '\u{1F3F0}' : '\u{1F512}';
@@ -694,28 +702,23 @@ export function renderOverworldMap() {
           node.classList.add('unlocked');
           node.title = 'Castle ' + i;
           const level = i;
-          node.addEventListener('click', () => {
-            startFromCheckpoint(level);
-          });
+          node.addEventListener('click', () => startFromCheckpoint(level));
         } else {
           node.classList.add('locked');
           node.title = 'Locked';
         }
       }
 
-      // Node label
       const label = document.createElement('span');
       label.className = 'map-node-label';
       label.textContent = i === 0 ? 'Start' : '#' + i;
       node.appendChild(label);
-
       rowDiv.appendChild(node);
 
-      // Add horizontal connector between nodes in the same row
+      // Horizontal connector
       if (ci < indices.length - 1) {
         const hConn = document.createElement('div');
         hConn.className = 'map-connector-h biome-' + biome.name;
-        // Light up connector if both nodes it connects are unlocked/start
         const nextI = indices[ci + 1];
         const curOk = i === 0 || state.unlockedCastles.includes(i);
         const nextOk = nextI === 0 || state.unlockedCastles.includes(nextI);
@@ -726,35 +729,31 @@ export function renderOverworldMap() {
 
     pathEl.appendChild(rowDiv);
 
-    // Add vertical connector between rows — aligned to the turning column
+    // Vertical connector between rows
     if (r < rows - 1) {
       const vConnRow = document.createElement('div');
       vConnRow.className = 'map-row map-vconn-row';
-
-      // The turn happens at the last column of even rows (right side) or first column of odd rows (left side)
-      // Add spacer nodes to push the vertical connector to the correct column
-      const turnCol = r % 2 === 0 ? cols - 1 : 0;
-      const biome = getBiome(r % 2 === 0 ? Math.min(endIdx - 1, totalNodes) : startIdx);
+      const turnCol = r % 2 === 0 ? Math.min(indices.length - 1, cols - 1) : 0;
 
       for (let c = 0; c < cols; c++) {
         if (c === turnCol) {
           const vConn = document.createElement('div');
           vConn.className = 'map-connector-v biome-' + biome.name;
-          // Check if both endpoints are unlocked
-          const turnIdx = r % 2 === 0 ? Math.min(endIdx - 1, totalNodes) : startIdx;
+          const turnIdx = indices[r % 2 === 0 ? indices.length - 1 : 0];
           const turnOk = turnIdx === 0 || state.unlockedCastles.includes(turnIdx);
-          const nextRowStart = (r + 1) * cols;
-          const nextTurnIdx = r % 2 === 0 ? Math.min(nextRowStart + cols - 1, totalNodes) : nextRowStart;
+          const nextRowStart = rangeStart + (r + 1) * cols;
+          const nextIndices = [];
+          for (let n = nextRowStart; n <= Math.min(nextRowStart + cols - 1, rangeEnd); n++) nextIndices.push(n);
+          if ((r + 1) % 2 === 1) nextIndices.reverse();
+          const nextTurnIdx = nextIndices[(r + 1) % 2 === 0 ? nextIndices.length - 1 : 0];
           const nextTurnOk = nextTurnIdx === 0 || state.unlockedCastles.includes(nextTurnIdx);
           if (turnOk && nextTurnOk) vConn.classList.add('active');
           vConnRow.appendChild(vConn);
         } else {
-          // Invisible spacer to keep column alignment
           const spacer = document.createElement('div');
           spacer.className = 'map-vconn-spacer';
           vConnRow.appendChild(spacer);
         }
-        // Add gap spacer for horizontal connectors between columns
         if (c < cols - 1) {
           const gapSpacer = document.createElement('div');
           gapSpacer.className = 'map-connector-h-spacer';
@@ -769,9 +768,7 @@ export function renderOverworldMap() {
 
 function startFromCheckpoint(level) {
   state.endlessCheckpointStart = level;
-  // Hide map panel
   const backdrop = document.getElementById('map-backdrop');
   if (backdrop) backdrop.classList.remove('visible');
-  // Trigger endless mode start via click
   document.dispatchEvent(new CustomEvent('startFromCheckpoint', { detail: { level } }));
 }

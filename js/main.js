@@ -1840,6 +1840,14 @@ document.addEventListener('DOMContentLoaded', function () {
   // Hat rendering — draws a hat graphic as a child of the critter sprite
   let currentHatGraphic = null;
 
+  // Per-character hat Y offsets (fraction of texture height above center)
+  const _hatYOffsets = {
+    frog:  { tophat: 0.16, partyhat: 0.10 },
+    snail: { tophat: 0.40, partyhat: 0.34 },
+    bird:  { tophat: 0.34, partyhat: 0.28 },
+    bee:   { tophat: 0.34, partyhat: 0.28 },
+  };
+
   function applyHat(critterSprite, charType) {
     // Remove existing hat
     if (currentHatGraphic) {
@@ -1850,36 +1858,38 @@ document.addEventListener('DOMContentLoaded', function () {
     const charName = charType ? charType.replace('character-', '') : '';
     const hatId = state.equippedHats[charName];
     if (!hatId || !critterSprite) return;
+    const offsets = _hatYOffsets[charName] || _hatYOffsets.frog;
+    const yOff = -(critterSprite.texture.height * (offsets[hatId] || 0.16));
 
     if (hatId === 'tophat') {
       const hat = new PIXI.Graphics();
-      // Brim
       hat.roundRect(-22, -4, 44, 8, 3).fill({ color: 0x1a1a2e });
-      // Crown
       hat.roundRect(-14, -34, 28, 32, 4).fill({ color: 0x1a1a2e });
-      // Band
       hat.rect(-14, -10, 28, 5).fill({ color: 0x8b0000 });
-      hat.position.set(0, -critterSprite.texture.height * 0.42);
+      hat.position.set(0, yOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;
     } else if (hatId === 'partyhat') {
       const hat = new PIXI.Graphics();
       const blue = 0x0070DD;
-      // OSRS-style paper crown: wide flat band with smooth rounded bumps
-      hat.moveTo(-40, 6);
-      hat.lineTo(40, 6);
-      hat.lineTo(40, 0);
-      // 4 smooth rounded bumps from right to left
-      hat.quadraticCurveTo(30, -18, 20, 0);
-      hat.quadraticCurveTo(10, -18, 0, 0);
-      hat.quadraticCurveTo(-10, -18, -20, 0);
-      hat.quadraticCurveTo(-30, -18, -40, 0);
+      // OSRS-style: thick blocky base band + crown points on top
+      hat.roundRect(-34, -2, 68, 12, 2).fill({ color: blue });
+      // Crown points rising from top of band
+      hat.moveTo(-34, -2);
+      hat.lineTo(-26, -16);
+      hat.lineTo(-17, -2);
+      hat.lineTo(-9, -16);
+      hat.lineTo(0, -2);
+      hat.lineTo(9, -16);
+      hat.lineTo(17, -2);
+      hat.lineTo(26, -16);
+      hat.lineTo(34, -2);
       hat.closePath();
       hat.fill({ color: blue });
-      hat.stroke({ width: 1.5, color: 0x005bb5 });
-      hat.scale.set(1.2);
-      hat.position.set(0, -critterSprite.texture.height * 0.22);
+      hat.stroke({ width: 1, color: 0x005bb5, alpha: 0.5 });
+      hat.scale.set(1.15);
+      hat.position.set(0, yOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;

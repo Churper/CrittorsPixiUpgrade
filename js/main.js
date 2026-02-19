@@ -1868,7 +1868,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Pixel-analyzed from spritesheets: x = head center-of-mass X, y = head bulk-top Y
   const _hatBasePos = {
     frog:  [0, -36],      // head roughly centered; lowered to sit on head
-    snail: [-200, 80],    // head far left and below shell; sits between eye stalks
+    snail: [-8, 80],      // head right of shell center; sits between eye stalks
     bird:  [-82, -200],   // crest left of center, near frame top
     bee:   [-6, -51],     // nearly centered
   };

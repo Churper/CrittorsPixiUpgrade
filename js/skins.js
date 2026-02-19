@@ -74,8 +74,8 @@ const skinHueConfigs = {
     { from: 70, to: 160, targetFrom: 192, targetTo: 206, sat: 1.2, lit: 1.1, shine: 0.1 },
   ],
   'frog-golden': [
-    // Silver: desaturated cool steel with subtle shine
-    { from: 70, to: 160, targetFrom: 210, targetTo: 220, sat: 0.15, lit: 1.3, shine: 0.25 },
+    // Silver: bright polished silver bar — high lightness, near-zero saturation, strong shine
+    { from: 70, to: 160, targetFrom: 210, targetTo: 215, sat: 0.05, lit: 1.7, shine: 0.5 },
   ],
   'frog-cherry': [
     { from: 70, to: 160, targetFrom: 338, targetTo: 350, sat: 1.2, lit: 1.05 },

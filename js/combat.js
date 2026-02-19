@@ -1193,7 +1193,6 @@ export function createCoffeeDrop(x, y) {
     setTimeout(() => {
       state.app.stage.removeChild(coffeeContainer);
       coffeeContainer.destroy({ children: true });
-      createCoffeeDropText(x, y + 50, numBeans);
     }, flyDuration + beans.length * 40 + 100);
 
   }, fallDuration + 300);
@@ -1838,8 +1837,8 @@ export function playDeathAnimation(enemy, critter) {
   state.enemyDeath.zIndex = 15;
   state.app.stage.addChild(state.enemyDeath);
 
-  // Skip EXP floating text for baby siege mobs (they don't award character EXP)
-  if (!enemy.isBaby) {
+  // Only show EXP floating text in story mode (endless uses shared kill-based leveling)
+  if (state.gameMode !== 'endless') {
     const expDrop = new PIXI.Text("+" + enemy.exp + " EXP", {
       fontSize: 18,
       fill: "orange",
@@ -1852,27 +1851,21 @@ export function playDeathAnimation(enemy, critter) {
     expDrop.zIndex = 9999999999;
     state.app.stage.addChild(expDrop);
 
-    // Animate the floating text
     const startY = enemy.position.y - 20;
-
-    const endY = startY - 50; // Adjust the value to control the floating height
-    const duration = 2600; // Animation duration in milliseconds
+    const endY = startY - 50;
+    const duration = 2600;
     const startTime = performance.now();
 
     const animateExpDrop = (currentTime) => {
       const elapsed = currentTime - startTime;
-
       if (elapsed < duration) {
         const progress = elapsed / duration;
-        const newY = startY - (progress * (startY - endY));
-        expDrop.position.y = newY;
+        expDrop.position.y = startY - (progress * (startY - endY));
         requestAnimationFrame(animateExpDrop);
       } else {
-        // Animation complete, remove the floating text
         if (expDrop.parent) state.app.stage.removeChild(expDrop);
       }
     };
-
     requestAnimationFrame(animateExpDrop);
   }
   // Play the death animation

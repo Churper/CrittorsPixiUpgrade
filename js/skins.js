@@ -302,7 +302,7 @@ export function updateSkinEffects(critter, now) {
   // Spawn new particles
   if (effect === 'sparkle' && now > _nextSparkleTime) {
     _spawnSparkle(critter);
-    _nextSparkleTime = now + 150 + Math.random() * 200; // every 0.15-0.35s
+    _nextSparkleTime = now + 400 + Math.random() * 500; // every 0.4-0.9s
   }
   if (effect === 'heart' && now > _nextHeartTime) {
     _spawnHeart(critter);
@@ -367,7 +367,7 @@ function _spawnSparkle(critter) {
     gfx: g,
     type: 'sparkle',
     born: Date.now(),
-    life: 700 + Math.random() * 400,
+    life: 1100 + Math.random() * 600,
     maxScale: 1.5 + Math.random() * 1.0,
     startY: g.y,
   });

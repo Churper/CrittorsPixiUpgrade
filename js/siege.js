@@ -189,8 +189,8 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex) 
   enemy.isBaby = true;
   enemy.isSiegeMob = true;
 
-  // Stats scale with level
-  enemy.maxHP = 30 + sc * 2 + level * 15;
+  // Stats scale with level — babies should be 1-shottable
+  enemy.maxHP = 10 + level * 5;
   enemy.currentHP = enemy.maxHP;
   enemy.attackDamage = Math.max(1, Math.round(sc / 5 + level * 0.4));
   enemy.exp = 8 + level * 2;

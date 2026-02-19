@@ -2230,13 +2230,13 @@ touch-action: manipulation;
 
 /* ── Overworld Map Panel ──────────────────────────────── */
 #map-panel {
-  width: 92%;
-  max-width: 420px;
-  max-height: 82vh;
-  background: rgba(8, 12, 20, 0.94);
+  width: 95%;
+  max-width: 500px;
+  max-height: 88vh;
+  background: rgb(8, 12, 20);
   border: 2px solid rgba(100, 160, 200, 0.5);
   border-radius: 16px;
-  padding: 16px;
+  padding: 20px;
   text-align: center;
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;

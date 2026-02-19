@@ -8,7 +8,8 @@ export function createBackgroundSprite() {
   const sh = state.app.screen.height;
   const backgroundSprite = new PIXI.Sprite(PIXI.Texture.WHITE);
   backgroundSprite.width = Math.min(sw * 0.7, 520);
-  backgroundSprite.height = Math.min(sh * 0.75, 500);
+  // Clamp height so it doesn't overflow on landscape mobile
+  backgroundSprite.height = Math.min(sh * 0.75, 500, sh - 20);
   backgroundSprite.tint = 0x0a0a14;
   backgroundSprite.alpha = 0.88;
   return backgroundSprite;
@@ -156,21 +157,70 @@ export function createSliderBall(backgroundSprite, type, trackWidth) {
 }
 
 export function createGarbageButton(backgroundSprite) {
-  const iconSize = Math.max(24, Math.min(40, backgroundSprite.width * 0.08));
-  const garbageButton = new PIXI.Text('\u{1F5D1}\u{FE0F}', { fontSize: iconSize });
-  garbageButton.anchor.set(0.5);
-  garbageButton.position.set(backgroundSprite.width * 0.85, backgroundSprite.height * 0.9);
+  const bw = backgroundSprite.width;
+  const bh = backgroundSprite.height;
+  const fontSize = Math.max(11, Math.min(16, bw * 0.035));
+  const btnW = Math.max(100, bw * 0.35);
+  const btnH = Math.max(28, bh * 0.065);
 
-  garbageButton.eventMode = 'static';
-  garbageButton.cursor = 'pointer';
+  const container = new PIXI.Container();
+  container.position.set(bw * 0.85, bh * 0.9);
 
-  garbageButton.on('pointerdown', () => {
-    alert("DELETED");
-    localStorage.removeItem('gameSave');
-    state.unlockedCharacters = ['character-frog'];
+  const bg = new PIXI.Graphics();
+  bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6)
+    .fill({ color: 0x551122, alpha: 0.7 })
+    .stroke({ width: 1.5, color: 0xaa3344, alpha: 0.8 });
+  bg.eventMode = 'static';
+  bg.cursor = 'pointer';
+  container.addChild(bg);
+
+  const txt = new PIXI.Text('Delete Save', {
+    fontFamily: 'Luckiest Guy',
+    fontSize: fontSize,
+    fill: '#ff6666',
+    stroke: '#000000',
+    strokeThickness: 2,
   });
+  txt.anchor.set(0.5);
+  txt.eventMode = 'static';
+  txt.cursor = 'pointer';
+  container.addChild(txt);
 
-  return garbageButton;
+  // Confirmation state
+  let awaitingConfirm = false;
+  let confirmTimeout = null;
+
+  function handleClick() {
+    if (!awaitingConfirm) {
+      awaitingConfirm = true;
+      txt.text = 'Are you sure?';
+      txt.style.fill = '#ff4444';
+      bg.clear();
+      bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6)
+        .fill({ color: 0x771122, alpha: 0.85 })
+        .stroke({ width: 2, color: 0xff4444, alpha: 0.9 });
+      confirmTimeout = setTimeout(() => {
+        awaitingConfirm = false;
+        txt.text = 'Delete Save';
+        txt.style.fill = '#ff6666';
+        bg.clear();
+        bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6)
+          .fill({ color: 0x551122, alpha: 0.7 })
+          .stroke({ width: 1.5, color: 0xaa3344, alpha: 0.8 });
+      }, 3000);
+    } else {
+      clearTimeout(confirmTimeout);
+      // Wipe ALL progress
+      localStorage.removeItem('gameSave');
+      localStorage.removeItem('crittorsBones');
+      window.location.reload();
+    }
+  }
+
+  bg.on('pointerdown', handleClick);
+  txt.on('pointerdown', handleClick);
+
+  return container;
 }
 
 // --- Pause menu container ---
@@ -202,16 +252,24 @@ export function createPauseMenuContainer() {
     state.pauseMenuContainer.addChild(text1);
   }
 
-  const musicSlider = createVolumeSlider(backgroundSprite, bh * 0.32, 'Music', 'music');
+  // Compact layout flag for landscape/short screens
+  const isCompact = bh < 350;
+  const sliderY1 = isCompact ? bh * 0.26 : bh * 0.32;
+  const sliderY2 = isCompact ? bh * 0.38 : bh * 0.44;
+  const btnY1    = isCompact ? bh * 0.52 : bh * 0.58;
+  const btnY2    = isCompact ? bh * 0.66 : bh * 0.72;
+  const delY     = isCompact ? bh * 0.82 : bh * 0.9;
+
+  const musicSlider = createVolumeSlider(backgroundSprite, sliderY1, 'Music', 'music');
   state.pauseMenuContainer.addChild(musicSlider);
 
-  const effectsSlider = createVolumeSlider(backgroundSprite, bh * 0.44, 'Effects', 'effects');
+  const effectsSlider = createVolumeSlider(backgroundSprite, sliderY2, 'Effects', 'effects');
   state.pauseMenuContainer.addChild(effectsSlider);
 
   // Button dimensions
-  const menuFontSize = Math.max(15, Math.min(22, bw * 0.045));
-  const btnW = Math.max(140, bw * 0.55);
-  const btnH = Math.max(36, bh * 0.085);
+  const menuFontSize = Math.max(13, Math.min(22, bw * 0.045));
+  const btnW = Math.max(120, bw * 0.55);
+  const btnH = Math.max(30, bh * 0.075);
 
   // Helper to create a styled button with accent color
   function addPauseButton(label, yPos, handler, fillColor, strokeColor) {
@@ -241,14 +299,16 @@ export function createPauseMenuContainer() {
   }
 
   // Submit Score button — blue accent
-  addPauseButton('Submit Score', bh * 0.58, () => {
+  addPauseButton('Submit Score', btnY1, () => {
     if (window._crittorsShowPauseScore) window._crittorsShowPauseScore();
   }, 0x2a4477, 0x5588bb);
 
   // Main Menu button — muted red accent
-  addPauseButton('Main Menu', bh * 0.72, () => { window.location.reload(); }, 0x662233, 0xaa5566);
+  addPauseButton('Main Menu', btnY2, () => { window.location.reload(); }, 0x662233, 0xaa5566);
 
   const garbageButton = createGarbageButton(backgroundSprite);
+  // Override Y to use compact-aware position
+  garbageButton.position.y = delY;
   state.pauseMenuContainer.addChild(garbageButton);
 
   let pauseX = -state.app.stage.position.x + (state.app.screen.width / 2) - (state.pauseMenuContainer.width / 2);

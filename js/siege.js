@@ -622,7 +622,7 @@ export function renderOverworldMap() {
   const maxUnlocked = state.unlockedCastles.length > 0
     ? Math.max(...state.unlockedCastles)
     : 0;
-  const totalNodes = Math.max(10, maxUnlocked + 3);
+  const totalNodes = Math.max(20, maxUnlocked + 5);
   const cols = 4; // nodes per row
 
   // Build a winding snake-path grid: row 0 goes left-to-right, row 1 right-to-left, etc.

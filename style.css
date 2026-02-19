@@ -1849,9 +1849,9 @@ touch-action: manipulation;
 }
 
 .layout-cosmetic-slot {
-  width: clamp(38px, 9.5vmin, 46px);
-  height: clamp(38px, 9.5vmin, 46px);
-  border-radius: clamp(8px, 1.8vmin, 12px);
+  width: clamp(48px, 12vmin, 62px);
+  height: clamp(32px, 8vmin, 40px);
+  border-radius: clamp(6px, 1.5vmin, 10px);
   border: 2px solid rgba(100, 160, 200, 0.4);
   background: rgba(14, 22, 38, 0.7);
   display: flex;
@@ -1877,8 +1877,13 @@ touch-action: manipulation;
   transform: scale(0.95);
 }
 
-.cosmetic-icon {
-  font-size: clamp(18px, 5vmin, 24px);
+.cosmetic-label {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(11px, 2.8vmin, 14px);
+  color: rgba(180, 210, 240, 0.85);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+  letter-spacing: 0.5px;
+  user-select: none;
 }
 
 /* ── Inline picker (hat/skin grid inside card) ────────── */
@@ -2145,8 +2150,11 @@ touch-action: manipulation;
   .layout-stat-bonus { font-size: clamp(0.6em, 1.8vh, 0.8em); }
   .layout-buy-btn { font-size: clamp(0.55em, 1.4vh, 0.7em); padding: 1px 5px; }
   .layout-cosmetic-slot {
-    width: clamp(24px, 6vh, 32px);
-    height: clamp(24px, 6vh, 32px);
+    width: clamp(36px, 8vh, 48px);
+    height: clamp(22px, 5vh, 30px);
+  }
+  .cosmetic-label {
+    font-size: clamp(9px, 2vh, 12px);
   }
   .layout-inline-picker .inline-picker-item {
     width: clamp(42px, 9vh, 58px);
@@ -2265,7 +2273,9 @@ touch-action: manipulation;
   text-align: center;
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 #map-panel h2 {
   font-family: 'Luckiest Guy', cursive;
@@ -2273,9 +2283,14 @@ touch-action: manipulation;
   color: #e0e8f0;
   text-shadow: 0 0 12px rgba(80, 160, 240, 0.4);
   margin: 0 0 12px;
+  flex-shrink: 0;
 }
 #map-content {
   padding: 6px 0;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 #map-path {
   display: flex;

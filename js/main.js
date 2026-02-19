@@ -714,8 +714,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Available hats & skins catalog
   const hatCatalog = [
-    { id: 'tophat',   icon: '🎩', name: 'Top Hat',    cost: 1 },
-    { id: 'partyhat', icon: '🎉', name: 'Party Hat',  cost: 3 },
+    { id: 'tophat',     icon: '🎩', name: 'Top Hat',     cost: 1 },
+    { id: 'partyhat',   icon: '🎉', name: 'Party Hat',   cost: 3 },
+    { id: 'crown',      icon: '👑', name: 'Crown',       cost: 5 },
+    { id: 'wizardhat',  icon: '🧙', name: 'Wizard Hat',  cost: 8 },
   ];
   // skinCatalog imported from skins.js
   // Items that can have starting counts purchased

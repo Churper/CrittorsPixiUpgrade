@@ -7,7 +7,7 @@ let currentHatGraphic = null;
 // Pixel-analyzed from spritesheets: x = head center-of-mass X, y = head bulk-top Y
 const _hatBasePos = {
   frog:  [0, -36],      // head roughly centered; lowered to sit on head
-  snail: [-16, 92],     // head right of shell center; sits between eye stalks
+  snail: [-26, 92],     // head right of shell center; sits between eye stalks
   bird:  [-82, -200],   // crest left of center, near frame top
   bee:   [-6, -51],     // nearly centered
 };
@@ -187,6 +187,74 @@ export function applyHat(critterSprite, charType) {
     hat.fill({ color: blue });
     hat.stroke({ width: 1.5, color: 0x005bb5, alpha: 0.5 });
     hat.scale.set(1.3);
+    hat.position.set(baseXOff, baseYOff);
+    hat.zIndex = 100;
+    critterSprite.addChild(hat);
+    currentHatGraphic = hat;
+  } else if (hatId === 'crown') {
+    const hat = new PIXI.Graphics();
+    const gold = 0xFFD700;
+    const darkGold = 0xDAA520;
+    // Base band
+    hat.roundRect(-32, -2, 64, 14, 3).fill({ color: gold });
+    hat.roundRect(-32, -2, 64, 14, 3).stroke({ width: 1, color: darkGold });
+    // Five pointed peaks
+    hat.moveTo(-32, -2);
+    hat.lineTo(-24, -28);
+    hat.lineTo(-16, -6);
+    hat.lineTo(-8, -32);
+    hat.lineTo(0, -6);
+    hat.lineTo(8, -34);
+    hat.lineTo(16, -6);
+    hat.lineTo(24, -28);
+    hat.lineTo(32, -2);
+    hat.closePath();
+    hat.fill({ color: gold });
+    hat.stroke({ width: 1.5, color: darkGold });
+    // Jewels at peak tips
+    hat.circle(-24, -26, 4).fill({ color: 0xff2244 });
+    hat.circle(-8, -30, 4).fill({ color: 0x2266ff });
+    hat.circle(8, -32, 5).fill({ color: 0xff2244 });
+    hat.circle(24, -26, 4).fill({ color: 0x2266ff });
+    // Center gem on band
+    hat.circle(0, 5, 5).fill({ color: 0x22dd66 });
+    hat.circle(0, 5, 5).stroke({ width: 1, color: darkGold });
+    hat.position.set(baseXOff, baseYOff);
+    hat.zIndex = 100;
+    critterSprite.addChild(hat);
+    currentHatGraphic = hat;
+  } else if (hatId === 'wizardhat') {
+    const hat = new PIXI.Graphics();
+    const purple = 0x6A0DAD;
+    const darkPurple = 0x4B0082;
+    // Wide brim
+    hat.ellipse(0, 0, 42, 10).fill({ color: purple });
+    hat.ellipse(0, 0, 42, 10).stroke({ width: 1.5, color: darkPurple });
+    // Tall cone body (slightly bent)
+    hat.moveTo(-28, 0);
+    hat.lineTo(-4, -70);
+    hat.lineTo(8, -72);
+    hat.lineTo(28, 0);
+    hat.closePath();
+    hat.fill({ color: purple });
+    hat.stroke({ width: 1.5, color: darkPurple });
+    // Gold band at base of cone
+    hat.rect(-26, -8, 52, 8).fill({ color: 0xFFD700, alpha: 0.8 });
+    // Star on front
+    const sx = 2, sy = -36;
+    hat.moveTo(sx, sy - 12);
+    hat.lineTo(sx + 4, sy - 4);
+    hat.lineTo(sx + 12, sy - 3);
+    hat.lineTo(sx + 6, sy + 3);
+    hat.lineTo(sx + 8, sy + 11);
+    hat.lineTo(sx, sy + 6);
+    hat.lineTo(sx - 8, sy + 11);
+    hat.lineTo(sx - 6, sy + 3);
+    hat.lineTo(sx - 12, sy - 3);
+    hat.lineTo(sx - 4, sy - 4);
+    hat.closePath();
+    hat.fill({ color: 0xFFD700 });
+    hat.stroke({ width: 1, color: 0xDAA520 });
     hat.position.set(baseXOff, baseYOff);
     hat.zIndex = 100;
     critterSprite.addChild(hat);

@@ -466,20 +466,6 @@ function showSiegeRewardPanel() {
   const titleEl = document.getElementById('siege-reward-title');
   if (titleEl) titleEl.textContent = 'Castle #' + level + ' Cleared!';
 
-  // Subtitle
-  let subtitleEl = document.querySelector('.siege-reward-subtitle');
-  if (!subtitleEl) {
-    subtitleEl = document.createElement('p');
-    subtitleEl.className = 'siege-reward-subtitle';
-    const panel = document.getElementById('siege-reward-panel');
-    if (panel && titleEl) panel.insertBefore(subtitleEl, titleEl.nextSibling);
-  }
-  subtitleEl.textContent = '+25 HP healed  ·  ' + rewards.length + ' items dropped!';
-
-  // Checkpoint message
-  const msgEl = document.getElementById('siege-checkpoint-msg');
-  if (msgEl) msgEl.textContent = 'Checkpoint unlocked! Start from here on the Map.';
-
   // Show panel
   const backdrop = document.getElementById('siege-reward-backdrop');
   if (backdrop) backdrop.classList.add('visible');

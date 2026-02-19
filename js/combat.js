@@ -1088,8 +1088,8 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       awardBones(enemy);
       setIsCharAttacking(false);
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-      // Item drop — demi-boss only
-      if (state.gameMode === 'endless' && enemy.isDemi) {
+      // Item drop — 50% chance from demi-boss
+      if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.5) {
         const items = ['shield','bomb','rage','feather','goldenBean'];
         createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
       }

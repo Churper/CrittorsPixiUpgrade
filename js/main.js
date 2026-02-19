@@ -39,7 +39,6 @@ import {
   createCoffeeDrop, collectGroundItem, drawEnemyHPBar,
   playShieldActivateSound, playShieldBreakSound,
   playBombDropSound, playExplosionSound,
-  createItemDrop,
   playRageSound, playFeatherReviveSound, playGoldenBeanSound,
   playGoldenBeanFlyEffect,
 } from './combat.js';
@@ -721,11 +720,11 @@ document.addEventListener('DOMContentLoaded', function () {
   // skinCatalog imported from skins.js
   // Items that can have starting counts purchased
   const inventoryItemCatalog = [
-    { id: 'shield',     icon: '🛡️', name: 'Shield',          costPer: 3 },
-    { id: 'bomb',       icon: '💣', name: 'Bomb',            costPer: 3 },
-    { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 5 },
-    { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 5 },
-    { id: 'potionHeal', icon: 'potion-svg', name: 'Potion Power', costPer: 10, suffix: '+15 hp/use' },
+    { id: 'shield',     icon: '🛡️', name: 'Shield',          costPer: 10 },
+    { id: 'bomb',       icon: '💣', name: 'Bomb',            costPer: 20 },
+    { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 10 },
+    { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 20 },
+    { id: 'potionHeal', icon: 'potion-svg', name: 'Potion Power', costPer: 100, suffix: '+15 hp/use' },
   ];
 
   function showLayoutView(view, charLabel, charName) {
@@ -1887,9 +1886,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 checkSharedLevelUp();
                 updateKillProgressBar();
               }
-              const roll = Math.random();
-              if (roll < 0.01) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
-              else if (roll < 0.02) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
             }
             if (enemy.isSiegeMob && state.siegeActive) {
               document.dispatchEvent(new Event('siegeMobKilled'));
@@ -3203,7 +3199,7 @@ let cantGainEXP = false;
           const wipeSubtitle = document.createElement('div');
           wipeSubtitle.className = 'wipe-subtitle';
           wipeSubtitle.textContent = isEndless
-            ? state.endlessKillCount + ' kills'
+            ? 'Castle #' + Math.floor(state.endlessKillCount / 10)
             : 'Round ' + state.currentRound;
           wipeEl.appendChild(wipeSubtitle);
 
@@ -3287,7 +3283,7 @@ let cantGainEXP = false;
                 const subtitle = document.createElement('div');
                 subtitle.className = 'wipe-subtitle';
                 subtitle.textContent = isEndless
-                  ? state.endlessKillCount + ' kills'
+                  ? 'Castle #' + Math.floor(state.endlessKillCount / 10)
                   : 'Round ' + state.currentRound;
                 wipeEl.appendChild(subtitle);
 
@@ -3627,7 +3623,6 @@ let cantGainEXP = false;
       document.getElementById('auto-attack-btn').style.display = 'flex';
       createWeatherEffects();
       document.getElementById("potion-button").style.visibility = "visible";
-      document.getElementById("potion-shop").style.visibility = "visible";
       updatePotionUI();
       critter.scale.set(getFrogSize());
       clearSkinEffects();

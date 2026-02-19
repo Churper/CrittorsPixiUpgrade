@@ -153,6 +153,8 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   state.siegeMobsTotal = totalWithNormals;
   state.siegeMobsRemaining = totalWithNormals;
 
+  // Split babies into two groups by type (grouped for cleave effectiveness)
+  const halfPoint = secondType ? Math.ceil(totalMobs / 2) : totalMobs;
   let spawned = 0;
 
   for (let w = 0; w < waves; w++) {
@@ -162,8 +164,8 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
     for (let m = 0; m < mobsThisWave; m++) {
       const delay = waveDelay + m * 500;
       const spawnIdx = spawned;
-      // Alternate: even-indexed babies are imp, odd-indexed are second type (if available)
-      const useSecondType = secondType && spawnIdx % 2 === 1;
+      // First half = imp, second half = second type (grouped for cleave)
+      const useSecondType = secondType && spawnIdx >= halfPoint;
       const walkTex = useSecondType ? secondType.walkTextures : impWalkTextures;
       const atkTex = useSecondType ? secondType.attackTextures : impAttackTextures;
       const typeName = useSecondType ? secondType.name : 'imp';
@@ -434,7 +436,7 @@ function siegeCastleDestroyed(critter, app) {
   // Generate reward items and drop them on the ground
   const level = state.siegeCastleLevel;
   const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean'];
-  const count = Math.min(2 + Math.floor(level / 4), 5);
+  const count = Math.min(1 + Math.floor(level / 3), 3);
   const rewards = [];
   for (let i = 0; i < count; i++) {
     rewards.push(itemPool[Math.floor(Math.random() * itemPool.length)]);

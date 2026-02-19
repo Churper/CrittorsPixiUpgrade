@@ -54,9 +54,9 @@ Enemy queue system: only 1 enemy engages in melee at a time; others wait at dist
 
 ## Level-Up System
 Auto-applies all 3 stats on level-up (no UI picker):
-- Speed: +0.15
-- Damage: +2
-- Health: +12 (also heals +12 if alive)
+- Speed: +0.2
+- Damage: +3
+- Health: +15 (also heals +15 if alive)
 - EXP requirement increases by 10% each level
 
 ## Game Modes

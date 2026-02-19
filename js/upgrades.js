@@ -136,15 +136,15 @@ export function levelUp() {
   setCharacterSpeed(state.currentCharacter, stats.speed);
   setSpeedChanged(true);
 
-  // Damage +4
-  stats.attack += 4;
+  // Damage +3
+  stats.attack += 3;
   setCharacterDamage(state.currentCharacter, stats.attack);
 
-  // Health +20
-  stats.health += 20;
-  setCharacterHealth(state.currentCharacter, getPlayerHealth() + 20);
+  // Health +15
+  stats.health += 15;
+  setCharacterHealth(state.currentCharacter, getPlayerHealth() + 15);
   if (!getisDead() && getPlayerCurrentHealth() > 0) {
-    setPlayerCurrentHealth(getPlayerCurrentHealth() + 20);
+    setPlayerCurrentHealth(getPlayerCurrentHealth() + 15);
   }
   updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
 
@@ -191,12 +191,12 @@ export function checkSharedLevelUp(amount = 10) {
     stats.speed += 0.2;
     setCharacterSpeed(charKey, stats.speed);
 
-    // Damage +4
-    stats.attack += 4;
+    // Damage +3
+    stats.attack += 3;
     setCharacterDamage(charKey, stats.attack);
 
-    // Health +20
-    stats.health += 20;
+    // Health +15
+    stats.health += 15;
     setCharacterHealth(charKey, stats.health);
 
     // Increment level
@@ -208,10 +208,10 @@ export function checkSharedLevelUp(amount = 10) {
     state[ch + 'Damage'] = stats.attack;
     state[ch + 'Health'] = stats.health;
 
-    // Heal current HP +20 if alive
+    // Heal current HP +15 if alive
     const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
     if (state[hpKey] > 0) {
-      state[hpKey] = Math.min(state[hpKey] + 20, stats.health);
+      state[hpKey] = Math.min(state[hpKey] + 15, stats.health);
     }
 
     // Defense goes up with level

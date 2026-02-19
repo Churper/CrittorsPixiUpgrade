@@ -57,6 +57,9 @@ function cleaveNearbyBaby(critter, killedEnemy) {
   // Kill the cleaved baby
   nearest.currentHP = 0;
   nearest.isAlive = false;
+  if (nearest.enemyAdded && getEnemiesInRange() > 0) {
+    setEnemiesInRange(getEnemiesInRange() - 1);
+  }
   if (state.app.stage.children.includes(nearest)) {
     state.app.stage.removeChild(nearest);
   }
@@ -193,7 +196,7 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(2 + sc / 3) + 2;
+    enemy.attackDamage = Math.round(3 + sc / 2) + 2;
     enemy.maxHP = 200 + sc * 5;
     enemy.exp = 32 + sc * 4;
   } else {
@@ -255,7 +258,7 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(2 + sc / 3);
+    enemy.attackDamage = Math.round(3 + sc / 2);
     enemy.maxHP = 80 + sc * 5;
     enemy.exp = 32 + sc * 2;
   } else {
@@ -486,8 +489,8 @@ export function rangedAttack(critter, enemy) {
           }
 
           createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-          // Item drop — demi-boss only
-          if (state.gameMode === 'endless' && enemy.isDemi) {
+          // Item drop — 50% chance from demi-boss
+          if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.5) {
             const items = ['shield','bomb','rage','feather','goldenBean'];
             createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
           }
@@ -1214,6 +1217,8 @@ export function awardBones(enemy) {
   const amount = enemy.isDemi ? 3 : 1;
   setBones(getBones() + amount);
   saveBones();
+  const bonesEl = document.getElementById('bones-amount');
+  if (bonesEl) bonesEl.textContent = getBones();
   // Visual popup near the kill
   if (state.app) {
     const txt = new PIXI.Text({ text: `+${amount} 🦴`, style: {

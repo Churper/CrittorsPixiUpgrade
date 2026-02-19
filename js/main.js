@@ -2572,8 +2572,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 updateKillProgressBar();
               }
               const roll = Math.random();
-              if (roll < 0.025) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
-              else if (roll < 0.05) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
+              if (roll < 0.01) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
+              else if (roll < 0.02) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
             }
             if (enemy.isSiegeMob && state.siegeActive) {
               document.dispatchEvent(new Event('siegeMobKilled'));
@@ -2921,8 +2921,13 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('snail').style.display = 'none';
       document.getElementById('progress').style.display = 'none';
       document.getElementById('progress-filled').style.display = 'none';
-      // Show endless timer
+      // Show endless timer + bones counter
       document.getElementById('endless-timer').style.display = 'flex';
+      const bonesDisplay = document.getElementById('bones-display');
+      if (bonesDisplay) {
+        bonesDisplay.style.display = 'block';
+        document.getElementById('bones-amount').textContent = state.bones;
+      }
       // Wire auto-attack button (shown after loading finishes)
       const autoBtn = document.getElementById('auto-attack-btn');
       autoBtn.addEventListener('click', () => {
@@ -2956,8 +2961,8 @@ document.addEventListener('DOMContentLoaded', function () {
           const levelsToGain = targetLevel - 1; // from level 1
           if (levelsToGain > 0) {
             stats.speed += 0.2 * levelsToGain;
-            stats.attack += 4 * levelsToGain;
-            stats.health += 20 * levelsToGain;
+            stats.attack += 3 * levelsToGain;
+            stats.health += 15 * levelsToGain;
             state[ch + 'Level'] = targetLevel;
             // Sync state properties with characterStats
             if (ch === 'frog') { state.speed = stats.speed; }
@@ -4458,6 +4463,17 @@ state.frogGhostPlayer.scale.set(0.28);
                 state.attackSound.volume = state.effectsVolume;
                 state.attackSound.play();
                 if (attackingChar === "character-bird") {
+                  // Skip firing if no alive enemies ahead within egg range
+                  const hasTarget = getEnemies().some(e => e.isAlive && e.position.x > critter.position.x && e.position.x - critter.position.x < 500);
+                  if (!hasTarget && !(state.siegeActive && state.siegePhase === 'castle')) {
+                    state.isAttackingChar = false;
+                    setIsCharAttacking(false);
+                    setCharAttackAnimating(false);
+                    critter.textures = state.frogWalkTextures;
+                    critter.loop = true;
+                    critter.play();
+                    return;
+                  }
                   const birdProjectile = new PIXI.Sprite(textures.bird_egg);
                   birdProjectile.position.set(
                     critter.position.x,
@@ -5387,6 +5403,16 @@ state.demiSpawned = 0;
           // Ensure health bar reflects the new character (fixes stale bar after dead→alive swap)
           updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
           // Fall through to auto-attack check (no early return)
+        }
+        // Reconcile enemiesInRange with reality — prevent stale counter after baby clears
+        if (getEnemiesInRange() > 0) {
+          const aliveNearby = getEnemies().filter(e => e.isAlive && e.enemyAdded).length;
+          if (aliveNearby === 0) {
+            setEnemiesInRange(0);
+            state.isCombat = false;
+            state.isAttackingChar = false;
+            setIsCharAttacking(false);
+          }
         }
         // Auto-attack: trigger attack when enemies are in range, or at siege castle
         const atSiegeCastle = state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&

@@ -571,6 +571,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   document.getElementById('layout-btn').addEventListener('click', function() {
     showLayoutDeck();
+    updateDeckPositions();
     updateLayoutUI();
     showPanel('layout');
   });
@@ -733,6 +734,7 @@ document.addEventListener('DOMContentLoaded', function () {
     layoutInventoryView.classList.remove('active');
     layoutDeckArea.style.display = 'flex';
     activeSubviewChar = null;
+    updateDeckPositions();
     // Restore inventory button label
     document.getElementById('layout-inventory-btn').textContent = '🎒 Inventory';
   }

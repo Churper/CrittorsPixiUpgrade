@@ -5108,8 +5108,10 @@ state.demiSpawned = 0;
           updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
           // Fall through to auto-attack check (no early return)
         }
-        // Auto-attack: trigger attack when enemies are in range
-        if (state.autoAttack && getEnemiesInRange() > 0 && !state.isAttackingChar && !state.isPointerDown) {
+        // Auto-attack: trigger attack when enemies are in range, or at siege castle
+        const atSiegeCastle = state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&
+          critter.position.x >= state.siegeCastleSprite.position.x - state.siegeCastleSprite.width / 1.1;
+        if ((state.autoAttack || atSiegeCastle) && (getEnemiesInRange() > 0 || atSiegeCastle) && !state.isAttackingChar && !state.isPointerDown) {
           handleTouchHold();
         }
 
@@ -5180,9 +5182,24 @@ state.demiSpawned = 0;
         }
 
         if (getSpeedChanged()) { updateVelocity(); setSpeedChanged(false); }
+
+        // --- Siege: stop character during reward phase ---
+        const siegeFrozen = state.siegeActive && (state.siegePhase === 'reward');
+        // --- Siege: stop character at castle during castle phase ---
+        const siegeAtCastle = state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&
+          critter.position.x >= state.siegeCastleSprite.position.x - state.siegeCastleSprite.width / 1.1;
+
         if (!state.isAttackingChar) {
           if (!getisDead()) {
-            if (!state.isCombat) {
+            if (siegeFrozen || siegeAtCastle) {
+              // Freeze critter in place during siege reward or at castle
+              if (critter.textures !== frogIdleTextures) {
+                critter.textures = frogIdleTextures;
+                critter.stop();
+                critter.loop = false;
+              }
+            }
+            else if (!state.isCombat) {
               if (!state.isPointerDown) {
                 if (getEnemiesInRange() <= 0) {
 

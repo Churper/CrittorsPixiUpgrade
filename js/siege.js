@@ -477,7 +477,14 @@ function showSiegeRewardPanel() {
     rewards.forEach(item => {
       const div = document.createElement('div');
       div.className = 'siege-reward-item';
-      div.textContent = emojiMap[item] + ' ' + nameMap[item];
+      const emoji = document.createElement('span');
+      emoji.className = 'reward-emoji';
+      emoji.textContent = emojiMap[item];
+      const name = document.createElement('span');
+      name.className = 'reward-name';
+      name.textContent = nameMap[item];
+      div.appendChild(emoji);
+      div.appendChild(name);
       listEl.appendChild(div);
     });
   }
@@ -486,9 +493,19 @@ function showSiegeRewardPanel() {
   const titleEl = document.getElementById('siege-reward-title');
   if (titleEl) titleEl.textContent = 'Castle #' + level + ' Cleared!';
 
+  // Subtitle (add if not present)
+  let subtitleEl = document.querySelector('.siege-reward-subtitle');
+  if (!subtitleEl) {
+    subtitleEl = document.createElement('p');
+    subtitleEl.className = 'siege-reward-subtitle';
+    const panel = document.getElementById('siege-reward-panel');
+    if (panel && titleEl) panel.insertBefore(subtitleEl, titleEl.nextSibling);
+  }
+  subtitleEl.textContent = '+25 HP healed  ·  ' + rewards.length + ' items earned';
+
   // Checkpoint message
   const msgEl = document.getElementById('siege-checkpoint-msg');
-  if (msgEl) msgEl.textContent = 'Checkpoint unlocked! You can start from here on the Map.';
+  if (msgEl) msgEl.textContent = 'Checkpoint unlocked! Start from here on the Map.';
 
   // Show panel
   const backdrop = document.getElementById('siege-reward-backdrop');

@@ -2142,7 +2142,7 @@ touch-action: manipulation;
   position: fixed;
   top: 0; left: 0;
   width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
   z-index: 100000;
   justify-content: center;
   align-items: center;
@@ -2151,43 +2151,81 @@ touch-action: manipulation;
   display: flex;
 }
 #siege-reward-panel {
-  width: 80%;
-  max-width: 340px;
-  background: rgba(8, 12, 20, 0.94);
-  border: 2px solid rgba(100, 160, 200, 0.5);
-  border-radius: 16px;
-  padding: 24px 20px;
+  width: 85%;
+  max-width: 360px;
+  background: linear-gradient(170deg, rgba(12, 18, 32, 0.96), rgba(6, 10, 22, 0.98));
+  border: 2px solid rgba(255, 200, 60, 0.4);
+  border-radius: 18px;
+  padding: 28px 22px 22px;
   text-align: center;
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;
+  box-shadow: 0 0 40px rgba(255, 200, 60, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  animation: siegePanelIn 0.4s ease-out;
+}
+@keyframes siegePanelIn {
+  0% { transform: scale(0.7); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
 }
 #siege-reward-panel h2 {
   font-family: 'Luckiest Guy', cursive;
-  font-size: 1.6em;
+  font-size: 1.7em;
   color: #ffdd44;
-  text-shadow: 0 0 10px rgba(255, 200, 0, 0.3);
+  text-shadow: 0 0 14px rgba(255, 200, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.6);
+  margin: 0 0 6px;
+}
+.siege-reward-subtitle {
+  font-size: 0.85em;
+  color: rgba(200, 220, 240, 0.5);
   margin: 0 0 16px;
 }
 #siege-reward-list {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
 }
 .siege-reward-item {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(100, 160, 200, 0.3);
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 1.1em;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  border: 1px solid rgba(255, 200, 60, 0.25);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 1em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: transform 0.15s ease;
+  animation: rewardItemPop 0.3s ease-out backwards;
+}
+.siege-reward-item:nth-child(1) { animation-delay: 0.1s; }
+.siege-reward-item:nth-child(2) { animation-delay: 0.2s; }
+.siege-reward-item:nth-child(3) { animation-delay: 0.3s; }
+.siege-reward-item:nth-child(4) { animation-delay: 0.4s; }
+.siege-reward-item:nth-child(5) { animation-delay: 0.5s; }
+@keyframes rewardItemPop {
+  0% { transform: scale(0); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.siege-reward-item .reward-emoji {
+  font-size: 1.5em;
+}
+.siege-reward-item .reward-name {
+  font-size: 0.95em;
+  color: #e8eef4;
 }
 #siege-checkpoint-msg {
-  font-size: 0.85em;
-  color: rgba(200, 220, 240, 0.6);
-  margin: 8px 0 16px;
+  font-size: 0.82em;
+  color: rgba(80, 220, 120, 0.7);
+  margin: 6px 0 18px;
+  font-style: italic;
 }
 #siege-reward-continue-btn {
-  margin-top: 4px;
+  margin-top: 2px;
+  border-color: rgba(255, 200, 60, 0.4);
+  box-shadow: 0 0 12px rgba(255, 200, 60, 0.15);
 }
 
 /* ── Overworld Map Panel ──────────────────────────────── */

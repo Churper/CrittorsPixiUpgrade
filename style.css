@@ -155,6 +155,7 @@ body {
   z-index: 1;
   margin-top: 12px;
   flex-shrink: 0;
+  align-self: center;
 }
 
 #info-panel {
@@ -2196,14 +2197,14 @@ touch-action: manipulation;
 #siege-reward-panel {
   width: 85%;
   max-width: 360px;
-  background: linear-gradient(170deg, rgba(12, 18, 32, 0.96), rgba(6, 10, 22, 0.98));
-  border: 2px solid rgba(255, 200, 60, 0.4);
+  background: linear-gradient(170deg, rgba(10, 16, 30, 0.97), rgba(6, 10, 22, 0.98));
+  border: 2px solid rgba(80, 180, 220, 0.4);
   border-radius: 18px;
   padding: 28px 22px 22px;
   text-align: center;
   color: #dde4ec;
   font-family: 'Patrick Hand', cursive;
-  box-shadow: 0 0 40px rgba(255, 200, 60, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: 0 0 40px rgba(60, 160, 220, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.06);
   animation: siegePanelIn 0.4s ease-out;
 }
 @keyframes siegePanelIn {
@@ -2214,8 +2215,8 @@ touch-action: manipulation;
 #siege-reward-panel h2 {
   font-family: 'Luckiest Guy', cursive;
   font-size: 1.7em;
-  color: #ffdd44;
-  text-shadow: 0 0 14px rgba(255, 200, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.6);
+  color: #e0ecff;
+  text-shadow: 0 0 14px rgba(80, 160, 240, 0.4), 0 2px 4px rgba(0, 0, 0, 0.6);
   margin: 0 0 6px;
 }
 .siege-reward-subtitle {
@@ -2232,7 +2233,7 @@ touch-action: manipulation;
 }
 .siege-reward-item {
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
-  border: 1px solid rgba(255, 200, 60, 0.25);
+  border: 1px solid rgba(80, 180, 220, 0.25);
   border-radius: 12px;
   padding: 10px 14px;
   font-size: 1em;
@@ -2267,8 +2268,8 @@ touch-action: manipulation;
 }
 #siege-reward-continue-btn {
   margin-top: 2px;
-  border-color: rgba(255, 200, 60, 0.4);
-  box-shadow: 0 0 12px rgba(255, 200, 60, 0.15);
+  border-color: rgba(80, 180, 220, 0.4);
+  box-shadow: 0 0 12px rgba(60, 160, 220, 0.15);
 }
 
 /* ── Overworld Map Panel ──────────────────────────────── */

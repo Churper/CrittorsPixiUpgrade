@@ -3101,7 +3101,7 @@ document.addEventListener('DOMContentLoaded', function () {
           goldenBeanBtn.classList.toggle('active', getGoldenBeanCount() > 0);
           if (getGoldenBeanCount() <= 0) { goldenBeanBtn.style.display = 'none'; }
           repositionItemButtons();
-          playGoldenBeanFlyEffect(critter, 100);
+          playGoldenBeanFlyEffect(critter, 60);
           playGoldenBeanSound();
         }
       });

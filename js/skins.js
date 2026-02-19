@@ -7,7 +7,7 @@ import { getCurrentCharacter } from './state.js';
 export const skinCatalog = [
   // Frog skins
   { id: 'frog-ice',    icon: '🧊', name: 'Ice Frog',         cost: 3, charOnly: 'frog' },
-  { id: 'frog-golden', icon: '✨', name: 'Golden Frog',      cost: 5, charOnly: 'frog' },
+  { id: 'frog-golden', icon: '✨', name: 'Silver Frog',       cost: 5, charOnly: 'frog' },
   { id: 'frog-cherry', icon: '🌸', name: 'Cherry Frog',      cost: 3, charOnly: 'frog' },
   { id: 'frog-pride',  icon: '🏳️‍⚧️', name: 'Pride Frog',       cost: 4, charOnly: 'frog' },
   { id: 'frog-poison', icon: '☠️', name: 'Poison Dart Frog', cost: 4, charOnly: 'frog' },
@@ -74,7 +74,8 @@ const skinHueConfigs = {
     { from: 70, to: 160, targetFrom: 192, targetTo: 206, sat: 1.2, lit: 1.1, shine: 0.1 },
   ],
   'frog-golden': [
-    { from: 70, to: 160, targetFrom: 44, targetTo: 50, sat: 1.35, lit: 1.0, shine: 0.35 },
+    // Silver: desaturated cool steel with subtle shine
+    { from: 70, to: 160, targetFrom: 210, targetTo: 220, sat: 0.15, lit: 1.3, shine: 0.25 },
   ],
   'frog-cherry': [
     { from: 70, to: 160, targetFrom: 338, targetTo: 350, sat: 1.2, lit: 1.05 },
@@ -113,8 +114,9 @@ const skinHueConfigs = {
     { from: 140, to: 334, targetFrom: 262, targetTo: 278, sat: 1.25, lit: 0.75, shine: 0.15 },
     { from: 335, to: 360, targetFrom: 268, targetTo: 276, sat: 0.85, lit: 0.82 },
     { from: 0, to: 20, targetFrom: 268, targetTo: 276, sat: 0.85, lit: 0.82 },
-    { from: 21, to: 37, targetFrom: 265, targetTo: 274, sat: 0.8, lit: 0.78 },
-    { from: 38, to: 68, targetFrom: 256, targetTo: 266, sat: 0.65, lit: 0.82 },
+    // Body — cosmic teal to contrast purple shell
+    { from: 21, to: 37, targetFrom: 175, targetTo: 190, sat: 0.9, lit: 0.85 },
+    { from: 38, to: 68, targetFrom: 168, targetTo: 182, sat: 0.75, lit: 0.9 },
   ],
 
   // ── BIRD (body = 80-168, crest = 258-328) ──

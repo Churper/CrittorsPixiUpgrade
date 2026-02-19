@@ -229,6 +229,30 @@ function spawnSiegeNormalEnemy(critter, app, enemyType) {
   const enemy = createSpawnEnemy(enemyType.walkTextures, enemyType.name, critter);
   enemy.isSiegeMob = true;
 
+  // Apply item effects at later siege levels
+  const level = state.siegeCastleLevel;
+  if (level >= 3) {
+    const pool = ['shield'];
+    if (level >= 4) pool.push('feather');
+    if (level >= 5) pool.push('bomb');
+    const effect = pool[Math.floor(Math.random() * pool.length)];
+
+    if (effect === 'shield') {
+      enemy.enemyShieldHP = Math.round(enemy.maxHP * 0.5);
+      const shield = new PIXI.Graphics();
+      shield.circle(0, 0, 60).fill({ color: 0x3399ff, alpha: 0.15 });
+      shield.circle(0, 0, 60).stroke({ color: 0x3399ff, alpha: 0.45, width: 2 });
+      enemy.addChild(shield);
+      enemy._shieldGfx = shield;
+    } else if (effect === 'feather') {
+      enemy.hasFeather = true;
+      enemy.tint = 0xFFEEBB;
+    } else if (effect === 'bomb') {
+      enemy.dropsBomb = true;
+      enemy.tint = 0xFFAAAA;
+    }
+  }
+
   addEnemies(enemy);
   if (enemy.isAlive) {
     app.stage.addChild(enemy);
@@ -264,37 +288,6 @@ function transitionToCastlePhase() {
   if (state.siegeCastleHPBar) state.siegeCastleHPBar.visible = true;
   if (state.siegeCastleHPBarBG) state.siegeCastleHPBarBG.visible = true;
 
-  // Show "Destroy the Castle!" text
-  if (castle && app) {
-    const txt = new PIXI.Text({
-      text: 'Destroy the Castle!',
-      style: {
-        fontFamily: 'Luckiest Guy, cursive',
-        fontSize: 28,
-        fill: '#ffdd44',
-        stroke: { color: '#000000', width: 4 },
-      }
-    });
-    txt.anchor.set(0.5);
-    txt.position.set(castle.position.x, castle.position.y - castle.height - 50);
-    txt.zIndex = 99999;
-    app.stage.addChild(txt);
-
-    // Fade out after 2s
-    setTimeout(() => {
-      let fadeElapsed = 0;
-      const fadeTicker = (ticker) => {
-        fadeElapsed += ticker.deltaTime;
-        txt.alpha = Math.max(0, 1 - fadeElapsed / 60);
-        if (fadeElapsed >= 60) {
-          app.ticker.remove(fadeTicker);
-          if (app.stage.children.includes(txt)) app.stage.removeChild(txt);
-          txt.destroy();
-        }
-      };
-      app.ticker.add(fadeTicker);
-    }, 2000);
-  }
 }
 
 // --- Castle Combat ---

@@ -406,6 +406,16 @@ export function rangedAttack(critter, enemy) {
   drawHitSplat(enemy);
   if (enemy.currentHP <= 0) {
 
+      // Feather revive — enemy comes back at 50% HP once
+      if (enemy.hasFeather) {
+        enemy.hasFeather = false;
+        enemy.currentHP = Math.round(enemy.maxHP * 0.5);
+        enemy.tint = 0xFFD700;
+        setTimeout(() => { enemy.tint = 0xFFFFFF; }, 400);
+        drawEnemyHPBar(enemy);
+        return;
+      }
+
       // Callback function to remove enemy after death animation2
       if (state.app.stage.children.includes(enemy)) {
           enemy.tint = 0xFF0000; // Set the hit color
@@ -414,6 +424,16 @@ export function rangedAttack(critter, enemy) {
           if (getEnemiesInRange() === 0) {
               const enemyPortrait = document.getElementById('enemy-portrait');
               enemyPortrait.style.display = 'none'; // Make the element visible
+          }
+
+          // Bomb — deal AoE damage to player on death
+          if (enemy.dropsBomb) {
+            const bombDmg = Math.max(5, Math.round(10 + (state.siegeCastleLevel || 0) * 5));
+            setPlayerCurrentHealth(getPlayerCurrentHealth() - bombDmg);
+            updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
+            playExplosionSound();
+            critter.tint = 0xFF4400;
+            setTimeout(() => { critter.tint = 0xFFFFFF; }, 200);
           }
 
           createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
@@ -845,6 +865,17 @@ export function drawHitSplat(enemy) {
       console.log('Invalid character type');
   }
 
+  // Enemy shield absorption — damage hits shield HP first
+  if (damage && enemy.enemyShieldHP && enemy.enemyShieldHP > 0) {
+    const absorbed = Math.min(damage, enemy.enemyShieldHP);
+    enemy.currentHP += absorbed;
+    enemy.enemyShieldHP -= absorbed;
+    if (enemy.enemyShieldHP <= 0) {
+      enemy.enemyShieldHP = 0;
+      if (enemy._shieldGfx) { enemy._shieldGfx.destroy(); enemy._shieldGfx = null; }
+    }
+  }
+
   // Detect hit type
   const isCrit = damage > baseDamage;
   const isDud = damage < baseDamage;
@@ -957,6 +988,16 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
 
   if (enemy.currentHP - getCharacterDamage(getCurrentCharacter()) <= 0) {
 
+    // Feather revive — enemy comes back at 50% HP once
+    if (enemy.hasFeather) {
+      enemy.hasFeather = false;
+      enemy.currentHP = Math.round(enemy.maxHP * 0.5);
+      enemy.tint = 0xFFD700;
+      setTimeout(() => { enemy.tint = 0xFFFFFF; }, 400);
+      drawEnemyHPBar(enemy);
+      return;
+    }
+
     // Callback function to remove enemy after death animation
     if (state.app.stage.children.includes(enemy)) {
       enemy.tint = 0xFF0000; // Set the hit color
@@ -971,6 +1012,16 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
         enemyPortrait.style.display = 'none'; // Make the element visible
       }
       state.currentAttackedEnemy = null;
+
+      // Bomb — deal AoE damage to player on death
+      if (enemy.dropsBomb) {
+        const bombDmg = Math.max(5, Math.round(10 + (state.siegeCastleLevel || 0) * 5));
+        setPlayerCurrentHealth(getPlayerCurrentHealth() - bombDmg);
+        updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
+        playExplosionSound();
+        critter.tint = 0xFF4400;
+        setTimeout(() => { critter.tint = 0xFFFFFF; }, 200);
+      }
 
       enemy.isAlive = false;
       if (enemy.isDemi) {

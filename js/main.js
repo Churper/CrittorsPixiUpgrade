@@ -58,7 +58,7 @@ import {
 } from './siege.js';
 import {
   skyGradients,
-  getWeatherType, updateWeatherIcon,
+  getWeatherType,
   clearWeatherEffects, createWeatherEffects, updateWeatherEffects,
   initWeather,
 } from './weather.js';
@@ -482,14 +482,14 @@ document.addEventListener('DOMContentLoaded', function () {
   initMenuScene();
   window.addEventListener('resize', () => { if (menuAnimId) { cancelAnimationFrame(menuAnimId); initMenuScene(); } });
 
-  function startFromMenu(mode) {
+  function startFromMenu() {
     if (menuAnimId) { cancelAnimationFrame(menuAnimId); menuAnimId = null; }
     rotateMessage.style.display = 'none';
     // Show loading overlay
     const loadingOverlay = document.getElementById('loading-overlay');
     if (loadingOverlay) loadingOverlay.style.display = 'flex';
     if (!appStarted) {
-      state.gameMode = mode;
+      state.gameMode = 'endless';
       // Start music here, within the user gesture (before any await)
       const sound = new Audio('./theme.ogg');
       sound.volume = state.musicVolume;
@@ -1897,10 +1897,6 @@ document.addEventListener('DOMContentLoaded', function () {
             app.stage.removeChild(enemy);
             const idx = enemies.indexOf(enemy);
             if (idx !== -1) enemies.splice(idx, 1);
-            if (state.gameMode !== 'endless') {
-              const expGain = enemy.exp || 32;
-              updateEXP(getCharEXP(getCurrentCharacter()) + expGain);
-            }
           }
         });
 
@@ -1996,13 +1992,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Endless mode setup ---
     if (state.gameMode === 'endless') {
-      // Unlock all 4 characters
-      state.unlockedCharacters = ['character-frog', 'character-snail', 'character-bird', 'character-bee'];
-      // Hide timer bar (snail + progress)
-      document.getElementById('snail').style.display = 'none';
-      document.getElementById('progress').style.display = 'none';
-      document.getElementById('progress-filled').style.display = 'none';
-      // Show bones counter (replaces kill count in endless-timer)
+      // Show bones counter
       document.getElementById('endless-timer').style.display = 'flex';
       const bonesAmountEl = document.getElementById('bones-amount');
       if (bonesAmountEl) bonesAmountEl.textContent = state.bones;
@@ -2930,7 +2920,6 @@ state.frogGhostPlayer.scale.set(0.28);
       }
 
 let hasExploded = false;
-let unlockAnimSprite = null;
       // Damage function
       function castleExpDrop(damage){
         expToGive = Math.round(damage * 0.75);
@@ -3000,59 +2989,16 @@ let unlockAnimSprite = null;
         updateHPBar(castleHealth, castleMaxHealth);
       }
 let cantGainEXP = false;
-      function showUnlockText(characterType) {
-        const names = {
-          'character-snail': '\u{1F40C} Snail',
-          'character-bird': '\u{1F99A} Bird',
-          'character-bee': '\u{1F41D} Bee'
-        };
-        const el = document.getElementById('unlock-text');
-        el.textContent = names[characterType] + ' Unlocked!';
-        el.style.visibility = 'visible';
-        el.style.opacity = '1';
-        setTimeout(() => { el.style.opacity = '0'; }, 2000);
-        setTimeout(() => { el.style.visibility = 'hidden'; }, 2500);
-      }
 
       function castleExplode() {
         cantGainEXP = true;
         state.currentRound++;
-        updateWeatherIcon();
         // Transition ground biome for the new round
         const newWeather = getWeatherType();
         if (endlessGround && newWeather !== endlessGroundCurrentWeather && !state.biomeTransition) {
           transitionWeather(newWeather);
         } else {
           createWeatherEffects();
-        }
-
-        // Check for character unlocks
-        const unlocks = { 2: 'character-snail', 5: 'character-bird', 10: 'character-bee' };
-        const newChar = unlocks[state.currentRound];
-        if (newChar && !state.unlockedCharacters.includes(newChar)) {
-          state.unlockedCharacters.push(newChar);
-
-          // Prepare unlock walk-out sprite (added to stage after explosions)
-          const unlockTexMap = {
-            'character-snail': snailWalkTextures,
-            'character-bird': birdWalkTextures,
-            'character-bee': beeWalkTextures,
-          };
-          const texs = unlockTexMap[newChar];
-          if (texs) {
-            unlockAnimSprite = new PIXI.AnimatedSprite(texs);
-            unlockAnimSprite.scale.set(0.05);
-            unlockAnimSprite.anchor.set(0.5, 0.5);
-            unlockAnimSprite.position.set(
-              castle.position.x - castle.width / 2,
-              state.stored
-            );
-            unlockAnimSprite.animationSpeed = 0.2;
-            unlockAnimSprite.loop = true;
-            unlockAnimSprite.scale.x *= -1; // Face left toward base
-            unlockAnimSprite.zIndex = 10000;
-            unlockAnimSprite.unlockChar = newChar;
-          }
         }
 
         // Rebuild enemy types for the new round
@@ -3098,12 +3044,6 @@ let cantGainEXP = false;
                 completedExplosions++; // Increment the counter when an explosion completes
 
                 if (completedExplosions === 7) { // All explosions completed
-                  // Spawn unlock character walking out of the rubble
-                  if (unlockAnimSprite) {
-                    app.stage.addChild(unlockAnimSprite);
-                    unlockAnimSprite.play();
-                    showUnlockText(unlockAnimSprite.unlockChar);
-                  }
                   state.roundOver = true;
               }
             };
@@ -3251,9 +3191,8 @@ let cantGainEXP = false;
           state.isCharacterMenuOpen = false;
 
           const wipeEl = document.getElementById('wipe-text');
-          const isEndless = state.gameMode === 'endless';
-          const score = isEndless ? state.endlessKillCount : state.currentRound;
-          const mode = isEndless ? 'endless' : 'story';
+          const score = state.endlessKillCount;
+          const mode = 'endless';
 
           wipeEl.innerHTML = '';
           const wipeTitle = document.createElement('div');
@@ -3308,159 +3247,14 @@ let cantGainEXP = false;
             document.getElementById('spawn-text').style.visibility = 'visible';
           }
 
-          // Camera: match sprite walk speed during unlock, keep panning to 0 during celebration
-          const unlockActive = unlockAnimSprite && app.stage.children.includes(unlockAnimSprite);
-          const celebrating = unlockActive && unlockAnimSprite.celebrating;
-          // Keep panning during celebration until camera reaches 0, then freeze
-          const cameraAtTarget = Math.abs(app.stage.x) < 2 && Math.abs(app.stage.y) < 2;
-          const cameraSpeed = (celebrating && cameraAtTarget) ? 0 : (unlockActive ? 6 : 6);
-
-          // Calculate the target position (start position, or stay in place for endless)
-          const targetX = (state.gameMode === 'endless') ? app.stage.x : 0;
-          const targetY = (state.gameMode === 'endless') ? app.stage.y : 0;
-
-          // Calculate the distance between the current position and the target position
-          const distanceX = targetX - app.stage.x;
-          const distanceY = targetY - app.stage.y;
-
-          // Calculate the movement for this frame
-          const movementX = Math.sign(distanceX) * Math.min(Math.abs(distanceX), cameraSpeed) * state.dt;
-          const movementY = Math.sign(distanceY) * Math.min(Math.abs(distanceY), cameraSpeed) * state.dt;
-
-          // Update the camera position
-          app.stage.x += movementX;
-          app.stage.y += movementY;
+          // Mountain parallax
           mountain1.position.x -= velocity.x * mountain1Speed * state.dt;
           mountain2.position.x += velocity.x * mountain2Speed * state.dt;
           mountain3.position.x += velocity.x * mountain3Speed * state.dt;
           mountain4.position.x += velocity.x * mountain4Speed * state.dt;
           wrapMountains();
 
-          // Animate unlock character walking out of castle toward player's base
-          if (unlockActive) {
-            // Stop at the player's starting castle area (x=250), not past it
-            const celebrationX = 300;
-
-            if (!unlockAnimSprite.celebrating) {
-              // Grow from tiny to full size (squirm out effect)
-              const targetScale = 0.35;
-              const currentScale = Math.abs(unlockAnimSprite.scale.x);
-              if (currentScale < targetScale) {
-                const growStep = 0.006;
-                const newScale = Math.min(currentScale + growStep, targetScale);
-                unlockAnimSprite.scale.set(newScale);
-                unlockAnimSprite.scale.x *= -1; // Keep facing left
-              }
-              // Walk left toward the player's castle
-              unlockAnimSprite.position.x -= 6 * state.dt;
-              unlockAnimSprite.position.y = state.stored + Math.sin(Date.now() * 0.008) * 3;
-
-              // Reached the player's castle — start celebration!
-              if (unlockAnimSprite.position.x <= celebrationX) {
-                unlockAnimSprite.celebrating = true;
-                unlockAnimSprite.celebrateStart = Date.now();
-                unlockAnimSprite.position.x = celebrationX;
-                // Snap critter next to the unlock character
-                critter.position.x = celebrationX - 70;
-                critter.position.y = state.stored;
-
-                // Spawn 🥳 emoji above them
-                const partyEmoji = new PIXI.Text('\u{1F973}', { fontSize: 64 });
-                partyEmoji.anchor.set(0.5);
-                partyEmoji.position.set(celebrationX - 35, state.stored - 80);
-                partyEmoji.zIndex = 99999;
-                app.stage.addChild(partyEmoji);
-                unlockAnimSprite.partyEmoji = partyEmoji;
-
-                // Spawn confetti particles
-                const confettiContainer = new PIXI.Container();
-                confettiContainer.zIndex = 99998;
-                app.stage.addChild(confettiContainer);
-                unlockAnimSprite.confettiContainer = confettiContainer;
-                const confettiColors = [0xFF4444, 0x44BB44, 0x4488FF, 0xFFDD00, 0xFF88DD, 0xFF8800, 0xAA44FF];
-                for (let i = 0; i < 40; i++) {
-                  const particle = new PIXI.Graphics();
-                  const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
-                  const w = 4 + Math.random() * 6;
-                  const h = 3 + Math.random() * 5;
-                  particle.rect(-w / 2, -h / 2, w, h).fill(color);
-                  particle.position.set(
-                    celebrationX - 100 + Math.random() * 200,
-                    state.stored - 120 - Math.random() * 80
-                  );
-                  particle.vx = (Math.random() - 0.5) * 3;
-                  particle.vy = -2 + Math.random() * 2;
-                  particle.gravity = 0.08 + Math.random() * 0.04;
-                  particle.spin = (Math.random() - 0.5) * 0.15;
-                  particle.drift = (Math.random() - 0.5) * 0.3;
-                  confettiContainer.addChild(particle);
-                }
-              }
-            } else {
-              // Celebration! Slow bouncy hops + flip direction back and forth
-              const elapsed = Date.now() - unlockAnimSprite.celebrateStart;
-              const bounce = Math.sin(elapsed * 0.006) * 18;
-              unlockAnimSprite.position.y = state.stored - Math.abs(bounce);
-              critter.position.y = state.stored - Math.abs(Math.sin((elapsed * 0.006) + Math.PI)) * 18;
-
-              // Flip facing direction each bounce cycle
-              const flipCycle = Math.sin(elapsed * 0.006);
-              unlockAnimSprite.scale.x = flipCycle > 0 ? -Math.abs(unlockAnimSprite.scale.x) : Math.abs(unlockAnimSprite.scale.x);
-              critter.scale.x = flipCycle > 0 ? -Math.abs(critter.scale.x) : Math.abs(critter.scale.x);
-
-              // Animate 🥳 emoji — float up and bob
-              if (unlockAnimSprite.partyEmoji) {
-                const pe = unlockAnimSprite.partyEmoji;
-                pe.position.y -= 0.3 * state.dt;
-                pe.rotation = Math.sin(elapsed * 0.005) * 0.2;
-                pe.scale.set(1 + Math.sin(elapsed * 0.008) * 0.1);
-              }
-
-              // Animate confetti — fall, tumble, drift
-              if (unlockAnimSprite.confettiContainer) {
-                for (const p of unlockAnimSprite.confettiContainer.children) {
-                  p.vy += p.gravity * state.dt;
-                  p.vx += p.drift * 0.02 * state.dt;
-                  p.position.x += p.vx * state.dt;
-                  p.position.y += p.vy * state.dt;
-                  p.rotation += p.spin;
-                  // Slow down sideways drift for flutter effect
-                  p.vx *= 0.995;
-                }
-              }
-
-              // After 3 seconds, fade out and clean up
-              if (elapsed > 3000) {
-                // Reset critter facing direction
-                critter.scale.x = Math.abs(critter.scale.x);
-                unlockAnimSprite.alpha -= 0.04;
-                critter.position.y = state.stored; // Reset player position
-
-                // Fade confetti and emoji too
-                if (unlockAnimSprite.partyEmoji) unlockAnimSprite.partyEmoji.alpha -= 0.04;
-                if (unlockAnimSprite.confettiContainer) unlockAnimSprite.confettiContainer.alpha -= 0.04;
-
-                if (unlockAnimSprite.alpha <= 0) {
-                  // Clean up confetti
-                  if (unlockAnimSprite.confettiContainer) {
-                    app.stage.removeChild(unlockAnimSprite.confettiContainer);
-                    unlockAnimSprite.confettiContainer.destroy({ children: true });
-                  }
-                  // Clean up emoji
-                  if (unlockAnimSprite.partyEmoji) {
-                    app.stage.removeChild(unlockAnimSprite.partyEmoji);
-                    unlockAnimSprite.partyEmoji.destroy();
-                  }
-                  app.stage.removeChild(unlockAnimSprite);
-                  unlockAnimSprite.destroy();
-                  unlockAnimSprite = null;
-                }
-              }
-            }
-          }
-
-          // Return if the camera has reached the target position
-          if (app.stage.x === targetX && app.stage.y === targetY) {
+          {
 
             if (state.currentSnailHealth + state.currentBeeHealth + state.currentBirdHealth + state.currentFrogHealth <= 0) {
               if (!state.isWiped) {
@@ -3480,9 +3274,8 @@ let cantGainEXP = false;
                 }
 
                 const wipeEl = document.getElementById('wipe-text');
-                const isEndless = state.gameMode === 'endless';
-                const score = isEndless ? state.endlessKillCount : state.currentRound;
-                const mode = isEndless ? 'endless' : 'story';
+                const score = state.endlessKillCount;
+                const mode = 'endless';
 
                 // Build styled wipe screen
                 wipeEl.innerHTML = '';
@@ -3506,46 +3299,6 @@ let cantGainEXP = false;
               }
             }
 
-            if (state.gameMode !== 'endless' && state.exploded && !unlockAnimSprite) {
-
-              mountain1.tint = getRandomColor();
-              mountain2.tint = getRandomColor();
-              mountain3.tint = getRandomColor3();
-              mountain4.tint = getRandomColor3();
-              foreground.tint = getRandomColor();
-              for (let i = 0; i < enemies.length; i++) {
-                const enemy = enemies[i];
-
-                // Remove the enemy and its associated HP bar elements from the PIXI stage
-                app.stage.removeChild(enemy);
-                app.stage.removeChild(enemy.hpBar);
-                app.stage.removeChild(enemy.hpBarBackground);
-
-                // Destroy the enemy object to free up memory
-                enemy.destroy();
-
-                // Remove the enemy from the enemies array
-                enemies.splice(i, 1);
-                i--; // Decrement i to adjust for the removed enemy
-              }
-              state.exploded = false;
-              buildEnemyTypes();
-              saveGame();
-
-              cantGainEXP=false;
-              resetTimer();
-              startTimer();
-              app.stage.addChild(castle);
-              app.stage.addChild(critter);
-app.stage.addChild(hpBarBackground,hpBar);
-              hasExploded = false;
-
-
-state.demiSpawned = 0;
-            }
-
-            // Don't reset the round while unlock animation is still playing
-            if (!unlockAnimSprite) {
             playRoundText(state.currentRound);
 
 
@@ -3553,11 +3306,7 @@ state.demiSpawned = 0;
             setCharAttackAnimating(false);
             setIsCharAttacking(false);
             app.stage.removeChild(state.frogGhostPlayer);
-            if (state.gameMode === 'endless') {
-              critter.position.set(state.endlessDeathX || app.screen.width / 20, state.stored);
-            } else {
-              critter.position.set(app.screen.width / 20, state.stored);
-            }
+            critter.position.set(state.endlessDeathX || app.screen.width / 20, state.stored);
             if (state.fullReset) {
               setPlayerCurrentHealth(getPlayerHealth());
               updatePlayerHealthBar(getPlayerHealth() / getPlayerHealth() * 100);
@@ -3626,7 +3375,6 @@ state.demiSpawned = 0;
             setIsDead(false);
             resetEnemiesState();
             spawnEnemies();
-            } // end unlock animation guard
 
           }
           return;
@@ -3676,11 +3424,7 @@ state.demiSpawned = 0;
           critter.onComplete = null;  // Clear stale attack callback
           state.isAttackingChar = false;  // Reset attack state (revive dialog click can leave this stuck)
           critter.play();
-          if (state.gameMode !== 'endless') {
-            updateEXP(getCharEXP(getCurrentCharacter()));
-          } else {
-            updateKillProgressBar();
-          }
+          updateKillProgressBar();
           document.getElementById('spawn-text').style.visibility = 'hidden';
           updateVelocity();
           setCharSwap(false);
@@ -3842,17 +3586,8 @@ state.demiSpawned = 0;
           }
 
 
-          // Only clamp player position in story mode
-          if (state.gameMode !== 'endless' && critter.position.x > maxX - 100) {
-            critter.position.x = maxX - 100;
-          }
-          if (state.gameMode !== 'endless' && critter.position.x > 1500) {
-            hpBar.visible = true; // Show the HP bar
-            hpBarBackground.visible = true;
-          } else {
-            hpBar.visible = false;
-            hpBarBackground.visible = false; // Hide the HP bar
-          }
+          hpBar.visible = false;
+          hpBarBackground.visible = false;
 
         }
 
@@ -3889,26 +3624,7 @@ state.demiSpawned = 0;
       document.getElementById("ui-overlay").style.visibility = "visible";
       document.getElementById("pause-button").style.visibility = "visible";
       document.getElementById("coffee-button").style.visibility = "visible";
-      // Show auto-attack button after loading (endless only)
-      if (state.gameMode === 'endless') {
-        document.getElementById('auto-attack-btn').style.display = 'flex';
-      }
-      const weatherIconEl = document.getElementById("weather-icon");
-      weatherIconEl.style.visibility = "visible";
-      if (state.gameMode !== 'endless') {
-        // In story mode, position at the right end of the progress bar
-        weatherIconEl.style.position = 'absolute';
-        weatherIconEl.style.left = '';
-        weatherIconEl.style.right = '-10px';
-        weatherIconEl.style.top = '50%';
-        weatherIconEl.style.transform = 'translateY(-50%)';
-        weatherIconEl.style.zIndex = '4';
-        document.getElementById('progress').appendChild(weatherIconEl);
-      } else {
-        // In endless mode, sit just left of the centered kill counter
-        weatherIconEl.style.left = 'calc(50% - 70px)';
-      }
-      updateWeatherIcon();
+      document.getElementById('auto-attack-btn').style.display = 'flex';
       createWeatherEffects();
       document.getElementById("potion-button").style.visibility = "visible";
       document.getElementById("potion-shop").style.visibility = "visible";
@@ -3921,11 +3637,7 @@ state.demiSpawned = 0;
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
-      if (state.gameMode !== 'endless') {
-        updateEXP(getCharEXP(getCurrentCharacter()));
-      } else {
-        updateKillProgressBar();
-      }
+      updateKillProgressBar();
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
       // Start the state.timer animation
       if (getPlayerCurrentHealth() <= 0) {
@@ -4237,7 +3949,6 @@ state.demiSpawned = 0;
       critter.play();
       app.stage.addChild(critter);
       playRoundText(state.currentRound);
-      updateWeatherIcon();
       createWeatherEffects();
 
       // Loop through the enemies array and remove each enemy
@@ -4352,9 +4063,7 @@ function showScoreSubmitOverlay(mode, score, fromPause = false) {
 }
 
 window._crittorsShowPauseScore = function() {
-  const mode = state.gameMode;
-  const score = mode === 'endless' ? state.endlessKillCount : state.currentRound;
-  showScoreSubmitOverlay(mode, score, true);
+  showScoreSubmitOverlay('endless', state.endlessKillCount, true);
 };
 
 startGame();

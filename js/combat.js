@@ -1104,9 +1104,13 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
 
 
 export function createCoffeeDrop(x, y) {
+  const numBeans = Math.floor(Math.random() * 15 + state.currentRound * 2) + 1;
+  if (state.detailMode === 'low') {
+    addCoffee(numBeans);
+    return;
+  }
   const coffeeContainer = new PIXI.Container();
   const beanTexture = PIXI.Assets.get('bean');
-  const numBeans = Math.floor(Math.random() * 15 + state.currentRound * 2) + 1;
   const fallDuration = 1200;
   const flyDuration = 900;
 

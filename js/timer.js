@@ -62,6 +62,7 @@ export function startTimer() {
 }
 
 export function pauseTimer() {
+  if (state.gameMode === 'endless') return;
   const snail = getSnailEl();
   const progressFilled = getProgressFilledEl();
 

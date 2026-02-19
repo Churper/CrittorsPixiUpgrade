@@ -39,18 +39,12 @@ export function initWeather(groundHeight) {
 }
 
 export function getWeatherType() {
-  if (state.gameMode === 'endless') {
-    const cycle = Math.floor((state.endlessElapsed || 0) / 60) % weatherTypes.length;
-    return weatherTypes[cycle].name;
-  }
-  return weatherTypes[(state.currentRound - 1) % weatherTypes.length].name;
+  const cycle = Math.floor((state.endlessElapsed || 0) / 60) % weatherTypes.length;
+  return weatherTypes[cycle].name;
 }
 
 export function updateWeatherIcon() {
-  const weatherEl = document.getElementById('weather-icon');
-  const type = getWeatherType();
-  const entry = weatherTypes.find(w => w.name === type) || weatherTypes[0];
-  weatherEl.textContent = entry.emoji;
+  // No-op: weather icon removed from UI
 }
 
 export function clearWeatherEffects() {

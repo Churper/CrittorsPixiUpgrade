@@ -2,7 +2,7 @@
 
 const state = {
   // Game mode
-  gameMode: 'story',          // 'story' or 'endless'
+  gameMode: 'endless',         // 'endless'
   endlessStartTime: null,     // Date.now() when endless begins
   endlessElapsed: 0,          // seconds survived (cosmetic only — weather)
   endlessSpawnCount: 0,       // number of enemies spawned (used for gameplay scaling)
@@ -78,7 +78,7 @@ const state = {
   isAttackingChar: false,
   isGameStarted: false,
   initialClouds: 0,
-  unlockedCharacters: ['character-frog'],
+  unlockedCharacters: ['character-frog', 'character-snail', 'character-bird', 'character-bee'],
 
   // EXP
   frogEXP: 0,

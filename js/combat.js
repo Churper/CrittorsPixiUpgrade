@@ -18,7 +18,7 @@ import {
 import { isTimerFinished } from './timer.js';
 import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCharacterDamage } from './characters.js';
 import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
-import { updateEXP } from './upgrades.js';
+import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
 
 // --- Synthesized SFX via Web Audio API ---
@@ -428,7 +428,11 @@ export function rangedAttack(critter, enemy) {
           if (enemy.isDemi) {
             state.lastDemiKillTime = Date.now();
           }
-          if (state.gameMode === 'endless' && !enemy.isSiegeMob) state.endlessKillCount++;
+          if (state.gameMode === 'endless' && !enemy.isSiegeMob) {
+            state.endlessKillCount++;
+            checkSharedLevelUp();
+            updateKillProgressBar();
+          }
           if (enemy.isSiegeMob && state.siegeActive) {
             document.dispatchEvent(new Event('siegeMobKilled'));
           }
@@ -809,7 +813,7 @@ export function drawHitSplat(enemy) {
       break;
     case 'character-bird':
       if (enemyType === 'imp' || enemyType === 'toofer') {
-        damage = Math.round(getBirdDamage() * 0.3);
+        damage = Math.round(getBirdDamage() * 0.5);
       } else if (enemyType === 'shark' || enemyType === 'puffer') {
         damage = Math.round(getBirdDamage() * 1.75);
       } else {
@@ -972,7 +976,11 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       if (enemy.isDemi) {
         state.lastDemiKillTime = Date.now();
       }
-      if (state.gameMode === 'endless' && !enemy.isSiegeMob) state.endlessKillCount++;
+      if (state.gameMode === 'endless' && !enemy.isSiegeMob) {
+        state.endlessKillCount++;
+        checkSharedLevelUp();
+        updateKillProgressBar();
+      }
       if (enemy.isSiegeMob && state.siegeActive) {
         document.dispatchEvent(new Event('siegeMobKilled'));
       }
@@ -1727,10 +1735,14 @@ export function playDeathAnimation(enemy, critter) {
   state.enemyDeath.position.set(enemy.position.x, enemy.position.y);
   state.enemyDeath.zIndex = 15;
   state.app.stage.addChild(state.enemyDeath);
-  const expDropText = enemy.exp;
-  const expDrop = new PIXI.Text("+" + enemy.exp + " EXP", {
+
+  // Floating text: "+EXP" in story mode, "+1 Kill" in endless mode
+  const isEndless = state.gameMode === 'endless';
+  const floatLabel = isEndless ? "+1 Kill" : "+" + enemy.exp + " EXP";
+  const floatColor = isEndless ? "#aaddff" : "orange";
+  const expDrop = new PIXI.Text(floatLabel, {
     fontSize: 18,
-    fill: "orange",
+    fill: floatColor,
     fontWeight: "bold",
     stroke: "#000",
     strokeThickness: 3,
@@ -1740,7 +1752,7 @@ export function playDeathAnimation(enemy, critter) {
   expDrop.zIndex = 9999999999;
   state.app.stage.addChild(expDrop);
 
-  // Animate the EXP drop text
+  // Animate the floating text
   const startY = enemy.position.y - 20;
 
   const endY = startY - 50; // Adjust the value to control the floating height
@@ -1756,7 +1768,7 @@ export function playDeathAnimation(enemy, critter) {
       expDrop.position.y = newY;
       requestAnimationFrame(animateExpDrop);
     } else {
-      // Animation complete, remove the EXP drop text
+      // Animation complete, remove the floating text
       state.app.stage.removeChild(expDrop);
     }
   };
@@ -1774,12 +1786,14 @@ export function playDeathAnimation(enemy, critter) {
       state.app.stage.removeChild(state.enemyDeath);
       return;
     }
-    // Award EXP to the character who made the kill (not whoever is current now)
-    const newEXP = getCharEXP(killingChar) + enemy.exp;
-    setCharEXP(killingChar, newEXP);
-    // Only update bar/level-up if this character is still active
-    if (getCurrentCharacter() === killingChar) {
-      updateEXP(newEXP);
+    // Story mode: award per-character EXP
+    if (state.gameMode !== 'endless') {
+      const newEXP = getCharEXP(killingChar) + enemy.exp;
+      setCharEXP(killingChar, newEXP);
+      // Only update bar/level-up if this character is still active
+      if (getCurrentCharacter() === killingChar) {
+        updateEXP(newEXP);
+      }
     }
 
     state.app.stage.removeChild(state.enemyDeath);

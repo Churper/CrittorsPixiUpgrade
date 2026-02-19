@@ -45,7 +45,7 @@ import {
   playGoldenBeanFlyEffect,
   playPotionChugSound, playPotionBottleAnimation,
 } from './combat.js';
-import { updateEXP } from './upgrades.js';
+import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveGame, loadGame, saveBones, loadBones } from './save.js';
 import { skinCatalog, applySkinFilter, getSkinTextures, generateSkinTextures, updateSkinEffects, clearSkinEffects } from './skins.js';
 import {
@@ -2529,7 +2529,11 @@ document.addEventListener('DOMContentLoaded', function () {
             enemy.tint = 0xFF0000;
             createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
             if (state.gameMode === 'endless') {
-              if (!enemy.isSiegeMob) state.endlessKillCount++;
+              if (!enemy.isSiegeMob) {
+                state.endlessKillCount++;
+                checkSharedLevelUp();
+                updateKillProgressBar();
+              }
               const roll = Math.random();
               if (roll < 0.025) createItemDrop(enemy.position.x, enemy.position.y, 'shield');
               else if (roll < 0.05) createItemDrop(enemy.position.x, enemy.position.y, 'bomb');
@@ -2540,8 +2544,10 @@ document.addEventListener('DOMContentLoaded', function () {
             app.stage.removeChild(enemy);
             const idx = enemies.indexOf(enemy);
             if (idx !== -1) enemies.splice(idx, 1);
-            const expGain = enemy.exp || 32;
-            updateEXP(getCharEXP(getCurrentCharacter()) + expGain);
+            if (state.gameMode !== 'endless') {
+              const expGain = enemy.exp || 32;
+              updateEXP(getCharEXP(getCurrentCharacter()) + expGain);
+            }
           }
         });
 
@@ -2891,6 +2897,7 @@ document.addEventListener('DOMContentLoaded', function () {
       state.endlessElapsed = 0;
       state.endlessSpawnCount = 0;
       state.endlessKillCount = 0;
+      state.sharedLevel = 1;
 
       // Checkpoint start — if starting from a castle checkpoint, fast-forward state
       // spawnCount uses cpLevel*7 (not *10) so enemies are softer when resuming
@@ -2901,30 +2908,35 @@ document.addEventListener('DOMContentLoaded', function () {
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
 
-        // Auto-level: grant cpLevel * 2 levels so the player isn't helpless
-        const autoLevels = cpLevel * 2;
-        const ch = getCurrentCharacter().replace('character-', '');
-        const stats = state.characterStats[getCurrentCharacter()];
-        if (stats && autoLevels > 0) {
-          stats.speed += 0.15 * autoLevels;
-          stats.attack += 2 * autoLevels;
-          stats.health += 12 * autoLevels;
-          state[ch + 'Level'] = (state[ch + 'Level'] || 1) + autoLevels;
-          // Sync state properties with characterStats
-          if (ch === 'frog') { state.speed = stats.speed; }
-          else { state[ch + 'Speed'] = stats.speed; }
-          state[ch + 'Damage'] = stats.attack;
-          state[ch + 'Health'] = stats.health;
-          // Set current health to new max
-          const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
-          state[hpKey] = stats.health;
-          // Advance expToLevel threshold to match level
-          for (let i = 0; i < autoLevels; i++) state.expToLevel *= 1.1;
-          // Update defense
-          const shopBonus = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
-          if (state.charDefense) state.charDefense[ch] = state[ch + 'Level'] + shopBonus;
-          state.defense = state[ch + 'Level'] + shopBonus;
+        // Shared level: cpLevel * 2 — apply levels to ALL 4 characters
+        const targetLevel = cpLevel * 2;
+        state.sharedLevel = targetLevel;
+        const characters = ['frog', 'snail', 'bird', 'bee'];
+        for (const ch of characters) {
+          const charKey = 'character-' + ch;
+          const stats = state.characterStats[charKey];
+          const levelsToGain = targetLevel - 1; // from level 1
+          if (levelsToGain > 0) {
+            stats.speed += 0.15 * levelsToGain;
+            stats.attack += 2 * levelsToGain;
+            stats.health += 12 * levelsToGain;
+            state[ch + 'Level'] = targetLevel;
+            // Sync state properties with characterStats
+            if (ch === 'frog') { state.speed = stats.speed; }
+            else { state[ch + 'Speed'] = stats.speed; }
+            state[ch + 'Damage'] = stats.attack;
+            state[ch + 'Health'] = stats.health;
+            // Set current health to new max
+            const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
+            state[hpKey] = stats.health;
+            // Update defense
+            const shopBonus = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
+            if (state.charDefense) state.charDefense[ch] = state[ch + 'Level'] + shopBonus;
+          }
         }
+        // Set active character's defense
+        const activeCh = getCurrentCharacter().replace('character-', '');
+        state.defense = (state.charDefense && state.charDefense[activeCh]) || 0;
 
         state.endlessCheckpointStart = 0;
       }
@@ -4573,6 +4585,7 @@ let unlockAnimSprite = null;
       function castleExpDrop(damage){
         expToGive = Math.round(damage * 0.75);
         if(cantGainEXP){return;}
+        if(state.gameMode === 'endless'){return;}
         const expDrop = new PIXI.Text("+" + expToGive+ " EXP", {
           fontSize: 18,
           fill: "orange",
@@ -4582,7 +4595,7 @@ let unlockAnimSprite = null;
           strokeOutside: true
         });
 
-    
+
         updateEXP(getCharEXP(getCurrentCharacter()) + expToGive);
         expDrop.position.set(critter.position.x + 20, critter.position.y - 20);
         expDrop.zIndex = 9999999999;
@@ -5312,7 +5325,11 @@ state.demiSpawned = 0;
           critter.onComplete = null;  // Clear stale attack callback
           state.isAttackingChar = false;  // Reset attack state (revive dialog click can leave this stuck)
           critter.play();
-          updateEXP(getCharEXP(getCurrentCharacter()));
+          if (state.gameMode !== 'endless') {
+            updateEXP(getCharEXP(getCurrentCharacter()));
+          } else {
+            updateKillProgressBar();
+          }
           document.getElementById('spawn-text').style.visibility = 'hidden';
           updateVelocity();
           setCharSwap(false);
@@ -5542,7 +5559,11 @@ state.demiSpawned = 0;
 
       state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
       critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
-      updateEXP(getCharEXP(getCurrentCharacter()));
+      if (state.gameMode !== 'endless') {
+        updateEXP(getCharEXP(getCurrentCharacter()));
+      } else {
+        updateKillProgressBar();
+      }
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
       // Start the state.timer animation
       if (getPlayerCurrentHealth() <= 0) {

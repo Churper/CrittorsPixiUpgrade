@@ -10,7 +10,7 @@ import {
   setSnailHealth, setBirdHealth, setFrogHealth, setBeeHealth,
   setSnailDamage, setBirdDamage, setFrogDamage, setBeeDamage,
 } from './state.js';
-import { setCharEXP, setEXPtoLevel, setPlayerCurrentHealth } from './characters.js';
+import { setCharEXP, setEXPtoLevel, setPlayerCurrentHealth, updateEXPIndicator, updateEXPIndicatorText } from './characters.js';
 import { updatePlayerHealthBar, updateExpText } from './ui.js';
 
 export function updateEXP(exp) {
@@ -169,4 +169,99 @@ export function levelUp() {
   state.chooseSound.volume = state.effectsVolume;
   state.chooseSound.play();
   state.levelSound.play();
+}
+
+// --- Shared Kill-Milestone Level System (Endless Mode) ---
+
+export function checkSharedLevelUp() {
+  const expectedLevel = Math.floor(state.endlessKillCount / 5) + 1;
+  if (expectedLevel <= state.sharedLevel) return;
+
+  const characters = ['frog', 'snail', 'bird', 'bee'];
+  while (state.sharedLevel < expectedLevel) {
+    state.sharedLevel++;
+    // Apply stat gains to ALL 4 characters
+    for (const ch of characters) {
+      const charKey = 'character-' + ch;
+      const stats = state.characterStats[charKey];
+
+      // Speed +0.15
+      stats.speed += 0.15;
+      setCharacterSpeed(charKey, stats.speed);
+
+      // Damage +2
+      stats.attack += 2;
+      setCharacterDamage(charKey, stats.attack);
+
+      // Health +12
+      stats.health += 12;
+      setCharacterHealth(charKey, stats.health);
+
+      // Increment level
+      state[ch + 'Level'] = (state[ch + 'Level'] || 1) + 1;
+
+      // Sync state speed property
+      if (ch === 'frog') { state.speed = stats.speed; }
+      else { state[ch + 'Speed'] = stats.speed; }
+      state[ch + 'Damage'] = stats.attack;
+      state[ch + 'Health'] = stats.health;
+
+      // Heal current HP +12 if alive
+      const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
+      if (state[hpKey] > 0) {
+        state[hpKey] = Math.min(state[hpKey] + 12, stats.health);
+      }
+
+      // Defense goes up with level
+      const newLevel = state[ch + 'Level'] || 1;
+      const shopBonus = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
+      if (state.charDefense) state.charDefense[ch] = newLevel + shopBonus;
+
+      // Update EXP indicator on portrait to show shared level
+      updateEXPIndicator(charKey, state.endlessKillCount % 5, 5);
+      updateEXPIndicatorText(charKey, newLevel);
+    }
+
+    // Update active character's defense
+    const activeCh = getCurrentCharacter().replace('character-', '');
+    state.defense = (state.charDefense && state.charDefense[activeCh]) || 0;
+
+    // Update health bar for current character
+    updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+
+    // Update infobox UI
+    const activeStats = state.characterStats[getCurrentCharacter()];
+    const shopDmg = (state.layoutUpgrades[activeCh] && state.layoutUpgrades[activeCh].damage) || 0;
+    document.getElementById('swords-level').textContent = shopDmg > 0 ? `${activeStats.attack} (+${shopDmg})` : `${activeStats.attack}`;
+    const activeLevel = state[activeCh + 'Level'] || 1;
+    const shopDef = (state.charDefenseShop && state.charDefenseShop[activeCh]) || 0;
+    const defEl = document.getElementById('defense-level');
+    defEl.textContent = shopDef > 0 ? `${activeLevel} (+${shopDef})` : `${activeLevel}`;
+    const speed = activeCh === 'frog' ? state.speed : (state[activeCh + 'Speed'] || 1);
+    const spdEl = document.getElementById('speed-level');
+    if (spdEl) spdEl.textContent = speed.toFixed(1);
+    const characterLevelElement = document.getElementById("character-level");
+    if (characterLevelElement) characterLevelElement.textContent = 'Lvl. ' + activeLevel;
+
+    // Play level-up sounds
+    state.chooseSound.volume = state.effectsVolume;
+    state.chooseSound.play();
+    state.levelSound.play();
+  }
+  setSpeedChanged(true);
+}
+
+export function updateKillProgressBar() {
+  const killsInLevel = state.endlessKillCount % 5;
+  const playerEXPBarFill = document.getElementById('exp-bar-fill');
+  playerEXPBarFill.style.width = (killsInLevel / 5) * 100 + '%';
+  updateExpText('exp-text', 'Kills', killsInLevel, 5);
+
+  // Update all character portrait EXP indicators
+  const characters = ['frog', 'snail', 'bird', 'bee'];
+  for (const ch of characters) {
+    const charKey = 'character-' + ch;
+    updateEXPIndicator(charKey, killsInLevel, 5);
+    updateEXPIndicatorText(charKey, state[ch + 'Level'] || 1);
+  }
 }

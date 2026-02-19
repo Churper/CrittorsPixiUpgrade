@@ -6,6 +6,7 @@ const state = {
   endlessStartTime: null,     // Date.now() when endless begins
   endlessElapsed: 0,          // seconds survived (cosmetic only — weather)
   endlessSpawnCount: 0,       // number of enemies spawned (used for gameplay scaling)
+  sharedLevel: 1,             // shared kill-milestone level for endless mode (all characters)
 
   // Core game state
   leveling: false,

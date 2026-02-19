@@ -166,16 +166,31 @@ export function setCharEXP(currentChar, value) {
 
 export function updateEXPIndicator(character, currentEXP, maxEXP) {
   const expIndicator = document.querySelector(`.upgrade-box.${character} .exp-indicator`);
-  const characterBox = document.querySelector(`.upgrade-box.${character}`);
+  if (!expIndicator) return;
 
-  const heightPercentage = (1 - currentEXP / maxEXP) * 100;
-  expIndicator.style.setProperty('--exp-indicator-height', `${heightPercentage}%`);
+  if (state.gameMode === 'endless') {
+    // In endless mode, show kill progress (same for all characters)
+    const killsInLevel = state.endlessKillCount % 5;
+    const heightPercentage = (1 - killsInLevel / 5) * 100;
+    expIndicator.style.setProperty('--exp-indicator-height', `${heightPercentage}%`);
+  } else {
+    const heightPercentage = (1 - currentEXP / maxEXP) * 100;
+    expIndicator.style.setProperty('--exp-indicator-height', `${heightPercentage}%`);
+  }
 }
 
 export function updateEXPIndicatorText(character, level) {
   const expIndicator = document.querySelector(`.upgrade-box.${character} .exp-indicator`);
+  if (!expIndicator) return;
   const levelElement = expIndicator.querySelector('.level');
-  levelElement.textContent = `${level}`;
+  if (!levelElement) return;
+
+  if (state.gameMode === 'endless') {
+    // Show shared level (same for all characters)
+    levelElement.textContent = `${state.sharedLevel}`;
+  } else {
+    levelElement.textContent = `${level}`;
+  }
 }
 
 // --- Character info ---

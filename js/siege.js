@@ -6,7 +6,7 @@ import {
   getEnemies, addEnemies,
   getCurrentCharacter, getEnemiesInRange, setEnemiesInRange,
   setIsCharAttacking, getisDead, getisPaused,
-  getPlayerCurrentHealth, getPlayerHealth, getCharEXP, getEXPtoLevel,
+  getPlayerCurrentHealth, getPlayerHealth,
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
@@ -16,9 +16,8 @@ import {
   createCoffeeDrop, playExplosionSound,
   createSpawnEnemy, createItemDrop,
 } from './combat.js';
-import { getCharacterDamage, setPlayerCurrentHealth, setCharEXP } from './characters.js';
+import { getCharacterDamage, setPlayerCurrentHealth } from './characters.js';
 import { updatePlayerHealthBar } from './ui.js';
-import { updateEXP } from './upgrades.js';
 import { saveBones } from './save.js';
 
 // --- Detection ---
@@ -315,42 +314,6 @@ export function siegeCastleTakeDamage(damage, critter, app) {
     }, 100);
   }
 
-  // EXP drop text (reuse castleExpDrop pattern)
-  const expToGive = Math.round(damage * 0.75);
-  const expDrop = new PIXI.Text({
-    text: '+' + expToGive + ' EXP',
-    style: {
-      fontSize: 18,
-      fill: 'orange',
-      fontWeight: 'bold',
-      stroke: { color: '#000000', width: 3 },
-    }
-  });
-  expDrop.anchor.set(0.5);
-  expDrop.position.set(critter.position.x + 20, critter.position.y - 20);
-  expDrop.zIndex = 9999999;
-  app.stage.addChild(expDrop);
-
-  const currentChar = getCurrentCharacter();
-  const newEXP = getCharEXP(currentChar) + expToGive;
-  setCharEXP(currentChar, newEXP);
-  updateEXP(newEXP);
-
-  // Animate EXP text floating up
-  const startY = expDrop.position.y;
-  const startTime = performance.now();
-  const animateExp = (currentTime) => {
-    const elapsed = currentTime - startTime;
-    if (elapsed < 2600) {
-      expDrop.position.y = startY - (elapsed / 2600) * 50;
-      requestAnimationFrame(animateExp);
-    } else {
-      if (app.stage.children.includes(expDrop)) app.stage.removeChild(expDrop);
-      expDrop.destroy();
-    }
-  };
-  requestAnimationFrame(animateExp);
-
   if (state.siegeCastleHP <= 0) {
     siegeCastleDestroyed(critter, app);
   }
@@ -420,12 +383,6 @@ function siegeCastleDestroyed(critter, app) {
   const newHP = Math.min(curHP + 25, maxHP);
   setPlayerCurrentHealth(newHP);
   updatePlayerHealthBar((newHP / maxHP) * 100);
-
-  // Siege completion EXP bonus — ~2 levels worth to reward the milestone
-  const currentChar = getCurrentCharacter();
-  const bonusEXP = Math.round(getEXPtoLevel(currentChar) * 2);
-  const totalEXP = getCharEXP(currentChar) + bonusEXP;
-  updateEXP(totalEXP);
 
   // Coffee drop + item drops on the floor with animation
   const dropX = castle ? castle.position.x : (critter ? critter.position.x + 100 : 400);

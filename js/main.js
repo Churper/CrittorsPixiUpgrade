@@ -2893,10 +2893,11 @@ document.addEventListener('DOMContentLoaded', function () {
       state.endlessKillCount = 0;
 
       // Checkpoint start — if starting from a castle checkpoint, fast-forward state
+      // spawnCount uses cpLevel*7 (not *10) so enemies are softer when resuming
       if (state.endlessCheckpointStart > 0) {
         const cpLevel = state.endlessCheckpointStart;
         state.endlessKillCount = cpLevel * 10;
-        state.endlessSpawnCount = cpLevel * 10;
+        state.endlessSpawnCount = cpLevel * 7;
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
         state.endlessCheckpointStart = 0;
@@ -5787,9 +5788,14 @@ state.demiSpawned = 0;
     }, currentInterval);
   }
 
-  // Siege ended event — resume spawning (needs access to spawnEnemies)
+  // Siege ended event — resume walk animation + spawning
   document.addEventListener('siegeEnded', function() {
     if (state.gameMode === 'endless' && !state.isWiped) {
+      // Restore walk animation (siege freeze stops it via critter.stop())
+      critter.textures = state.frogWalkTextures;
+      critter.loop = true;
+      critter.play();
+      state.isAttackingChar = false;
       state.isSpawning = false;
       spawnEnemies();
     }

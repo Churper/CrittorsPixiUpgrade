@@ -144,8 +144,8 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(2 + sc / 2) + 2;
-    enemy.maxHP = 200 + sc * 7;
+    enemy.attackDamage = Math.round(2 + sc / 3) + 2;
+    enemy.maxHP = 200 + sc * 5;
     enemy.exp = 32 + sc * 4;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 2);
@@ -206,8 +206,8 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(2 + sc / 2);
-    enemy.maxHP = 80 + sc * 7;
+    enemy.attackDamage = Math.round(2 + sc / 3);
+    enemy.maxHP = 80 + sc * 5;
     enemy.exp = 32 + sc * 2;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 3);
@@ -1101,6 +1101,7 @@ export function addCoffee(amount) {
 // --- Bones (cross-round currency) ---
 export function awardBones(enemy) {
   if (state.gameMode !== 'endless') return;
+  if (enemy.isSiegeMob || enemy.isBaby) return;
   const amount = enemy.isDemi ? 3 : 1;
   setBones(getBones() + amount);
   saveBones();

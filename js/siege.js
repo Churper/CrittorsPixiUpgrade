@@ -14,7 +14,7 @@ import {
 import {
   handleEnemySorting, handleEnemyActions,
   createCoffeeDrop, playExplosionSound,
-  createSpawnEnemy,
+  createSpawnEnemy, createItemDrop,
 } from './combat.js';
 import { getCharacterDamage, setPlayerCurrentHealth, setCharEXP } from './characters.js';
 import { updatePlayerHealthBar } from './ui.js';
@@ -100,7 +100,7 @@ function createSiegeCastle(critter, app) {
   state.siegeCastleSprite = castle;
 
   // HP
-  state.siegeCastleMaxHP = 300 + level * 100;
+  state.siegeCastleMaxHP = 100 + level * 50;
   state.siegeCastleHP = state.siegeCastleMaxHP;
 
   // HP bar background
@@ -421,15 +421,32 @@ function siegeCastleDestroyed(critter, app) {
   setPlayerCurrentHealth(newHP);
   updatePlayerHealthBar((newHP / maxHP) * 100);
 
-  // Coffee drop
+  // Coffee drop + item drops on the floor with animation
+  const dropX = castle ? castle.position.x : (critter ? critter.position.x + 100 : 400);
+  const dropY = castle ? castle.position.y - castle.height / 2 : 300;
   if (castle) {
-    createCoffeeDrop(castle.position.x, castle.position.y - castle.height / 2);
+    createCoffeeDrop(dropX, dropY);
   }
+
+  // Generate reward items and drop them on the ground
+  const level = state.siegeCastleLevel;
+  const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean'];
+  const count = Math.min(2 + Math.floor(level / 4), 5);
+  const rewards = [];
+  for (let i = 0; i < count; i++) {
+    rewards.push(itemPool[Math.floor(Math.random() * itemPool.length)]);
+  }
+  state.siegeRewardItems = rewards;
+  rewards.forEach((item, i) => {
+    setTimeout(() => {
+      createItemDrop(dropX + (i - count / 2) * 40, dropY - 20, item);
+    }, 200 + i * 150);
+  });
 
   // Remove castle + HP bars
   removeSiegeCastleSprites(app);
 
-  // Show reward panel after delay
+  // Show reward panel after delay (simplified — items already on floor)
   setTimeout(() => {
     showSiegeRewardPanel();
   }, 1000);
@@ -459,41 +476,17 @@ function removeSiegeCastleSprites(app) {
 
 function showSiegeRewardPanel() {
   const level = state.siegeCastleLevel;
-  const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean'];
-  const emojiMap = { shield: '🛡️', bomb: '💣', rage: '🧃', feather: '🪶', goldenBean: '☕' };
-  const nameMap = { shield: 'Shield', bomb: 'Bomb', rage: 'Rage Potion', feather: 'Phoenix Feather', goldenBean: 'Golden Bean' };
+  const rewards = state.siegeRewardItems;
 
-  const count = Math.min(2 + Math.floor(level / 4), 5);
-  const rewards = [];
-  for (let i = 0; i < count; i++) {
-    rewards.push(itemPool[Math.floor(Math.random() * itemPool.length)]);
-  }
-  state.siegeRewardItems = rewards;
-
-  // Populate reward list
+  // Clear item list (items drop on floor now, not shown here)
   const listEl = document.getElementById('siege-reward-list');
-  if (listEl) {
-    listEl.innerHTML = '';
-    rewards.forEach(item => {
-      const div = document.createElement('div');
-      div.className = 'siege-reward-item';
-      const emoji = document.createElement('span');
-      emoji.className = 'reward-emoji';
-      emoji.textContent = emojiMap[item];
-      const name = document.createElement('span');
-      name.className = 'reward-name';
-      name.textContent = nameMap[item];
-      div.appendChild(emoji);
-      div.appendChild(name);
-      listEl.appendChild(div);
-    });
-  }
+  if (listEl) listEl.innerHTML = '';
 
   // Title
   const titleEl = document.getElementById('siege-reward-title');
   if (titleEl) titleEl.textContent = 'Castle #' + level + ' Cleared!';
 
-  // Subtitle (add if not present)
+  // Subtitle
   let subtitleEl = document.querySelector('.siege-reward-subtitle');
   if (!subtitleEl) {
     subtitleEl = document.createElement('p');
@@ -501,7 +494,7 @@ function showSiegeRewardPanel() {
     const panel = document.getElementById('siege-reward-panel');
     if (panel && titleEl) panel.insertBefore(subtitleEl, titleEl.nextSibling);
   }
-  subtitleEl.textContent = '+25 HP healed  ·  ' + rewards.length + ' items earned';
+  subtitleEl.textContent = '+25 HP healed  ·  ' + rewards.length + ' items dropped!';
 
   // Checkpoint message
   const msgEl = document.getElementById('siege-checkpoint-msg');
@@ -569,6 +562,9 @@ function endSiege() {
 
   // Post-siege cooldown — reuse demi cooldown so spawner waits 8s
   state.lastDemiKillTime = Date.now();
+
+  // Sync demi counter so no catch-up demi spawns right after siege
+  state.demiSpawned = Math.floor(state.endlessKillCount / 5);
 
   // Resume normal spawning — fire a custom event so main.js can call spawnEnemies()
   document.dispatchEvent(new Event('siegeEnded'));

@@ -259,6 +259,61 @@ export function applyHat(critterSprite, charType) {
     hat.zIndex = 100;
     critterSprite.addChild(hat);
     currentHatGraphic = hat;
+  } else if (hatId === 'viking') {
+    const hat = new PIXI.Graphics();
+    const steel = 0x8899AA;
+    const darkSteel = 0x556677;
+    const horn = 0xE8D5A0;
+    const darkHorn = 0xC4AA6A;
+    // Helmet dome
+    hat.ellipse(0, -14, 30, 22).fill({ color: steel });
+    hat.ellipse(0, -14, 30, 22).stroke({ width: 1.5, color: darkSteel });
+    // Nose guard
+    hat.roundRect(-4, -12, 8, 24, 2).fill({ color: darkSteel });
+    // Brim band
+    hat.roundRect(-32, -4, 64, 10, 3).fill({ color: darkSteel });
+    hat.roundRect(-32, -4, 64, 10, 3).stroke({ width: 1, color: 0x445566 });
+    // Rivets on band
+    hat.circle(-22, 1, 3).fill({ color: 0xAABBCC });
+    hat.circle(-10, 1, 3).fill({ color: 0xAABBCC });
+    hat.circle(10, 1, 3).fill({ color: 0xAABBCC });
+    hat.circle(22, 1, 3).fill({ color: 0xAABBCC });
+    // Left horn — curved outward
+    hat.moveTo(-26, -8);
+    hat.lineTo(-38, -30);
+    hat.lineTo(-50, -52);
+    hat.lineTo(-44, -54);
+    hat.lineTo(-34, -34);
+    hat.lineTo(-22, -14);
+    hat.closePath();
+    hat.fill({ color: horn });
+    hat.stroke({ width: 1.5, color: darkHorn });
+    // Right horn — curved outward
+    hat.moveTo(26, -8);
+    hat.lineTo(38, -30);
+    hat.lineTo(50, -52);
+    hat.lineTo(44, -54);
+    hat.lineTo(34, -34);
+    hat.lineTo(22, -14);
+    hat.closePath();
+    hat.fill({ color: horn });
+    hat.stroke({ width: 1.5, color: darkHorn });
+    hat.position.set(baseXOff, baseYOff);
+    hat.zIndex = 100;
+    critterSprite.addChild(hat);
+    currentHatGraphic = hat;
+  } else if (hatId === 'halo') {
+    const hat = new PIXI.Graphics();
+    // Outer glow ring (larger, faint)
+    hat.ellipse(0, -38, 34, 9).stroke({ width: 6, color: 0xFFD700, alpha: 0.2 });
+    // Main golden ring
+    hat.ellipse(0, -38, 28, 7).stroke({ width: 4, color: 0xFFD700, alpha: 0.9 });
+    // Inner bright highlight
+    hat.ellipse(0, -38, 22, 5).stroke({ width: 2, color: 0xFFF4B0, alpha: 0.7 });
+    hat.position.set(baseXOff, baseYOff);
+    hat.zIndex = 100;
+    critterSprite.addChild(hat);
+    currentHatGraphic = hat;
   }
 
   // Wire up per-frame hat tracking so it follows the head through all animations

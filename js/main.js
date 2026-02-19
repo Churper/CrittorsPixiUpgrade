@@ -718,6 +718,8 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'partyhat',   icon: '🎉', name: 'Party Hat',   cost: 3 },
     { id: 'crown',      icon: '👑', name: 'Crown',       cost: 5 },
     { id: 'wizardhat',  icon: '🧙', name: 'Wizard Hat',  cost: 8 },
+    { id: 'viking',     icon: '⚔️', name: 'Viking Helm', cost: 12 },
+    { id: 'halo',       icon: '😇', name: 'Halo',        cost: 15 },
   ];
   // skinCatalog imported from skins.js
   // Items that can have starting counts purchased

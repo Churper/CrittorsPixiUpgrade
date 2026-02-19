@@ -6,19 +6,24 @@ import { getCurrentCharacter } from './state.js';
 // ── Skin catalog ──────────────────────────────────────────────────────────────
 export const skinCatalog = [
   // Frog skins
-  { id: 'frog-ice',    icon: '🧊', name: 'Ice Frog',       cost: 3, charOnly: 'frog' },
-  { id: 'frog-golden', icon: '✨', name: 'Golden Frog',    cost: 5, charOnly: 'frog' },
-  { id: 'frog-shadow', icon: '🌑', name: 'Shadow Frog',    cost: 4, charOnly: 'frog' },
+  { id: 'frog-ice',    icon: '🧊', name: 'Ice Frog',         cost: 3, charOnly: 'frog' },
+  { id: 'frog-golden', icon: '✨', name: 'Golden Frog',      cost: 5, charOnly: 'frog' },
+  { id: 'frog-cherry', icon: '🌸', name: 'Cherry Frog',      cost: 3, charOnly: 'frog' },
+  { id: 'frog-pride',  icon: '🏳️‍⚧️', name: 'Pride Frog',       cost: 4, charOnly: 'frog' },
+  { id: 'frog-poison', icon: '☠️', name: 'Poison Dart Frog', cost: 4, charOnly: 'frog' },
   // Snail skins
   { id: 'snail-crystal',   icon: '💎', name: 'Crystal Snail',   cost: 3, charOnly: 'snail' },
-  { id: 'snail-magma',     icon: '🌋', name: 'Magma Snail',    cost: 4, charOnly: 'snail' },
+  { id: 'snail-magma',     icon: '🌋', name: 'Magma Snail',     cost: 4, charOnly: 'snail' },
   { id: 'snail-valentine', icon: '💝', name: 'Valentine Snail', cost: 4, charOnly: 'snail' },
+  { id: 'snail-galaxy',    icon: '🌌', name: 'Galaxy Snail',    cost: 5, charOnly: 'snail' },
   // Bird skins
-  { id: 'bird-phoenix', icon: '🔥', name: 'Phoenix Bird',  cost: 5, charOnly: 'bird' },
-  { id: 'bird-arctic',  icon: '❄️', name: 'Arctic Bird',   cost: 3, charOnly: 'bird' },
+  { id: 'bird-phoenix', icon: '🔥', name: 'Phoenix Bird', cost: 5, charOnly: 'bird' },
+  { id: 'bird-arctic',  icon: '❄️', name: 'Arctic Bird',  cost: 3, charOnly: 'bird' },
+  { id: 'bird-moss',    icon: '🌿', name: 'Moss Bird',    cost: 3, charOnly: 'bird' },
+  { id: 'bird-parrot',  icon: '🦜', name: 'Parrot Bird',  cost: 4, charOnly: 'bird' },
   // Bee skins
-  { id: 'bee-neon',  icon: '💚', name: 'Neon Bee',   cost: 3, charOnly: 'bee' },
-  { id: 'bee-royal', icon: '👑', name: 'Royal Bee',  cost: 5, charOnly: 'bee' },
+  { id: 'bee-neon',  icon: '☣️', name: 'Toxic Bee',  cost: 3, charOnly: 'bee' },
+  { id: 'bee-royal', icon: '🪻', name: 'Orchid Bee', cost: 5, charOnly: 'bee' },
 ];
 
 // ── HSL conversion ────────────────────────────────────────────────────────────
@@ -64,20 +69,29 @@ function _hslToRgb(h, s, l) {
 // ── Hue shift configs per skin ────────────────────────────────────────────────
 
 const skinHueConfigs = {
-  // ── FROG ──
+  // ── FROG (body green = hue 70-160) ──
   'frog-ice': [
     { from: 70, to: 160, targetFrom: 190, targetTo: 200, sat: 1.2, lit: 1.15 },
   ],
   'frog-golden': [
-    { from: 70, to: 160, targetFrom: 44, targetTo: 52, sat: 1.3, lit: 1.2, shine: 0.65 },
+    { from: 70, to: 160, targetFrom: 38, targetTo: 46, sat: 1.6, lit: 0.95, shine: 0.25 },
   ],
-  'frog-shadow': [
-    { from: 70, to: 160, targetFrom: 272, targetTo: 286, sat: 0.9, lit: 0.65 },
+  'frog-cherry': [
+    { from: 70, to: 160, targetFrom: 335, targetTo: 348, sat: 1.3, lit: 1.15 },
+  ],
+  'frog-pride': [
+    // Trans pride flag: light blue / pink / white bands across body
+    { from: 70, to: 100, targetFrom: 195, targetTo: 205, sat: 0.9, lit: 1.2 },
+    { from: 100, to: 130, targetFrom: 338, targetTo: 348, sat: 1.0, lit: 1.25 },
+    { from: 130, to: 160, targetFrom: 0, targetTo: 0, sat: 0.1, lit: 1.5 },
+  ],
+  'frog-poison': [
+    // Electric blue poison dart frog
+    { from: 70, to: 160, targetFrom: 210, targetTo: 225, sat: 1.6, lit: 1.0, shine: 0.1 },
   ],
 
   // ── SNAIL ──
   // Shell range starts at 170 to catch ALL blue/teal pixels including the lower shell.
-  // The dark head area (~170-190°) gets recolored too but with the lit boost it looks fine.
   'snail-crystal': [
     { from: 170, to: 334, targetFrom: 178, targetTo: 192, sat: 1.15, lit: 1.2 },
     { from: 335, to: 360, targetFrom: 185, targetTo: 192, sat: 0.3, lit: 1.35 },
@@ -95,9 +109,15 @@ const skinHueConfigs = {
     { from: 21, to: 37, targetFrom: 330, targetTo: 340, sat: 1.1, lit: 1.2 },
     { from: 38, to: 68, targetFrom: 348, targetTo: 355, sat: 0.35, lit: 1.45 },
   ],
+  'snail-galaxy': [
+    // Deep space purple shell with subtle shimmer
+    { from: 170, to: 334, targetFrom: 265, targetTo: 280, sat: 1.3, lit: 0.75, shine: 0.15 },
+    { from: 335, to: 360, targetFrom: 270, targetTo: 278, sat: 0.8, lit: 0.9 },
+    { from: 0, to: 20, targetFrom: 270, targetTo: 278, sat: 0.8, lit: 0.9 },
+    { from: 38, to: 68, targetFrom: 255, targetTo: 265, sat: 0.6, lit: 0.85 },
+  ],
 
-  // ── BIRD ──
-  // Phoenix: body → warm orange-red (fire core), crest → deep red (ember edges)
+  // ── BIRD (body = 80-168, crest = 258-328) ──
   'bird-phoenix': [
     { from: 80, to: 168, targetFrom: 12, targetTo: 30, sat: 1.6, lit: 1.1, shine: 0.15 },
     { from: 258, to: 328, targetFrom: 0, targetTo: 10, sat: 1.4, lit: 0.95, shine: 0.1 },
@@ -106,8 +126,18 @@ const skinHueConfigs = {
     { from: 80, to: 168, targetFrom: 196, targetTo: 208, sat: 0.95, lit: 1.35, shine: 0.25 },
     { from: 258, to: 328, targetFrom: 205, targetTo: 215, sat: 0.55, lit: 1.4 },
   ],
+  'bird-moss': [
+    // Earthy deep green body, brown/olive crest
+    { from: 80, to: 168, targetFrom: 85, targetTo: 105, sat: 0.65, lit: 0.7 },
+    { from: 258, to: 328, targetFrom: 30, targetTo: 42, sat: 0.55, lit: 0.65 },
+  ],
+  'bird-parrot': [
+    // Tropical red body, bright yellow crest
+    { from: 80, to: 168, targetFrom: 355, targetTo: 370, sat: 1.5, lit: 1.05 },
+    { from: 258, to: 328, targetFrom: 48, targetTo: 58, sat: 1.4, lit: 1.2 },
+  ],
 
-  // ── BEE ──
+  // ── BEE (yellow = 18-72) ──
   'bee-neon': [
     { from: 18, to: 72, targetFrom: 118, targetTo: 142, sat: 1.55, lit: 1.05 },
   ],
@@ -237,6 +267,7 @@ let _nextHeartTime = 0;
 const _skinEffects = {
   'frog-golden': 'sparkle',
   'snail-valentine': 'heart',
+  'snail-galaxy': 'sparkle',
 };
 
 export function updateSkinEffects(critter, now) {
@@ -249,11 +280,11 @@ export function updateSkinEffects(critter, now) {
   // Spawn new particles
   if (effect === 'sparkle' && now > _nextSparkleTime) {
     _spawnSparkle(critter);
-    _nextSparkleTime = now + 250 + Math.random() * 250; // every 0.25-0.5s
+    _nextSparkleTime = now + 150 + Math.random() * 200; // every 0.15-0.35s
   }
   if (effect === 'heart' && now > _nextHeartTime) {
     _spawnHeart(critter);
-    _nextHeartTime = now + 700 + Math.random() * 600; // every 0.7-1.3s
+    _nextHeartTime = now + 400 + Math.random() * 400; // every 0.4-0.8s
   }
 
   // Update & remove expired particles
@@ -286,7 +317,7 @@ export function updateSkinEffects(critter, now) {
 
 function _spawnSparkle(critter) {
   const g = new PIXI.Graphics();
-  const size = 6 + Math.random() * 6;
+  const size = 10 + Math.random() * 8;
   // Draw a 4-pointed star
   g.moveTo(0, -size);
   g.lineTo(size * 0.25, -size * 0.25);
@@ -315,7 +346,7 @@ function _spawnSparkle(critter) {
     type: 'sparkle',
     born: Date.now(),
     life: 700 + Math.random() * 400,
-    maxScale: 1.2 + Math.random() * 0.8,
+    maxScale: 1.5 + Math.random() * 1.0,
     startY: g.y,
   });
 }
@@ -324,7 +355,7 @@ function _spawnHeart(critter) {
   const heart = new PIXI.Text({
     text: '\u2764',
     style: {
-      fontSize: 14 + Math.random() * 8,
+      fontSize: 22 + Math.random() * 10,
       fill: '#ff4070',
     },
   });
@@ -343,7 +374,7 @@ function _spawnHeart(critter) {
     type: 'heart',
     born: Date.now(),
     life: 1000 + Math.random() * 500,
-    maxScale: 1.0 + Math.random() * 0.6,
+    maxScale: 1.5 + Math.random() * 1.0,
     startY: startY,
   });
 }

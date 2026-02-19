@@ -193,9 +193,14 @@ export function loadBones() {
       if (data.layoutUpgrades) setLayoutUpgrades(data.layoutUpgrades);
       if (data.startingItems) state.startingItems = data.startingItems;
       if (data.ownedHats) state.ownedHats = data.ownedHats;
-      if (data.ownedSkins) state.ownedSkins = data.ownedSkins;
+      if (data.ownedSkins) {
+        state.ownedSkins = data.ownedSkins.filter(id => id !== 'frog-shadow');
+      }
       if (data.equippedHats) state.equippedHats = data.equippedHats;
-      if (data.equippedSkins) state.equippedSkins = data.equippedSkins;
+      if (data.equippedSkins) {
+        state.equippedSkins = data.equippedSkins;
+        if (state.equippedSkins.frog === 'frog-shadow') delete state.equippedSkins.frog;
+      }
       if (data.unlockedCastles) state.unlockedCastles = data.unlockedCastles;
     } catch (e) {
       console.warn('Failed to load bones data:', e);

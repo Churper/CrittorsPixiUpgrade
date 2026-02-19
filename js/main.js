@@ -702,7 +702,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Available hats & skins catalog
   const hatCatalog = [
-    { id: 'tophat', icon: '🎩', name: 'Top Hat', cost: 1 },
+    { id: 'tophat',   icon: '🎩', name: 'Top Hat',    cost: 1 },
+    { id: 'partyhat', icon: '🎉', name: 'Party Hat',  cost: 3 },
   ];
   // skinCatalog imported from skins.js
   // Items that can have starting counts purchased
@@ -1858,8 +1859,35 @@ document.addEventListener('DOMContentLoaded', function () {
       hat.roundRect(-14, -34, 28, 32, 4).fill({ color: 0x1a1a2e });
       // Band
       hat.rect(-14, -10, 28, 5).fill({ color: 0x8b0000 });
-      // Position above the character's head (anchor 0.5, 0.5 means 0,0 is center)
       hat.position.set(0, -critterSprite.texture.height * 0.42);
+      hat.zIndex = 100;
+      critterSprite.addChild(hat);
+      currentHatGraphic = hat;
+    } else if (hatId === 'partyhat') {
+      const hat = new PIXI.Graphics();
+      const blue = 0x0070DD;
+      const darkBlue = 0x004499;
+      // OSRS-style paper crown: band with triangular peaks
+      hat.moveTo(-34, 0);
+      hat.lineTo(-34, -8);
+      hat.lineTo(-26, -26);
+      hat.lineTo(-18, -8);
+      hat.lineTo(-9, -26);
+      hat.lineTo(0, -8);
+      hat.lineTo(9, -26);
+      hat.lineTo(18, -8);
+      hat.lineTo(26, -26);
+      hat.lineTo(34, -8);
+      hat.lineTo(34, 0);
+      hat.closePath();
+      hat.fill({ color: blue });
+      hat.stroke({ width: 2, color: darkBlue });
+      // Small dots at peak tips
+      for (const px of [-26, -9, 9, 26]) {
+        hat.circle(px, -26, 2.5).fill({ color: 0x40a0ff });
+      }
+      hat.scale.set(1.15);
+      hat.position.set(0, -critterSprite.texture.height * 0.34);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;

@@ -107,22 +107,35 @@ Items persist across runs in `state.startingItems`. Can be purchased in the layo
 - **Bones** — Cross-run meta-currency. 1 per kill, 3 per demi boss (endless only). Spent in layout shop for upgrades, items, hats, skins. Persisted via `saveBones()`.
 
 ## Skins System (`skins.js`)
-10 skins across 4 characters. Each skin defines HSL hue shift ranges in `skinHueConfigs`. At load, `generateSkinTextures()` recolors walk/attack spritesheets via canvas pixel manipulation.
+16 skins across 4 characters. Each skin defines HSL hue shift ranges in `skinHueConfigs`. At load, `generateSkinTextures()` recolors walk/attack spritesheets via canvas pixel manipulation.
 
 | Skin | Character | Hue ranges |
 |------|-----------|------------|
 | frog-ice | Frog | Green→Cyan |
-| frog-golden | Frog | Green→Gold (with shine) |
-| frog-shadow | Frog | Green→Purple (darker) |
+| frog-golden | Frog | Green→Rich Gold (sat 1.6, subtle shine) |
+| frog-cherry | Frog | Green→Pink (335-348°) |
+| frog-pride | Frog | Trans pride flag: green split into 3 bands → light blue / pink / white |
+| frog-poison | Frog | Green→Electric Blue (210-225°, high sat) |
 | snail-crystal | Snail | Shell→Cyan, body accents→light blue |
 | snail-magma | Snail | Shell→Red/Orange |
 | snail-valentine | Snail | Shell→Pink (140-334°→335-348°), accents→deep pink, body→pale pink. Hearts particle effect. |
+| snail-galaxy | Snail | Shell→Deep Space Purple (265-280°, shimmer). Sparkle particle effect. |
 | bird-phoenix | Bird | Body→Orange-red, crest→deep red |
 | bird-arctic | Bird | Body→Light blue, crest→pale blue |
-| bee-neon | Bee | Yellow→Green |
-| bee-royal | Bee | Yellow→Purple |
+| bird-moss | Bird | Body→Deep forest green (85-105°, muted), crest→brown/olive |
+| bird-parrot | Bird | Body→Vivid red (355-10°), crest→bright yellow |
+| bee-neon (Toxic Bee) | Bee | Yellow→Green |
+| bee-royal (Orchid Bee) | Bee | Yellow→Purple |
 
-**Runtime effects:** Golden frog gets sparkle particles, valentine snail gets floating heart particles. Managed by `updateSkinEffects()`.
+**Runtime effects:** Golden frog and galaxy snail get sparkle particles (bigger, more frequent). Valentine snail gets floating heart particles (larger, more frequent). Managed by `updateSkinEffects()`.
+
+## Hats System
+Hats are drawn as PIXI.Graphics children of the critter sprite in `applyHat()` (main.js). Hat catalog:
+
+| Hat | Shape | Notes |
+|-----|-------|-------|
+| tophat | Brim + crown + red band | Dark color (0x1a1a2e), positioned at -0.42 × texture height |
+| partyhat | OSRS-style paper crown with 4 triangular peaks + tip dots | Blue (0x0070DD), scaled 1.15x, positioned lower at -0.34 × texture height |
 
 ## Layout Shop (Bones Shop)
 Accessed from pause menu. Card-swipe UI. Categories:

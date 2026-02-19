@@ -248,11 +248,11 @@ export function updateSkinEffects(critter, now) {
   // Spawn new particles
   if (effect === 'sparkle' && now > _nextSparkleTime) {
     _spawnSparkle(critter);
-    _nextSparkleTime = now + 400 + Math.random() * 400; // every 0.4-0.8s
+    _nextSparkleTime = now + 250 + Math.random() * 250; // every 0.25-0.5s
   }
   if (effect === 'heart' && now > _nextHeartTime) {
     _spawnHeart(critter);
-    _nextHeartTime = now + 1200 + Math.random() * 1000; // every 1.2-2.2s
+    _nextHeartTime = now + 700 + Math.random() * 600; // every 0.7-1.3s
   }
 
   // Update & remove expired particles
@@ -275,7 +275,7 @@ export function updateSkinEffects(critter, now) {
       p.gfx.rotation += 0.05;
     } else if (p.type === 'heart') {
       // Float upward and fade out
-      p.gfx.y = p.startY - age * 0.06;
+      p.gfx.y = p.startY - age * 0.05;
       p.gfx.alpha = 1 - progress;
       const scale = progress < 0.2 ? progress / 0.2 : 1;
       p.gfx.scale.set(scale * p.maxScale);
@@ -285,7 +285,7 @@ export function updateSkinEffects(critter, now) {
 
 function _spawnSparkle(critter) {
   const g = new PIXI.Graphics();
-  const size = 4 + Math.random() * 4;
+  const size = 6 + Math.random() * 6;
   // Draw a 4-pointed star
   g.moveTo(0, -size);
   g.lineTo(size * 0.25, -size * 0.25);
@@ -297,7 +297,7 @@ function _spawnSparkle(critter) {
   g.lineTo(-size * 0.25, -size * 0.25);
   g.closePath();
   g.fill({ color: 0xfffde0, alpha: 1 });
-  g.stroke({ width: 1, color: 0xffd700, alpha: 0.8 });
+  g.stroke({ width: 2, color: 0xffd700, alpha: 0.8 });
 
   // Random position on the critter
   const bw = critter.width * 0.6;
@@ -313,8 +313,8 @@ function _spawnSparkle(critter) {
     gfx: g,
     type: 'sparkle',
     born: Date.now(),
-    life: 500 + Math.random() * 300,
-    maxScale: 0.8 + Math.random() * 0.6,
+    life: 700 + Math.random() * 400,
+    maxScale: 1.2 + Math.random() * 0.8,
     startY: g.y,
   });
 }
@@ -323,7 +323,7 @@ function _spawnHeart(critter) {
   const heart = new PIXI.Text({
     text: '\u2764',
     style: {
-      fontSize: 10 + Math.random() * 6,
+      fontSize: 14 + Math.random() * 8,
       fill: '#ff4070',
     },
   });
@@ -341,8 +341,8 @@ function _spawnHeart(critter) {
     gfx: heart,
     type: 'heart',
     born: Date.now(),
-    life: 800 + Math.random() * 400,
-    maxScale: 0.8 + Math.random() * 0.4,
+    life: 1000 + Math.random() * 500,
+    maxScale: 1.0 + Math.random() * 0.6,
     startY: startY,
   });
 }

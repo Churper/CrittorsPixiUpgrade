@@ -1743,12 +1743,20 @@ touch-action: manipulation;
   transition: none !important;
 }
 
+.layout-portrait-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(6px, 1.5vmin, 10px);
+  flex-shrink: 0;
+  margin-bottom: clamp(1px, 0.4vmin, 4px);
+}
+
 .layout-card-portrait {
   width: clamp(48px, 14vmin, 72px);
   height: clamp(48px, 14vmin, 72px);
   border-radius: clamp(8px, 2vmin, 12px);
   border: 2px solid rgba(100, 160, 200, 0.4);
-  margin-bottom: clamp(1px, 0.4vmin, 4px);
   image-rendering: pixelated;
   flex-shrink: 0;
 }
@@ -1820,23 +1828,9 @@ touch-action: manipulation;
   cursor: not-allowed;
 }
 
-/* ── Cosmetics placeholder ────────────────────────────── */
-.layout-cosmetics {
-  width: 100%;
-  margin-top: clamp(2px, 0.6vmin, 4px);
-  flex-shrink: 0;
-}
-
-
-.layout-cosmetic-slots {
-  display: flex;
-  gap: clamp(6px, 1.5vmin, 10px);
-  justify-content: center;
-}
-
 .layout-cosmetic-slot {
-  width: clamp(40px, 10vmin, 56px);
-  height: clamp(40px, 10vmin, 56px);
+  width: clamp(32px, 8vmin, 40px);
+  height: clamp(32px, 8vmin, 40px);
   border-radius: clamp(8px, 1.8vmin, 12px);
   border: 2px solid rgba(100, 160, 200, 0.4);
   background: rgba(14, 22, 38, 0.7);
@@ -1882,8 +1876,8 @@ touch-action: manipulation;
 }
 
 .layout-inline-picker .inline-picker-item {
-  width: clamp(36px, 9vmin, 44px);
-  height: clamp(36px, 9vmin, 44px);
+  width: clamp(50px, 13vmin, 68px);
+  height: clamp(50px, 13vmin, 68px);
   border-radius: clamp(6px, 1.4vmin, 8px);
   border: 2px solid rgba(100, 160, 200, 0.35);
   background: rgba(15, 25, 45, 0.8);
@@ -1892,6 +1886,7 @@ touch-action: manipulation;
   align-items: center;
   justify-content: center;
   font-size: clamp(16px, 4vmin, 20px);
+  gap: 1px;
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   user-select: none;
@@ -1925,9 +1920,14 @@ touch-action: manipulation;
 
 .layout-inline-picker .inline-picker-label {
   font-family: 'Patrick Hand', cursive;
-  font-size: clamp(7px, 1.5vmin, 9px);
-  color: rgba(200, 220, 240, 0.6);
+  font-size: clamp(8px, 1.8vmin, 11px);
+  color: rgba(200, 220, 240, 0.7);
   line-height: 1;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .layout-cosmetic-slot.slot-active {
@@ -2108,7 +2108,6 @@ touch-action: manipulation;
   .layout-card-portrait {
     width: clamp(44px, 12vh, 64px);
     height: clamp(44px, 12vh, 64px);
-    margin-bottom: 2px;
   }
   .layout-card-name {
     font-size: clamp(0.95em, 3vh, 1.2em);
@@ -2120,8 +2119,8 @@ touch-action: manipulation;
   .layout-stat-bonus { font-size: clamp(0.8em, 2.6vh, 1em); }
   .layout-buy-btn { font-size: clamp(0.7em, 2vh, 0.85em); padding: 3px 8px; }
   .layout-cosmetic-slot {
-    width: clamp(34px, 9vh, 48px);
-    height: clamp(34px, 9vh, 48px);
+    width: clamp(28px, 7vh, 36px);
+    height: clamp(28px, 7vh, 36px);
   }
 }
 

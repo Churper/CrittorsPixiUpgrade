@@ -866,7 +866,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
     noneEl.className = 'inline-picker-item' + (isNone ? ' equipped' : '');
-    noneEl.innerHTML = '<span>✨</span>';
+    noneEl.innerHTML = '<span>✨</span><span class="inline-picker-label">None</span>';
     noneEl.addEventListener('click', () => {
       state.equippedHats[charName] = null;
       saveBones();
@@ -881,8 +881,8 @@ document.addEventListener('DOMContentLoaded', function () {
       const el = document.createElement('div');
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
-        ? `<span>${hat.icon}</span>`
-        : `<span>${hat.icon}</span><span class="inline-picker-cost">🦴${hat.cost}</span>`;
+        ? `<span>${hat.icon}</span><span class="inline-picker-label">${hat.name}</span>`
+        : `<span>${hat.icon}</span><span class="inline-picker-cost">🦴${hat.cost}</span><span class="inline-picker-label">${hat.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.bones < hat.cost) return;
@@ -909,7 +909,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const isDefault = !state.equippedSkins[charName];
     const defEl = document.createElement('div');
     defEl.className = 'inline-picker-item' + (isDefault ? ' equipped' : '');
-    defEl.innerHTML = '<span>✨</span>';
+    defEl.innerHTML = '<span>✨</span><span class="inline-picker-label">Default</span>';
     defEl.addEventListener('click', () => {
       state.equippedSkins[charName] = null;
       saveBones();
@@ -925,8 +925,8 @@ document.addEventListener('DOMContentLoaded', function () {
       const el = document.createElement('div');
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
-        ? `<span>${skin.icon}</span>`
-        : `<span>${skin.icon}</span><span class="inline-picker-cost">🦴${skin.cost}</span>`;
+        ? `<span>${skin.icon}</span><span class="inline-picker-label">${skin.name}</span>`
+        : `<span>${skin.icon}</span><span class="inline-picker-cost">🦴${skin.cost}</span><span class="inline-picker-label">${skin.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.bones < skin.cost) return;

@@ -1849,8 +1849,8 @@ touch-action: manipulation;
 }
 
 .layout-cosmetic-slot {
-  width: clamp(32px, 8vmin, 40px);
-  height: clamp(32px, 8vmin, 40px);
+  width: clamp(38px, 9.5vmin, 46px);
+  height: clamp(38px, 9.5vmin, 46px);
   border-radius: clamp(8px, 1.8vmin, 12px);
   border: 2px solid rgba(100, 160, 200, 0.4);
   background: rgba(14, 22, 38, 0.7);
@@ -1878,7 +1878,7 @@ touch-action: manipulation;
 }
 
 .cosmetic-icon {
-  font-size: clamp(16px, 4vmin, 22px);
+  font-size: clamp(18px, 5vmin, 24px);
 }
 
 /* ── Inline picker (hat/skin grid inside card) ────────── */
@@ -1896,8 +1896,8 @@ touch-action: manipulation;
 }
 
 .layout-inline-picker .inline-picker-item {
-  width: clamp(48px, 11vmin, 66px);
-  height: clamp(48px, 11vmin, 66px);
+  width: clamp(54px, 12.5vmin, 70px);
+  height: clamp(54px, 12.5vmin, 70px);
   border-radius: clamp(6px, 1.5vmin, 9px);
   border: 2px solid rgba(100, 160, 200, 0.35);
   background: rgba(15, 25, 45, 0.8);

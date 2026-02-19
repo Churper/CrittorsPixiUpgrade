@@ -148,7 +148,7 @@ const skinHueConfigs = {
 
 // ── Spritesheet recoloring ────────────────────────────────────────────────────
 
-function recolorSheet(baseTex, shifts, skinId) {
+function recolorSheet(baseTex, shifts, skinId, numFrames) {
   const src = baseTex.source;
   const resource = src.resource;
   const w = src.pixelWidth || src.width;
@@ -160,22 +160,25 @@ function recolorSheet(baseTex, shifts, skinId) {
   const imgData = ctx.getImageData(0, 0, w, h);
   const d = imgData.data;
   const isPride = skinId === 'frog-pride';
+  const frameW = isPride && numFrames > 1 ? w / numFrames : w;
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] < 10) continue;
     let [hue, sat, lit] = _rgbToHsl(d[i], d[i + 1], d[i + 2]);
     if (sat < 0.08 || lit < 0.06 || lit > 0.94) continue;
     if (isPride) {
-      // Trans pride flag via lightness bands — follows body contour naturally
+      // Trans pride flag via vertical X-position bands per frame
       const hN = ((hue % 360) + 360) % 360;
       if (hN >= 70 && hN <= 160) {
-        // Use original lightness to determine pride color band:
-        // Dark areas (shadows) → light blue, mid → pink, bright → white
-        if (lit < 0.35) {
-          hue = 200; sat = 0.75; lit = Math.min(1, lit + 0.35);
-        } else if (lit < 0.55) {
-          hue = 340; sat = 0.65; lit = Math.min(1, lit + 0.2);
+        const pixIdx = i / 4;
+        const pixX = pixIdx % w;
+        const xPct = (pixX % frameW) / frameW;
+        // 5 vertical bands: blue / pink / white / pink / blue
+        if (xPct < 0.2 || xPct >= 0.8) {
+          hue = 200; sat = 0.8; lit = Math.min(1, lit * 1.05 + 0.2);
+        } else if (xPct < 0.4 || xPct >= 0.6) {
+          hue = 340; sat = 0.7; lit = Math.min(1, lit * 1.1 + 0.15);
         } else {
-          hue = 0; sat = 0.08; lit = Math.min(0.95, lit + 0.15);
+          hue = 0; sat = 0.08; lit = Math.min(0.95, lit * 1.3 + 0.2);
         }
       }
     } else {
@@ -233,8 +236,8 @@ export function generateSkinTextures(textures, textureScaleFactors) {
     const fp = _skinFrameParams[ch];
     const walkSheet = ch + '_walk';
     const atkSheet = ch + '_attack';
-    const recoloredWalk = recolorSheet(textures[walkSheet], shifts, skinId);
-    const recoloredAtk = recolorSheet(textures[atkSheet], shifts, skinId);
+    const recoloredWalk = recolorSheet(textures[walkSheet], shifts, skinId, fp.walk.n);
+    const recoloredAtk = recolorSheet(textures[atkSheet], shifts, skinId, fp.attack.n);
     if (fp.type === 1) {
       const wFrames = [], aFrames = [];
       const wScale = textureScaleFactors[walkSheet] || 1;

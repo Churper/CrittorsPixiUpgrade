@@ -1036,6 +1036,30 @@ document.addEventListener('DOMContentLoaded', function () {
     hidePanel('guide');
   });
 
+  // Delete save button (main menu trash icon)
+  const deleteSaveBtn = document.getElementById('delete-save-btn');
+  let deleteSaveConfirm = false;
+  let deleteSaveTimeout = null;
+  deleteSaveBtn.addEventListener('click', function() {
+    if (!deleteSaveConfirm) {
+      deleteSaveConfirm = true;
+      deleteSaveBtn.textContent = '?';
+      deleteSaveBtn.style.background = '#771122';
+      deleteSaveBtn.style.borderColor = '#ff4444';
+      deleteSaveTimeout = setTimeout(() => {
+        deleteSaveConfirm = false;
+        deleteSaveBtn.innerHTML = '&#128465;';
+        deleteSaveBtn.style.background = '';
+        deleteSaveBtn.style.borderColor = '';
+      }, 3000);
+    } else {
+      clearTimeout(deleteSaveTimeout);
+      localStorage.removeItem('gameSave');
+      localStorage.removeItem('crittorsBones');
+      window.location.reload();
+    }
+  });
+
   async function mainAppFunction() {
   const app = new PIXI.Application();
   await app.init({
@@ -1843,8 +1867,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Base hat position [x, y] in texture-space pixels from sprite center (walk frame 0 head)
   // Pixel-analyzed from spritesheets: x = head center-of-mass X, y = head bulk-top Y
   const _hatBasePos = {
-    frog:  [0, -46],      // head roughly centered; y at eyeball level (~20px below antenna tip)
-    snail: [-104, -30],   // head far left of frame center
+    frog:  [0, -36],      // head roughly centered; lowered to sit on head
+    snail: [-104, 10],    // head far left of frame center; lowered to rest on head
     bird:  [-82, -200],   // crest left of center, near frame top
     bee:   [-6, -51],     // nearly centered
   };
@@ -1907,21 +1931,21 @@ document.addEventListener('DOMContentLoaded', function () {
       ],
     },
     bird: {
-      // 13-frame walk: gentle 10px Y bob, X nearly constant
+      // 13-frame walk: smooth gentle Y bob, reduced amplitude
       walk: [
         [0, 0],       // 0: baseline
-        [0, 3],       // 1
-        [0, 6],       // 2
-        [0, 10],      // 3: lowest step
-        [0, 6],       // 4
-        [0, 3],       // 5
+        [0, 1],       // 1
+        [0, 3],       // 2
+        [0, 5],       // 3: lowest step
+        [0, 3],       // 4
+        [0, 1],       // 5
         [0, 0],       // 6
-        [0, 2],       // 7
-        [0, 5],       // 8
-        [0, 7],       // 9
-        [0, 10],      // 10: lowest
-        [0, 6],       // 11
-        [0, 4],       // 12
+        [0, 1],       // 7
+        [0, 2],       // 8
+        [0, 4],       // 9
+        [0, 5],       // 10: lowest
+        [0, 3],       // 11
+        [0, 1],       // 12
       ],
       // 13-frame peck: bird leans forward (X+33, Y+27 at peak) then returns
       attack: [
@@ -1941,17 +1965,17 @@ document.addEventListener('DOMContentLoaded', function () {
       ],
     },
     bee: {
-      // 9-frame hover: body tilts, head shifts right + drops up to 16px
+      // 9-frame hover: smooth gentle bob, reduced X jitter
       walk: [
         [0, 0],       // 0: baseline
-        [7, 9],       // 1: tilting
-        [15, 15],     // 2: most tilted
-        [8, 13],      // 3
-        [3, 8],       // 4
-        [10, 13],     // 5
-        [18, 16],     // 6: most tilted (alt)
-        [12, 10],     // 7
-        [13, 9],      // 8
+        [2, 3],       // 1: tilting
+        [5, 6],       // 2: most tilted
+        [3, 5],       // 3
+        [1, 3],       // 4
+        [3, 5],       // 5
+        [6, 6],       // 6: most tilted (alt)
+        [4, 4],       // 7
+        [2, 3],       // 8
       ],
       // 18-frame sting: dramatic lunge left then right (200px X range, 80px Y range)
       // Deltas account for wider attack frame (390px vs 306px walk)
@@ -2898,6 +2922,7 @@ document.addEventListener('DOMContentLoaded', function () {
       state.endlessSpawnCount = 0;
       state.endlessKillCount = 0;
       state.sharedLevel = 1;
+      state.killsToNextLevel = 5;
 
       // Checkpoint start — if starting from a castle checkpoint, fast-forward state
       // spawnCount uses cpLevel*7 (not *10) so enemies are softer when resuming
@@ -2937,6 +2962,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // Set active character's defense
         const activeCh = getCurrentCharacter().replace('character-', '');
         state.defense = (state.charDefense && state.charDefense[activeCh]) || 0;
+
+        // Set kills-to-next-level with checkpoint scaling
+        state.killsToNextLevel = 5 + cpLevel;
 
         state.endlessCheckpointStart = 0;
       }

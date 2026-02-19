@@ -314,6 +314,36 @@ export function siegeCastleTakeDamage(damage, critter, app) {
     }, 100);
   }
 
+  // Floating EXP text on castle hit (visual feedback)
+  const expToGive = Math.round(damage * 0.75);
+  const expDrop = new PIXI.Text({
+    text: '+' + expToGive + ' EXP',
+    style: {
+      fontSize: 18,
+      fill: 'orange',
+      fontWeight: 'bold',
+      stroke: { color: '#000000', width: 3 },
+    }
+  });
+  expDrop.anchor.set(0.5);
+  expDrop.position.set(critter.position.x + 20, critter.position.y - 20);
+  expDrop.zIndex = 9999999;
+  app.stage.addChild(expDrop);
+
+  const startY = expDrop.position.y;
+  const startTime = performance.now();
+  const animateExp = (currentTime) => {
+    const elapsed = currentTime - startTime;
+    if (elapsed < 2600) {
+      expDrop.position.y = startY - (elapsed / 2600) * 50;
+      requestAnimationFrame(animateExp);
+    } else {
+      if (app.stage.children.includes(expDrop)) app.stage.removeChild(expDrop);
+      expDrop.destroy();
+    }
+  };
+  requestAnimationFrame(animateExp);
+
   if (state.siegeCastleHP <= 0) {
     siegeCastleDestroyed(critter, app);
   }

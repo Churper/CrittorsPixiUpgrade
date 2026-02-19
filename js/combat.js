@@ -1736,13 +1736,9 @@ export function playDeathAnimation(enemy, critter) {
   state.enemyDeath.zIndex = 15;
   state.app.stage.addChild(state.enemyDeath);
 
-  // Floating text: "+EXP" in story mode, "+1 Kill" in endless mode
-  const isEndless = state.gameMode === 'endless';
-  const floatLabel = isEndless ? "+1 Kill" : "+" + enemy.exp + " EXP";
-  const floatColor = isEndless ? "#aaddff" : "orange";
-  const expDrop = new PIXI.Text(floatLabel, {
+  const expDrop = new PIXI.Text("+" + enemy.exp + " EXP", {
     fontSize: 18,
-    fill: floatColor,
+    fill: "orange",
     fontWeight: "bold",
     stroke: "#000",
     strokeThickness: 3,

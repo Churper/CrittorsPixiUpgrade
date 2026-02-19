@@ -311,11 +311,6 @@ export function createPauseMenuContainer() {
   // Main Menu button — muted red accent
   addPauseButton('Main Menu', btnY2, () => { window.location.reload(); }, 0x662233, 0xaa5566);
 
-  const garbageButton = createGarbageButton(backgroundSprite);
-  // Override Y to use compact-aware position
-  garbageButton.position.y = delY;
-  state.pauseMenuContainer.addChild(garbageButton);
-
   let pauseX = -state.app.stage.position.x + (state.app.screen.width / 2) - (state.pauseMenuContainer.width / 2);
   let pauseY = -state.app.stage.position.y + (state.app.screen.height / 2) - (state.pauseMenuContainer.height / 2);
   state.pauseMenuContainer.position.set(pauseX, pauseY);

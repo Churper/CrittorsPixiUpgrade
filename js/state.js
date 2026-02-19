@@ -126,6 +126,23 @@ const state = {
   endlessKillCount: 0,
   defense: 0, // flat damage reduction from layout upgrades
 
+  // Siege system (endless mode castle encounters every 10 kills)
+  siegeActive: false,
+  siegeCastleLevel: 0,
+  siegeMobsRemaining: 0,
+  siegeMobsTotal: 0,
+  siegeCastleHP: 0,
+  siegeCastleMaxHP: 0,
+  siegeCastleSprite: null,
+  siegeCastleHPBar: null,
+  siegeCastleHPBarBG: null,
+  siegePhase: 'idle',
+  siegeAlertSprite: null,
+  siegeRewardItems: [],
+  lastSiegeCastleLevel: 0,
+  unlockedCastles: [],
+  endlessCheckpointStart: 0,
+
   // Cross-round currency
   bones: 0,
   layoutUpgrades: {

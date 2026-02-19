@@ -179,6 +179,7 @@ export function saveBones() {
     ownedSkins: state.ownedSkins,
     equippedHats: state.equippedHats,
     equippedSkins: state.equippedSkins,
+    unlockedCastles: state.unlockedCastles,
   };
   localStorage.setItem('crittorsBones', JSON.stringify(data));
 }
@@ -195,6 +196,7 @@ export function loadBones() {
       if (data.ownedSkins) state.ownedSkins = data.ownedSkins;
       if (data.equippedHats) state.equippedHats = data.equippedHats;
       if (data.equippedSkins) state.equippedSkins = data.equippedSkins;
+      if (data.unlockedCastles) state.unlockedCastles = data.unlockedCastles;
     } catch (e) {
       console.warn('Failed to load bones data:', e);
     }

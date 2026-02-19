@@ -262,8 +262,8 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
 
   if (enemy.isAlive && enemy.position.x - critter.position.x > 100 && enemy.position.x > 250) {
     // Queue gate: hold position when an enemy is already engaged and this one is close
-    if (getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250) {
-      // Stand still — freeze on current frame
+    if (getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250 && !enemy.isBaby) {
+      // Stand still — freeze on current frame (baby siege mobs bypass the queue)
       if (enemy.playing) {
         enemy.stop();
       }
@@ -428,7 +428,10 @@ export function rangedAttack(critter, enemy) {
           if (enemy.isDemi) {
             state.lastDemiKillTime = Date.now();
           }
-          if (state.gameMode === 'endless') state.endlessKillCount++;
+          if (state.gameMode === 'endless' && !enemy.isSiegeMob) state.endlessKillCount++;
+          if (enemy.isSiegeMob && state.siegeActive) {
+            document.dispatchEvent(new Event('siegeMobKilled'));
+          }
           awardBones(enemy);
           state.isCombat = false;
           setIsCharAttacking(false);
@@ -969,7 +972,10 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       if (enemy.isDemi) {
         state.lastDemiKillTime = Date.now();
       }
-      if (state.gameMode === 'endless') state.endlessKillCount++;
+      if (state.gameMode === 'endless' && !enemy.isSiegeMob) state.endlessKillCount++;
+      if (enemy.isSiegeMob && state.siegeActive) {
+        document.dispatchEvent(new Event('siegeMobKilled'));
+      }
       awardBones(enemy);
       setIsCharAttacking(false);
       createCoffeeDrop(enemy.position.x + 20, enemy.position.y);

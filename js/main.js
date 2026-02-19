@@ -53,6 +53,11 @@ import {
   getSavedPlayerName, savePlayerName,
   showLeaderboardPanel,
 } from './leaderboard.js';
+import {
+  shouldTriggerSiege, startSiege, siegeMobKilled,
+  siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards,
+  renderOverworldMap,
+} from './siege.js';
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -491,6 +496,30 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.getElementById('endless-mode-btn').addEventListener('click', function() {
+    startFromMenu('endless');
+  });
+
+  // --- Map panel ---
+  document.getElementById('map-btn').addEventListener('click', function() {
+    renderOverworldMap();
+    showPanel('map');
+  });
+  document.getElementById('map-close-btn').addEventListener('click', function() {
+    hidePanel('map');
+  });
+
+  // --- Siege reward panel ---
+  document.getElementById('siege-reward-continue-btn').addEventListener('click', function() {
+    collectSiegeRewards();
+  });
+
+  // Siege mob killed event (from combat.js)
+  document.addEventListener('siegeMobKilled', function() {
+    siegeMobKilled();
+  });
+
+  // Start from checkpoint event (from siege.js map)
+  document.addEventListener('startFromCheckpoint', function() {
     startFromMenu('endless');
   });
 
@@ -2664,6 +2693,16 @@ document.addEventListener('DOMContentLoaded', function () {
       state.endlessSpawnCount = 0;
       state.endlessKillCount = 0;
 
+      // Checkpoint start — if starting from a castle checkpoint, fast-forward state
+      if (state.endlessCheckpointStart > 0) {
+        const cpLevel = state.endlessCheckpointStart;
+        state.endlessKillCount = cpLevel * 10;
+        state.endlessSpawnCount = cpLevel * 10;
+        state.demiSpawned = Math.floor(cpLevel * 10 / 5);
+        state.lastSiegeCastleLevel = cpLevel;
+        state.endlessCheckpointStart = 0;
+      }
+
       // Load item stockpile — these are consumable, not per-run
       const si = state.startingItems || {};
       setShieldCount(si.shield || 0);
@@ -4181,6 +4220,12 @@ state.frogGhostPlayer.scale.set(0.28);
                   app.ticker.add(updateProjectile);
                 }
 
+                // Siege castle combat (endless mode)
+                if (state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&
+                    critter.position.x > state.siegeCastleSprite.position.x - state.siegeCastleSprite.width / 1.1) {
+                  siegeCastleTakeDamage(getCharacterDamage(attackingChar), critter, app);
+                }
+
                 if (state.gameMode !== 'endless' && critter.position.x > castle.position.x - castle.width / 1.1) {
                   const greyscaleFilter = new PIXI.ColorMatrixFilter();
                   const remainingHealthPercentage = castleHealth / castleMaxHealth;
@@ -4600,6 +4645,10 @@ let cantGainEXP = false;
             app.stage.removeChild(state.reviveDialogContainer);
             state.reviveDialogContainer = null;
           }
+          // Clean up siege if active
+          if (state.siegeActive) {
+            cleanupSiege();
+          }
           // Stop flashing character portraits
           stopFlashing();
 
@@ -4833,6 +4882,11 @@ let cantGainEXP = false;
                 const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
                 characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
                 state.isCharacterMenuOpen = false;
+
+                // Clean up siege if active
+                if (state.siegeActive) {
+                  cleanupSiege();
+                }
 
                 const wipeEl = document.getElementById('wipe-text');
                 const isEndless = state.gameMode === 'endless';
@@ -5390,7 +5444,18 @@ state.demiSpawned = 0;
       return;
     }
 
+    // Bail out during siege — siege.js handles its own spawning
+    if (state.siegeActive) return;
+
     if (state.gameMode === 'endless') {
+      // Check for siege trigger before demi check
+      if (shouldTriggerSiege()) {
+        // Use imp textures for baby enemies
+        const impType = state.enemyTypes.find(e => e.name === 'imp') || state.enemyTypes[0];
+        startSiege(critter, app, impType.walkTextures, impType.attackTextures);
+        return;
+      }
+
       // Cap: don't spawn if 2+ enemies are already alive — prevents pileup
       const aliveCount = state.enemies.filter(e => e.isAlive).length;
       if (aliveCount >= 2) {
@@ -5432,9 +5497,8 @@ state.demiSpawned = 0;
       const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
       const selectedEnemy = state.enemyTypes[randomIndex];
 
-      // Spawn demi boss every 5 kills (use demiSpawned tracking instead of
-      // exact % 5 check — kills can jump past a multiple between spawn checks)
-      if (state.endlessKillCount >= 5 && state.demiSpawned < Math.floor(state.endlessKillCount / 5)) {
+      // Spawn demi boss every 5 kills (skip siege multiples — those trigger castle siege)
+      if (state.endlessKillCount >= 5 && state.endlessKillCount % 10 !== 0 && state.demiSpawned < Math.floor(state.endlessKillCount / 5)) {
         spawnEnemyDemi(
           critter,
           selectedEnemy.attackTextures,
@@ -5506,6 +5570,13 @@ state.demiSpawned = 0;
     }, currentInterval);
   }
 
+  // Siege ended event — resume spawning (needs access to spawnEnemies)
+  document.addEventListener('siegeEnded', function() {
+    if (state.gameMode === 'endless' && !state.isWiped) {
+      state.isSpawning = false;
+      spawnEnemies();
+    }
+  });
 
   function resetGame(critter, enemy, enemies) {
     let isReset = false;

@@ -159,19 +159,22 @@ export function createSliderBall(backgroundSprite, type, trackWidth) {
 export function createGarbageButton(backgroundSprite) {
   const bw = backgroundSprite.width;
   const bh = backgroundSprite.height;
-  const fontSize = Math.max(11, Math.min(16, bw * 0.035));
-  const btnW = Math.max(100, bw * 0.35);
-  const btnH = Math.max(28, bh * 0.065);
+  const fontSize = Math.max(12, Math.min(18, bw * 0.04));
+  const btnW = Math.max(120, bw * 0.4);
+  const btnH = Math.max(32, bh * 0.075);
 
   const container = new PIXI.Container();
-  container.position.set(bw * 0.85, bh * 0.9);
+  // Center horizontally, near the bottom of the panel
+  container.position.set(bw / 2, bh * 0.9);
+  container.eventMode = 'static';
 
   const bg = new PIXI.Graphics();
-  bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6)
-    .fill({ color: 0x551122, alpha: 0.7 })
-    .stroke({ width: 1.5, color: 0xaa3344, alpha: 0.8 });
+  bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 8)
+    .fill({ color: 0x551122, alpha: 0.65 })
+    .stroke({ width: 1.5, color: 0xaa5566, alpha: 0.8 });
   bg.eventMode = 'static';
   bg.cursor = 'pointer';
+  bg.isDeleteSaveBtn = true;
   container.addChild(bg);
 
   const txt = new PIXI.Text('Delete Save', {
@@ -184,19 +187,21 @@ export function createGarbageButton(backgroundSprite) {
   txt.anchor.set(0.5);
   txt.eventMode = 'static';
   txt.cursor = 'pointer';
+  txt.isDeleteSaveBtn = true;
   container.addChild(txt);
 
   // Confirmation state
   let awaitingConfirm = false;
   let confirmTimeout = null;
 
-  function handleClick() {
+  function handleClick(e) {
+    if (e) e.stopPropagation();
     if (!awaitingConfirm) {
       awaitingConfirm = true;
       txt.text = 'Are you sure?';
       txt.style.fill = '#ff4444';
       bg.clear();
-      bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6)
+      bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 8)
         .fill({ color: 0x771122, alpha: 0.85 })
         .stroke({ width: 2, color: 0xff4444, alpha: 0.9 });
       confirmTimeout = setTimeout(() => {
@@ -204,9 +209,9 @@ export function createGarbageButton(backgroundSprite) {
         txt.text = 'Delete Save';
         txt.style.fill = '#ff6666';
         bg.clear();
-        bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 6)
-          .fill({ color: 0x551122, alpha: 0.7 })
-          .stroke({ width: 1.5, color: 0xaa3344, alpha: 0.8 });
+        bg.roundRect(-btnW / 2, -btnH / 2, btnW, btnH, 8)
+          .fill({ color: 0x551122, alpha: 0.65 })
+          .stroke({ width: 1.5, color: 0xaa5566, alpha: 0.8 });
       }, 3000);
     } else {
       clearTimeout(confirmTimeout);

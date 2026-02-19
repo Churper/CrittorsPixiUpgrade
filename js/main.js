@@ -1841,8 +1841,9 @@ document.addEventListener('DOMContentLoaded', function () {
   let currentHatGraphic = null;
 
   // Per-character hat base Y offsets (fraction of texture height above center)
+  // Calibrated to walk frame 0 head-top position per sprite pixel analysis
   const _hatYOffsets = {
-    frog:  { tophat: 0.19, partyhat: 0.13 },
+    frog:  { tophat: 0.19, partyhat: 0.23 },
     snail: { tophat: 0.40, partyhat: 0.34 },
     bird:  { tophat: 0.36, partyhat: 0.30 },
     bee:   { tophat: 0.36, partyhat: 0.30 },
@@ -1850,36 +1851,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Per-frame hat offsets [dx, dy] in texture-space pixels (added to base position)
   // null = hide hat for that frame (e.g. snail shell-spin)
-  // Derived frame-by-frame from each spritesheet
+  // Frog values derived from pixel analysis of spritesheet head positions
   const _hatFrameDeltas = {
     frog: {
-      // 10-frame hop: stand → crouch → launch → airborne → land → tumble
+      // 10-frame hop cycle: stand → rise → peak → descend → tumble
+      // Pixel-analyzed: head rises ~112px from frame 0 to frame 4, drops ~75px below at frame 9
       walk: [
-        [0, 0],       // 0: standing upright
-        [0, 5],       // 1: slight forward lean
-        [5, 20],      // 2: deep crouch, head drops + shifts right
-        [3, 10],      // 3: pushing off ground
-        [-2, -20],    // 4: airborne, head rises
-        [-5, -28],    // 5: peak of jump, head highest
-        [-4, -22],    // 6: still airborne
-        [0, -8],      // 7: descending
-        [28, 20],     // 8: tumble, body rotated, head shifted right+down
-        [32, 25],     // 9: tumble end, head far right
+        [0, 0],       // 0: standing (headY=-62.5 from center — baseline)
+        [0, -48],     // 1: rising (headY=-110.5)
+        [0, -83],     // 2: high (headY=-145.5)
+        [0, -105],    // 3: near peak (headY=-167.5)
+        [0, -112],    // 4: peak of hop (headY=-174.5)
+        [0, -104],    // 5: descending (headY=-166.5)
+        [0, -81],     // 6: mid descent (headY=-143.5)
+        [0, -43],     // 7: lower (headY=-105.5)
+        [0, 9],       // 8: near ground (headY=-53.5)
+        [0, 75],      // 9: tumble, body drops below center (headY=+12.5)
       ],
-      // 12-frame sword swing: body fairly stable
+      // 12-frame attack: head stays at constant height (headY=-40.5)
+      // +22 delta because attack pose head is 22px lower than walk standing pose
       attack: [
-        [0, 0],       // 0: neutral
-        [-3, -2],     // 1: windup
-        [-6, -4],     // 2: arm back
-        [-4, -3],     // 3: starting swing
-        [0, 0],       // 4: mid-swing
-        [4, 2],       // 5: extending
-        [6, 4],       // 6: full extension
-        [4, 3],       // 7: follow through
-        [0, 0],       // 8: returning
-        [-3, -2],     // 9
-        [-4, -3],     // 10
-        [-2, -1],     // 11: back to neutral
+        [0, 22],      // 0
+        [0, 22],      // 1
+        [0, 22],      // 2
+        [0, 22],      // 3
+        [0, 22],      // 4
+        [0, 22],      // 5
+        [0, 22],      // 6
+        [0, 22],      // 7
+        [0, 22],      // 8
+        [0, 22],      // 9
+        [0, 22],      // 10
+        [0, 23],      // 11
       ],
     },
     snail: {
@@ -4458,6 +4461,9 @@ state.frogGhostPlayer.scale.set(0.28);
 
 
         if (deleteButton && deleteButton.text === '🗑️') {
+          return;
+        }
+        if (deleteButton && deleteButton.isDeleteSaveBtn) {
           return;
         }
         if (deleteButton.isSlider) {

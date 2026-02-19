@@ -6,9 +6,9 @@ let currentHatGraphic = null;
 // Base hat position [x, y] in texture-space pixels from sprite center (walk frame 0 head)
 // Pixel-analyzed from spritesheets: x = head center-of-mass X, y = head bulk-top Y
 const _hatBasePos = {
-  frog:  [0, -36],      // head roughly centered; lowered to sit on head
-  snail: [-26, 92],     // head right of shell center; sits between eye stalks
-  bird:  [-82, -200],   // crest left of center, near frame top
+  frog:  [0, -10],      // head roughly centered; lowered to sit on head
+  snail: [-26, 100],    // head right of shell center; sits between eye stalks
+  bird:  [-82, -150],   // crest left of center, near frame top
   bee:   [-6, -51],     // nearly centered
 };
 

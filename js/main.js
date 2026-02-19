@@ -490,11 +490,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   }
 
-  document.getElementById('story-mode-btn').addEventListener('click', function() {
-    if (this.disabled) return;
-    startFromMenu('story');
-  });
-
   document.getElementById('endless-mode-btn').addEventListener('click', function() {
     renderOverworldMap();
     showPanel('map');

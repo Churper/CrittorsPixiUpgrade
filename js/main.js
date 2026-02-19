@@ -1840,12 +1840,42 @@ document.addEventListener('DOMContentLoaded', function () {
   // Hat rendering — draws a hat graphic as a child of the critter sprite
   let currentHatGraphic = null;
 
-  // Per-character hat Y offsets (fraction of texture height above center)
+  // Per-character hat base Y offsets (fraction of texture height above center)
   const _hatYOffsets = {
     frog:  { tophat: 0.16, partyhat: 0.10 },
     snail: { tophat: 0.40, partyhat: 0.34 },
     bird:  { tophat: 0.34, partyhat: 0.28 },
     bee:   { tophat: 0.34, partyhat: 0.28 },
+  };
+
+  // Per-frame hat Y deltas (texture-space pixels, added to base offset)
+  // Positive = hat moves down, negative = hat moves up
+  // Derived from studying each spritesheet's head position per frame
+  const _hatFrameDeltas = {
+    frog: {
+      // 10-frame hop: crouch → launch → airborne → land → tumble
+      walk:   [0, 4, 10, 3, -10, -15, -12, -4, 8, 5],
+      // 12-frame swing: relatively stable body
+      attack: [0, -2, -4, -3, 0, 2, 3, 2, 0, -2, -3, -1],
+    },
+    snail: {
+      // 20-frame slide: barely any vertical movement
+      walk:   [0, 0, 1, 1, 2, 1, 0, 0, -1, -1, 0, 0, 1, 1, 2, 1, 0, 0, -1, -1],
+      // 20-frame shell spin: head retracts into shell then re-emerges
+      attack: [0, 0, 5, 12, 20, 30, 35, 35, 35, 35, 30, 25, 18, 12, 6, 3, 1, 0, 0, 0],
+    },
+    bird: {
+      // 13-frame walk: gentle bobbing stride
+      walk:   [0, -2, -4, -5, -3, -1, 1, 3, 5, 4, 2, 0, -1],
+      // 13-frame attack: bob with forward lean
+      attack: [0, -2, -5, -6, -4, -1, 2, 4, 3, 1, -1, -3, -1],
+    },
+    bee: {
+      // 9-frame hover: gentle floating oscillation
+      walk:   [0, -3, -5, -4, -1, 2, 4, 5, 2],
+      // 18-frame sting: lunge forward and back
+      attack: [0, -3, -6, -8, -6, -3, 0, 3, 6, 8, 6, 3, 0, -2, -4, -3, -1, 0],
+    },
   };
 
   function applyHat(critterSprite, charType) {
@@ -1855,18 +1885,21 @@ document.addEventListener('DOMContentLoaded', function () {
       currentHatGraphic.destroy();
       currentHatGraphic = null;
     }
+    // Clear previous frame-change handler
+    if (critterSprite) critterSprite.onFrameChange = null;
+
     const charName = charType ? charType.replace('character-', '') : '';
     const hatId = state.equippedHats[charName];
     if (!hatId || !critterSprite) return;
     const offsets = _hatYOffsets[charName] || _hatYOffsets.frog;
-    const yOff = -(critterSprite.texture.height * (offsets[hatId] || 0.16));
+    const baseYOff = -(critterSprite.texture.height * (offsets[hatId] || 0.16));
 
     if (hatId === 'tophat') {
       const hat = new PIXI.Graphics();
       hat.roundRect(-22, -4, 44, 8, 3).fill({ color: 0x1a1a2e });
       hat.roundRect(-14, -34, 28, 32, 4).fill({ color: 0x1a1a2e });
       hat.rect(-14, -10, 28, 5).fill({ color: 0x8b0000 });
-      hat.position.set(0, yOff);
+      hat.position.set(0, baseYOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;
@@ -1889,10 +1922,28 @@ document.addEventListener('DOMContentLoaded', function () {
       hat.fill({ color: blue });
       hat.stroke({ width: 1, color: 0x005bb5, alpha: 0.5 });
       hat.scale.set(1.15);
-      hat.position.set(0, yOff);
+      hat.position.set(0, baseYOff);
       hat.zIndex = 100;
       critterSprite.addChild(hat);
       currentHatGraphic = hat;
+    }
+
+    // Wire up per-frame hat tracking so it follows the head through animations
+    const deltas = _hatFrameDeltas[charName];
+    if (deltas && currentHatGraphic) {
+      const hat = currentHatGraphic;
+      const walkDeltas = deltas.walk;
+      const attackDeltas = deltas.attack;
+      // Apply immediately for the current frame
+      const initDelta = walkDeltas[critterSprite.currentFrame % walkDeltas.length] || 0;
+      hat.position.y = baseYOff + initDelta;
+
+      critterSprite.onFrameChange = (frameIndex) => {
+        if (!hat || hat.destroyed) return;
+        const deltaArr = state.isAttackingChar ? attackDeltas : walkDeltas;
+        const delta = deltaArr[frameIndex % deltaArr.length] || 0;
+        hat.position.y = baseYOff + delta;
+      };
     }
   }
 

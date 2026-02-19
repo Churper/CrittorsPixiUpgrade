@@ -496,7 +496,8 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   document.getElementById('endless-mode-btn').addEventListener('click', function() {
-    startFromMenu('endless');
+    renderOverworldMap();
+    showPanel('map');
   });
 
   // --- Map panel ---
@@ -571,7 +572,6 @@ document.addEventListener('DOMContentLoaded', function () {
       });
     });
 
-    updateDeckPositions();
   }
 
   document.getElementById('layout-btn').addEventListener('click', function() {

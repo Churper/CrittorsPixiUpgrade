@@ -71,35 +71,34 @@ function _hslToRgb(h, s, l) {
 const skinHueConfigs = {
   // ── FROG (body green = hue 70-160) ──
   'frog-ice': [
-    { from: 70, to: 160, targetFrom: 190, targetTo: 200, sat: 1.2, lit: 1.15 },
+    { from: 70, to: 160, targetFrom: 190, targetTo: 205, sat: 1.35, lit: 1.15, shine: 0.15 },
   ],
   'frog-golden': [
-    { from: 70, to: 160, targetFrom: 38, targetTo: 46, sat: 1.6, lit: 0.95, shine: 0.25 },
+    { from: 70, to: 160, targetFrom: 43, targetTo: 50, sat: 1.4, lit: 1.05, shine: 0.4 },
   ],
   'frog-cherry': [
-    { from: 70, to: 160, targetFrom: 335, targetTo: 348, sat: 1.3, lit: 1.15 },
+    { from: 70, to: 160, targetFrom: 330, targetTo: 345, sat: 1.4, lit: 1.1 },
   ],
   'frog-pride': [
-    // Trans pride flag: light blue / pink / white bands across body
-    { from: 70, to: 100, targetFrom: 195, targetTo: 205, sat: 0.9, lit: 1.2 },
-    { from: 100, to: 130, targetFrom: 338, targetTo: 348, sat: 1.0, lit: 1.25 },
-    { from: 130, to: 160, targetFrom: 0, targetTo: 0, sat: 0.1, lit: 1.5 },
+    // Handled specially in recolorSheet — Y-position trans pride bands
+    { from: 70, to: 160, targetFrom: 200, targetTo: 200, sat: 1.0, lit: 1.0 },
   ],
   'frog-poison': [
-    // Electric blue poison dart frog
-    { from: 70, to: 160, targetFrom: 210, targetTo: 225, sat: 1.6, lit: 1.0, shine: 0.1 },
+    // Vivid electric blue poison dart frog
+    { from: 70, to: 160, targetFrom: 210, targetTo: 228, sat: 1.7, lit: 1.05, shine: 0.15 },
   ],
 
-  // ── SNAIL ──
-  // Shell range starts at 170 to catch ALL blue/teal pixels including the lower shell.
+  // ── SNAIL (shell = 140-334, extended to catch lower-back shell pixels) ──
   'snail-crystal': [
-    { from: 170, to: 334, targetFrom: 178, targetTo: 192, sat: 1.15, lit: 1.2 },
+    { from: 140, to: 334, targetFrom: 178, targetTo: 195, sat: 1.3, lit: 1.2, shine: 0.2 },
     { from: 335, to: 360, targetFrom: 185, targetTo: 192, sat: 0.3, lit: 1.35 },
     { from: 0, to: 20, targetFrom: 185, targetTo: 192, sat: 0.3, lit: 1.35 },
+    { from: 21, to: 37, targetFrom: 188, targetTo: 195, sat: 0.4, lit: 1.3 },
     { from: 38, to: 68, targetFrom: 200, targetTo: 210, sat: 0.5, lit: 1.1 },
   ],
   'snail-magma': [
-    { from: 170, to: 334, targetFrom: 2, targetTo: 14, sat: 1.35, lit: 1.3 },
+    { from: 140, to: 334, targetFrom: 2, targetTo: 16, sat: 1.5, lit: 1.2 },
+    { from: 21, to: 37, targetFrom: 8, targetTo: 14, sat: 1.2, lit: 1.1 },
     { from: 38, to: 68, targetFrom: 35, targetTo: 45, sat: 1.0, lit: 1.0 },
   ],
   'snail-valentine': [
@@ -110,39 +109,40 @@ const skinHueConfigs = {
     { from: 38, to: 68, targetFrom: 348, targetTo: 355, sat: 0.35, lit: 1.45 },
   ],
   'snail-galaxy': [
-    // Deep space purple shell with subtle shimmer
-    { from: 170, to: 334, targetFrom: 265, targetTo: 280, sat: 1.3, lit: 0.75, shine: 0.15 },
-    { from: 335, to: 360, targetFrom: 270, targetTo: 278, sat: 0.8, lit: 0.9 },
-    { from: 0, to: 20, targetFrom: 270, targetTo: 278, sat: 0.8, lit: 0.9 },
-    { from: 38, to: 68, targetFrom: 255, targetTo: 265, sat: 0.6, lit: 0.85 },
+    // Deep space purple shell — extended range like valentine to catch back shell
+    { from: 140, to: 334, targetFrom: 265, targetTo: 282, sat: 1.4, lit: 0.8, shine: 0.2 },
+    { from: 335, to: 360, targetFrom: 270, targetTo: 278, sat: 0.9, lit: 0.85 },
+    { from: 0, to: 20, targetFrom: 270, targetTo: 278, sat: 0.9, lit: 0.85 },
+    { from: 21, to: 37, targetFrom: 268, targetTo: 275, sat: 0.9, lit: 0.8 },
+    { from: 38, to: 68, targetFrom: 255, targetTo: 265, sat: 0.7, lit: 0.85 },
   ],
 
   // ── BIRD (body = 80-168, crest = 258-328) ──
   'bird-phoenix': [
-    { from: 80, to: 168, targetFrom: 12, targetTo: 30, sat: 1.6, lit: 1.1, shine: 0.15 },
-    { from: 258, to: 328, targetFrom: 0, targetTo: 10, sat: 1.4, lit: 0.95, shine: 0.1 },
+    { from: 80, to: 168, targetFrom: 10, targetTo: 28, sat: 1.7, lit: 1.1, shine: 0.2 },
+    { from: 258, to: 328, targetFrom: 0, targetTo: 8, sat: 1.5, lit: 0.95, shine: 0.1 },
   ],
   'bird-arctic': [
-    { from: 80, to: 168, targetFrom: 196, targetTo: 208, sat: 0.95, lit: 1.35, shine: 0.25 },
-    { from: 258, to: 328, targetFrom: 205, targetTo: 215, sat: 0.55, lit: 1.4 },
+    { from: 80, to: 168, targetFrom: 195, targetTo: 210, sat: 1.1, lit: 1.3, shine: 0.2 },
+    { from: 258, to: 328, targetFrom: 200, targetTo: 212, sat: 0.6, lit: 1.4 },
   ],
   'bird-moss': [
-    // Earthy deep green body, brown/olive crest
-    { from: 80, to: 168, targetFrom: 85, targetTo: 105, sat: 0.65, lit: 0.7 },
-    { from: 258, to: 328, targetFrom: 30, targetTo: 42, sat: 0.55, lit: 0.65 },
+    // Rich earthy green body, warm brown/olive crest
+    { from: 80, to: 168, targetFrom: 80, targetTo: 100, sat: 0.8, lit: 0.75 },
+    { from: 258, to: 328, targetFrom: 28, targetTo: 40, sat: 0.7, lit: 0.65 },
   ],
   'bird-parrot': [
-    // Tropical red body, bright yellow crest
-    { from: 80, to: 168, targetFrom: 355, targetTo: 370, sat: 1.5, lit: 1.05 },
-    { from: 258, to: 328, targetFrom: 48, targetTo: 58, sat: 1.4, lit: 1.2 },
+    // Bold tropical red body, vivid yellow crest
+    { from: 80, to: 168, targetFrom: 355, targetTo: 370, sat: 1.6, lit: 1.1 },
+    { from: 258, to: 328, targetFrom: 46, targetTo: 56, sat: 1.5, lit: 1.2 },
   ],
 
   // ── BEE (yellow = 18-72) ──
   'bee-neon': [
-    { from: 18, to: 72, targetFrom: 118, targetTo: 142, sat: 1.55, lit: 1.05 },
+    { from: 18, to: 72, targetFrom: 115, targetTo: 140, sat: 1.7, lit: 1.1 },
   ],
   'bee-royal': [
-    { from: 18, to: 72, targetFrom: 268, targetTo: 285, sat: 1.25, lit: 0.82 },
+    { from: 18, to: 72, targetFrom: 268, targetTo: 288, sat: 1.4, lit: 0.85 },
   ],
 };
 

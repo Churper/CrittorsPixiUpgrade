@@ -15,8 +15,7 @@ export function initPotion(critter, app) {
 export function updatePotionUI() {
   const btn = document.getElementById('potion-button');
   if (!btn) return;
-  const isHurt = getPlayerCurrentHealth() < getPlayerHealth();
-  if (getCoffee() < 20 || !isHurt || getisDead()) {
+  if (getCoffee() < 20) {
     btn.classList.add('cant-afford');
   } else {
     btn.classList.remove('cant-afford');

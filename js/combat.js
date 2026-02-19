@@ -1216,8 +1216,8 @@ export function awardBones(enemy) {
   saveBones();
   const bonesEl = document.getElementById('bones-amount');
   if (bonesEl) bonesEl.textContent = getBones();
-  // Visual popup near the kill
-  if (state.app) {
+  // Visual popup near the kill (skip in low detail)
+  if (state.app && state.detailMode !== 'low') {
     const txt = new PIXI.Text({ text: `+${amount} 🍓`, style: {
       fontFamily: 'Luckiest Guy, cursive',
       fontSize: 18,
@@ -1570,6 +1570,11 @@ const _goldenBeanFilter = (() => {
 })();
 
 export function playGoldenBeanFlyEffect(critter, totalCoffee) {
+  // Low detail: add coffee instantly, skip the bean fly animation
+  if (state.detailMode === 'low') {
+    addCoffee(totalCoffee);
+    return;
+  }
   const beanTexture = PIXI.Assets.get('bean');
   const numBeans = 20;
   const coffeePerBean = totalCoffee / numBeans;

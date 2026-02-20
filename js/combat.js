@@ -1973,3 +1973,242 @@ export function drawEnemyHPBar(enemy) {
   enemy.hpBar.clear();
   enemy.hpBar.rect(hpBarX + hpBarWidth - hpBarWidthActual, hpBarY, hpBarWidthActual, hpBarHeight).fill({ color: 0xff0000, alpha: 0.75 });
 }
+
+export function triggerAirstrike(app, critter) {
+  // Drop target = ahead of player (shifted ~2 character lengths to the right)
+  const dropX = critter.position.x + 140;
+  const dropY = -app.stage.y + app.screen.height / 2;
+  const groundY = critter.position.y;
+
+  // Play falling bomb whistle
+  playBombDropSound();
+
+  // Create bomb emoji dropping from top of screen
+  const bombSprite = new PIXI.Text({ text: '💣', style: { fontSize: 48 } });
+  bombSprite.anchor.set(0.5);
+  bombSprite.position.set(dropX, -app.stage.y - 60);
+  bombSprite.zIndex = 999999;
+  app.stage.addChild(bombSprite);
+
+  // Animate bomb falling
+  const fallStart = Date.now();
+  const fallDuration = 700;
+  const startBombY = bombSprite.position.y;
+  const targetBombY = groundY;
+
+  const animateFall = () => {
+    const elapsed = Date.now() - fallStart;
+    const progress = Math.min(elapsed / fallDuration, 1);
+    // Accelerating fall (ease-in)
+    const t = progress * progress;
+    bombSprite.position.y = startBombY + (targetBombY - startBombY) * t;
+    bombSprite.rotation += 0.15;
+    // Grow slightly as it gets closer
+    const s = 1 + progress * 0.4;
+    bombSprite.scale.set(s);
+
+    if (progress < 1) {
+      requestAnimationFrame(animateFall);
+    } else {
+      // IMPACT — remove bomb sprite
+      app.stage.removeChild(bombSprite);
+      bombSprite.destroy();
+
+      // Play explosion sound
+      playExplosionSound();
+
+      // --- Explosion visual ---
+      const explosionContainer = new PIXI.Container();
+      explosionContainer.zIndex = 999999;
+      explosionContainer.position.set(dropX, groundY);
+      app.stage.addChild(explosionContainer);
+
+      // Central fireball ring (expanding circle)
+      const fireball = new PIXI.Graphics();
+      fireball.circle(0, 0, 10);
+      fireball.fill({ color: 0xff6600, alpha: 0.9 });
+      explosionContainer.addChild(fireball);
+
+      // Inner white-hot core
+      const core = new PIXI.Graphics();
+      core.circle(0, 0, 6);
+      core.fill({ color: 0xffffcc, alpha: 1 });
+      explosionContainer.addChild(core);
+
+      // Explosion particles — fiery debris (fewer in low detail)
+      const particles = [];
+      const particleCount = state.detailMode === 'low' ? 8 : 24;
+      for (let i = 0; i < particleCount; i++) {
+        const p = new PIXI.Graphics();
+        const size = 3 + Math.random() * 5;
+        const colors = [0xff4400, 0xff8800, 0xffcc00, 0xff2200, 0xffaa00];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+        p.circle(0, 0, size);
+        p.fill({ color: color, alpha: 0.9 });
+        p.position.set(0, 0);
+        const angle = (Math.PI * 2 * i) / particleCount + (Math.random() - 0.5) * 0.5;
+        const speed = 3 + Math.random() * 6;
+        p.vx = Math.cos(angle) * speed;
+        p.vy = Math.sin(angle) * speed - Math.random() * 3;
+        p.gravity = 0.12;
+        p.drag = 0.96;
+        explosionContainer.addChild(p);
+        particles.push(p);
+      }
+
+      // Smoke puffs (skip in low detail)
+      const smokes = [];
+      if (state.detailMode !== 'low') {
+        for (let i = 0; i < 8; i++) {
+          const s = new PIXI.Graphics();
+          const smokeSize = 8 + Math.random() * 12;
+          const grey = Math.floor(80 + Math.random() * 80);
+          s.circle(0, 0, smokeSize);
+          s.fill({ color: (grey << 16) | (grey << 8) | grey, alpha: 0.5 });
+          s.position.set((Math.random() - 0.5) * 30, (Math.random() - 0.5) * 20);
+          s.vx = (Math.random() - 0.5) * 1.5;
+          s.vy = -1 - Math.random() * 2;
+          explosionContainer.addChild(s);
+          smokes.push(s);
+        }
+      }
+
+      // Screen flash overlay (skip in low detail)
+      const overlay = state.detailMode !== 'low' ? (() => {
+        const o = new PIXI.Graphics();
+        o.rect(0, 0, app.screen.width, app.screen.height);
+        o.fill({ color: 0xffffff, alpha: 0.7 });
+        o.zIndex = 10000;
+        o.position.set(-app.stage.x, -app.stage.y);
+        app.stage.addChild(o);
+        return o;
+      })() : null;
+
+      // Animate explosion
+      const explosionStart = Date.now();
+      const explosionDuration = 800;
+      const animateExplosion = () => {
+        const elapsed = Date.now() - explosionStart;
+        const progress = Math.min(elapsed / explosionDuration, 1);
+
+        // Expand fireball then fade
+        const fireScale = 1 + progress * 8;
+        fireball.scale.set(fireScale);
+        fireball.alpha = Math.max(0, 0.9 - progress * 1.2);
+        core.scale.set(1 + progress * 5);
+        core.alpha = Math.max(0, 1 - progress * 2);
+
+        // Particles fly outward
+        for (const p of particles) {
+          p.position.x += p.vx;
+          p.position.y += p.vy;
+          p.vy += p.gravity;
+          p.vx *= p.drag;
+          p.vy *= p.drag;
+          p.alpha = Math.max(0, 1 - progress * 1.3);
+          p.scale.set(Math.max(0, 1 - progress * 0.8));
+        }
+
+        // Smoke drifts up
+        for (const s of smokes) {
+          s.position.x += s.vx;
+          s.position.y += s.vy;
+          s.vy *= 0.98;
+          s.alpha = Math.max(0, 0.5 - progress * 0.7);
+          s.scale.set(1 + progress * 1.5);
+        }
+
+        // Fade flash overlay
+        if (overlay) {
+          const flashAlpha = Math.max(0, 0.7 - progress * 1.4);
+          overlay.clear();
+          overlay.rect(0, 0, app.screen.width, app.screen.height);
+          overlay.fill({ color: 0xffffff, alpha: flashAlpha });
+          overlay.position.set(-app.stage.x, -app.stage.y);
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(animateExplosion);
+        } else {
+          // Cleanup
+          if (app.stage.children.includes(explosionContainer)) {
+            app.stage.removeChild(explosionContainer);
+          }
+          explosionContainer.destroy({ children: true });
+          if (overlay) {
+            if (app.stage.children.includes(overlay)) {
+              app.stage.removeChild(overlay);
+            }
+            overlay.destroy();
+          }
+        }
+      };
+      requestAnimationFrame(animateExplosion);
+
+      // Screen shake
+      let shakeTime = 0;
+      const shakeInterval = setInterval(() => {
+        shakeTime += 20;
+        if (shakeTime > 400) {
+          clearInterval(shakeInterval);
+          return;
+        }
+        const intensity = Math.max(0, 1 - shakeTime / 400);
+        app.stage.x += (Math.random() - 0.5) * 8 * intensity;
+        app.stage.y += (Math.random() - 0.5) * 8 * intensity;
+      }, 20);
+
+      // --- Apply damage to all enemies ---
+      const enemies = getEnemies();
+      const deadEnemies = [];
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        const enemy = enemies[i];
+        if (!enemy.isAlive) continue;
+        // Bombs instantly kill baby/small siege mobs
+        const damage = enemy.isBaby ? enemy.currentHP : Math.round(enemy.maxHP * 0.75);
+        enemy.currentHP -= damage;
+        enemy.tint = 0xffffff;
+        setTimeout(() => { if (enemy && enemy.isAlive) enemy.tint = 0xffffff; }, 150);
+        drawEnemyHPBar(enemy);
+        if (enemy.currentHP <= 0) {
+          enemy.isAlive = false;
+          if (enemy.isDemi) state.lastDemiKillTime = Date.now();
+          deadEnemies.push(enemy);
+        }
+      }
+
+      // Process dead enemies
+      deadEnemies.forEach(enemy => {
+        if (app.stage.children.includes(enemy)) {
+          enemy.tint = 0xFF0000;
+          if (!enemy.isBaby) createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
+          if (state.gameMode === 'endless') {
+            if (!enemy.isSiegeMob) {
+              state.endlessKillCount++;
+            }
+            if (!enemy.isBaby) {
+              checkSharedLevelUp();
+              updateKillProgressBar();
+            }
+          }
+          if (enemy.isSiegeMob && state.siegeActive) {
+            document.dispatchEvent(new Event('siegeMobKilled'));
+          }
+          app.stage.removeChild(enemy);
+          const idx = enemies.indexOf(enemy);
+          if (idx !== -1) enemies.splice(idx, 1);
+        }
+      });
+
+      if (getEnemiesInRange() > 0) {
+        setEnemiesInRange(Math.max(0, getEnemiesInRange() - deadEnemies.length));
+      }
+      if (getEnemiesInRange() === 0) {
+        const enemyPortrait = document.getElementById('enemy-portrait');
+        if (enemyPortrait) enemyPortrait.style.display = 'none';
+        state.isCombat = false;
+      }
+    }
+  };
+  animateFall();
+}

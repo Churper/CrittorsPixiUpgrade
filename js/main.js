@@ -1329,8 +1329,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (state.pauseMenuContainer) {
         app.stage.removeChild(state.pauseMenuContainer);
         state.pauseMenuContainer = null;
-        const spawnVis = window.getComputedStyle(document.getElementById('spawn-text')).visibility;
-        if (spawnVis === 'visible' || app.stage.children.includes(state.reviveDialogContainer)) {
+        if (state.isCharacterMenuOpen || app.stage.children.includes(state.reviveDialogContainer)) {
           return; // stay paused, just close the menu
         }
       }
@@ -1626,7 +1625,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   // --- Dynamic item button layout ---
-  // Stacks only visible item buttons below the auto-attack btn with no gaps.
+  // Stacks visible item buttons on the left side.
   // Called whenever an item count changes.
   function repositionItemButtons() {
     const btnIds = ['shield-btn', 'bomb-btn', 'rage-btn', 'feather-btn', 'golden-bean-btn'];
@@ -1644,18 +1643,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const gap = 6;
     const leftEdge = 16;
 
-    // Position auto-attack button: always at top of the left button stack
-    const autoAtkBtn = document.getElementById('auto-attack-btn');
-    const autoAtkTop = Math.max(screenH * 0.35, 80);
-    if (autoAtkBtn) {
-      autoAtkBtn.style.bottom = 'auto';
-      autoAtkBtn.style.top = autoAtkTop + 'px';
-    }
-
     if (visibleBtns.length === 0) return;
 
-    // Items stack below the auto-attack button
-    const startTop = autoAtkTop + btnSize + gap + 4;
+    const startTop = Math.max(screenH * 0.35, 80);
     // Max items per column before we'd go off-screen
     const maxPerCol = Math.max(1, Math.floor((screenH - startTop - 8) / (btnSize + gap)));
 
@@ -1883,7 +1873,7 @@ document.addEventListener('DOMContentLoaded', function () {
         deadEnemies.forEach(enemy => {
           if (app.stage.children.includes(enemy)) {
             enemy.tint = 0xFF0000;
-            createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
+            if (!enemy.isBaby) createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
             if (state.gameMode === 'endless') {
               if (!enemy.isSiegeMob) {
                 state.endlessKillCount++;
@@ -1998,12 +1988,8 @@ document.addEventListener('DOMContentLoaded', function () {
       document.getElementById('endless-timer').style.display = 'flex';
       const bonesAmountEl = document.getElementById('bones-amount');
       if (bonesAmountEl) bonesAmountEl.textContent = state.bones;
-      // Wire auto-attack button (shown after loading finishes)
-      const autoBtn = document.getElementById('auto-attack-btn');
-      autoBtn.addEventListener('click', () => {
-        state.autoAttack = !state.autoAttack;
-        autoBtn.classList.toggle('active', state.autoAttack);
-      });
+      // Auto-attack always on
+      state.autoAttack = true;
       // Set endless start time + reset kill count
       state.endlessStartTime = Date.now();
       state.endlessElapsed = 0;
@@ -3623,7 +3609,6 @@ let cantGainEXP = false;
       document.getElementById("ui-overlay").style.visibility = "visible";
       document.getElementById("pause-button").style.visibility = "visible";
       document.getElementById("coffee-button").style.visibility = "visible";
-      document.getElementById('auto-attack-btn').style.display = 'flex';
       createWeatherEffects();
       document.getElementById("potion-button").style.visibility = "visible";
       updatePotionUI();
@@ -3633,8 +3618,8 @@ let cantGainEXP = false;
       applyHat(critter, getCurrentCharacter());
       applySkinFilter(critter, getCurrentCharacter());
 
-      state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
-      critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 2.2 - critter.height * .22);
+      state.stored = app.screen.height - foreground.height / 1.8 - critter.height * .22;
+      critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 1.8 - critter.height * .22);
       updateKillProgressBar();
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
       // Start the state.timer animation
@@ -3741,7 +3726,7 @@ let cantGainEXP = false;
         }
         castle.position.y = app.screen.height - castle.height * 0.25;
         castlePlayer.position.y = app.screen.height - castle.height * 0.25;
-        state.stored = app.screen.height - foreground.height / 2.2 - critter.height * .22;
+        state.stored = app.screen.height - foreground.height / 1.8 - critter.height * .22;
         critter.position.y = state.stored;
 
         // Reposition mountains to match new screen height

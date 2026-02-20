@@ -182,6 +182,7 @@ export function saveBones() {
     equippedHats: state.equippedHats,
     equippedSkins: state.equippedSkins,
     unlockedCastles: state.unlockedCastles,
+    checkpointLevels: state.checkpointLevels,
     detailMode: state.detailMode,
   };
   localStorage.setItem('crittorsBones', JSON.stringify(data));
@@ -206,6 +207,7 @@ export function loadBones() {
         if (state.equippedSkins.frog === 'frog-shadow') delete state.equippedSkins.frog;
       }
       if (data.unlockedCastles) state.unlockedCastles = data.unlockedCastles;
+      if (data.checkpointLevels) state.checkpointLevels = data.checkpointLevels;
       if (data.detailMode) state.detailMode = data.detailMode;
     } catch (e) {
       console.warn('Failed to load bones data:', e);

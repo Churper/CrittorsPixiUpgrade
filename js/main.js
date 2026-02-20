@@ -770,9 +770,9 @@ document.addEventListener('DOMContentLoaded', function () {
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
 
-        // Shared level: scales with diminishing returns at higher checkpoints
-        // cp9→14, cp13→18 matches observed gameplay progression
-        const targetLevel = Math.round(cpLevel + Math.sqrt(cpLevel) * 1.5);
+        // Use saved level from when checkpoint was unlocked; fall back to formula for old saves
+        const savedLevel = state.checkpointLevels && state.checkpointLevels[cpLevel];
+        const targetLevel = savedLevel || Math.round(cpLevel + Math.sqrt(cpLevel) * 1.5);
         state.sharedLevel = targetLevel;
         const characters = ['frog', 'snail', 'bird', 'bee'];
         for (const ch of characters) {

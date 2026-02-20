@@ -144,6 +144,7 @@ const state = {
   siegeRewardItems: [],
   lastSiegeCastleLevel: 0,
   unlockedCastles: [],
+  checkpointLevels: {},  // maps castle number → sharedLevel at time of unlock
   endlessCheckpointStart: 0,
 
   // Cross-round currency

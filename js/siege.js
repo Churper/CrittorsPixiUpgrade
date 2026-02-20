@@ -510,6 +510,10 @@ export function collectSiegeRewards() {
   state.unlockedCastles.sort((a, b) => a - b);
   state.lastSiegeCastleLevel = level;
 
+  // Record actual level at this checkpoint so resume uses exact values
+  if (!state.checkpointLevels) state.checkpointLevels = {};
+  state.checkpointLevels[level] = state.sharedLevel || 1;
+
   saveBones();
 
   // Hide panel

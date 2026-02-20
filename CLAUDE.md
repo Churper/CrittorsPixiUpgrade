@@ -13,22 +13,32 @@
 
 ## File Architecture
 
-| File | Purpose |
-|------|---------|
-| `js/main.js` | Game init, PIXI app, game loop (app.ticker), input handling, camera, spawning loop, endless mode logic, item button wiring, airstrike/bomb, layout shop, biome transitions, weather, day/night cycle, character unlock animations |
-| `js/state.js` | Central state object + all getters/setters. Single source of truth for game mode, character stats, items, siege state, bones, skins, hats, layout upgrades |
-| `js/combat.js` | Enemy spawning (`spawnEnemy`, `spawnEnemyDemi`, `createSpawnEnemy`), AI, movement, attack logic, damage calc, type multipliers, coffee drops, hit splats (color-coded: gold crit, grey dud), item drops, bones awarding, ground item collection, death animations, synthesized SFX |
-| `js/siege.js` | Castle siege system (triggers every 10 kills in endless). Alert phase → baby mob swarm + normal mobs → castle destruction → reward panel with random items. Overworld map rendering with 2D snake-path grid layout and checkpoint system |
-| `js/skins.js` | Skin catalog (10 skins across 4 characters), HSL recoloring engine (`recolorSheet`), per-skin hue shift configs, texture cache, runtime particle effects (sparkles for golden frog, hearts for valentine snail) |
-| `js/upgrades.js` | EXP tracking, auto level-up (all 3 stats), character stat setters |
-| `js/characters.js` | Per-character health/EXP management, portrait flashing, HP indicators, `getCharacterDamage()` |
-| `js/ui.js` | Health/EXP bars, pause menu, cooldown overlay, round text, grayscale filters |
-| `js/timer.js` | 60-second round timer with animated snail progress bar |
-| `js/save.js` | Save/load to localStorage. `saveBones()` persists bones + layout upgrades + starting items + unlocked castles + owned hats/skins |
-| `js/utils.js` | Random color generators for particle effects |
-| `js/leaderboard.js` | Leaderboard functionality |
-| `index.html` | Game container, UI overlay, character boxes, panels (pause, layout shop, map, siege reward, skin/hat previews) |
-| `style.css` | All styles, animations, overworld map grid, panel styling |
+| File | Lines | Purpose |
+|------|-------|---------|
+| `js/main.js` | ~2,500 | PIXI app init, game loop (`app.ticker`), input handling, camera, character swap, pause system, asset loading, `setup()`, `startGame()`, story-mode castle logic, resize handler. Key sections: `handleCharacterClick` (~line 450), `handleTouchHold` (attack logic, ~line 1150), game loop (~line 1600), `buildEnemyTypes` (~line 2200) |
+| `js/state.js` | ~500 | Central state object + all getters/setters. Single source of truth for game mode, character stats, items, siege state, bones, skins, hats, layout upgrades |
+| `js/combat.js` | ~2,200 | Enemy spawning (`spawnEnemy`, `spawnEnemyDemi`), AI, movement, attack logic, damage calc, type multipliers, coffee drops, hit splats, item drops, bones awarding, ground item collection, death animations, synthesized SFX, `triggerAirstrike()` (bomb AoE + explosion visuals) |
+| `js/spawnLoop.js` | ~145 | Enemy spawn scheduling for endless + story modes. Demi boss timing, siege trigger checks, spawn interval scaling. `initSpawnLoop(critter, app)` + `spawnEnemies()` |
+| `js/itemButtons.js` | ~210 | All 6 item button click handlers (shield, bomb, rage, feather, golden bean, medkit) + `repositionItemButtons()` layout. `initItemButtons(critter, app)` |
+| `js/layoutShop.js` | ~555 | Bones shop panel: card deck navigation, swipe gestures, stat upgrades, hats/skins/inventory sub-views, inline cosmetic pickers, settings panel, leaderboard/guide button wiring, delete save. `showPanel()`/`hidePanel()` helpers |
+| `js/menuScene.js` | ~400 | Animated menu background (pure Canvas 2D): stars, moon, mountains, campfires, lanterns, snail sprite. `initMenuScene()` + `stopMenuScene()` |
+| `js/siege.js` | ~500 | Castle siege system (triggers every 10 kills in endless). Alert phase, baby mob swarm, castle combat, reward panel. Overworld map rendering with snake-path grid + checkpoint system |
+| `js/skins.js` | ~450 | Skin catalog (16 skins across 4 characters), HSL recoloring engine (`recolorSheet`), per-skin hue shift configs, texture cache, runtime particle effects (sparkles for golden frog, hearts for valentine snail) |
+| `js/upgrades.js` | ~100 | EXP tracking, auto level-up (all 3 stats), character stat setters |
+| `js/characters.js` | ~200 | Per-character health/EXP management, portrait flashing, HP indicators, `getCharacterDamage()` |
+| `js/ui.js` | ~300 | Health/EXP bars, pause menu, cooldown overlay, round text, grayscale filters |
+| `js/timer.js` | ~100 | 60-second round timer with animated snail progress bar |
+| `js/save.js` | ~100 | Save/load to localStorage. `saveBones()` persists bones + layout upgrades + starting items + unlocked castles + owned hats/skins |
+| `js/utils.js` | ~20 | Random color generators for particle effects |
+| `js/leaderboard.js` | ~160 | Supabase leaderboard: score submission, formatting, player name persistence, leaderboard panel rendering, `showScoreSubmitOverlay()` |
+| `js/hats.js` | ~150 | `applyHat()` — draws hat shapes as PIXI.Graphics children of critter sprite |
+| `js/potion.js` | ~100 | Potion system: 3 doses per potion, heal amount, UI wiring |
+| `js/reviveDialog.js` | ~100 | Death/revive dialog: coffee-to-revive flow |
+| `js/terrain.js` | ~150 | `initTerrain()`, `drawEndlessGround()` — procedural ground tiles |
+| `js/weather.js` | ~200 | Weather type selection, rain/snow/etc. particle creation + update |
+| `js/biomeTransition.js` | ~150 | Biome crossfade system, sky gradient drawing |
+| `index.html` | — | Game container, UI overlay, character boxes, panels (pause, layout shop, map, siege reward, skin/hat previews) |
+| `style.css` | — | All styles, animations, overworld map grid, panel styling |
 
 ## Characters
 | Character | Emoji | Default Damage | Strong vs (1.75x) | Weak vs (0.75x) |
@@ -130,7 +140,7 @@ Items persist across runs in `state.startingItems`. Can be purchased in the layo
 **Runtime effects:** Golden frog and galaxy snail get sparkle particles (bigger, more frequent). Valentine snail gets floating heart particles (larger, more frequent). Managed by `updateSkinEffects()`.
 
 ## Hats System
-Hats are drawn as PIXI.Graphics children of the critter sprite in `applyHat()` (main.js). Hat catalog:
+Hats are drawn as PIXI.Graphics children of the critter sprite in `applyHat()` (`hats.js`). Hat catalog (defined in `layoutShop.js`):
 
 | Hat | Shape | Notes |
 |-----|-------|-------|
@@ -190,9 +200,21 @@ Sprites in `./assets/`:
 - Bee: type 2, walk 9 frames × 256h (2753×256), attack 18 frames × 256h (1950×1024)
 - Bird: type 2, walk 13 frames × 403h (2541×806), attack 13 frames × 403h (2541×806)
 
+## Module Init Order
+Inside `DOMContentLoaded`:
+1. `loadBones()` — restore persistent currency
+2. `initMenuScene()` — start animated menu canvas
+3. `initLayoutShop()` — wire bones shop + settings + panel helpers
+4. Button click handlers (map, siege reward) remain in main.js
+
+Inside `mainAppFunction()` → `setup()` → `startGame()`:
+5. `initItemButtons(critter, app)` — wire 6 consumable item buttons
+6. `initSpawnLoop(critter, app)` — store refs for spawn scheduler
+7. `spawnEnemies()` — kick off first spawn
+
 ## Known Quirks
 - `getFrogSpeed()` returns `state.speed` (not `state.frogSpeed`) — possible bug
 - `setCharacterSpeed/Health/Damage()` in upgrades.js take a `currentCharacter` param but ignore it, using `state.currentCharacter` instead
 - index.html has two `</body>` closing tags
 - `#pause-button` div has duplicate `id` attributes (`id="pause-button" id="coffee-coins"`)
-- `main.js` is very large (~5500+ lines). Key sections: item button wiring (~line 2700), airstrike (~line 2137), spawning loop (~line 5440), camera logic (~line 5248), enemy types definition (~line 5370)
+- `main.js` remaining ~2,500 lines are tightly coupled game-loop code (PIXI closure vars `critter`, `app`). Key sections: `handleCharacterClick` (~line 450), `handleTouchHold` (~line 1150), game loop `app.ticker.add` (~line 1600), `buildEnemyTypes` (~line 2200)

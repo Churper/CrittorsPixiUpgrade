@@ -2755,7 +2755,12 @@ state.frogGhostPlayer.scale.set(0.28);
             critter.loop = false;
             critter.onComplete = function () {
               if (!state.isAttackingChar) {
-                return; // Return early if attack was interrupted (paused)
+                // Attack was interrupted or already resolved — restore walk textures
+                critter.textures = state.frogWalkTextures;
+                critter.loop = true;
+                setCharAttackAnimating(false);
+                critter.play();
+                return;
               }
               if (state.isAttackingChar) {
                 attackAnimationPlayed = true;
@@ -2833,6 +2838,10 @@ state.frogGhostPlayer.scale.set(0.28);
                 isMoving = false;
               }
               state.isAttackingChar = false;
+              setCharAttackAnimating(false);
+              // Restore walk textures after attack resolves
+              critter.textures = state.frogWalkTextures;
+              critter.loop = true;
               critter.play();
             };
             critter.play();
@@ -3466,6 +3475,13 @@ let cantGainEXP = false;
             state.isAttackingChar = false;
             setIsCharAttacking(false);
           }
+        }
+        // Safety: if stuck in attack textures with nothing to fight, restore walk
+        if (!state.isAttackingChar && getEnemiesInRange() === 0 && critter.textures === state.frogAttackTextures) {
+          critter.textures = state.frogWalkTextures;
+          critter.loop = true;
+          setCharAttackAnimating(false);
+          critter.play();
         }
         // Auto-attack: trigger attack when enemies are in range, or at siege castle
         const atSiegeCastle = state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&

@@ -8,7 +8,8 @@ import {
   getSnailDamage, getBirdDamage, getFrogDamage, getBeeDamage,
   getPlayerCurrentHealth, getPlayerHealth,
   setSelectLevel,
-  getBones, setBones, getLayoutUpgrades, setLayoutUpgrades,
+  getBones, setBones, getSupporterHearts, setSupporterHearts,
+  getLayoutUpgrades, setLayoutUpgrades,
 } from './state.js';
 import {
   setCurrentFrogHealth, setCurrentSnailHealth, setCurrentBeeHealth, setCurrentBirdHealth,
@@ -173,6 +174,7 @@ export function loadGame() {
 export function saveBones() {
   const data = {
     bones: getBones(),
+    supporterHearts: getSupporterHearts(),
     layoutUpgrades: getLayoutUpgrades(),
     startingItems: state.startingItems,
     ownedHats: state.ownedHats,
@@ -191,6 +193,7 @@ export function loadBones() {
     try {
       const data = JSON.parse(saved);
       if (data.bones !== undefined) setBones(data.bones);
+      if (data.supporterHearts !== undefined) setSupporterHearts(data.supporterHearts);
       if (data.layoutUpgrades) setLayoutUpgrades(data.layoutUpgrades);
       if (data.startingItems) state.startingItems = data.startingItems;
       if (data.ownedHats) state.ownedHats = data.ownedHats;

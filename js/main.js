@@ -19,6 +19,7 @@ import {
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
   getMedkitCount, setMedkitCount,
+  getSupporterHearts, setSupporterHearts,
 } from './state.js';
 import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
 import { getRandomColor, getRandomColor3 } from './utils.js';
@@ -562,6 +563,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const bones = state.bones;
     const upgrades = state.layoutUpgrades;
     layoutBonesEl.textContent = `🍓 ${bones}`;
+    const heartsEl = document.getElementById('layout-hearts');
+    if (heartsEl) heartsEl.textContent = `💖 ${state.supporterHearts}`;
 
     // Update each card's stat rows
     layoutCards.forEach(card => {
@@ -787,11 +790,11 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${hat.icon}</span>`
-        : `<span>${hat.icon}</span><span class="subview-cost">🍓${hat.cost}</span>`;
+        : `<span>${hat.icon}</span><span class="subview-cost">💖${hat.cost}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
-          if (state.bones < hat.cost) return;
-          state.bones -= hat.cost;
+          if (state.supporterHearts < hat.cost) return;
+          state.supporterHearts -= hat.cost;
           state.ownedHats.push(hat.id);
           saveBones();
           updateLayoutUI();
@@ -833,11 +836,11 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span>`
-        : `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span><span class="subview-cost">🍓${skin.cost}</span>`;
+        : `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span><span class="subview-cost">💖${skin.cost}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
-          if (state.bones < skin.cost) return;
-          state.bones -= skin.cost;
+          if (state.supporterHearts < skin.cost) return;
+          state.supporterHearts -= skin.cost;
           state.ownedSkins.push(skin.id);
           saveBones();
           updateLayoutUI();
@@ -931,11 +934,11 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${hat.icon}</span><span class="inline-picker-label">${hat.name}</span>`
-        : `<span>${hat.icon}</span><span class="inline-picker-cost">🍓${hat.cost}</span><span class="inline-picker-label">${hat.name}</span>`;
+        : `<span>${hat.icon}</span><span class="inline-picker-cost">💖${hat.cost}</span><span class="inline-picker-label">${hat.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
-          if (state.bones < hat.cost) return;
-          state.bones -= hat.cost;
+          if (state.supporterHearts < hat.cost) return;
+          state.supporterHearts -= hat.cost;
           state.ownedHats.push(hat.id);
           saveBones();
           updateLayoutUI();
@@ -975,11 +978,11 @@ document.addEventListener('DOMContentLoaded', function () {
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${skin.icon}</span><span class="inline-picker-label">${skin.name}</span>`
-        : `<span>${skin.icon}</span><span class="inline-picker-cost">🍓${skin.cost}</span><span class="inline-picker-label">${skin.name}</span>`;
+        : `<span>${skin.icon}</span><span class="inline-picker-cost">💖${skin.cost}</span><span class="inline-picker-label">${skin.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
-          if (state.bones < skin.cost) return;
-          state.bones -= skin.cost;
+          if (state.supporterHearts < skin.cost) return;
+          state.supporterHearts -= skin.cost;
           state.ownedSkins.push(skin.id);
           saveBones();
           updateLayoutUI();

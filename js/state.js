@@ -148,6 +148,7 @@ const state = {
 
   // Cross-round currency
   bones: 0,
+  supporterHearts: 50, // gifted 50 to everyone; later earned via supporter activities
   layoutUpgrades: {
     frog:  { damage: 0, health: 0, defense: 0 },
     snail: { damage: 0, health: 0, defense: 0 },
@@ -445,5 +446,7 @@ export function setUnlockedCharacters(value) { state.unlockedCharacters = value;
 // Bones (cross-round currency)
 export function getBones() { return state.bones; }
 export function setBones(value) { state.bones = value; }
+export function getSupporterHearts() { return state.supporterHearts; }
+export function setSupporterHearts(value) { state.supporterHearts = value; }
 export function getLayoutUpgrades() { return state.layoutUpgrades; }
 export function setLayoutUpgrades(value) { state.layoutUpgrades = value; }

@@ -1887,6 +1887,8 @@ document.addEventListener('DOMContentLoaded', function () {
             if (state.gameMode === 'endless') {
               if (!enemy.isSiegeMob) {
                 state.endlessKillCount++;
+              }
+              if (!enemy.isBaby) {
                 checkSharedLevelUp();
                 updateKillProgressBar();
               }
@@ -3243,9 +3245,6 @@ let cantGainEXP = false;
         }
 
         if (state.roundOver) {
-          if (getPlayerCurrentHealth() <= 0) {
-            document.getElementById('spawn-text').style.visibility = 'visible';
-          }
 
           // Mountain parallax
           mountain1.position.x -= velocity.x * mountain1Speed * state.dt;

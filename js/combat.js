@@ -497,10 +497,14 @@ export function rangedAttack(critter, enemy) {
           if (enemy.isDemi) {
             state.lastDemiKillTime = Date.now();
           }
-          if (state.gameMode === 'endless' && !enemy.isSiegeMob) {
-            state.endlessKillCount++;
-            checkSharedLevelUp();
-            updateKillProgressBar();
+          if (state.gameMode === 'endless') {
+            if (!enemy.isSiegeMob) {
+              state.endlessKillCount++;
+            }
+            if (!enemy.isBaby) {
+              checkSharedLevelUp();
+              updateKillProgressBar();
+            }
           }
           if (enemy.isSiegeMob && state.siegeActive) {
             document.dispatchEvent(new Event('siegeMobKilled'));
@@ -1077,10 +1081,14 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       if (enemy.isDemi) {
         state.lastDemiKillTime = Date.now();
       }
-      if (state.gameMode === 'endless' && !enemy.isSiegeMob) {
-        state.endlessKillCount++;
-        checkSharedLevelUp();
-        updateKillProgressBar();
+      if (state.gameMode === 'endless') {
+        if (!enemy.isSiegeMob) {
+          state.endlessKillCount++;
+        }
+        if (!enemy.isBaby) {
+          checkSharedLevelUp();
+          updateKillProgressBar();
+        }
       }
       if (enemy.isSiegeMob && state.siegeActive) {
         document.dispatchEvent(new Event('siegeMobKilled'));

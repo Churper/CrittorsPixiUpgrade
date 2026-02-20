@@ -92,7 +92,7 @@ function createSiegeCastle(critter, app) {
   castle.anchor.set(0.5, 1);
   castle.position.set(
     critter.position.x + app.screen.width + 200,
-    app.screen.height - 100
+    state.groundY || (app.screen.height - 100)
   );
   castle.zIndex = 6;
   castle.scale.set(0.8);
@@ -137,9 +137,9 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   const waves = Math.min(1 + Math.floor(level / 3), 4);
   const mobsPerWave = Math.ceil(totalMobs / waves);
 
-  // Pick a second baby type at level 3+
+  // Pick a second baby type at level 2+ (mix variety earlier)
   let secondType = null;
-  if (level >= 3 && state.enemyTypes && state.enemyTypes.length > 1) {
+  if (level >= 2 && state.enemyTypes && state.enemyTypes.length > 1) {
     const candidates = state.enemyTypes.filter(e => e.name !== 'imp');
     if (candidates.length > 0) {
       secondType = candidates[Math.floor(Math.random() * candidates.length)];
@@ -206,8 +206,8 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, 
   enemy.isBaby = true;
   enemy.isSiegeMob = true;
 
-  // Stats scale with level — 2-hit normal, 1-hit with type advantage
-  enemy.maxHP = 20 + level * 4;
+  // Stats scale with level — 1-shot with strong type, 2-shot with neutral/weak
+  enemy.maxHP = 8 + level * 3;
   enemy.currentHP = enemy.maxHP;
   enemy.attackDamage = Math.max(1, Math.round(sc / 5 + level * 0.4));
   enemy.exp = 8 + level * 2;
@@ -403,13 +403,16 @@ function siegeCastleDestroyed(critter, app) {
     createCoffeeDrop(dropX, dropY);
   }
 
-  // Generate reward items and drop them on the ground
+  // Generate reward items and drop them on the ground (no duplicates)
   const level = state.siegeCastleLevel;
-  const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean'];
+  const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean', 'medkit'];
   const count = Math.min(1 + Math.floor(level / 3), 3);
   const rewards = [];
-  for (let i = 0; i < count; i++) {
-    rewards.push(itemPool[Math.floor(Math.random() * itemPool.length)]);
+  const available = [...itemPool];
+  for (let i = 0; i < count && available.length > 0; i++) {
+    const idx = Math.floor(Math.random() * available.length);
+    rewards.push(available[idx]);
+    available.splice(idx, 1);
   }
   state.siegeRewardItems = rewards;
   rewards.forEach((item, i) => {
@@ -497,12 +500,14 @@ export function collectSiegeRewards() {
   }
   document.dispatchEvent(new Event('itemButtonsChanged'));
 
-  // Unlock checkpoint
+  // Unlock checkpoint — backfill all previous castles too
   const level = state.siegeCastleLevel;
-  if (!state.unlockedCastles.includes(level)) {
-    state.unlockedCastles.push(level);
-    state.unlockedCastles.sort((a, b) => a - b);
+  for (let i = 1; i <= level; i++) {
+    if (!state.unlockedCastles.includes(i)) {
+      state.unlockedCastles.push(i);
+    }
   }
+  state.unlockedCastles.sort((a, b) => a - b);
   state.lastSiegeCastleLevel = level;
 
   saveBones();

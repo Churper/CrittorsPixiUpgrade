@@ -46,20 +46,20 @@ const state = {
 
   // Character stats
   snailSpeed: 1,
-  snailDamage: 16,
+  snailDamage: 8,
   snailHealth: 100,
   snailLevel: 1,
   beeLevel: 1,
   birdLevel: 1,
   birdSpeed: 1,
-  birdDamage: 10,
+  birdDamage: 5,
   touchCount: 0,
   birdHealth: 100,
   beeSpeed: 1,
-  beeDamage: 16,
+  beeDamage: 8,
   beeHealth: 100,
   frogSpeed: 1,
-  frogDamage: 16,
+  frogDamage: 8,
   frogHealth: 100,
   frogLevel: 1,
   currentFrogHealth: 100,
@@ -124,6 +124,7 @@ const state = {
   rageCount: 0, rageActive: false, rageStartTime: 0, rageEndTime: 0,
   featherCount: 0, featherActive: false, featherSprite: null,
   goldenBeanCount: 0,
+  medkitCount: 0,
   ghostFlyInterval: null,
   endlessKillCount: 0,
   defense: 0, // flat damage reduction from layout upgrades
@@ -153,7 +154,7 @@ const state = {
     bird:  { damage: 0, health: 0, defense: 0 },
     bee:   { damage: 0, health: 0, defense: 0 },
   },
-  startingItems: { shield: 0, bomb: 0, rage: 0, feather: 0, goldenBean: 0, potionHeal: 0 },
+  startingItems: { shield: 0, bomb: 0, rage: 0, feather: 0, goldenBean: 0, potionHeal: 0, medkit: 0 },
   ownedHats: [],
   ownedSkins: [],
   equippedHats: { frog: null, snail: null, bird: null, bee: null },
@@ -168,10 +169,10 @@ const state = {
   },
 
   characterStats: {
-    'character-frog': { speed: 1, attack: 16, health: 100 },
-    'character-snail': { speed: 1, attack: 16, health: 100 },
-    'character-bird': { speed: 1, attack: 10, health: 100 },
-    'character-bee': { speed: 1, attack: 16, health: 100 },
+    'character-frog': { speed: 1, attack: 8, health: 100 },
+    'character-snail': { speed: 1, attack: 8, health: 100 },
+    'character-bird': { speed: 1, attack: 5, health: 100 },
+    'character-bee': { speed: 1, attack: 8, health: 100 },
   },
 
   enemyPortraits: [
@@ -334,6 +335,8 @@ export function getFeatherCount() { return state.featherCount; }
 export function setFeatherCount(v) { state.featherCount = v; }
 export function getGoldenBeanCount() { return state.goldenBeanCount; }
 export function setGoldenBeanCount(v) { state.goldenBeanCount = v; }
+export function getMedkitCount() { return state.medkitCount; }
+export function setMedkitCount(v) { state.medkitCount = v; }
 
 // Misc getters/setters
 export function getFrogSize() { return state.frogSize; }

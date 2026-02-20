@@ -18,6 +18,7 @@ import {
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
+  getMedkitCount, setMedkitCount,
 } from './state.js';
 import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
 import { getRandomColor, getRandomColor3 } from './utils.js';
@@ -729,6 +730,7 @@ document.addEventListener('DOMContentLoaded', function () {
     { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 10 },
     { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 20 },
     { id: 'potionHeal', icon: 'potion-svg', name: 'Potion Power', costPer: 100, suffix: '+15 hp/use' },
+    { id: 'medkit',     icon: '🩹', name: 'Medkit',           costPer: 15, suffix: 'Heal all crittors' },
   ];
 
   function showLayoutView(view, charLabel, charName) {
@@ -1628,7 +1630,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Stacks visible item buttons on the left side.
   // Called whenever an item count changes.
   function repositionItemButtons() {
-    const btnIds = ['shield-btn', 'bomb-btn', 'rage-btn', 'feather-btn', 'golden-bean-btn'];
+    const btnIds = ['shield-btn', 'bomb-btn', 'rage-btn', 'feather-btn', 'golden-bean-btn', 'medkit-btn'];
     const visibleBtns = [];
     for (const id of btnIds) {
       const btn = document.getElementById(id);
@@ -2007,8 +2009,8 @@ document.addEventListener('DOMContentLoaded', function () {
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
 
-        // Shared level: cpLevel * 2 — matches expected progression with +3/+15 gains
-        const targetLevel = cpLevel * 2;
+        // Shared level: ceil(cpLevel * 1.5) — matches expected progression with +1.5/+10 gains
+        const targetLevel = Math.ceil(cpLevel * 1.5);
         state.sharedLevel = targetLevel;
         const characters = ['frog', 'snail', 'bird', 'bee'];
         for (const ch of characters) {
@@ -2016,9 +2018,9 @@ document.addEventListener('DOMContentLoaded', function () {
           const stats = state.characterStats[charKey];
           const levelsToGain = targetLevel - 1; // from level 1
           if (levelsToGain > 0) {
-            stats.speed += 0.2 * levelsToGain;
-            stats.attack += 3 * levelsToGain;
-            stats.health += 15 * levelsToGain;
+            stats.speed = Math.min(stats.speed + 0.1 * levelsToGain, 3.0);
+            stats.attack += 1.5 * levelsToGain;
+            stats.health += 10 * levelsToGain;
             state[ch + 'Level'] = targetLevel;
             // Sync state properties with characterStats
             if (ch === 'frog') { state.speed = stats.speed; }
@@ -2038,7 +2040,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.defense = (state.charDefense && state.charDefense[activeCh]) || 0;
 
         // Set kills-to-next-level with checkpoint scaling
-        state.killsToNextLevel = (5 + cpLevel) * 10;
+        state.killsToNextLevel = (4 + targetLevel + cpLevel) * 10;
 
         state.endlessCheckpointStart = 0;
       }
@@ -2050,6 +2052,7 @@ document.addEventListener('DOMContentLoaded', function () {
       setRageCount(si.rage || 0);
       setFeatherCount(si.feather || 0);
       setGoldenBeanCount(si.goldenBean || 0);
+      setMedkitCount(si.medkit || 0);
 
       // Wire item buttons
       const shieldBtn = document.getElementById('shield-btn');
@@ -2057,6 +2060,7 @@ document.addEventListener('DOMContentLoaded', function () {
       const rageBtn = document.getElementById('rage-btn');
       const featherBtn = document.getElementById('feather-btn');
       const goldenBeanBtn = document.getElementById('golden-bean-btn');
+      const medkitBtn = document.getElementById('medkit-btn');
 
       // Show buttons + counts for all starting items (only if count > 0)
       if (getShieldCount() > 0) { shieldBtn.style.display = 'flex'; document.getElementById('shield-count').textContent = getShieldCount(); }
@@ -2064,6 +2068,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (getRageCount() > 0) { rageBtn.style.display = 'flex'; document.getElementById('rage-count').textContent = getRageCount(); }
       if (getFeatherCount() > 0) { featherBtn.style.display = 'flex'; document.getElementById('feather-count').textContent = getFeatherCount(); }
       if (getGoldenBeanCount() > 0) { goldenBeanBtn.style.display = 'flex'; document.getElementById('golden-bean-count').textContent = getGoldenBeanCount(); }
+      if (getMedkitCount() > 0) { medkitBtn.style.display = 'flex'; document.getElementById('medkit-count').textContent = getMedkitCount(); }
       repositionItemButtons();
 
       // Shield button handler
@@ -2177,6 +2182,31 @@ document.addEventListener('DOMContentLoaded', function () {
           repositionItemButtons();
           playGoldenBeanFlyEffect(critter, 60);
           playGoldenBeanSound();
+        }
+      });
+
+      // Medkit button handler — heals all crittors
+      medkitBtn.addEventListener('click', () => {
+        if (getMedkitCount() > 0) {
+          setMedkitCount(getMedkitCount() - 1);
+          state.startingItems.medkit = Math.max(0, (state.startingItems.medkit || 0) - 1);
+          saveBones();
+          document.getElementById('medkit-count').textContent = getMedkitCount();
+          if (getMedkitCount() <= 0) { medkitBtn.style.display = 'none'; }
+          repositionItemButtons();
+          // Heal all 4 crittors by 40% of their max HP
+          const chars = ['frog', 'snail', 'bird', 'bee'];
+          for (const ch of chars) {
+            const maxHP = state.characterStats['character-' + ch].health;
+            const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
+            if (state[hpKey] > 0) {
+              state[hpKey] = Math.min(state[hpKey] + Math.round(maxHP * 0.4), maxHP);
+            }
+          }
+          updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+          // Green flash on critter
+          critter.tint = 0x44FF44;
+          setTimeout(() => { critter.tint = 0xFFFFFF; }, 300);
         }
       });
     }
@@ -3619,6 +3649,7 @@ let cantGainEXP = false;
       applySkinFilter(critter, getCurrentCharacter());
 
       state.stored = app.screen.height - foreground.height / 1.8 - critter.height * .22;
+      state.groundY = app.screen.height - foreground.height / 1.8 + critter.height * .3;
       critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 1.8 - critter.height * .22);
       updateKillProgressBar();
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
@@ -3727,6 +3758,7 @@ let cantGainEXP = false;
         castle.position.y = app.screen.height - castle.height * 0.25;
         castlePlayer.position.y = app.screen.height - castle.height * 0.25;
         state.stored = app.screen.height - foreground.height / 1.8 - critter.height * .22;
+        state.groundY = app.screen.height - foreground.height / 1.8 + critter.height * .3;
         critter.position.y = state.stored;
 
         // Reposition mountains to match new screen height

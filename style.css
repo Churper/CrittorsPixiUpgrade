@@ -2229,15 +2229,19 @@ touch-action: manipulation;
     font-size: clamp(9px, 2vh, 12px);
   }
   .layout-inline-picker .inline-picker-item {
-    width: clamp(42px, 9vh, 58px);
-    height: clamp(42px, 9vh, 58px);
-    font-size: clamp(14px, 3.5vh, 20px);
+    width: clamp(52px, 12vh, 72px);
+    height: clamp(52px, 12vh, 72px);
+    font-size: clamp(18px, 4.5vh, 26px);
   }
   .layout-inline-picker .inline-picker-label {
-    font-size: clamp(7px, 1.6vh, 10px);
+    font-size: clamp(8px, 2vh, 12px);
   }
   .layout-inline-picker .inline-picker-cost {
-    font-size: clamp(7px, 1.5vh, 9px);
+    font-size: clamp(8px, 1.8vh, 11px);
+  }
+  .layout-cosmetic-slot {
+    width: clamp(44px, 10vh, 60px);
+    height: clamp(28px, 7vh, 40px);
   }
 }
 

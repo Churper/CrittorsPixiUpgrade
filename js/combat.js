@@ -13,6 +13,7 @@ import {
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
+  getMedkitCount, setMedkitCount,
   getBones, setBones,
 } from './state.js';
 import { isTimerFinished } from './timer.js';
@@ -196,12 +197,12 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(3 + sc / 2) + 2;
-    enemy.maxHP = 200 + sc * 5;
+    enemy.attackDamage = Math.round(2 + sc / 3) + 2;
+    enemy.maxHP = 100 + Math.round(sc * 2.5);
     enemy.exp = 32 + sc * 4;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 2);
-    enemy.maxHP = 200 + state.currentRound * 7;
+    enemy.maxHP = 100 + state.currentRound * 5;
     enemy.exp = 32 + Math.floor(state.currentRound * 4);
   }
 
@@ -258,12 +259,12 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(3 + sc / 2);
-    enemy.maxHP = 80 + sc * 5;
+    enemy.attackDamage = Math.round(2 + sc / 3);
+    enemy.maxHP = 40 + Math.round(sc * 2.5);
     enemy.exp = 32 + sc * 2;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 3);
-    enemy.maxHP = 80 + state.currentRound * 7;
+    enemy.maxHP = 40 + state.currentRound * 5;
     enemy.exp = 32 + Math.floor(state.currentRound * 2);
   }
 
@@ -314,8 +315,13 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
 
   if (enemy.isAlive && enemy.position.x - critter.position.x > 100 && enemy.position.x > 250) {
     // Queue gate: hold position when an enemy is already engaged and this one is close
+    // Babies always bypass queue; non-babies also queue when any baby is alive nearby
+    const babiesAlive = getEnemies().some(e => e.isBaby && e.isAlive);
     if (getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250 && !enemy.isBaby) {
-      // Stand still but keep walking animation playing (baby siege mobs bypass the queue)
+      enemy.isQueued = true;
+      return;
+    }
+    if (!enemy.isBaby && babiesAlive && enemy.position.x - critter.position.x < 400) {
       enemy.isQueued = true;
       return;
     }
@@ -486,9 +492,9 @@ export function rangedAttack(critter, enemy) {
           }
 
           if (!enemy.isBaby) createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-          // Item drop — 50% chance from demi-boss
-          if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.5) {
-            const items = ['shield','bomb','rage','feather','goldenBean'];
+          // Item drop — 25% chance from demi-boss
+          if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.25) {
+            const items = ['shield','bomb','rage','feather','goldenBean','medkit'];
             createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
           }
           state.app.stage.removeChild(enemy);
@@ -874,11 +880,13 @@ export function drawHitSplat(enemy) {
     default: baseDamage = 0;
   }
 
+  // Baby mobs: no weakness penalty — strong type 1-shots, neutral 2-shots
+  const isBaby = enemy.isBaby;
   switch (characterType) {
     case 'character-snail':
       if (enemyType === 'imp' || enemyType === 'toofer') {
         damage = Math.round(getSnailDamage() * 1.75);
-      } else if (enemyType === 'scorp') {
+      } else if (!isBaby && enemyType === 'scorp') {
         damage = Math.round(getSnailDamage() * .75);
       } else {
         damage = Math.round(getSnailDamage());
@@ -886,7 +894,7 @@ export function drawHitSplat(enemy) {
       enemy.currentHP -= damage;
       break;
     case 'character-bird':
-      if (enemyType === 'imp' || enemyType === 'toofer') {
+      if (!isBaby && (enemyType === 'imp' || enemyType === 'toofer')) {
         damage = Math.round(getBirdDamage() * 0.5);
       } else if (enemyType === 'shark' || enemyType === 'puffer') {
         damage = Math.round(getBirdDamage() * 1.75);
@@ -898,7 +906,7 @@ export function drawHitSplat(enemy) {
     case 'character-frog':
       if (enemyType === 'pig' || enemyType === 'scorp') {
         damage = Math.round(getFrogDamage() * 1.75);
-      } else if (enemyType === 'puffer') {
+      } else if (!isBaby && enemyType === 'puffer') {
         damage = Math.round(getFrogDamage() * 0.75);
       } else {
         damage = Math.round(getFrogDamage());
@@ -908,7 +916,7 @@ export function drawHitSplat(enemy) {
     case 'character-bee':
       if (enemyType === 'ele' || enemyType === 'octo') {
         damage = Math.round(getBeeDamage() * 1.75);
-      } else if (enemyType === 'shark') {
+      } else if (!isBaby && enemyType === 'shark') {
         damage = Math.round(getBeeDamage() * 0.75);
       } else {
         damage = Math.round(getBeeDamage());
@@ -1096,9 +1104,9 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       awardBones(enemy);
       setIsCharAttacking(false);
       if (!enemy.isBaby) createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-      // Item drop — 50% chance from demi-boss
-      if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.5) {
-        const items = ['shield','bomb','rage','feather','goldenBean'];
+      // Item drop — 25% chance from demi-boss
+      if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.25) {
+        const items = ['shield','bomb','rage','feather','goldenBean','medkit'];
         createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
       }
       state.app.stage.removeChild(enemy);
@@ -1651,9 +1659,9 @@ export function playGoldenBeanFlyEffect(critter, totalCoffee) {
 }
 
 function updateItemButtonState(itemType) {
-  const btnMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn' };
-  const countMap = { 'shield': 'shield-count', 'bomb': 'bomb-count', 'rage': 'rage-count', 'feather': 'feather-count', 'goldenBean': 'golden-bean-count' };
-  const getCountMap = { 'shield': getShieldCount, 'bomb': getBombCount, 'rage': getRageCount, 'feather': getFeatherCount, 'goldenBean': getGoldenBeanCount };
+  const btnMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn', 'medkit': 'medkit-btn' };
+  const countMap = { 'shield': 'shield-count', 'bomb': 'bomb-count', 'rage': 'rage-count', 'feather': 'feather-count', 'goldenBean': 'golden-bean-count', 'medkit': 'medkit-count' };
+  const getCountMap = { 'shield': getShieldCount, 'bomb': getBombCount, 'rage': getRageCount, 'feather': getFeatherCount, 'goldenBean': getGoldenBeanCount, 'medkit': getMedkitCount };
   const btnId = btnMap[itemType];
   const countId = countMap[itemType];
   const count = getCountMap[itemType] ? getCountMap[itemType]() : 0;
@@ -1678,7 +1686,7 @@ export function createItemDrop(x, y, itemType) {
     itemSprite.tint = 0xFFD700;
     itemSprite.filters = [_goldenBeanFilter];
   } else {
-    const emojiMap = { 'shield': '🛡️', 'bomb': '💣', 'rage': '🧃', 'feather': '🪶' };
+    const emojiMap = { 'shield': '🛡️', 'bomb': '💣', 'rage': '🧃', 'feather': '🪶', 'medkit': '🩹' };
     const emoji = emojiMap[itemType] || '❓';
     itemSprite = new PIXI.Text({ text: emoji, style: { fontSize: 32 } });
     itemSprite.anchor.set(0.5);
@@ -1734,7 +1742,7 @@ export function collectGroundItem(groundItem) {
   playItemPickupSound(itemType);
 
   // Fly to UI button position
-  const btnIdMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn' };
+  const btnIdMap = { 'shield': 'shield-btn', 'bomb': 'bomb-btn', 'rage': 'rage-btn', 'feather': 'feather-btn', 'goldenBean': 'golden-bean-btn', 'medkit': 'medkit-btn' };
   const btnId = btnIdMap[itemType] || 'shield-btn';
   const btn = document.getElementById(btnId);
 
@@ -1776,6 +1784,9 @@ export function collectGroundItem(groundItem) {
       } else if (itemType === 'goldenBean') {
         setGoldenBeanCount(getGoldenBeanCount() + 1);
         state.startingItems.goldenBean = (state.startingItems.goldenBean || 0) + 1;
+      } else if (itemType === 'medkit') {
+        setMedkitCount(getMedkitCount() + 1);
+        state.startingItems.medkit = (state.startingItems.medkit || 0) + 1;
       }
       saveBones();
       updateItemButtonState(itemType);

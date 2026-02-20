@@ -131,20 +131,20 @@ export function levelUp() {
   // Auto-apply all 3 stat upgrades
   const stats = state.characterStats[state.currentCharacter];
 
-  // Speed +0.2 (hidden stat — still applied but not displayed)
-  stats.speed += 0.2;
+  // Speed +0.1 (hidden stat — still applied but not displayed), capped at 3.0
+  stats.speed = Math.min(stats.speed + 0.1, 3.0);
   setCharacterSpeed(state.currentCharacter, stats.speed);
   setSpeedChanged(true);
 
-  // Damage +3
-  stats.attack += 3;
+  // Damage +1.5
+  stats.attack += 1.5;
   setCharacterDamage(state.currentCharacter, stats.attack);
 
-  // Health +15
-  stats.health += 15;
-  setCharacterHealth(state.currentCharacter, getPlayerHealth() + 15);
+  // Health +10
+  stats.health += 10;
+  setCharacterHealth(state.currentCharacter, getPlayerHealth() + 10);
   if (!getisDead() && getPlayerCurrentHealth() > 0) {
-    setPlayerCurrentHealth(getPlayerCurrentHealth() + 15);
+    setPlayerCurrentHealth(getPlayerCurrentHealth() + 10);
   }
   updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
 
@@ -187,16 +187,16 @@ export function checkSharedLevelUp(amount = 10) {
     const charKey = 'character-' + ch;
     const stats = state.characterStats[charKey];
 
-    // Speed +0.2
-    stats.speed += 0.2;
+    // Speed +0.1, capped at 3.0
+    stats.speed = Math.min(stats.speed + 0.1, 3.0);
     setCharacterSpeed(charKey, stats.speed);
 
-    // Damage +3
-    stats.attack += 3;
+    // Damage +1.5
+    stats.attack += 1.5;
     setCharacterDamage(charKey, stats.attack);
 
-    // Health +15
-    stats.health += 15;
+    // Health +10
+    stats.health += 10;
     setCharacterHealth(charKey, stats.health);
 
     // Increment level
@@ -208,10 +208,10 @@ export function checkSharedLevelUp(amount = 10) {
     state[ch + 'Damage'] = stats.attack;
     state[ch + 'Health'] = stats.health;
 
-    // Heal current HP +15 if alive
+    // Heal current HP +10 if alive
     const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
     if (state[hpKey] > 0) {
-      state[hpKey] = Math.min(state[hpKey] + 15, stats.health);
+      state[hpKey] = Math.min(state[hpKey] + 10, stats.health);
     }
 
     // Defense goes up with level

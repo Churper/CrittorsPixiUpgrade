@@ -1675,8 +1675,10 @@ touch-action: manipulation;
 
 .layout-currency-row {
   display: flex;
-  gap: 12px;
+  gap: 14px;
+  justify-content: center;
   align-items: center;
+  margin-bottom: clamp(4px, 1vmin, 8px);
 }
 #layout-bones {
   font-family: 'Luckiest Guy', cursive;

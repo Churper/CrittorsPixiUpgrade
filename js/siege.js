@@ -26,16 +26,16 @@ import { saveBones } from './save.js';
 export function shouldTriggerSiege() {
   if (state.gameMode !== 'endless') return false;
   if (state.endlessKillCount < 10) return false;
-  if (state.endlessKillCount % 10 !== 0) return false;
-  const level = state.endlessKillCount / 10;
-  if (level <= state.lastSiegeCastleLevel) return false;
+  // Use >= threshold instead of exact modulo — prevents skipping if kills jump past a multiple of 10
+  const nextSiegeAt = (state.lastSiegeCastleLevel + 1) * 10;
+  if (state.endlessKillCount < nextSiegeAt) return false;
   return true;
 }
 
 // --- Start Siege ---
 
 export function startSiege(critter, app, impWalkTextures, impAttackTextures) {
-  const level = state.endlessKillCount / 10;
+  const level = state.lastSiegeCastleLevel + 1;
   state.siegeActive = true;
   state.siegePhase = 'alert';
   state.siegeCastleLevel = level;

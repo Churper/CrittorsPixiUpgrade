@@ -815,9 +815,7 @@ document.addEventListener('DOMContentLoaded', function () {
       setFeatherCount(si.feather || 0);
       setGoldenBeanCount(si.goldenBean || 0);
       setMedkitCount(si.medkit || 0);
-
-      // Item button click handlers (extracted to itemButtons.js)
-      initItemButtons(critter, app);
+      // NOTE: initItemButtons is called later, after critter is created (line ~1249)
     }
 
     var snailHPIndicator = document.querySelector('.upgrade-box.character-snail .hp-indicator');
@@ -1248,6 +1246,9 @@ state.frogGhostPlayer.scale.set(0.28);
       // Wire potion system (needs critter + app refs)
       initPotion(critter, app);
       wirePotionListeners();
+
+      // Item button click handlers — must be after critter is created
+      initItemButtons(critter, app);
 
       // Define the desired color in hexadecimal format
       const desiredColor = 0x00ff00; // Green color

@@ -1983,26 +1983,9 @@ export function triggerAirstrike(app, critter) {
   // Play falling bomb whistle
   playBombDropSound();
 
-  // Create bomb graphic dropping from top of screen (Graphics instead of emoji
-  // for reliable rendering on mobile where canvas emoji can fail silently)
-  const bombSprite = new PIXI.Container();
-  const bombBody = new PIXI.Graphics();
-  bombBody.circle(0, 4, 16);
-  bombBody.fill({ color: 0x222222 });
-  bombBody.circle(0, 4, 14);
-  bombBody.fill({ color: 0x333333 });
-  // Fuse
-  bombBody.moveTo(0, -12);
-  bombBody.lineTo(6, -22);
-  bombBody.stroke({ width: 3, color: 0x8B4513 });
-  // Spark at fuse tip
-  const spark = new PIXI.Graphics();
-  spark.circle(6, -22, 4);
-  spark.fill({ color: 0xffaa00, alpha: 0.9 });
-  spark.circle(6, -22, 2);
-  spark.fill({ color: 0xffffcc });
-  bombSprite.addChild(bombBody);
-  bombSprite.addChild(spark);
+  // Create bomb emoji dropping from top of screen
+  const bombSprite = new PIXI.Text({ text: '💣', style: { fontSize: 48 } });
+  bombSprite.anchor.set(0.5);
   bombSprite.position.set(dropX, -app.stage.y - 60);
   bombSprite.zIndex = 999999;
   app.stage.addChild(bombSprite);

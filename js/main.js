@@ -1331,8 +1331,8 @@ document.addEventListener('DOMContentLoaded', function () {
       if (state.pauseMenuContainer) {
         app.stage.removeChild(state.pauseMenuContainer);
         state.pauseMenuContainer = null;
-        if (state.isCharacterMenuOpen || app.stage.children.includes(state.reviveDialogContainer)) {
-          return; // stay paused, just close the menu
+        if (getisDead() || app.stage.children.includes(state.reviveDialogContainer)) {
+          return; // stay paused during death/revive, just close the pause overlay
         }
       }
       setisPaused(!getisPaused());
@@ -1469,13 +1469,8 @@ document.addEventListener('DOMContentLoaded', function () {
     characterPortrait.classList.remove("character-snail", "character-bird", "character-bee", "character-frog");
     characterPortrait.classList.add(characterType);
 
-    // Close the character menu
-    const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
-    characterBoxes.forEach((box) => {
-      box.style.visibility = 'hidden';
-    });
+    // Refresh character menu (stays open, updates which boxes are visible)
     updateEXPIndicatorText(getCurrentCharacter(), getCharLevel(getCurrentCharacter()));
-    state.isCharacterMenuOpen = false;
     setCharSwap(true);
 
     // Save old selected character and update both tracking vars together
@@ -2447,7 +2442,7 @@ let endlessGround = null;
 let endlessGroundDecor = null; // Separate container for trees/rocks above ground line
 let endlessGroundDecorFG = null; // Foreground decor layer (in front of character)
 let endlessGroundCurrentWeather = null;
-const endlessGroundHeight = foreground.height * 0.65;
+const endlessGroundHeight = foreground.height * 0.75;
 
 
 endlessGround = new PIXI.Graphics();
@@ -3455,6 +3450,8 @@ let cantGainEXP = false;
           app.stage.addChild(critter);
           // Ensure health bar reflects the new character (fixes stale bar after dead→alive swap)
           updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+          // Refresh character menu so it shows the updated swap options
+          showCharacterMenu();
           // Fall through to auto-attack check (no early return)
         }
         // Reconcile enemiesInRange with reality — prevent stale counter after baby clears
@@ -3653,48 +3650,45 @@ let cantGainEXP = false;
       critter.position.set(app.screen.width / 20, app.screen.height - foreground.height / 1.8 - critter.height * .22);
       updateKillProgressBar();
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+
+      // Character menu always starts open
+      setTimeout(() => showCharacterMenu(), 100);
+
+      // --- Character menu helper: show all unlocked swap boxes ---
+      function showCharacterMenu() {
+        const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+        const visibleBoxes = [];
+        characterBoxes.forEach((box) => {
+          const charClass = box.classList[1];
+          if (!state.unlockedCharacters.includes(charClass)) {
+            box.style.visibility = 'hidden';
+          } else if (!getisDead() && state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
+            box.style.visibility = 'hidden';
+          } else {
+            box.style.visibility = 'visible';
+            visibleBoxes.push(box);
+          }
+        });
+        if (visibleBoxes.length > 0) {
+          const totalWidth = visibleBoxes.length * 60;
+          const startOffset = -totalWidth / 2;
+          visibleBoxes.forEach((box, i) => {
+            box.style.left = 'calc(45% + ' + (startOffset + i * 60) + 'px)';
+          });
+        }
+        state.isCharacterMenuOpen = true;
+      }
+
+      function hideCharacterMenu() {
+        const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+        characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
+        state.isCharacterMenuOpen = false;
+      }
+
       // Start the state.timer animation
       if (getPlayerCurrentHealth() <= 0) {
-
-
         setisPaused(true);
-
-
-        // Toggle the visibility of the character info boxes
-        const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
-
-        if (state.isCharacterMenuOpen) {
-          characterBoxes.forEach((box) => {
-            box.style.visibility = 'hidden';
-          });
-          state.isCharacterMenuOpen = false;
-        } else {
-          const visibleBoxes = [];
-          characterBoxes.forEach((box) => {
-            const charClass = box.classList[1];
-            if (!state.unlockedCharacters.includes(charClass)) {
-              box.style.visibility = 'hidden';
-            } else if (!getisDead() && state.selectedCharacter !== "" && box.classList.contains(state.selectedCharacter)) {
-              box.style.visibility = 'hidden';
-            } else {
-              box.style.visibility = 'visible';
-              visibleBoxes.push(box);
-            }
-          });
-          // Evenly center all visible boxes
-          if (visibleBoxes.length > 0) {
-            const totalWidth = visibleBoxes.length * 60;
-            const startOffset = -totalWidth / 2;
-            visibleBoxes.forEach((box, i) => {
-              box.style.left = 'calc(45% + ' + (startOffset + i * 60) + 'px)';
-            });
-          }
-          state.isCharacterMenuOpen = true;
-        }
-
-        // Start the cooldown
-
-
+        showCharacterMenu();
       }
       if (state.gameMode === 'endless') {
         app.stage.addChild(background, mountain4, mountain1, mountain2, mountain3, endlessGround, endlessGroundDecor, foreground, critter, endlessGroundDecorFG, clouds, clouds2, state.enemyDeath, castlePlayer);

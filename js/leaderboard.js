@@ -111,3 +111,50 @@ function escapeHtml(str) {
   d.textContent = str;
   return d.innerHTML;
 }
+
+// ── Score submission overlay ────────────────────────────────
+export function showScoreSubmitOverlay(mode, score, fromPause = false) {
+  const overlay = document.getElementById('score-submit-overlay');
+  const scoreEl = document.getElementById('score-submit-score');
+  const nameInput = document.getElementById('score-submit-name');
+  const submitBtn = document.getElementById('score-submit-btn');
+  const skipBtn = document.getElementById('score-skip-btn');
+  const statusEl = document.getElementById('score-submit-status');
+
+  scoreEl.textContent = formatScore(score, mode);
+  nameInput.value = getSavedPlayerName();
+  statusEl.textContent = '';
+  submitBtn.disabled = false;
+  overlay.classList.add('visible');
+
+  submitBtn.onclick = async () => {
+    const name = nameInput.value.trim();
+    if (!name || name.length > 20) {
+      statusEl.textContent = 'Enter a name (1-20 chars)';
+      return;
+    }
+    submitBtn.disabled = true;
+    statusEl.textContent = 'Submitting...';
+    savePlayerName(name);
+    const result = await submitScore(name, mode, score);
+    if (result.ok) {
+      statusEl.textContent = 'Score submitted!';
+      if (fromPause) {
+        setTimeout(() => overlay.classList.remove('visible'), 1200);
+      } else {
+        setTimeout(() => location.reload(), 1200);
+      }
+    } else {
+      statusEl.textContent = 'Error: ' + (result.error || 'try again');
+      submitBtn.disabled = false;
+    }
+  };
+
+  skipBtn.onclick = () => {
+    if (fromPause) {
+      overlay.classList.remove('visible');
+    } else {
+      location.reload();
+    }
+  };
+}

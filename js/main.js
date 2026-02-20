@@ -44,12 +44,9 @@ import {
 import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveGame, loadGame, saveBones, loadBones } from './save.js';
 import { applySkinFilter, getSkinTextures, generateSkinTextures, updateSkinEffects, clearSkinEffects } from './skins.js';
+import { showScoreSubmitOverlay } from './leaderboard.js';
 import {
-  submitScore, formatScore,
-  getSavedPlayerName, savePlayerName,
-} from './leaderboard.js';
-import {
-  shouldTriggerSiege, startSiege, siegeMobKilled,
+  siegeMobKilled,
   siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards,
   renderOverworldMap, getMapBiomeIndex, getMapBiomeCount,
 } from './siege.js';
@@ -70,6 +67,7 @@ import {
 import { initMenuScene, stopMenuScene } from './menuScene.js';
 import { initLayoutShop, showPanel, hidePanel } from './layoutShop.js';
 import { repositionItemButtons, initItemButtons } from './itemButtons.js';
+import { initSpawnLoop, spawnEnemies } from './spawnLoop.js';
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -2409,6 +2407,7 @@ let cantGainEXP = false;
       window.addEventListener('orientationchange', () => setTimeout(handleResize, 100));
 
       // Start timer here — after all assets are loaded and setup is done
+      initSpawnLoop(critter, app);
       resetTimer();
       startTimer();
       spawnEnemies();
@@ -2419,136 +2418,7 @@ let cantGainEXP = false;
   }
 
 
-  function spawnEnemies() {
-    if (state.isSpawning || getisDead() || getisPaused()) {
-      return;
-    }
-
-    // Bail out during siege — siege.js handles its own spawning
-    if (state.siegeActive) return;
-
-    if (state.gameMode === 'endless') {
-      // Check for siege trigger before demi check
-      if (shouldTriggerSiege()) {
-        // Use imp textures for baby enemies
-        const impType = state.enemyTypes.find(e => e.name === 'imp') || state.enemyTypes[0];
-        startSiege(critter, app, impType.walkTextures, impType.attackTextures);
-        return;
-      }
-
-      // Cap: don't spawn if 2+ enemies are already alive — prevents pileup
-      const aliveCount = state.enemies.filter(e => e.isAlive).length;
-      if (aliveCount >= 2) {
-        state.isSpawning = true;
-        state.enemySpawnTimeout = setTimeout(() => {
-          state.isSpawning = false;
-          spawnEnemies();
-        }, 2000);
-        return;
-      }
-
-      // Post-demi cooldown: 8s breathing room after killing a demi boss
-      if (state.lastDemiKillTime && Date.now() - state.lastDemiKillTime < 8000) {
-        state.isSpawning = true;
-        state.enemySpawnTimeout = setTimeout(() => {
-          state.isSpawning = false;
-          spawnEnemies();
-        }, 8000 - (Date.now() - state.lastDemiKillTime));
-        return;
-      }
-
-      // Endless mode: no max spawns, no timer check
-      const sc = state.endlessSpawnCount || 0;
-      const currentInterval = Math.max(2000, 12000 - sc * 100);
-
-      const timeSinceLastSpawn = Date.now() - state.timeOfLastSpawn;
-      if (timeSinceLastSpawn < currentInterval) {
-        const remainingTime = currentInterval - timeSinceLastSpawn;
-        state.isSpawning = true;
-        state.enemySpawnTimeout = setTimeout(() => {
-          state.isSpawning = false;
-          spawnEnemies();
-        }, remainingTime);
-        return;
-      }
-
-      state.isSpawning = true;
-
-      const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
-      const selectedEnemy = state.enemyTypes[randomIndex];
-
-      // Spawn demi boss every 5 kills (skip siege multiples — those trigger castle siege)
-      if (state.endlessKillCount >= 5 && state.endlessKillCount % 10 !== 0 && state.demiSpawned < Math.floor(state.endlessKillCount / 5)) {
-        spawnEnemyDemi(
-          critter,
-          selectedEnemy.attackTextures,
-          selectedEnemy.walkTextures,
-          selectedEnemy.name
-        );
-        state.demiSpawned++;
-      } else {
-        spawnEnemy(
-          critter,
-          selectedEnemy.attackTextures,
-          selectedEnemy.walkTextures,
-          selectedEnemy.name
-        );
-      }
-
-      state.timeOfLastSpawn = Date.now();
-      state.endlessSpawnCount++;
-
-      state.enemySpawnTimeout = setTimeout(() => {
-        state.isSpawning = false;
-        spawnEnemies();
-      }, currentInterval);
-      return;
-    }
-
-    // Story mode logic below
-    if (isTimerFinished()) {
-      return;
-    }
-
-    // Cap enemies per round — spawn across ~75% of timer, leave end for castle
-    const maxSpawns = 4 + Math.floor(state.currentRound * 0.4);
-    if (state.spawnedThisRound >= maxSpawns) {
-      return;
-    }
-
-    // On resume, wait the remaining interval before spawning instead of spawning instantly
-    const currentInterval = state.interval + 2000 - (state.currentRound * 150);
-    const timeSinceLastSpawn = Date.now() - state.timeOfLastSpawn;
-    if (timeSinceLastSpawn < currentInterval) {
-      const remainingTime = currentInterval - timeSinceLastSpawn;
-      state.isSpawning = true;
-      state.enemySpawnTimeout = setTimeout(() => {
-        state.isSpawning = false;
-        spawnEnemies();
-      }, remainingTime);
-      return;
-    }
-
-    state.isSpawning = true;
-
-    const randomIndex = Math.floor(Math.random() * state.enemyTypes.length);
-    const selectedEnemy = state.enemyTypes[randomIndex];
-
-    spawnEnemy(
-      critter,
-      selectedEnemy.attackTextures,
-      selectedEnemy.walkTextures,
-      selectedEnemy.name
-    );
-
-    state.spawnedThisRound++;
-    state.timeOfLastSpawn = Date.now();
-
-    state.enemySpawnTimeout = setTimeout(() => {
-      state.isSpawning = false;
-      spawnEnemies();
-    }, currentInterval);
-  }
+  // spawnEnemies extracted to spawnLoop.js
 
   // Wire revive dialog (needs setisPaused, handleCharacterClick, spawnEnemies)
   initReviveDialog({ setisPaused, handleCharacterClick, spawnEnemies });
@@ -2655,53 +2525,6 @@ let cantGainEXP = false;
   }
 
 
-
-// ── Score submission overlay ────────────────────────────────
-function showScoreSubmitOverlay(mode, score, fromPause = false) {
-  const overlay = document.getElementById('score-submit-overlay');
-  const scoreEl = document.getElementById('score-submit-score');
-  const nameInput = document.getElementById('score-submit-name');
-  const submitBtn = document.getElementById('score-submit-btn');
-  const skipBtn = document.getElementById('score-skip-btn');
-  const statusEl = document.getElementById('score-submit-status');
-
-  scoreEl.textContent = formatScore(score, mode);
-  nameInput.value = getSavedPlayerName();
-  statusEl.textContent = '';
-  submitBtn.disabled = false;
-  overlay.classList.add('visible');
-
-  submitBtn.onclick = async () => {
-    const name = nameInput.value.trim();
-    if (!name || name.length > 20) {
-      statusEl.textContent = 'Enter a name (1-20 chars)';
-      return;
-    }
-    submitBtn.disabled = true;
-    statusEl.textContent = 'Submitting...';
-    savePlayerName(name);
-    const result = await submitScore(name, mode, score);
-    if (result.ok) {
-      statusEl.textContent = 'Score submitted!';
-      if (fromPause) {
-        setTimeout(() => overlay.classList.remove('visible'), 1200);
-      } else {
-        setTimeout(() => location.reload(), 1200);
-      }
-    } else {
-      statusEl.textContent = 'Error: ' + (result.error || 'try again');
-      submitBtn.disabled = false;
-    }
-  };
-
-  skipBtn.onclick = () => {
-    if (fromPause) {
-      overlay.classList.remove('visible');
-    } else {
-      location.reload();
-    }
-  };
-}
 
 window._crittorsShowPauseScore = function() {
   showScoreSubmitOverlay('endless', state.endlessKillCount, true);

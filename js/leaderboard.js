@@ -67,21 +67,7 @@ export async function fetchLeaderboard(mode, limit = 20) {
 
 // ── Leaderboard panel rendering ─────────────────────────────
 export async function showLeaderboardPanel() {
-  const panel = document.getElementById('leaderboard-panel');
-
-  // Wire tab clicks
-  const tabs = panel.querySelectorAll('.lb-tab');
-  tabs.forEach(tab => {
-    tab.onclick = () => {
-      tabs.forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      renderList(tab.dataset.mode);
-    };
-  });
-
-  // Load default tab
-  const activeTab = panel.querySelector('.lb-tab.active');
-  renderList(activeTab ? activeTab.dataset.mode : 'endless');
+  renderList('endless');
 }
 
 async function renderList(mode) {
@@ -121,13 +107,25 @@ export function showScoreSubmitOverlay(mode, score, fromPause = false) {
   const skipBtn = document.getElementById('score-skip-btn');
   const statusEl = document.getElementById('score-submit-status');
 
+  const titleEl = document.getElementById('score-submit-title');
+  if (titleEl) titleEl.textContent = fromPause ? 'Submit Score' : 'Game Over';
   scoreEl.textContent = formatScore(score, mode);
   nameInput.value = getSavedPlayerName();
   statusEl.textContent = '';
   submitBtn.disabled = false;
   overlay.classList.add('visible');
 
+  // Guard against synthetic click events from the touch that opened this overlay.
+  // On mobile, pointerdown shows the overlay, then ~300ms later a synthetic click
+  // can land on Skip/Submit and dismiss it instantly.
+  const openTime = Date.now();
+
+  // Block pointer events on the overlay background so taps outside the panel
+  // don't propagate to the game canvas underneath.
+  overlay.onclick = (e) => { e.stopPropagation(); };
+
   submitBtn.onclick = async () => {
+    if (Date.now() - openTime < 400) return;
     const name = nameInput.value.trim();
     if (!name || name.length > 20) {
       statusEl.textContent = 'Enter a name (1-20 chars)';
@@ -151,6 +149,7 @@ export function showScoreSubmitOverlay(mode, score, fromPause = false) {
   };
 
   skipBtn.onclick = () => {
+    if (Date.now() - openTime < 400) return;
     if (fromPause) {
       overlay.classList.remove('visible');
     } else {

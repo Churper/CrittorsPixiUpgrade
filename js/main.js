@@ -810,7 +810,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Load item stockpile — these are consumable, not per-run
       const si = state.startingItems || {};
       setShieldCount(si.shield || 0);
-      setBombCount(si.bomb || 0);
+      setBombCount(Math.max(si.bomb || 0, 5)); // TODO: remove test bombs
       setRageCount(si.rage || 0);
       setFeatherCount(si.feather || 0);
       setGoldenBeanCount(si.goldenBean || 0);

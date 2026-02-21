@@ -2,6 +2,7 @@ import state from './state.js';
 import {
   getCoffee, setIsDead, setEnemiesInRange,
   getSnailHealth, getBirdHealth, getFrogHealth, getBeeHealth,
+  getPlayerCurrentHealth,
 } from './state.js';
 import {
   setCurrentSnailHealth, setCurrentBirdHealth, setCurrentFrogHealth, setCurrentBeeHealth,
@@ -249,7 +250,13 @@ export function createReviveDialog(characterType) {
     if (!state.reviveDialogContainer) return;
     app.stage.removeChild(state.reviveDialogContainer);
     state.reviveDialogContainer = null;
-    openCharacterMenu();
+    // If the active character is alive, just unpause and resume play
+    if (getPlayerCurrentHealth() > 0) {
+      _setisPaused(false);
+    } else {
+      // Active character is also dead — reopen character menu to pick another
+      openCharacterMenu();
+    }
   };
 
   yesBg.on('pointerdown', (e) => { e.stopPropagation(); doRevive(); });

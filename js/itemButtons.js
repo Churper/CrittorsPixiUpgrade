@@ -17,6 +17,13 @@ import {
   playGoldenBeanFlyEffect,
   triggerAirstrike,
 } from './combat.js';
+import {
+  setCurrentFrogHealth, setCurrentSnailHealth,
+  setCurrentBirdHealth, setCurrentBeeHealth,
+} from './characters.js';
+import {
+  getFrogHealth, getSnailHealth, getBirdHealth, getBeeHealth,
+} from './state.js';
 
 /** Stacks visible item buttons on the left side of the screen. */
 export function repositionItemButtons() {
@@ -195,13 +202,16 @@ export function initItemButtons(critter, app) {
       document.getElementById('medkit-count').textContent = getMedkitCount();
       if (getMedkitCount() <= 0) { medkitBtn.style.display = 'none'; }
       repositionItemButtons();
-      // Heal all 4 crittors by 40% of their max HP
-      const chars = ['frog', 'snail', 'bird', 'bee'];
-      for (const ch of chars) {
-        const maxHP = state.characterStats['character-' + ch].health;
-        const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
-        if (state[hpKey] > 0) {
-          state[hpKey] = Math.min(state[hpKey] + Math.round(maxHP * 0.4), maxHP);
+      // Heal all 4 crittors by 40% of their max HP (use setters to update HP indicator bars)
+      const healMap = [
+        { cur: state.currentFrogHealth,  max: getFrogHealth(),  set: setCurrentFrogHealth },
+        { cur: state.currentSnailHealth, max: getSnailHealth(), set: setCurrentSnailHealth },
+        { cur: state.currentBirdHealth,  max: getBirdHealth(),  set: setCurrentBirdHealth },
+        { cur: state.currentBeeHealth,   max: getBeeHealth(),   set: setCurrentBeeHealth },
+      ];
+      for (const h of healMap) {
+        if (h.cur > 0) {
+          h.set(Math.min(h.cur + Math.round(h.max * 0.4), h.max));
         }
       }
       updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);

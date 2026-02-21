@@ -2387,14 +2387,60 @@ touch-action: manipulation;
 #map-panel.map-biome-tundra  .map-nav-btn { border-color: rgba(80, 180, 220, 0.5); }
 #map-panel.map-biome-volcano .map-nav-btn { border-color: rgba(220, 80, 40, 0.5); }
 #map-panel.map-biome-void    .map-nav-btn { border-color: rgba(140, 60, 220, 0.5); }
-#map-content {
-  padding: 6px 0;
-  overflow-y: auto;
+.map-deck-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   flex: 1;
   min-height: 0;
-  -webkit-overflow-scrolling: touch;
 }
-#map-path {
+.map-deck {
+  position: relative;
+  width: clamp(280px, 82vw, 420px);
+  height: clamp(260px, 60vh, 400px);
+  perspective: 600px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  margin: 0 auto;
+}
+.map-card {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: clamp(8px, 2vmin, 12px);
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+  pointer-events: none;
+  opacity: 0;
+  background: rgba(15, 25, 45, 0.6);
+  border: 2px solid rgba(100, 160, 200, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+.map-card::-webkit-scrollbar { display: none; }
+.map-card-pos-0 { transform: translateX(0) scale(1);      opacity: 1;    z-index: 5; pointer-events: auto; box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(80,160,220,0.15); }
+.map-card-pos-1 { transform: translateX(14px) scale(0.94); opacity: 0.65; z-index: 4; }
+.map-card-pos-2 { transform: translateX(28px) scale(0.88); opacity: 0.4;  z-index: 3; }
+.map-card-pos-3 { transform: translateX(42px) scale(0.82); opacity: 0.2;  z-index: 2; }
+.map-card-pos-4 { transform: translateX(56px) scale(0.76); opacity: 0.1;  z-index: 1; }
+/* Per-biome glow on front card */
+.map-card.forest.map-card-pos-0  { border-color: rgba(80, 200, 100, 0.6); box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(60,180,80,0.15); }
+.map-card.desert.map-card-pos-0  { border-color: rgba(220, 180, 80, 0.6); box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(200,160,60,0.15); }
+.map-card.tundra.map-card-pos-0  { border-color: rgba(100, 200, 240, 0.6); box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(80,180,220,0.15); }
+.map-card.volcano.map-card-pos-0 { border-color: rgba(240, 100, 60, 0.6); box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(220,80,40,0.15); }
+.map-card.void.map-card-pos-0    { border-color: rgba(160, 80, 240, 0.6); box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 12px rgba(140,60,220,0.15); }
+.map-card.swiping { transition: none !important; }
+/* Map card grid content */
+.map-card .map-grid {
   display: flex;
   flex-direction: column;
   align-items: stretch;

@@ -594,46 +594,57 @@ const MAP_BIOMES = [
   { name: 'void',    label: '\u{1F30C} Void',    range: [80, 99] },
 ];
 
-let currentMapBiome = 0;
-export function getMapBiomeIndex() { return currentMapBiome; }
+let mapDeckIndex = 0;
+let mapCards = [];
+let mapSwipeWired = false;
+export function getMapBiomeIndex() { return mapDeckIndex; }
 export function getMapBiomeCount() { return MAP_BIOMES.length; }
 
 export function renderOverworldMap(biomeIdx) {
-  if (biomeIdx !== undefined) currentMapBiome = biomeIdx;
-
-  const pathEl = document.getElementById('map-path');
+  const deck = document.getElementById('map-deck');
   const titleEl = document.getElementById('map-biome-title');
-  const panel = document.getElementById('map-panel');
-  if (!pathEl || !titleEl) return;
-  pathEl.innerHTML = '';
+  if (!deck || !titleEl) return;
+  deck.innerHTML = '';
+  mapCards = [];
 
-  // Auto-navigate to the biome containing the player's highest checkpoint
+  // Auto-navigate to highest unlocked biome
   if (biomeIdx === undefined) {
     const maxUnlocked = state.unlockedCastles.length > 0
-      ? Math.max(...state.unlockedCastles)
-      : 0;
-    currentMapBiome = 0;
+      ? Math.max(...state.unlockedCastles) : 0;
+    mapDeckIndex = 0;
     for (let b = MAP_BIOMES.length - 1; b >= 0; b--) {
-      if (maxUnlocked >= MAP_BIOMES[b].range[0]) {
-        currentMapBiome = b;
-        break;
-      }
+      if (maxUnlocked >= MAP_BIOMES[b].range[0]) { mapDeckIndex = b; break; }
     }
+  } else {
+    mapDeckIndex = biomeIdx;
   }
 
-  const biome = MAP_BIOMES[currentMapBiome];
-  titleEl.textContent = biome.label;
+  // Build one card per biome
+  for (let b = 0; b < MAP_BIOMES.length; b++) {
+    const biome = MAP_BIOMES[b];
+    const card = document.createElement('div');
+    card.className = 'map-card ' + biome.name;
+    card.dataset.biome = biome.name;
 
-  // Apply biome theme to the whole panel
-  for (const b of MAP_BIOMES) panel.classList.remove('map-biome-' + b.name);
-  panel.classList.add('map-biome-' + biome.name);
+    const grid = document.createElement('div');
+    grid.className = 'map-grid';
+    buildBiomeGrid(grid, biome);
+    card.appendChild(grid);
 
-  // Update nav button visibility
-  const prevBtn = document.getElementById('map-prev');
-  const nextBtn = document.getElementById('map-next');
-  if (prevBtn) prevBtn.style.visibility = currentMapBiome > 0 ? 'visible' : 'hidden';
-  if (nextBtn) nextBtn.style.visibility = currentMapBiome < MAP_BIOMES.length - 1 ? 'visible' : 'hidden';
+    deck.appendChild(card);
+    mapCards.push(card);
+  }
 
+  // Wire swipe gestures (only once per deck element)
+  if (!mapSwipeWired) {
+    wireMapSwipe(deck);
+    mapSwipeWired = true;
+  }
+
+  updateMapDeckPositions();
+}
+
+function buildBiomeGrid(container, biome) {
   const cols = 4;
   const rangeStart = biome.range[0];
   const rangeEnd = biome.range[1];
@@ -692,7 +703,7 @@ export function renderOverworldMap(biomeIdx) {
       }
     }
 
-    pathEl.appendChild(rowDiv);
+    container.appendChild(rowDiv);
 
     // Vertical connector between rows
     if (r < rows - 1) {
@@ -726,8 +737,112 @@ export function renderOverworldMap(biomeIdx) {
         }
       }
 
-      pathEl.appendChild(vConnRow);
+      container.appendChild(vConnRow);
     }
+  }
+}
+
+function updateMapDeckPositions() {
+  const titleEl = document.getElementById('map-biome-title');
+  const panel = document.getElementById('map-panel');
+
+  // Strip old position classes, keep biome class
+  mapCards.forEach(c => {
+    c.className = 'map-card ' + (c.dataset.biome || '');
+  });
+  // Assign card-pos-N from mapDeckIndex
+  for (let i = 0; i < mapCards.length; i++) {
+    const pos = i - mapDeckIndex;
+    if (pos >= 0 && pos <= 4) {
+      mapCards[i].classList.add('map-card-pos-' + pos);
+    }
+  }
+  // Update title + panel theme
+  const biome = MAP_BIOMES[mapDeckIndex];
+  if (titleEl) titleEl.textContent = biome.label;
+  if (panel) {
+    for (const b of MAP_BIOMES) panel.classList.remove('map-biome-' + b.name);
+    panel.classList.add('map-biome-' + biome.name);
+  }
+  // Nav button visibility
+  const prevBtn = document.getElementById('map-prev');
+  const nextBtn = document.getElementById('map-next');
+  if (prevBtn) prevBtn.style.visibility = mapDeckIndex > 0 ? 'visible' : 'hidden';
+  if (nextBtn) nextBtn.style.visibility = mapDeckIndex < MAP_BIOMES.length - 1 ? 'visible' : 'hidden';
+}
+
+function wireMapSwipe(deck) {
+  let swipeStartX = 0, swipeStartY = 0, swipeStartTime = 0;
+  let isSwiping = false, swipeLocked = false;
+
+  deck.addEventListener('touchstart', function(e) {
+    swipeStartX = e.touches[0].clientX;
+    swipeStartY = e.touches[0].clientY;
+    swipeStartTime = Date.now();
+    isSwiping = true;
+    swipeLocked = false;
+    const front = deck.querySelector('.map-card-pos-0');
+    if (front) front.classList.add('swiping');
+  }, { passive: true });
+
+  deck.addEventListener('touchmove', function(e) {
+    if (!isSwiping) return;
+    const dx = e.touches[0].clientX - swipeStartX;
+    const dy = e.touches[0].clientY - swipeStartY;
+    if (!swipeLocked && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+      if (Math.abs(dy) > Math.abs(dx)) {
+        isSwiping = false;
+        const front = deck.querySelector('.swiping');
+        if (front) front.classList.remove('swiping');
+        return;
+      }
+      swipeLocked = true;
+    }
+    if (!swipeLocked) return;
+    e.preventDefault();
+    const front = deck.querySelector('.map-card-pos-0.swiping');
+    if (!front) return;
+    const clamp = Math.max(-100, Math.min(100, dx));
+    front.style.transform = 'translateX(' + clamp + 'px) rotate(' + (clamp * 0.05) + 'deg) scale(1)';
+    front.style.opacity = Math.max(0.4, 1 - Math.abs(clamp) / 180);
+  }, { passive: false });
+
+  deck.addEventListener('touchend', function(e) {
+    if (!isSwiping) return;
+    isSwiping = false;
+    const front = deck.querySelector('.map-card-pos-0.swiping');
+    if (front) {
+      front.classList.remove('swiping');
+      front.style.transform = '';
+      front.style.opacity = '';
+    }
+    const dx = e.changedTouches[0].clientX - swipeStartX;
+    const vel = Math.abs(dx) / Math.max(1, Date.now() - swipeStartTime);
+    if (Math.abs(dx) > 25 || vel > 0.25) {
+      if (dx < 0 && mapDeckIndex < MAP_BIOMES.length - 1) mapDeckIndex++;
+      else if (dx > 0 && mapDeckIndex > 0) mapDeckIndex--;
+      updateMapDeckPositions();
+    }
+  });
+
+  deck.addEventListener('touchcancel', function() {
+    isSwiping = false;
+    const front = deck.querySelector('.swiping');
+    if (front) {
+      front.classList.remove('swiping');
+      front.style.transform = '';
+      front.style.opacity = '';
+    }
+  });
+}
+
+export function navigateMapDeck(direction) {
+  if (direction < 0 && mapDeckIndex > 0) {
+    mapDeckIndex--;
+    updateMapDeckPositions();
+  } else if (direction > 0 && mapDeckIndex < MAP_BIOMES.length - 1) {
+    mapDeckIndex++;
+    updateMapDeckPositions();
   }
 }
 

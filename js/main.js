@@ -48,7 +48,7 @@ import { showScoreSubmitOverlay } from './leaderboard.js';
 import {
   siegeMobKilled,
   siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards,
-  renderOverworldMap, getMapBiomeIndex, getMapBiomeCount,
+  renderOverworldMap, getMapBiomeIndex, getMapBiomeCount, navigateMapDeck,
 } from './siege.js';
 import {
   skyGradients,
@@ -111,10 +111,10 @@ document.addEventListener('DOMContentLoaded', function () {
     hidePanel('map');
   });
   document.getElementById('map-prev').addEventListener('click', function() {
-    renderOverworldMap(Math.max(0, getMapBiomeIndex() - 1));
+    navigateMapDeck(-1);
   });
   document.getElementById('map-next').addEventListener('click', function() {
-    renderOverworldMap(Math.min(getMapBiomeCount() - 1, getMapBiomeIndex() + 1));
+    navigateMapDeck(1);
   });
 
   // --- Siege reward panel ---

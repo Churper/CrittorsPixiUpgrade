@@ -1,7 +1,7 @@
 # Crittors — CLAUDE.md
 
 ## Project Overview
-2D side-scrolling combat game built with PixiJS v8. Two game modes: **Story** (round-based with castle destruction) and **Endless** (infinite survival with scaling difficulty, siege encounters, and an overworld checkpoint map). Players control one of 4 characters fighting waves of enemies. Features character swapping, type advantages, leveling, coffee currency, bones meta-currency, consumable items, skins, hats, and weather/day-night systems.
+2D side-scrolling combat game built with PixiJS v8. Two game modes: **Story** (round-based with castle destruction) and **Endless** (infinite survival with scaling difficulty, siege encounters, and an overworld checkpoint map). Players control one of 4 characters fighting waves of enemies. Features character swapping, type advantages, leveling, coffee currency, strawberries meta-currency, consumable items, skins, hats, and weather/day-night systems.
 
 ## Tech Stack
 - Vanilla JS with ES modules (no bundler)
@@ -16,11 +16,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `js/main.js` | ~2,500 | PIXI app init, game loop (`app.ticker`), input handling, camera, character swap, pause system, asset loading, `setup()`, `startGame()`, story-mode castle logic, resize handler. Key sections: `handleCharacterClick` (~line 450), `handleTouchHold` (attack logic, ~line 1150), game loop (~line 1600), `buildEnemyTypes` (~line 2200) |
-| `js/state.js` | ~500 | Central state object + all getters/setters. Single source of truth for game mode, character stats, items, siege state, bones, skins, hats, layout upgrades |
-| `js/combat.js` | ~2,200 | Enemy spawning (`spawnEnemy`, `spawnEnemyDemi`), AI, movement, attack logic, damage calc, type multipliers, coffee drops, hit splats, item drops, bones awarding, ground item collection, death animations, synthesized SFX, `triggerAirstrike()` (bomb AoE + explosion visuals) |
+| `js/state.js` | ~500 | Central state object + all getters/setters. Single source of truth for game mode, character stats, items, siege state, strawberries (var: `bones`), skins, hats, layout upgrades |
+| `js/combat.js` | ~2,200 | Enemy spawning (`spawnEnemy`, `spawnEnemyDemi`), AI, movement, attack logic, damage calc, type multipliers, coffee drops, hit splats, item drops, strawberry awarding, ground item collection, death animations, synthesized SFX, `triggerAirstrike()` (bomb AoE + explosion visuals) |
 | `js/spawnLoop.js` | ~145 | Enemy spawn scheduling for endless + story modes. Demi boss timing, siege trigger checks, spawn interval scaling. `initSpawnLoop(critter, app)` + `spawnEnemies()` |
 | `js/itemButtons.js` | ~210 | All 6 item button click handlers (shield, bomb, rage, feather, golden bean, medkit) + `repositionItemButtons()` layout. `initItemButtons(critter, app)` |
-| `js/layoutShop.js` | ~555 | Bones shop panel: card deck navigation, swipe gestures, stat upgrades, hats/skins/inventory sub-views, inline cosmetic pickers, settings panel, leaderboard/guide button wiring, delete save. `showPanel()`/`hidePanel()` helpers |
+| `js/layoutShop.js` | ~555 | Strawberry shop panel: card deck navigation, swipe gestures, stat upgrades, hats/skins/inventory sub-views, inline cosmetic pickers, settings panel, leaderboard/guide button wiring, delete save. `showPanel()`/`hidePanel()` helpers |
 | `js/menuScene.js` | ~400 | Animated menu background (pure Canvas 2D): stars, moon, mountains, campfires, lanterns, snail sprite. `initMenuScene()` + `stopMenuScene()` |
 | `js/siege.js` | ~500 | Castle siege system (triggers every 10 kills in endless). Alert phase, baby mob swarm, castle combat, reward panel. Overworld map rendering with snake-path grid + checkpoint system |
 | `js/skins.js` | ~450 | Skin catalog (16 skins across 4 characters), HSL recoloring engine (`recolorSheet`), per-skin hue shift configs, texture cache, runtime particle effects (sparkles for golden frog, hearts for valentine snail) |
@@ -28,7 +28,7 @@
 | `js/characters.js` | ~200 | Per-character health/EXP management, portrait flashing, HP indicators, `getCharacterDamage()` |
 | `js/ui.js` | ~300 | Health/EXP bars, pause menu, cooldown overlay, round text, grayscale filters |
 | `js/timer.js` | ~100 | 60-second round timer with animated snail progress bar |
-| `js/save.js` | ~100 | Save/load to localStorage. `saveBones()` persists bones + layout upgrades + starting items + unlocked castles + owned hats/skins |
+| `js/save.js` | ~100 | Save/load to localStorage. `saveBones()` persists strawberries + layout upgrades + starting items + unlocked castles + owned hats/skins |
 | `js/utils.js` | ~20 | Random color generators for particle effects |
 | `js/leaderboard.js` | ~160 | Supabase leaderboard: score submission, formatting, player name persistence, leaderboard panel rendering, `showScoreSubmitOverlay()` |
 | `js/hats.js` | ~150 | `applyHat()` — draws hat shapes as PIXI.Graphics children of critter sprite |
@@ -82,7 +82,7 @@ Auto-applies all 3 stats on level-up (no UI picker):
 - Demi boss every 5 kills (skipping multiples of 10)
 - **Siege** every 10 kills (see Siege System below)
 - Kill count tracked in `state.endlessKillCount`
-- Bones awarded per kill (1 regular, 3 demi)
+- Strawberries awarded per kill (1 regular, 3 demi)
 - 2% item drop chance from regular kills (1% shield, 1% bomb)
 
 ## Siege System (`siege.js`)
@@ -98,7 +98,7 @@ Triggers every 10 kills in endless mode (`shouldTriggerSiege()`).
 **Castle checkpoints** are stored in `state.unlockedCastles[]` and shown on the overworld map.
 
 ## Overworld Map
-2D snake-path grid (4 columns). Start node at top-left. Nodes wind left-to-right, then right-to-left per row. Unlocked castles are clickable checkpoints. Connectors light up between unlocked nodes. Rendered by `renderOverworldMap()` in siege.js. CSS uses `.map-row`, `.map-node`, `.map-connector-h`, `.map-connector-v`.
+Swipeable card deck UI (same pattern as layout shop). One card per biome (5 cards: forest, desert, tundra, volcano, void), each containing a 20-castle snake-path grid (4 columns). Swipe left/right or use nav arrows to switch biomes. Front card has biome-themed border glow; stacked cards fan out to the right with decreasing scale/opacity. Auto-navigates to the biome of the highest unlocked castle. Rendered by `renderOverworldMap()` in siege.js. CSS uses `.map-deck`, `.map-card`, `.map-card-pos-N`, `.map-row`, `.map-node`, `.map-connector-h`, `.map-connector-v`.
 
 ## Consumable Items
 | Item | Button ID | Effect |
@@ -110,11 +110,11 @@ Triggers every 10 kills in endless mode (`shouldTriggerSiege()`).
 | Golden Bean | `golden-bean-btn` | Grants large coffee amount. Gold-tinted beans fly to UI. |
 | Potion (Heal) | via potion system | 3 doses per potion, heals `15 + potionHeal upgrades` per sip |
 
-Items persist across runs in `state.startingItems`. Can be purchased in the layout shop with bones.
+Items persist across runs in `state.startingItems`. Can be purchased in the layout shop with strawberries.
 
 ## Currencies
 - **Coffee** — In-run currency. Dropped by enemies/castle. 50 to revive dead character. Earned from golden beans.
-- **Bones** — Cross-run meta-currency. 1 per kill, 3 per demi boss (endless only). Spent in layout shop for upgrades, items, hats, skins. Persisted via `saveBones()`.
+- **Strawberries** (code var: `bones`) — Cross-run meta-currency (🍓). 1 per kill, 3 per demi boss (endless only). Spent in layout shop for upgrades, items, hats, skins. Persisted via `saveBones()`.
 
 ## Skins System (`skins.js`)
 16 skins across 4 characters. Each skin defines HSL hue shift ranges in `skinHueConfigs`. At load, `generateSkinTextures()` recolors walk/attack spritesheets via canvas pixel manipulation.
@@ -147,11 +147,11 @@ Hats are drawn as PIXI.Graphics children of the critter sprite in `applyHat()` (
 | tophat | Brim + crown + red band | Dark color (0x1a1a2e), positioned at -0.42 × texture height |
 | partyhat | OSRS-style paper crown with 4 triangular peaks + tip dots | Blue (0x0070DD), scaled 1.15x, positioned lower at -0.34 × texture height |
 
-## Layout Shop (Bones Shop)
+## Layout Shop (Strawberry Shop)
 Accessed from pause menu. Card-swipe UI. Categories:
 - **Character upgrades:** +damage, +health, +defense per character (costs scale with level)
-- **Starting items:** Buy shields, bombs, rage potions, feathers, potions with bones
-- **Hats & Skins:** Cosmetic purchases with bones
+- **Starting items:** Buy shields, bombs, rage potions, feathers, potions with strawberries
+- **Hats & Skins:** Cosmetic purchases with strawberries
 
 ## Key Mechanics
 - **Character swap:** 3-second cooldown, spawn animation with colored particles, 2s spawn protection
@@ -173,12 +173,12 @@ Key state groups:
 - **Endless:** endlessSpawnCount, endlessKillCount, endlessDeathX
 - **Siege:** siegeActive, siegePhase, siegeCastleLevel, siegeMobsRemaining, siegeCastleHP, unlockedCastles[]
 - **Items:** shieldCount, bombCount, rageCount, featherCount, goldenBeanCount, groundItems[], startingItems{}
-- **Meta:** bones, layoutUpgrades{}, ownedHats[], ownedSkins[], equippedHats{}, equippedSkins{}
+- **Meta:** bones (strawberries), layoutUpgrades{}, ownedHats[], ownedSkins[], equippedHats{}, equippedSkins{}
 - **Cosmetic:** skinBaseTint, biomeTransition, weather state
 
 ## Save System
 `saveGame()` serializes full state to JSON in localStorage key `'gameSave'`. `loadGame()` restores everything.
-`saveBones()` separately persists: bones, layoutUpgrades, startingItems, unlockedCastles, ownedHats, ownedSkins, equippedHats, equippedSkins.
+`saveBones()` separately persists: strawberries (var: `bones`), layoutUpgrades, startingItems, unlockedCastles, ownedHats, ownedSkins, equippedHats, equippedSkins.
 
 ## Audio
 - `theme.ogg` — background music (loops, default volume 0.42)
@@ -202,9 +202,9 @@ Sprites in `./assets/`:
 
 ## Module Init Order
 Inside `DOMContentLoaded`:
-1. `loadBones()` — restore persistent currency
+1. `loadBones()` — restore persistent currency (strawberries)
 2. `initMenuScene()` — start animated menu canvas
-3. `initLayoutShop()` — wire bones shop + settings + panel helpers
+3. `initLayoutShop()` — wire strawberry shop + settings + panel helpers
 4. Button click handlers (map, siege reward) remain in main.js
 
 Inside `mainAppFunction()` → `setup()` → `startGame()`:

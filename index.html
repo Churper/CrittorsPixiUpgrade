@@ -118,8 +118,10 @@
       <div id="layout-panel">
         <div class="layout-header">
           <button id="layout-inventory-btn">🎒 Inventory</button>
-          <span id="layout-bones">🍓 0</span>
-          <span id="layout-hearts">💗 0</span>
+          <div class="layout-currency-center">
+            <span id="layout-bones">🍓 0</span>
+            <span id="layout-hearts">💗 0</span>
+          </div>
           <button id="layout-close-btn" class="menu-info-btn">✕</button>
         </div>
         <div class="layout-deck-area">
@@ -260,10 +262,8 @@
         </div>
         <!-- Inventory sub-view -->
         <div id="layout-inventory-view" class="layout-subview">
-          <div class="layout-subview-title">Inventory</div>
-          <div class="layout-subview-grid" id="inventory-grid">
-            <div class="layout-subview-empty">Your inventory is empty.</div>
-          </div>
+          <div class="layout-subview-title">Shop</div>
+          <div class="shop-list" id="inventory-grid"></div>
           <button class="layout-back-btn" data-back="deck">Back</button>
         </div>
       </div>

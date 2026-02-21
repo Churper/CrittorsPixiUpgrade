@@ -1641,11 +1641,15 @@ touch-action: manipulation;
 .layout-header {
   display: flex;
   align-items: center;
-  gap: clamp(8px, 2vmin, 14px);
+  gap: clamp(6px, 1.5vmin, 10px);
   margin-bottom: clamp(6px, 1.5vmin, 12px);
 }
-.layout-header #layout-close-btn {
-  margin-left: auto;
+.layout-currency-center {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: clamp(8px, 2vmin, 14px);
 }
 #layout-bones {
   font-family: 'Luckiest Guy', cursive;
@@ -2166,6 +2170,98 @@ touch-action: manipulation;
   font-family: 'Patrick Hand', cursive;
   font-size: clamp(9px, 2vmin, 11px);
   color: rgba(200, 220, 240, 0.6);
+}
+
+/* ── Shop list (inventory) ──────────────────────────── */
+.shop-list {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(4px, 1vmin, 6px);
+  width: 100%;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.shop-list::-webkit-scrollbar { display: none; }
+
+.shop-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(6px, 1.5vmin, 10px);
+  padding: clamp(6px, 1.2vmin, 10px) clamp(8px, 2vmin, 12px);
+  border-radius: clamp(6px, 1.4vmin, 10px);
+  background: rgba(15, 25, 45, 0.7);
+  border: 1px solid rgba(100, 160, 200, 0.2);
+  transition: border-color 0.15s, background 0.15s;
+}
+.shop-row:hover {
+  border-color: rgba(100, 180, 220, 0.45);
+  background: rgba(20, 35, 60, 0.8);
+}
+.shop-row-icon {
+  font-size: clamp(20px, 5vmin, 28px);
+  flex-shrink: 0;
+  width: clamp(32px, 7vmin, 40px);
+  text-align: center;
+}
+.shop-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.shop-row-name {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(0.75em, 2.2vmin, 0.95em);
+  color: #e0e8f0;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+}
+.shop-row-desc {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(0.6em, 1.8vmin, 0.78em);
+  color: rgba(160, 190, 220, 0.6);
+}
+.shop-row-owned {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(0.8em, 2.2vmin, 1em);
+  color: #8cc8e8;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  flex-shrink: 0;
+  min-width: clamp(28px, 6vmin, 36px);
+  text-align: center;
+}
+.shop-row-buy {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(0.7em, 2vmin, 0.85em);
+  padding: clamp(4px, 0.8vmin, 6px) clamp(8px, 2vmin, 12px);
+  border-radius: 6px;
+  border: 2px solid rgba(100, 180, 100, 0.5);
+  background: rgba(20, 50, 30, 0.7);
+  color: #a0e8a0;
+  cursor: pointer;
+  transition: transform 0.12s, background 0.12s, border-color 0.12s;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.shop-row-buy:hover {
+  transform: scale(1.06);
+  background: rgba(30, 70, 40, 0.85);
+  border-color: rgba(100, 200, 120, 0.7);
+}
+.shop-row-buy:active {
+  transform: scale(0.94);
+}
+.shop-row-buy.cant-afford {
+  border-color: rgba(160, 100, 100, 0.4);
+  background: rgba(50, 20, 20, 0.5);
+  color: rgba(200, 140, 140, 0.6);
+  cursor: not-allowed;
 }
 
 /* ── Layout landscape tweaks ─────────────────────────── */

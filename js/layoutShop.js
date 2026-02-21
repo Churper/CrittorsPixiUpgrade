@@ -37,7 +37,7 @@ const inventoryItemCatalog = [
   { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 10 },
   { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 20 },
   { id: 'potionHeal', icon: 'potion-svg', name: 'Potion Power', costPer: 100, suffix: '+15 hp/use' },
-  { id: 'medkit',     icon: '🩹', name: 'Medkit',           costPer: 15, suffix: 'Heal all crittors' },
+  { id: 'medkit',     icon: '➕', name: 'Medkit',           costPer: 15, suffix: 'Heal all crittors' },
 ];
 
 /** Call once from DOMContentLoaded to wire all layout shop DOM listeners. */
@@ -336,12 +336,17 @@ export function initLayoutShop() {
     const potionSVG = '<svg width="22" height="32" viewBox="0 0 28 40"><rect x="10" y="0" width="8" height="5" rx="1" fill="#8B5E3C"/><rect x="11" y="5" width="6" height="8" rx="2" fill="#cc2222" opacity="0.8"/><rect x="6" y="13" width="16" height="22" rx="4" fill="#dd2222"/><rect x="8" y="15" width="4" height="12" rx="2" fill="#ff6666" opacity="0.45"/></svg>';
     inventoryItemCatalog.forEach(item => {
       const count = state.startingItems[item.id] || 0;
-      const el = document.createElement('div');
-      el.className = 'layout-subview-item';
-      const label = item.suffix ? `<span class="subview-label">${item.suffix}</span>` : '';
+      const canAfford = state.bones >= item.costPer;
       const iconHtml = item.icon === 'potion-svg' ? potionSVG : item.icon;
-      el.innerHTML = `<span>${iconHtml}</span><span class="subview-count">x${count}</span>${label}<span class="subview-cost">🍓${item.costPer}</span>`;
-      el.addEventListener('click', () => {
+      const row = document.createElement('div');
+      row.className = 'shop-row';
+      const desc = item.suffix ? `<span class="shop-row-desc">${item.suffix}</span>` : '';
+      row.innerHTML =
+        `<div class="shop-row-icon">${iconHtml}</div>` +
+        `<div class="shop-row-info"><span class="shop-row-name">${item.name}</span>${desc}</div>` +
+        `<span class="shop-row-owned">x${count}</span>` +
+        `<button class="shop-row-buy${canAfford ? '' : ' cant-afford'}">🍓${item.costPer}</button>`;
+      row.querySelector('.shop-row-buy').addEventListener('click', () => {
         if (state.bones < item.costPer) return;
         state.bones -= item.costPer;
         state.startingItems[item.id] = (state.startingItems[item.id] || 0) + 1;
@@ -349,7 +354,7 @@ export function initLayoutShop() {
         updateLayoutUI();
         renderInventoryGrid();
       });
-      grid.appendChild(el);
+      grid.appendChild(row);
     });
   }
 

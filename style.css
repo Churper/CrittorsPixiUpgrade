@@ -2334,7 +2334,7 @@ touch-action: manipulation;
 #map-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   margin-bottom: 12px;
   flex-shrink: 0;
 }
@@ -2354,13 +2354,15 @@ touch-action: manipulation;
 #map-panel.map-biome-void    #map-biome-title { color: rgba(180, 120, 240, 0.95); text-shadow: 0 0 12px rgba(140, 60, 220, 0.4); }
 
 .map-nav-btn {
-  width: 36px;
-  height: 36px;
+  position: absolute;
+  top: 50%;
+  width: clamp(28px, 7vmin, 36px);
+  height: clamp(28px, 7vmin, 36px);
   border-radius: 50%;
   border: 2px solid rgba(100, 160, 200, 0.5);
   background: rgba(10, 15, 25, 0.75);
   color: #ccd8e4;
-  font-size: 1.4em;
+  font-size: clamp(1.1em, 3vmin, 1.6em);
   line-height: 1;
   cursor: pointer;
   user-select: none;
@@ -2368,14 +2370,17 @@ touch-action: manipulation;
   touch-action: manipulation;
   transition: transform 0.15s, background 0.15s;
   flex-shrink: 0;
+  z-index: 10;
 }
+#map-prev { left: -6px; transform: translateY(-50%); }
+#map-next { right: -6px; transform: translateY(-50%); }
 .map-nav-btn:hover {
   background: rgba(20, 40, 60, 0.85);
-  transform: scale(1.15);
 }
-.map-nav-btn:active {
-  transform: scale(0.92);
-}
+#map-prev:hover { transform: translateY(-50%) scale(1.15); }
+#map-next:hover { transform: translateY(-50%) scale(1.15); }
+#map-prev:active { transform: translateY(-50%) scale(0.92); }
+#map-next:active { transform: translateY(-50%) scale(0.92); }
 /* Biome-colored nav buttons */
 #map-panel.map-biome-forest  .map-nav-btn { border-color: rgba(60, 160, 80, 0.5); }
 #map-panel.map-biome-desert  .map-nav-btn { border-color: rgba(200, 160, 60, 0.5); }

@@ -1640,17 +1640,12 @@ touch-action: manipulation;
 
 .layout-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: clamp(8px, 2vmin, 14px);
   margin-bottom: clamp(6px, 1.5vmin, 12px);
 }
-
-.layout-currency-row {
-  display: flex;
-  gap: 14px;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: clamp(4px, 1vmin, 8px);
+.layout-header #layout-close-btn {
+  margin-left: auto;
 }
 #layout-bones {
   font-family: 'Luckiest Guy', cursive;

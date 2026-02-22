@@ -62,6 +62,16 @@ export function initLayoutShop() {
     }
   }
 
+  /** Refresh the always-visible equip row on each card */
+  function refreshAllCardEquipRows() {
+    layoutCards.forEach(card => {
+      const charName = card.dataset.char;
+      const row = card.querySelector('.card-equip-row');
+      if (!row) return;
+      refreshPreview(row, charName);
+    });
+  }
+
   function updateLayoutUI() {
     const bones = state.bones;
     const upgrades = state.layoutUpgrades;
@@ -78,13 +88,14 @@ export function initLayoutShop() {
         const totalBonus = level * layoutBonusPerLevel[stat];
         const bonusStr = totalBonus;
         row.querySelector('.layout-stat-bonus').textContent = `+${bonusStr} ${layoutBonusLabel[stat]}`;
-        const cost = 10 + level * 5;
+        const cost = 8 + level * 3;
         const btn = row.querySelector('.layout-buy-btn');
         btn.dataset.cost = cost;
         btn.textContent = `🍓${cost}`;
         btn.classList.toggle('cant-afford', bones < cost);
       });
     });
+    refreshAllCardEquipRows();
   }
 
   // --- Layout panel open/close ---
@@ -92,7 +103,6 @@ export function initLayoutShop() {
     showLayoutDeck();
     updateDeckPositions();
     updateLayoutUI();
-    updateEarnBtnState();
     showPanel('layout');
   });
 
@@ -640,11 +650,11 @@ export function initLayoutShop() {
           state.supporterHearts -= hat.cost;
           state.ownedHats.push(hat.id);
           saveBones();
-          updateLayoutUI();
         } else {
           state.equippedHats[charName] = equipped ? null : hat.id;
           saveBones();
         }
+        updateLayoutUI();
         renderInlineHats(container, charName);
       });
       grid.appendChild(el);
@@ -683,12 +693,11 @@ export function initLayoutShop() {
           state.supporterHearts -= skin.cost;
           state.ownedSkins.push(skin.id);
           saveBones();
-          updateLayoutUI();
         } else {
           state.equippedSkins[charName] = equipped ? null : skin.id;
           saveBones();
         }
-        // Skin changed — rebuild preview
+        updateLayoutUI();
         renderInlineSkins(container, charName);
       });
       grid.appendChild(el);
@@ -760,45 +769,63 @@ export function initLayoutShop() {
     hidePanel('guide');
   });
 
-  // --- Earn hearts via rewarded ad ---
+  // --- Hearts Shop panel ---
   initRewardedAds();
-  const earnHeartsBtn = document.getElementById('earn-hearts-btn');
-  let earnCooldownInterval = null;
+  const heartsShopWatchBtn = document.getElementById('hearts-shop-watch-btn');
+  const heartsShopBalanceEl = document.getElementById('hearts-shop-balance');
+  const heartsShopBlockedMsg = document.getElementById('hearts-shop-blocked-msg');
+  let heartsShopCooldownInterval = null;
 
-  function updateEarnBtnState() {
+  function updateHeartsShopUI() {
+    heartsShopBalanceEl.textContent = '\uD83D\uDC97 ' + state.supporterHearts;
     const remaining = getAdCooldownRemaining();
     if (remaining > 0) {
-      earnHeartsBtn.classList.add('on-cooldown');
-      earnHeartsBtn.textContent = remaining + 's';
-      if (!earnCooldownInterval) {
-        earnCooldownInterval = setInterval(() => {
+      heartsShopWatchBtn.classList.add('on-cooldown');
+      heartsShopWatchBtn.textContent = remaining + 's';
+      if (!heartsShopCooldownInterval) {
+        heartsShopCooldownInterval = setInterval(() => {
           const r = getAdCooldownRemaining();
           if (r <= 0) {
-            clearInterval(earnCooldownInterval);
-            earnCooldownInterval = null;
-            earnHeartsBtn.classList.remove('on-cooldown');
-            earnHeartsBtn.textContent = '+';
+            clearInterval(heartsShopCooldownInterval);
+            heartsShopCooldownInterval = null;
+            heartsShopWatchBtn.classList.remove('on-cooldown');
+            heartsShopWatchBtn.textContent = '\uD83C\uDFA5 Watch Ad \u2014 Earn 3 \uD83D\uDC97';
           } else {
-            earnHeartsBtn.textContent = r + 's';
+            heartsShopWatchBtn.textContent = r + 's';
           }
         }, 1000);
       }
     } else {
-      earnHeartsBtn.classList.remove('on-cooldown');
-      earnHeartsBtn.textContent = '+';
+      heartsShopWatchBtn.classList.remove('on-cooldown');
+      heartsShopWatchBtn.textContent = '\uD83C\uDFA5 Watch Ad \u2014 Earn 3 \uD83D\uDC97';
     }
   }
 
-  earnHeartsBtn.addEventListener('click', function() {
+  document.getElementById('hearts-btn').addEventListener('click', function() {
+    updateHeartsShopUI();
+    heartsShopBlockedMsg.classList.remove('visible');
+    showPanel('hearts-shop');
+  });
+
+  document.getElementById('hearts-shop-close-btn').addEventListener('click', function() {
+    hidePanel('hearts-shop');
+  });
+
+  heartsShopWatchBtn.addEventListener('click', function() {
     if (getAdCooldownRemaining() > 0) return;
+    heartsShopBlockedMsg.classList.remove('visible');
     showRewardedAd(
       () => {
         state.supporterHearts += 3;
         saveBones();
         updateLayoutUI();
-        updateEarnBtnState();
+        updateHeartsShopUI();
       },
-      () => { /* dismissed */ }
+      (info) => {
+        if (info && info.blocked) {
+          heartsShopBlockedMsg.classList.add('visible');
+        }
+      }
     );
   });
 

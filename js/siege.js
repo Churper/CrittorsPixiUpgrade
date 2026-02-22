@@ -252,7 +252,6 @@ function spawnSiegeNormalEnemy(critter, app, enemyType) {
   const level = state.siegeCastleLevel;
   if (level >= 3) {
     const pool = ['shield'];
-    if (level >= 4) pool.push('feather');
     if (level >= 5) pool.push('bomb');
     const effect = pool[Math.floor(Math.random() * pool.length)];
 
@@ -263,9 +262,6 @@ function spawnSiegeNormalEnemy(critter, app, enemyType) {
       shield.circle(0, 0, 60).stroke({ color: 0x3399ff, alpha: 0.45, width: 2 });
       enemy.addChild(shield);
       enemy._shieldGfx = shield;
-    } else if (effect === 'feather') {
-      enemy.hasFeather = true;
-      enemy.tint = 0xFFEEBB;
     } else if (effect === 'bomb') {
       enemy.dropsBomb = true;
       enemy.tint = 0xFFAAAA;

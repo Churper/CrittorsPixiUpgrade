@@ -477,16 +477,6 @@ export function rangedAttack(critter, enemy) {
   drawHitSplat(enemy);
   if (enemy.currentHP <= 0) {
 
-      // Feather revive — enemy comes back at 50% HP once
-      if (enemy.hasFeather) {
-        enemy.hasFeather = false;
-        enemy.currentHP = Math.round(enemy.maxHP * 0.5);
-        enemy.tint = 0xFFD700;
-        setTimeout(() => { enemy.tint = 0xFFFFFF; }, 400);
-        drawEnemyHPBar(enemy);
-        return;
-      }
-
       // Callback function to remove enemy after death animation2
       if (state.app.stage.children.includes(enemy)) {
           enemy.tint = 0xFF0000; // Set the hit color
@@ -508,8 +498,8 @@ export function rangedAttack(critter, enemy) {
           }
 
           if (!enemy.isBaby) createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-          // Item drop — 25% chance from demi-boss
-          if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.25) {
+          // Item drop — 15% chance from demi-boss
+          if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.15) {
             const items = ['shield','bomb','rage','feather','goldenBean','medkit'];
             createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
           }
@@ -1066,16 +1056,6 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
 
   if (enemy.currentHP - getCharacterDamage(getCurrentCharacter()) <= 0) {
 
-    // Feather revive — enemy comes back at 50% HP once
-    if (enemy.hasFeather) {
-      enemy.hasFeather = false;
-      enemy.currentHP = Math.round(enemy.maxHP * 0.5);
-      enemy.tint = 0xFFD700;
-      setTimeout(() => { enemy.tint = 0xFFFFFF; }, 400);
-      drawEnemyHPBar(enemy);
-      return;
-    }
-
     // Callback function to remove enemy after death animation
     if (state.app.stage.children.includes(enemy)) {
       enemy.tint = 0xFF0000; // Set the hit color
@@ -1120,8 +1100,8 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
       awardBones(enemy);
       setIsCharAttacking(false);
       if (!enemy.isBaby) createCoffeeDrop(enemy.position.x + 20, enemy.position.y);
-      // Item drop — 25% chance from demi-boss
-      if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.25) {
+      // Item drop — 15% chance from demi-boss
+      if (state.gameMode === 'endless' && enemy.isDemi && Math.random() < 0.15) {
         const items = ['shield','bomb','rage','feather','goldenBean','medkit'];
         createItemDrop(enemy.position.x, enemy.position.y, items[Math.floor(Math.random() * items.length)]);
       }

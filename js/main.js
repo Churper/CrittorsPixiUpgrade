@@ -1387,9 +1387,18 @@ state.frogGhostPlayer.scale.set(0.28);
                 state.attackSound.volume = state.effectsVolume;
                 state.attackSound.play();
                 if (attackingChar === "character-bird") {
-                  // Skip firing if no alive enemies ahead within egg range
-                  const hasTarget = getEnemies().some(e => e.isAlive && e.position.x > critter.position.x && e.position.x - critter.position.x < 500);
-                  if (!hasTarget && !(state.siegeActive && state.siegePhase === 'castle')) {
+                  // Skip firing if no alive enemies ahead within egg range AND not at a castle
+                  const hasTarget = getEnemies().some(e => {
+                    if (!e.isAlive || e.position.x <= critter.position.x) return false;
+                    const dist = e.position.x - critter.position.x;
+                    if (dist >= 500) return false;
+                    // Predict if this shot will overkill — skip if enemy will die from previous hit
+                    if (e.currentHP <= 0) return false;
+                    return true;
+                  });
+                  const birdAtCastle = (state.siegeActive && state.siegePhase === 'castle') ||
+                    (state.gameMode !== 'endless' && castle && critter.position.x > castle.position.x - castle.width / 1.1);
+                  if (!hasTarget && !birdAtCastle) {
                     state.isAttackingChar = false;
                     setIsCharAttacking(false);
                     setCharAttackAnimating(false);
@@ -2086,8 +2095,16 @@ let cantGainEXP = false;
           showCharacterMenu();
           // Fall through to auto-attack check (no early return)
         }
+        // Detect if player is at a castle target (siege or story mode)
+        const atSiegeCastle = state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&
+          critter.position.x >= state.siegeCastleSprite.position.x - state.siegeCastleSprite.width / 1.1;
+        const atStoryCastle = state.gameMode !== 'endless' && castle &&
+          critter.position.x > castle.position.x - castle.width / 1.1;
+        const atAnyCastle = atSiegeCastle || atStoryCastle;
+
         // Reconcile enemiesInRange with reality — prevent stale counter after baby clears
-        if (getEnemiesInRange() > 0) {
+        // Skip reset when at a castle — the castle is the target
+        if (getEnemiesInRange() > 0 && !atAnyCastle) {
           const aliveNearby = getEnemies().filter(e => e.isAlive && e.enemyAdded).length;
           if (aliveNearby === 0) {
             setEnemiesInRange(0);
@@ -2097,14 +2114,16 @@ let cantGainEXP = false;
           }
         }
         // Safety: if stuck in attack textures with nothing to fight, restore walk
-        if (getEnemiesInRange() === 0 && critter.textures !== state.frogWalkTextures && !state.isAttackingChar) {
+        // Skip when at a castle — attack animation should complete
+        if (getEnemiesInRange() === 0 && critter.textures !== state.frogWalkTextures && !state.isAttackingChar && !atAnyCastle) {
           critter.textures = state.frogWalkTextures;
           critter.loop = true;
           setCharAttackAnimating(false);
           critter.play();
         }
         // Failsafe: force-restore walk if stuck attacking with no enemies for over 2 seconds
-        if (getEnemiesInRange() === 0 && getEnemies().filter(e => e.isAlive && e.enemyAdded).length === 0) {
+        // Skip when at a castle
+        if (getEnemiesInRange() === 0 && getEnemies().filter(e => e.isAlive && e.enemyAdded).length === 0 && !atAnyCastle) {
           if (!state._noEnemySince) state._noEnemySince = Date.now();
           if (Date.now() - state._noEnemySince > 2000 && critter.textures !== state.frogWalkTextures) {
             state.isAttackingChar = false;
@@ -2118,10 +2137,8 @@ let cantGainEXP = false;
         } else {
           state._noEnemySince = null;
         }
-        // Auto-attack: trigger attack when enemies are in range, or at siege castle
-        const atSiegeCastle = state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&
-          critter.position.x >= state.siegeCastleSprite.position.x - state.siegeCastleSprite.width / 1.1;
-        if ((state.autoAttack || atSiegeCastle) && (getEnemiesInRange() > 0 || atSiegeCastle) && !state.isAttackingChar && !state.isPointerDown) {
+        // Auto-attack: trigger attack when enemies are in range, or at any castle
+        if ((state.autoAttack || atAnyCastle) && (getEnemiesInRange() > 0 || atAnyCastle) && !state.isAttackingChar && !state.isPointerDown) {
           handleTouchHold();
         }
 

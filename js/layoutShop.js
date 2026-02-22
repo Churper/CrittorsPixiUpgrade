@@ -5,6 +5,7 @@ import state from './state.js';
 import { saveBones } from './save.js';
 import { skinCatalog } from './skins.js';
 import { showLeaderboardPanel } from './leaderboard.js';
+import { initRewardedAds, showRewardedAd, getAdCooldownRemaining } from './rewardedAd.js';
 
 // --- Helper: show/hide panel via its backdrop ---
 export function showPanel(panelId) {
@@ -91,6 +92,7 @@ export function initLayoutShop() {
     showLayoutDeck();
     updateDeckPositions();
     updateLayoutUI();
+    updateEarnBtnState();
     showPanel('layout');
   });
 
@@ -756,6 +758,56 @@ export function initLayoutShop() {
 
   document.getElementById('guide-close-btn').addEventListener('click', function() {
     hidePanel('guide');
+  });
+
+  // --- Earn hearts via rewarded ad ---
+  initRewardedAds();
+  const earnHeartsBtn = document.getElementById('earn-hearts-btn');
+  let earnCooldownInterval = null;
+
+  function updateEarnBtnState() {
+    const remaining = getAdCooldownRemaining();
+    if (remaining > 0) {
+      earnHeartsBtn.classList.add('on-cooldown');
+      earnHeartsBtn.textContent = remaining + 's';
+      if (!earnCooldownInterval) {
+        earnCooldownInterval = setInterval(() => {
+          const r = getAdCooldownRemaining();
+          if (r <= 0) {
+            clearInterval(earnCooldownInterval);
+            earnCooldownInterval = null;
+            earnHeartsBtn.classList.remove('on-cooldown');
+            earnHeartsBtn.textContent = '+';
+          } else {
+            earnHeartsBtn.textContent = r + 's';
+          }
+        }, 1000);
+      }
+    } else {
+      earnHeartsBtn.classList.remove('on-cooldown');
+      earnHeartsBtn.textContent = '+';
+    }
+  }
+
+  earnHeartsBtn.addEventListener('click', function() {
+    if (getAdCooldownRemaining() > 0) return;
+    showRewardedAd(
+      () => {
+        state.supporterHearts += 3;
+        saveBones();
+        updateLayoutUI();
+        updateEarnBtnState();
+      },
+      () => { /* dismissed */ }
+    );
+  });
+
+  // --- Privacy policy panel ---
+  document.getElementById('privacy-policy-btn').addEventListener('click', function() {
+    showPanel('privacy');
+  });
+  document.getElementById('privacy-close-btn').addEventListener('click', function() {
+    hidePanel('privacy');
   });
 
   // Delete save button (main menu trash icon)

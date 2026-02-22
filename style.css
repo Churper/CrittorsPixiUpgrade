@@ -1672,7 +1672,9 @@ touch-action: manipulation;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: clamp(8px, 2vmin, 14px);
+  gap: clamp(6px, 1.5vmin, 12px);
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 #layout-bones {
   font-family: 'Luckiest Guy', cursive;
@@ -1685,6 +1687,197 @@ touch-action: manipulation;
   font-size: clamp(0.9em, 3vmin, 1.3em);
   color: #f0c0d8;
   text-shadow: 0 0 6px rgba(220, 120, 180, 0.3), 1px 1px 2px rgba(0, 0, 0, 0.9);
+}
+
+/* ── Earn hearts button ────────────────────────────────── */
+#earn-hearts-btn {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  border: 2px solid rgba(240, 140, 200, 0.7);
+  background: rgba(220, 80, 160, 0.35);
+  color: #fff;
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  padding: 0;
+  margin-left: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(220, 100, 180, 0.3);
+}
+#earn-hearts-btn:hover {
+  transform: scale(1.15);
+  background: rgba(220, 80, 160, 0.55);
+  border-color: rgba(240, 160, 210, 0.9);
+  box-shadow: 0 0 10px rgba(220, 120, 180, 0.5);
+}
+#earn-hearts-btn:active {
+  transform: scale(0.92);
+}
+#earn-hearts-btn.on-cooldown {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  font-size: 10px;
+  box-shadow: none;
+}
+
+/* ── Ad overlay (mock Slurm ad) ──────────────────────── */
+#ad-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 999999;
+  justify-content: center;
+  align-items: center;
+}
+.ad-overlay-box.slurm {
+  text-align: center;
+  padding: 36px 44px;
+  background: linear-gradient(160deg, #1a4d1a 0%, #0d2e0d 50%, #1a3a0a 100%);
+  border: 3px solid #7fff00;
+  border-radius: 18px;
+  min-width: 240px;
+  box-shadow: 0 0 40px rgba(80, 220, 40, 0.3), inset 0 0 30px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+.ad-overlay-box.slurm::before {
+  content: '';
+  position: absolute;
+  top: -50%; left: -50%;
+  width: 200%; height: 200%;
+  background: radial-gradient(circle at 30% 40%, rgba(127, 255, 0, 0.06) 0%, transparent 60%);
+  pointer-events: none;
+}
+.ad-slurm-logo {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(2.2em, 8vmin, 3.2em);
+  color: #7fff00;
+  text-shadow: 0 0 20px rgba(80, 255, 0, 0.6), 0 0 40px rgba(80, 255, 0, 0.3), 2px 3px 0 #2a5a00;
+  letter-spacing: 6px;
+  margin-bottom: 4px;
+}
+.ad-slurm-tagline {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(0.9em, 3vmin, 1.2em);
+  color: #ffcc00;
+  text-shadow: 0 0 8px rgba(255, 200, 0, 0.4);
+  margin-bottom: 16px;
+  font-style: italic;
+}
+.ad-slurm-worm {
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 16px;
+  background: radial-gradient(circle at 40% 35%, #b0ff40, #60cc00 50%, #308800 100%);
+  border-radius: 50% 50% 45% 45%;
+  position: relative;
+  box-shadow: 0 0 12px rgba(100, 220, 0, 0.4);
+}
+.ad-slurm-worm::before {
+  content: '';
+  position: absolute;
+  top: 22%; left: 22%;
+  width: 16px; height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 18px 0 0 #fff;
+}
+.ad-slurm-worm::after {
+  content: '';
+  position: absolute;
+  top: 28%; left: 27%;
+  width: 8px; height: 10px;
+  background: #111;
+  border-radius: 50%;
+  box-shadow: 18px 0 0 #111;
+}
+.ad-overlay-progress {
+  width: 100%;
+  height: 10px;
+  background: rgba(127, 255, 0, 0.12);
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  border: 1px solid rgba(127, 255, 0, 0.25);
+}
+.ad-overlay-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #4a9900, #7fff00, #aaff44);
+  border-radius: 5px;
+  box-shadow: 0 0 8px rgba(127, 255, 0, 0.5);
+}
+.ad-overlay-sub {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(0.8em, 2.5vmin, 1em);
+  color: #ffcc00;
+  text-shadow: 0 0 6px rgba(255, 200, 0, 0.3);
+  letter-spacing: 1px;
+}
+
+/* ── Privacy panel ───────────────────────────────────── */
+#privacy-panel {
+  position: relative;
+  width: 88%;
+  max-width: 420px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: rgba(8, 12, 20, 0.95);
+  border: 2px solid rgba(100, 160, 200, 0.5);
+  border-radius: 16px;
+  padding: 24px 20px;
+  color: #ccd8e4;
+  font-family: 'Patrick Hand', cursive;
+  text-align: left;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100,160,200,0.3) transparent;
+}
+#privacy-panel::-webkit-scrollbar { width: 6px; }
+#privacy-panel::-webkit-scrollbar-thumb { background: rgba(100,160,200,0.3); border-radius: 3px; }
+#privacy-panel h2 {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: 1.8em;
+  color: #e0e8f0;
+  text-shadow: 0 0 8px rgba(80, 160, 220, 0.4), 2px 2px 4px rgba(0, 0, 0, 0.8);
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+.privacy-content p {
+  font-size: 0.95em;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+/* ── Settings link button (privacy policy) ───────────── */
+.settings-link-btn {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 0;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 0.9em;
+  color: #88bbee;
+  background: rgba(20, 40, 70, 0.6);
+  border: 2px solid rgba(100, 160, 200, 0.35);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.settings-link-btn:hover {
+  border-color: rgba(100, 180, 220, 0.7);
+  background: rgba(25, 50, 85, 0.8);
+  box-shadow: 0 0 8px rgba(60, 140, 200, 0.2);
 }
 
 /* ── Card deck ────────────────────────────────────────── */

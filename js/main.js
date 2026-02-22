@@ -1,16 +1,16 @@
 import state from './state.js';
 import {
-  getFrogSpeed, getFrogDamage, getFrogHealth, getFrogLevel,
-  getSnailSpeed, getSnailDamage, getSnailHealth, getSnailLevel,
-  getBeeSpeed, getBeeDamage, getBeeHealth, getBeeLevel,
-  getBirdSpeed, getBirdDamage, getBirdHealth, getBirdLevel,
-  getEnemies, addEnemies,
+  getFrogSpeed, getFrogHealth,
+  getSnailSpeed, getSnailHealth,
+  getBeeSpeed, getBeeHealth,
+  getBirdSpeed, getBirdHealth,
+  getEnemies,
   getCharSwap, setCharSwap,
   getCurrentCharacter, setCurrentCharacter,
-  getCoffee, setCoffee,
+  getCoffee,
   getFrogSize, getSpeedChanged, setSpeedChanged,
   getisDead, setIsDead,
-  getIsCharAttacking, setIsCharAttacking,
+  setIsCharAttacking,
   getAreResetting, setCharAttackAnimating,
   getEnemiesInRange, setEnemiesInRange,
   getCharLevel, getCharEXP, getEXPtoLevel,
@@ -19,41 +19,40 @@ import {
   getRageCount, setRageCount, setFeatherCount,
   setGoldenBeanCount,
   setMedkitCount,
-  getSupporterHearts, setSupporterHearts,
 } from './state.js';
 import { startTimer, pauseTimer, resetTimer, isTimerFinished } from './timer.js';
-import { getRandomColor, getRandomColor3 } from './utils.js';
+import { getRandomColor } from './utils.js';
 import {
   stopFlashing,
-  setPlayerCurrentHealth, setCharEXP,
-  updateEXPIndicator, updateEXPIndicatorText,
+  setPlayerCurrentHealth,
+  updateEXPIndicatorText,
   getCharacterPortraitUrl, updateCharacterStats,
   getCharacterDamage, updateCurrentLevels,
 } from './characters.js';
 import {
   createPauseMenuContainer, shouldReturnEarly, updateDialogPositions,
-  getIsWiped, setisWiped, startCooldown, openCharacterMenu,
-  updatePlayerHealthBar, playRoundText, getTextStyle,
+  setisWiped, startCooldown, openCharacterMenu,
+  updatePlayerHealthBar, playRoundText,
 } from './ui.js';
 import {
-  spawnEnemyDemi, spawnEnemy,
+  spawnEnemyDemi,
   resetEnemiesState, playSpawnAnimation,
   createCoffeeDrop, collectGroundItem,
   playShieldBreakSound,
 } from './combat.js';
-import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
-import { saveGame, loadGame, saveBones, loadBones } from './save.js';
+import { updateEXP, updateKillProgressBar } from './upgrades.js';
+import { loadGame, loadBones } from './save.js';
 import { applySkinFilter, getSkinTextures, generateSkinTextures, updateSkinEffects, clearSkinEffects } from './skins.js';
 import { showScoreSubmitOverlay } from './leaderboard.js';
 import {
   siegeMobKilled,
   siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards, spendAllCoffeeTeamHeal,
-  renderOverworldMap, getMapBiomeIndex, getMapBiomeCount, navigateMapDeck,
+  renderOverworldMap, navigateMapDeck,
 } from './siege.js';
 import {
   skyGradients,
   getWeatherType, getGroundWeather,
-  clearWeatherEffects, createWeatherEffects, updateWeatherEffects,
+  createWeatherEffects, updateWeatherEffects,
   initWeather,
 } from './weather.js';
 import { initTerrain, drawEndlessGround } from './terrain.js';
@@ -185,9 +184,6 @@ document.addEventListener('DOMContentLoaded', function () {
   let critterWalkTextures;
   let backgroundSprite;
   let enemies = state.enemies;
-  let previousCharacter = "";
-  let playAgain = false;
-  let isAttacking = false;
   let enemyPortrait;
   let handleTouchEnd;
   // Procedural main menu scene
@@ -680,7 +676,6 @@ document.addEventListener('DOMContentLoaded', function () {
       // Swap box positions (skip if prevSelected is empty, e.g. self-revive)
       if (prevSelected) {
         const currentCharacterBox = document.querySelector('.upgrade-box.' + prevSelected);
-        const prevCharacterBox = document.querySelector('.upgrade-box.' + characterType);
         const tempPosition = { ...state.characterPositions[prevSelected] };
 
         currentCharacterBox.style.top = state.characterPositions[characterType].top;
@@ -688,10 +683,6 @@ document.addEventListener('DOMContentLoaded', function () {
         state.characterPositions[prevSelected] = state.characterPositions[characterType];
         state.characterPositions[characterType] = tempPosition;
       }
-
-      previousCharacter = prevSelected;
-    } else {
-      previousCharacter = ""; // Set previousCharacter to an empty string if the same character is selected again
     }
 
     updateCharacterStats(); // Update the stats for the new character
@@ -729,10 +720,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     });
   });
-
-  const hoverScale = 1.2;
-  const hoverAlpha = 0.8;
- 
 
   async function startGame() {
 
@@ -998,7 +985,7 @@ function getMaxTextureSize() {
       c.width = 0; c.height = 0;
       return max;
     }
-  } catch (e) {}
+  } catch {}
   return 4096;
 }
 
@@ -1418,10 +1405,8 @@ state.frogGhostPlayer.scale.set(0.28);
       // Variables
       let attackAnimationPlayed = false; // Flag variable to track if attack animation has played
       let pointerHoldInterval;
-      let activeTouches = 0;
 
       handleTouchEnd = function(event) {
-        activeTouches--;
         clearInterval(pointerHoldInterval);
         pointerHoldInterval = null;
         state.isPointerDown = false;
@@ -1430,12 +1415,6 @@ state.frogGhostPlayer.scale.set(0.28);
         }
         xDir = 1;
       };
-
-      function handleMouseLeave(event) {
-        state.isPointerDown = false;
-        attackAnimationPlayed = true;
-        handleTouchEnd(event);
-      }
 
       app.stage.eventMode = 'static';
       app.stage.on("pointerdown", handleTouchStart);
@@ -1449,7 +1428,7 @@ state.frogGhostPlayer.scale.set(0.28);
         if (getisPaused()) {
           return;
         }
-        if (state.roundOver === true) { isAttacking = false; attackAnimationPlayed = false; return; }
+        if (state.roundOver === true) { attackAnimationPlayed = false; return; }
         if (!state.isAttackingChar) {
           if (!getisDead()) {
             const attackingChar = getCurrentCharacter();
@@ -1619,8 +1598,6 @@ state.frogGhostPlayer.scale.set(0.28);
 
         }
 
-
-        activeTouches++;
 
         if (attackAnimationPlayed) {
           attackAnimationPlayed = false;
@@ -1818,7 +1795,6 @@ let cantGainEXP = false;
     
 
       let unPauser = 0;
-      const maxX = foreground.width - critter.width / 2;
       const cloudSpeed = .5 / 3.5;
       const cloud2Speed = 1.1 / 3.5;
       const mountain1Speed = 0.01;
@@ -1847,7 +1823,6 @@ let cantGainEXP = false;
       }
 
       state.initialClouds = clouds.position.x;
-      let once = 0;
       app.ticker.add((ticker) => {
         state.dt = ticker.deltaTime;
         // Spawn protection / feather revive visual effect
@@ -2090,11 +2065,10 @@ let cantGainEXP = false;
             updateHPBar(castleHealth, castleMaxHealth);
 
             // Remove any existing enemy death sprites
-            // Set state.isCombat and playAgain to false
+            // Set state.isCombat to false
             state.isCombat = false;
             enemyPortrait = document.getElementById('enemy-portrait');
             enemyPortrait.style.display = 'none'; // Make the element visible
-            playAgain = false;
             state.isAttackingChar = false;
             isMoving = true;;
             setIsDead(false);
@@ -2477,12 +2451,6 @@ let cantGainEXP = false;
         state.isCharacterMenuOpen = true;
       }
 
-      function hideCharacterMenu() {
-        const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
-        characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
-        state.isCharacterMenuOpen = false;
-      }
-
       // Start the state.timer animation
       if (getPlayerCurrentHealth() <= 0) {
         setisPaused(true);
@@ -2603,63 +2571,6 @@ let cantGainEXP = false;
       spawnEnemies();
     }
   });
-
-  function resetGame(critter, enemy, enemies) {
-    let isReset = false;
-    if (!isReset) {
-      setEnemiesInRange(0);
-      setCharAttackAnimating(false);
-      setIsCharAttacking(false);
-      app.stage.removeChild(state.frogGhostPlayer);
-      critter.position.set(app.screen.width / 20, state.stored);
-      setPlayerCurrentHealth(getPlayerHealth());
-      updatePlayerHealthBar(getPlayerHealth() / getPlayerHealth() * 100);
-      // Reset castle health
-      castleHealth = 100;
-      // Remove any existing enemy death sprites
-      // Set state.isCombat and playAgain to false
-      state.isCombat = false;
-      const enemyPortrait = document.getElementById('enemy-portrait');
-      enemyPortrait.style.display = 'none'; // Make the element visible
-      playAgain = false;
-      setIsDead(false);
-      critter.loop = true;
-      critter.textures = state.frogWalkTextures;
-      critter.play();
-      app.stage.addChild(critter);
-      playRoundText(state.currentRound);
-      createWeatherEffects();
-
-      // Loop through the enemies array and remove each enemy
-      for (let i = 0; i < getEnemies().length; i++) {
-        let enemy = getEnemies()[i];
-        app.stage.removeChild(enemy);
-        app.stage.removeChild(enemy.hpBar);
-        app.stage.removeChild(enemy.hpBarBackground);
-        // Destroy the enemy object to free up memory
-      }
-
-      // Clear the enemies array
-      enemies.length = 0;
-      state.isAttackingChar = false;
-      isMoving = true;
-      isReset = true;
-    }
-  }
-
-
-  function handlePlayClick() {
-
-    if (!state.isGameStarted) {
-      state.isGameStarted = true;
-      resetTimer();
-      startTimer();
-      startGame();
-    }
-  }
-
-
-
 
   function handleVisibilityChange() {
     // No-op: game continues running when tab loses focus

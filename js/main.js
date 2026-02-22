@@ -122,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
     collectSiegeRewards();
   });
   document.getElementById('siege-reward-shop-btn').addEventListener('click', function() {
+    collectSiegeRewards();
     showPanel('layout');
   });
 
@@ -379,7 +380,14 @@ document.addEventListener('DOMContentLoaded', function () {
           return; // stay paused during death/revive, just close the pause overlay
         }
       }
-      setisPaused(!getisPaused());
+      const nextPaused = !getisPaused();
+      setisPaused(nextPaused);
+      // If pause was requested while spawn text is visible, setisPaused can early-return
+      // before creating the menu. Ensure one-click open still works.
+      if (nextPaused && getisPaused() && !state.pauseMenuContainer
+          && !app.stage.children.includes(state.reviveDialogContainer)) {
+        state.pauseMenuContainer = createPauseMenuContainer();
+      }
     }
   }
 

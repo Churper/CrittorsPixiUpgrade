@@ -72,6 +72,7 @@ import { initSpawnLoop, spawnEnemies } from './spawnLoop.js';
 document.addEventListener('DOMContentLoaded', function () {
   let appStarted = false;
   let rotateMessage = document.getElementById('rotateDevice');
+  const CHARACTER_BOX_SELECTOR = '.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog';
   rotateMessage.style.display = "block"; // Always display the new menu
 
   // Load persistent bones currency before menu shows
@@ -712,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   // Add click event listeners to character boxes
-  const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+  const characterBoxes = document.querySelectorAll(CHARACTER_BOX_SELECTOR);
   characterBoxes.forEach((box) => {
     box.addEventListener('click', function () {
       const characterType = box.classList[1];
@@ -1937,7 +1938,7 @@ let cantGainEXP = false;
           // Show wipe screen
           setisWiped(true);
           document.getElementById('spawn-text').style.visibility = 'hidden';
-          const wipeCharBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+          const wipeCharBoxes = document.querySelectorAll(CHARACTER_BOX_SELECTOR);
           wipeCharBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
           state.isCharacterMenuOpen = false;
 
@@ -2012,7 +2013,7 @@ let cantGainEXP = false;
                 document.getElementById('spawn-text').style.visibility = 'hidden';
 
                 // Hide character menu boxes
-                const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+                const characterBoxes = document.querySelectorAll(CHARACTER_BOX_SELECTOR);
                 characterBoxes.forEach((box) => { box.style.visibility = 'hidden'; });
                 state.isCharacterMenuOpen = false;
 
@@ -2428,7 +2429,7 @@ let cantGainEXP = false;
 
       // --- Character menu helper: show all unlocked swap boxes ---
       function showCharacterMenu() {
-        const characterBoxes = document.querySelectorAll('.upgrade-box.character-snail, .upgrade-box.character-bird, .upgrade-box.character-bee, .upgrade-box.character-frog');
+        const characterBoxes = document.querySelectorAll(CHARACTER_BOX_SELECTOR);
         const visibleBoxes = [];
         characterBoxes.forEach((box) => {
           const charClass = box.classList[1];

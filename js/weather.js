@@ -488,29 +488,23 @@ export function resetWeatherRefs() {
 
 /**
  * Maps a weather type to the appropriate ground style based on the current biome.
- * Forest biome always uses forest-style ground (no cacti/snow ground).
+ * Ground visuals are biome-locked for consistency.
  */
 export function getGroundWeather(weather) {
   const castleLevel = state.lastSiegeCastleLevel || 0;
   const biomeIdx = Math.floor(castleLevel / 20); // 0=forest, 1=desert, 2=tundra, 3=volcano, 4=void
 
   if (biomeIdx === 0) {
-    // Forest: keep sun, night, rain ground; remap wind/snow to sun
-    if (weather === 'wind' || weather === 'snow') return 'sun';
+    return 'sun';   // forest
   } else if (biomeIdx === 1) {
-    // Desert: wind-style ground; remap others
-    if (weather === 'sun' || weather === 'rain' || weather === 'snow') return 'wind';
+    return 'wind';  // desert
   } else if (biomeIdx === 2) {
-    // Tundra: snow-style ground; remap others
-    if (weather === 'sun' || weather === 'rain' || weather === 'wind') return 'snow';
+    return 'snow';  // tundra
   } else if (biomeIdx === 3) {
-    // Volcano: rain-style ground (mossy/dark); remap others
-    if (weather === 'sun' || weather === 'wind' || weather === 'snow') return 'rain';
+    return 'rain';  // volcano
   } else {
-    // Void: always night ground
-    if (weather !== 'night') return 'night';
+    return 'night'; // void
   }
-  return weather;
 }
 
 export { weatherTypes, skyGradients };

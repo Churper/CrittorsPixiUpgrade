@@ -4,20 +4,19 @@ import state from './state.js';
 import {
   getEnemies, addEnemies,
   getCurrentCharacter, getEnemiesInRange, setEnemiesInRange,
-  getIsCharAttacking, setIsCharAttacking, setCharAttackAnimating,
+  getIsCharAttacking, setIsCharAttacking,
   setIsDead, getisDead, getisPaused,
   getPlayerCurrentHealth, getPlayerHealth,
   getSnailDamage, getBirdDamage, getFrogDamage, getBeeDamage,
   getFrogTintColor, getCoffee, setCoffee,
-  getCharEXP, getEXPtoLevel,
+  getCharEXP,
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
   getMedkitCount, setMedkitCount,
   getBones, setBones,
 } from './state.js';
-import { isTimerFinished } from './timer.js';
-import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP, getCharacterDamage } from './characters.js';
+import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP } from './characters.js';
 import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
 import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
@@ -674,7 +673,6 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
 
 
   let hasDied = false;
-  let hasPlayedSound = false;
   if (state.roundOver) { return; }
 
 
@@ -703,7 +701,6 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
 
             // Shield damage interception
             if (state.shieldActive && state.shieldHP > 0) {
-              const prevShieldHP = state.shieldHP;
               state.shieldHP -= enemy.attackDamage;
               // Flash shield sprite
               if (state.shieldSprite) {
@@ -800,7 +797,6 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
             state.hitSound.volume = state.effectsVolume;
             state.hitSound.play();
           }
-          hasPlayedSound = true;
         }
       }
     }
@@ -810,7 +806,6 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
 
   const tickerHandler = () => {
     if (enemy.currentFrame === 0) {
-      hasPlayedSound = false;
       if (enemy.position.x - critter.position.x < 150) {
         if (getEnemies().length === 0) {
           const enemyPortrait = document.getElementById('enemy-portrait');
@@ -2041,7 +2036,6 @@ export function drawEnemyHPBar(enemy) {
 export function triggerAirstrike(app, critter) {
   // Drop target = ahead of player (shifted ~2 character lengths to the right)
   const dropX = critter.position.x + 140;
-  const dropY = -app.stage.y + app.screen.height / 2;
   const groundY = critter.position.y;
 
   // Play falling bomb whistle

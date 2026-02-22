@@ -374,48 +374,89 @@ export function createWeatherEffects() {
     nightOverlay.eventMode = 'none';
     app.stage.addChild(nightOverlay);
 
-    // Animated fire glows — placed at campfire and lantern positions (skip in low detail)
+    // Animated fire glows — biome-specific light sources (skip in low detail)
     if (lowDetail) { /* no fire glows in low detail */ }
     else {
-    // (must match seeds 99222 and 99333 from drawEndlessGroundDecor)
+    const biomeKey = getCurrentBiomeKey();
     nightFireGlows = new PIXI.Container();
     nightFireGlows.zIndex = 7; // above decor (6), below critter (10)
     nightFireGlows.eventMode = 'none';
-    // Campfire glows — seed 99222, same spacing as campfire decor
-    let _fgs = 99222;
+    let _fgs = 0;
     function _fgr() { _fgs = (_fgs * 16807) % 2147483647; return (_fgs & 0x7fffffff) / 2147483647; }
-    let cfx = 200;
-    while (cfx < 50000) {
-      const sc = 0.8 + _fgr() * 0.4; // matches endlessGroundRandom() call in decor
-      const glow = new PIXI.Graphics();
-      glow.circle(0, 0, 28 * sc).fill({ color: 0xff8833, alpha: 0.12 });
-      glow.circle(0, 0, 16 * sc).fill({ color: 0xffaa44, alpha: 0.15 });
-      glow.circle(0, 0, 6 * sc).fill({ color: 0xffcc66, alpha: 0.2 });
-      const groundY = Math.sin(cfx * 0.0004) * 14 + Math.sin(cfx * 0.0011) * 7;
-      glow.position.set(cfx, groundY - 8 * sc);
-      glow.baseAlpha = glow.alpha;
-      glow.flickerPhase = Math.random() * Math.PI * 2;
-      glow.flickerSpeed = 0.08 + Math.random() * 0.06;
-      glow.isCampfire = true;
-      nightFireGlows.addChild(glow);
-      cfx += 600 + _fgr() * 1000; // matches endlessGroundRandom() call in decor
-    }
-    // Lantern glows — seed 99333, same spacing as lantern decor
-    _fgs = 99333;
-    let lnx = 900;
-    while (lnx < 50000) {
-      const sc = (0.8 + _fgr() * 0.3) * 1.4; // matches endlessGroundRandom() call in decor (with 1.4x scale)
-      const glow = new PIXI.Graphics();
-      glow.circle(0, 0, 25 * sc).fill({ color: 0xffaa33, alpha: 0.1 });
-      glow.circle(0, 0, 14 * sc).fill({ color: 0xffcc44, alpha: 0.14 });
-      const groundY = Math.sin(lnx * 0.0004) * 14 + Math.sin(lnx * 0.0011) * 7;
-      glow.position.set(lnx, groundY - 36 * sc);
-      glow.baseAlpha = glow.alpha;
-      glow.flickerPhase = Math.random() * Math.PI * 2;
-      glow.flickerSpeed = 0.05 + Math.random() * 0.04;
-      glow.isCampfire = false;
-      nightFireGlows.addChild(glow);
-      lnx += 1100 + _fgr() * 1200; // matches endlessGroundRandom() call in decor
+
+    if (biomeKey === 'volcano') {
+      // Lava vent glows — seed 77001, matching volcano lava vent decor in terrain.js
+      _fgs = 77001;
+      let lvx = 220;
+      while (lvx < 50000) {
+        const sc = 0.9 + _fgr() * 0.45;
+        const glow = new PIXI.Graphics();
+        glow.circle(0, 0, 32 * sc).fill({ color: 0xff4400, alpha: 0.1 });
+        glow.circle(0, 0, 18 * sc).fill({ color: 0xff6622, alpha: 0.14 });
+        glow.circle(0, 0, 7 * sc).fill({ color: 0xffaa44, alpha: 0.2 });
+        const groundY = Math.sin(lvx * 0.0004) * 14 + Math.sin(lvx * 0.0011) * 7;
+        glow.position.set(lvx, groundY + 2 * sc);
+        glow.baseAlpha = glow.alpha;
+        glow.flickerPhase = Math.random() * Math.PI * 2;
+        glow.flickerSpeed = 0.1 + Math.random() * 0.08;
+        glow.isCampfire = true;
+        nightFireGlows.addChild(glow);
+        lvx += 760 + _fgr() * 980;
+      }
+    } else if (biomeKey === 'void') {
+      // Void rift glows — seed 77101, matching void rift decor in terrain.js
+      _fgs = 77101;
+      let vx = 240;
+      while (vx < 50000) {
+        const sc = 0.8 + _fgr() * 0.45;
+        const glow = new PIXI.Graphics();
+        glow.circle(0, 0, 30 * sc).fill({ color: 0x6622cc, alpha: 0.1 });
+        glow.circle(0, 0, 16 * sc).fill({ color: 0x9944ff, alpha: 0.14 });
+        glow.circle(0, 0, 6 * sc).fill({ color: 0x7ce8ff, alpha: 0.22 });
+        const groundY = Math.sin(vx * 0.0004) * 14 + Math.sin(vx * 0.0011) * 7;
+        glow.position.set(vx, groundY + 2 * sc);
+        glow.baseAlpha = glow.alpha;
+        glow.flickerPhase = Math.random() * Math.PI * 2;
+        glow.flickerSpeed = 0.06 + Math.random() * 0.05;
+        glow.isCampfire = true;
+        nightFireGlows.addChild(glow);
+        vx += 700 + _fgr() * 1000;
+      }
+    } else {
+      // Forest/Desert/Tundra: campfire + lantern glows (seeds 99222, 99333)
+      _fgs = 99222;
+      let cfx = 200;
+      while (cfx < 50000) {
+        const sc = 0.8 + _fgr() * 0.4;
+        const glow = new PIXI.Graphics();
+        glow.circle(0, 0, 28 * sc).fill({ color: 0xff8833, alpha: 0.12 });
+        glow.circle(0, 0, 16 * sc).fill({ color: 0xffaa44, alpha: 0.15 });
+        glow.circle(0, 0, 6 * sc).fill({ color: 0xffcc66, alpha: 0.2 });
+        const groundY = Math.sin(cfx * 0.0004) * 14 + Math.sin(cfx * 0.0011) * 7;
+        glow.position.set(cfx, groundY - 8 * sc);
+        glow.baseAlpha = glow.alpha;
+        glow.flickerPhase = Math.random() * Math.PI * 2;
+        glow.flickerSpeed = 0.08 + Math.random() * 0.06;
+        glow.isCampfire = true;
+        nightFireGlows.addChild(glow);
+        cfx += 600 + _fgr() * 1000;
+      }
+      _fgs = 99333;
+      let lnx = 900;
+      while (lnx < 50000) {
+        const sc = (0.8 + _fgr() * 0.3) * 1.4;
+        const glow = new PIXI.Graphics();
+        glow.circle(0, 0, 25 * sc).fill({ color: 0xffaa33, alpha: 0.1 });
+        glow.circle(0, 0, 14 * sc).fill({ color: 0xffcc44, alpha: 0.14 });
+        const groundY = Math.sin(lnx * 0.0004) * 14 + Math.sin(lnx * 0.0011) * 7;
+        glow.position.set(lnx, groundY - 36 * sc);
+        glow.baseAlpha = glow.alpha;
+        glow.flickerPhase = Math.random() * Math.PI * 2;
+        glow.flickerSpeed = 0.05 + Math.random() * 0.04;
+        glow.isCampfire = false;
+        nightFireGlows.addChild(glow);
+        lnx += 1100 + _fgr() * 1200;
+      }
     }
     app.stage.addChild(nightFireGlows);
     } // end if !lowDetail

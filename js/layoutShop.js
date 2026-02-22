@@ -2,6 +2,14 @@
 // Extracted from main.js — pure DOM UI, no PIXI dependencies.
 
 import state from './state.js';
+import {
+  getShieldCount, setShieldCount,
+  getBombCount, setBombCount,
+  getRageCount, setRageCount,
+  getFeatherCount, setFeatherCount,
+  getGoldenBeanCount, setGoldenBeanCount,
+  getMedkitCount, setMedkitCount,
+} from './state.js';
 import { saveBones } from './save.js';
 import { skinCatalog } from './skins.js';
 import { showLeaderboardPanel } from './leaderboard.js';
@@ -15,6 +23,16 @@ export function showPanel(panelId) {
 export function hidePanel(panelId) {
   const backdrop = document.getElementById(panelId + '-backdrop');
   if (backdrop) backdrop.classList.remove('visible');
+}
+
+let _openLayoutInventoryPanel = null;
+export function openLayoutInventoryPanel() {
+  if (_openLayoutInventoryPanel) {
+    _openLayoutInventoryPanel();
+    return true;
+  }
+  showPanel('layout');
+  return false;
 }
 
 // Flat bonus per layout upgrade level
@@ -302,6 +320,15 @@ export function initLayoutShop() {
     document.getElementById('layout-inventory-btn').textContent = '🛡️ Shop';
   }
 
+  function openInventoryOnlyPanel() {
+    showLayoutDeck();
+    updateDeckPositions();
+    updateLayoutUI();
+    showPanel('layout');
+    showLayoutView(layoutInventoryView);
+  }
+  _openLayoutInventoryPanel = openInventoryOnlyPanel;
+
   // --- Render hats grid ---
   function renderHatsGrid() {
     const grid = document.getElementById('hats-grid');
@@ -416,6 +443,19 @@ export function initLayoutShop() {
         if (state.bones < item.costPer) return;
         state.bones -= item.costPer;
         state.startingItems[item.id] = (state.startingItems[item.id] || 0) + 1;
+        if (item.id === 'shield') setShieldCount(getShieldCount() + 1);
+        else if (item.id === 'bomb') setBombCount(getBombCount() + 1);
+        else if (item.id === 'rage') setRageCount(getRageCount() + 1);
+        else if (item.id === 'feather') setFeatherCount(getFeatherCount() + 1);
+        else if (item.id === 'goldenBean') setGoldenBeanCount(getGoldenBeanCount() + 1);
+        else if (item.id === 'medkit') setMedkitCount(getMedkitCount() + 1);
+        const countMap = { shield: 'shield-count', bomb: 'bomb-count', rage: 'rage-count', feather: 'feather-count', goldenBean: 'golden-bean-count', medkit: 'medkit-count' };
+        const btnMap = { shield: 'shield-btn', bomb: 'bomb-btn', rage: 'rage-btn', feather: 'feather-btn', goldenBean: 'golden-bean-btn', medkit: 'medkit-btn' };
+        const countEl = document.getElementById(countMap[item.id]);
+        if (countEl) countEl.textContent = String(state.startingItems[item.id] || 0);
+        const btnEl = document.getElementById(btnMap[item.id]);
+        if (btnEl) btnEl.style.display = 'flex';
+        document.dispatchEvent(new Event('itemButtonsChanged'));
         saveBones();
         updateLayoutUI();
         renderInventoryGrid();

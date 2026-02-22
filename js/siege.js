@@ -486,6 +486,32 @@ function showSiegeRewardPanel() {
   if (backdrop) backdrop.classList.add('visible');
 }
 
+function playHealCenterJingle() {
+  const vol = state.effectsVolume;
+  if (vol <= 0) return;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  const ctx = new AudioCtx();
+  const now = ctx.currentTime;
+  const notes = [659.25, 783.99, 880.0, 1046.5, 880.0, 783.99, 659.25, 783.99, 880.0, 987.77, 1174.66];
+  notes.forEach((freq, i) => {
+    const start = now + i * 0.08;
+    const end = start + 0.12;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(freq, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(Math.max(0.0001, vol * 0.2), start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, end);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(start);
+    osc.stop(end);
+  });
+  setTimeout(() => { try { ctx.close(); } catch (_) {} }, 1800);
+}
+
 export function spendAllCoffeeTeamHeal() {
   const coffee = getCoffee();
   if (coffee <= 0) return false;
@@ -514,11 +540,8 @@ export function spendAllCoffeeTeamHeal() {
 
   updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
 
-  // Short celebratory "pokecenter" style jingle.
-  const jingle = state.levelSound.cloneNode();
-  jingle.volume = Math.min(1, state.effectsVolume * 0.9);
-  jingle.playbackRate = 1.1;
-  jingle.play();
+  // Pokecenter-style heal jingle.
+  playHealCenterJingle();
 
   const healBtn = document.getElementById('siege-reward-heal-btn');
   if (healBtn) {

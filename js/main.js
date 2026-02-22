@@ -65,7 +65,7 @@ import {
   drawSkyGradient,
 } from './biomeTransition.js';
 import { initMenuScene, stopMenuScene } from './menuScene.js';
-import { initLayoutShop, showPanel, hidePanel } from './layoutShop.js';
+import { initLayoutShop, showPanel, hidePanel, openLayoutInventoryPanel } from './layoutShop.js';
 import { repositionItemButtons, initItemButtons } from './itemButtons.js';
 import { initSpawnLoop, spawnEnemies } from './spawnLoop.js';
 
@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (siegeBackdrop) siegeBackdrop.classList.remove('visible');
     rotateMessage.classList.add('in-game-shop');
     rotateMessage.style.display = 'block';
-    // Reuse existing loadout button flow so deck/UI state refreshes identically.
-    document.getElementById('layout-btn').click();
+    // Open the loadout panel directly in the inventory/shop subview.
+    openLayoutInventoryPanel();
   });
   document.getElementById('siege-reward-heal-btn').addEventListener('click', function() {
     spendAllCoffeeTeamHeal();

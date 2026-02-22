@@ -104,17 +104,17 @@ const _hatFrameDeltas = {
     ],
   },
   bee: {
-    // 9-frame hover: smooth gentle bob, reduced X jitter
+    // 9-frame hover: head stays nearly still, wings do the moving
     walk: [
       [0, 0],       // 0: baseline
-      [2, 3],       // 1: tilting
-      [5, 6],       // 2: most tilted
-      [3, 5],       // 3
-      [1, 3],       // 4
-      [3, 5],       // 5
-      [6, 6],       // 6: most tilted (alt)
-      [4, 4],       // 7
-      [2, 3],       // 8
+      [0, 1],       // 1
+      [0, 1],       // 2
+      [0, 0],       // 3
+      [0, 0],       // 4
+      [0, 0],       // 5
+      [0, 1],       // 6
+      [0, 1],       // 7
+      [0, 0],       // 8
     ],
     // 18-frame sting: smoothed lunge left then right
     attack: [

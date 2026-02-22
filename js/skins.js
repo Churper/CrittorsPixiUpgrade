@@ -192,17 +192,18 @@ function recolorSheet(baseTex, shifts, skinId, numFrames, fh) {
         }
       }
     } else if (isRasta) {
-      // Rasta flag: horizontal bands — red / gold / green
+      // Rasta flag: vertical repeating bands — red / gold / green
       const hN = ((hue % 360) + 360) % 360;
       if (hN >= 18 && hN <= 72) {
         const pixIdx = i / 4;
-        const pixY = Math.floor(pixIdx / w);
-        const yPct = (pixY % frameH) / frameH;
-        if (yPct < 0.33) {
+        const pixX = pixIdx % w;
+        // Repeat every ~30% of frame width so all 3 colors are always visible
+        const bandPct = ((pixX % frameW) / frameW * 3) % 1;
+        if (bandPct < 0.33) {
           // Red band
           hue = 5; sat = 0.9; lit = Math.min(1, lit * 0.85 + 0.08);
-        } else if (yPct < 0.66) {
-          // Gold band (keep close to original yellow but richer)
+        } else if (bandPct < 0.66) {
+          // Gold band
           hue = 48; sat = 1.0; lit = Math.min(1, lit * 1.05);
         } else {
           // Green band

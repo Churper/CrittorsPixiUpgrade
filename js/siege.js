@@ -205,7 +205,7 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, 
   const level = state.siegeCastleLevel;
   const sc = state.endlessSpawnCount || 0;
   const late = Math.max(0, level - 20);
-  const lateExtra = Math.min(0.10, (late * 0.002 + late * late * 0.00003) * 0.29);
+  const lateExtra = Math.min(0.08, (late * 0.002 + late * late * 0.00003) * 0.24);
   const lateDmgMult = 1 + lateExtra;
 
   const enemy = new PIXI.AnimatedSprite(walkTextures);

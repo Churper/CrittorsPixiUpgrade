@@ -29,8 +29,8 @@ const endlessGroundPalettes = {
           rock: 0x9f8b73, rockShade: 0x7f6f5c, trunk: 0x7a5530, canopy: [0x8a7a42, 0xa38f52, 0x6f6436, 0xc59a45], flower: 0xd6b06a },
   snow: { base: 0x88b7d8, dirt: 0x5f7388, path: 0xb7dcf2, grass: 0xd8f3ff, variation: 0x6ea0c2,
           rock: 0x8ea5ba, rockShade: 0x6f8599, trunk: 0x4f4f62, canopy: [0x6aa7bf, 0x588fa7, 0x3f758f, 0xbfeaff], flower: 0xc5f0ff },
-  night: { base: 0x1a2e1a, dirt: 0x2a2218, path: 0x3a3528, grass: 0x1e3a1e, variation: 0x162a16,
-           rock: 0x4a4a50, rockShade: 0x3a3a40, trunk: 0x3a2a18, canopy: [0x142a14, 0x1a3a1a, 0x0e200e], flower: 0x3a3a50 },
+  night: { base: 0x160f27, dirt: 0x221738, path: 0x3f2d63, grass: 0x5a3687, variation: 0x2e1f4c,
+           rock: 0x5c4a84, rockShade: 0x3b2f58, trunk: 0x40265a, canopy: [0x5c3490, 0x6f44ab, 0x8a60c7], flower: 0x84f2ff },
 };
 
 /**
@@ -134,8 +134,8 @@ export function drawEndlessGround(weather, skyWeather = weather) {
     px += 60 + endlessGroundRandom() * 120;
   }
 
-  // 7-9. Vegetation passes (skip in desert/wind, tundra/snow, and volcano/rain biomes).
-  if (weather !== 'wind' && weather !== 'snow' && weather !== 'rain') {
+  // 7-9. Vegetation passes (skip in desert/wind, tundra/snow, volcano/rain, and void/night biomes).
+  if (weather !== 'wind' && weather !== 'snow' && weather !== 'rain' && weather !== 'night') {
     // 7. Grass tufts along the curving top edge
     _endlessGroundSeed = 12345;
     let gx = 5;
@@ -244,6 +244,28 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
         d.circle(tx - 1, treeY - cH - 3, cW * 0.15).fill({ color: 0xffaacc, alpha: 0.5 });
       }
       tx += 300 + endlessGroundRandom() * 500;
+      continue;
+    }
+    if (weather === 'night') {
+      // Void biome: crystalline spires with neon cores.
+      const spireH = (28 + endlessGroundRandom() * 30) * treeScale;
+      const spireW = (7 + endlessGroundRandom() * 8) * treeScale;
+      const baseY = treeY + 4;
+      d.poly([
+        tx - spireW, baseY,
+        tx - spireW * 0.2, baseY - spireH * 0.72,
+        tx, baseY - spireH,
+        tx + spireW * 0.22, baseY - spireH * 0.64,
+        tx + spireW, baseY,
+      ]).fill({ color: 0x433166, alpha: 0.95 });
+      d.poly([
+        tx - spireW * 0.06, baseY - spireH * 0.1,
+        tx + spireW * 0.06, baseY - spireH * 0.1,
+        tx + spireW * 0.01, baseY - spireH * 0.82,
+        tx - spireW * 0.01, baseY - spireH * 0.82,
+      ]).fill({ color: 0x74f1ff, alpha: 0.75 });
+      d.circle(tx, baseY - spireH * 0.88, 1.7 * treeScale).fill({ color: 0xd9a7ff, alpha: 0.65 });
+      tx += 270 + endlessGroundRandom() * 420;
       continue;
     }
     if (weather === 'rain') {
@@ -401,8 +423,8 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
     tx += 300 + endlessGroundRandom() * 500;
   }
 
-  // Bushes with berries (skip for desert/wind and volcano/rain biomes).
-  if (weather !== 'wind' && weather !== 'rain') {
+  // Bushes with berries (skip for desert/wind, volcano/rain, and void/night biomes).
+  if (weather !== 'wind' && weather !== 'rain' && weather !== 'night') {
     _endlessGroundSeed = 22222;
     let bsx = 80;
     const berryColors = { sun: 0xcc2244, rain: 0x5544aa, wind: 0xddaa22, snow: 0x8844bb };
@@ -509,6 +531,30 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
     }
   }
 
+  // Void biome: rifts and floating shards.
+  if (weather === 'night') {
+    _endlessGroundSeed = 77101;
+    let vx = 240;
+    while (vx < w) {
+      const vy = terrainTopY(vx);
+      const sc = 0.8 + endlessGroundRandom() * 0.45;
+      d.ellipse(vx, vy + 3 * sc, 16 * sc, 4.5 * sc).fill({ color: 0x221639, alpha: 0.95 });
+      d.ellipse(vx, vy + 2.6 * sc, 9 * sc, 2.2 * sc).fill({ color: 0x7f43d4, alpha: 0.58 });
+      d.ellipse(vx, vy + 2.5 * sc, 5 * sc, 1.2 * sc).fill({ color: 0x7ce8ff, alpha: 0.5 });
+      d.poly([
+        vx - 4 * sc, vy - 14 * sc,
+        vx - 7 * sc, vy - 5 * sc,
+        vx - 2 * sc, vy - 4 * sc,
+      ]).fill({ color: 0xa075ec, alpha: 0.55 });
+      d.poly([
+        vx + 5 * sc, vy - 11 * sc,
+        vx + 8 * sc, vy - 3 * sc,
+        vx + 3 * sc, vy - 3 * sc,
+      ]).fill({ color: 0x7ce8ff, alpha: 0.5 });
+      vx += 700 + endlessGroundRandom() * 1000;
+    }
+  }
+
   // Ice crystal clusters (snow/tundra biome only)
   if (weather === 'snow') {
     _endlessGroundSeed = 99111;
@@ -541,8 +587,8 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
     }
   }
 
-  // Campfires with warm glow (night only)
-  if (isNightSky) {
+  // Campfires with warm glow (night only, except in void biome).
+  if (isNightSky && weather !== 'night') {
     _endlessGroundSeed = 99222;
     let cfx = 200;
     while (cfx < w) {
@@ -577,8 +623,8 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
     }
   }
 
-  // Lanterns on posts (night only)
-  if (isNightSky) {
+  // Lanterns on posts (night only, except in void biome).
+  if (isNightSky && weather !== 'night') {
     _endlessGroundSeed = 99333;
     let lnx = 900;
     while (lnx < w) {
@@ -613,7 +659,7 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
     _decorFG.alpha = 0.5;
     const fg = new PIXI.Graphics();
 
-    if (weather !== 'wind' && weather !== 'rain') {
+    if (weather !== 'wind' && weather !== 'rain' && weather !== 'night') {
       // FG trees — sparse, larger, dark silhouettes, positioned well below terrain line
       _endlessGroundSeed = 33334;
       let ftx = 800;

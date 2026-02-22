@@ -55,11 +55,11 @@ const biomeSkyGradients = {
     snow:  { top: 0x7fa2ba, bottom: 0xe7f7ff, starsAlpha: 0.24, mountain: 0xd2edf9, cloud: 0xf7fdff, starTint: 0xD9FBFF },
   },
   volcano: {
-    sun:   { top: 0x7a2a17, bottom: 0xd86b34, starsAlpha: 0.0,  mountain: 0x7f4f43, cloud: 0x8f6556, starTint: 0xFFD0B8 },
-    night: { top: 0x13070d, bottom: 0x3b0f1c, starsAlpha: 1.0,  mountain: 0x502839, cloud: 0x6a3947, starTint: 0xFFA9C2 },
-    rain:  { top: 0x47373a, bottom: 0x776060, starsAlpha: 0.02, mountain: 0x6e5859, cloud: 0x8d7777, starTint: 0xFFC6B3 },
-    wind:  { top: 0x6a5042, bottom: 0xb07a57, starsAlpha: 0.05, mountain: 0x8d6657, cloud: 0xc0997f, starTint: 0xFFE0C5 },
-    snow:  { top: 0x605a63, bottom: 0xa79ca9, starsAlpha: 0.22, mountain: 0x887e8a, cloud: 0xb7abb8, starTint: 0xFFD0EA },
+    sun:   { top: 0x8e3721, bottom: 0xe7894d, starsAlpha: 0.0,  mountain: 0x986458, cloud: 0xb08372, starTint: 0xFFD6BF },
+    night: { top: 0x260b14, bottom: 0x5a1c30, starsAlpha: 1.0,  mountain: 0x704058, cloud: 0x8d566a, starTint: 0xFFB6CB },
+    rain:  { top: 0x5b4748, bottom: 0x927677, starsAlpha: 0.02, mountain: 0x857071, cloud: 0xa79292, starTint: 0xFFD0BE },
+    wind:  { top: 0x7e604f, bottom: 0xc68f67, starsAlpha: 0.05, mountain: 0xa27865, cloud: 0xd0a98e, starTint: 0xFFE4CB },
+    snow:  { top: 0x726b73, bottom: 0xbbafb9, starsAlpha: 0.22, mountain: 0x99909b, cloud: 0xcabfcb, starTint: 0xFFD8EE },
   },
   void: {
     sun:   { top: 0x26124a, bottom: 0x6d35a0, starsAlpha: 0.45, mountain: 0x6c4e91, cloud: 0x7f63a8, starTint: 0xE6C9FF },

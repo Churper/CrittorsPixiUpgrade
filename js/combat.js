@@ -155,8 +155,8 @@ export function getEnemyPortraitUrl(enemyName) {
 function getLateCheckpointDamageMultiplier() {
   const checkpoint = state.lastSiegeCastleLevel || 0;
   const late = Math.max(0, checkpoint - 20);
-  // Keep checkpoint 20 unchanged, but cap the late-game buff to +10% max.
-  const extra = Math.min(0.10, (late * 0.003 + late * late * 0.00005) * 0.22);
+  // Keep checkpoint 20 unchanged, but soften late-game pressure to +8% max.
+  const extra = Math.min(0.08, (late * 0.003 + late * late * 0.00005) * 0.17);
   return 1 + extra;
 }
 

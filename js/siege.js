@@ -203,6 +203,8 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
 function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, typeName) {
   const level = state.siegeCastleLevel;
   const sc = state.endlessSpawnCount || 0;
+  const late = Math.max(0, level - 20);
+  const lateDmgMult = 1 + (late * 0.002 + late * late * 0.00003) * 0.85;
 
   const enemy = new PIXI.AnimatedSprite(walkTextures);
   enemy.scale.set(0.25);
@@ -219,7 +221,7 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, 
   enemy.maxHP = 8 + level * 3;
   enemy.currentHP = enemy.maxHP;
   // Mid-ground siege-baby damage scaling (undo part of the recent nerf).
-  enemy.attackDamage = Math.max(1, Math.round((sc / 8 + level * 0.3) * 0.5));
+  enemy.attackDamage = Math.max(1, Math.round((sc / 8 + level * 0.3) * 0.5 * lateDmgMult));
   // Keep siege baby EXP aligned with main endless cap.
   enemy.exp = Math.min(20, 10 + Math.floor(level / 2));
 

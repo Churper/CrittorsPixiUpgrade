@@ -152,6 +152,14 @@ export function getEnemyPortraitUrl(enemyName) {
   return enemy ? enemy.url : ''; // Return the URL or an empty string if not found
 }
 
+function getLateCheckpointDamageMultiplier() {
+  const checkpoint = state.lastSiegeCastleLevel || 0;
+  const late = Math.max(0, checkpoint - 20);
+  // Keep checkpoint 20 unchanged, then ramp faster through late-game.
+  // Reduced 15% from the previous late-game buff.
+  return 1 + (late * 0.003 + late * late * 0.00005) * 0.85;
+}
+
 
 export function spawnEnemyDemi(critter, critterAttackTextures, critterWalkTextures, enemyName) {
   const enemy = createSpawnDemi(critterWalkTextures, enemyName, critter);
@@ -200,7 +208,8 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
     // Stronger endless ramp so flat defense doesn't over-trivialize high checkpoints.
-    enemy.attackDamage = Math.max(3, Math.round((7 + sc / 4.5 + Math.sqrt(sc) / 2.2) * 0.8));
+    const dmgMult = getLateCheckpointDamageMultiplier();
+    enemy.attackDamage = Math.max(3, Math.round((7 + sc / 4.5 + Math.sqrt(sc) / 2.2) * 0.8 * dmgMult));
     enemy.maxHP = 100 + Math.round(sc * 2.0);
     // Keep endless EXP gains modest: cap near 2x old baseline.
     enemy.exp = Math.min(20, 12 + Math.floor(sc / 10));
@@ -264,7 +273,8 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
     // Stronger endless ramp so flat defense doesn't over-trivialize high checkpoints.
-    enemy.attackDamage = Math.max(2, Math.round((4 + sc / 5 + Math.sqrt(sc) / 2.4) * 0.8));
+    const dmgMult = getLateCheckpointDamageMultiplier();
+    enemy.attackDamage = Math.max(2, Math.round((4 + sc / 5 + Math.sqrt(sc) / 2.4) * 0.8 * dmgMult));
     enemy.maxHP = 40 + Math.round(sc * 2.0);
     // Keep endless EXP gains modest: cap near 2x old baseline.
     enemy.exp = Math.min(20, 10 + Math.floor(sc / 12));

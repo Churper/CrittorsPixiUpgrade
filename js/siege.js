@@ -326,6 +326,12 @@ function spawnSiegeNormalEnemy(critter, app, enemyType) {
 // --- Siege Mob Kill Tracking ---
 
 export function siegeMobKilled() {
+  // Last defense phase has its own kill tracking
+  if (state.siegePhase === 'lastDefense') {
+    lastDefenseMobKilled();
+    return;
+  }
+
   state.siegeMobsRemaining--;
   if (state.siegeMobsRemaining > 0) return;
   state.siegeMobsRemaining = 0;
@@ -541,10 +547,79 @@ function siegeCastleDestroyed(critter, app) {
   // Remove castle + HP bars
   removeSiegeCastleSprites(app);
 
-  // Show reward panel after delay (simplified — items already on floor)
+  // Last defense: desperate baby swarm after castle falls (volcano + void)
+  const biome = getSiegeBiome(state.siegeCastleLevel);
+  if (biome === 'volcano' || biome === 'void') {
+    state.siegePhase = 'lastDefense';
+    state.siegeLastDefenseWave = 0;
+    state.siegeLastDefenseTotal = biome === 'void' ? 3 : 2;
+    spawnLastDefenseWave(critter, app);
+    return;
+  }
+
+  // Show reward panel after delay
   setTimeout(() => {
     showSiegeRewardPanel();
   }, 1000);
+}
+
+function spawnLastDefenseWave(critter, app) {
+  const level = state.siegeCastleLevel;
+  const waveNum = state.siegeLastDefenseWave;
+  const impWalkTex = state.siegeImpWalkTex;
+  const impAtkTex = state.siegeImpAtkTex;
+  const secondType = state.siegeSecondType;
+  const enemyTypes = state.enemyTypes || [];
+
+  // Each wave gets slightly bigger: 4, 5, 6 babies
+  const count = Math.min(4 + waveNum, 8);
+  state.siegeMobsRemaining = count;
+  state.siegeMobsTotal += count;
+
+  // Pick a random enemy type for variety each wave
+  let waveType = null;
+  if (enemyTypes.length > 0 && waveNum > 0) {
+    const candidates = enemyTypes.filter(e => e.name !== 'imp');
+    if (candidates.length > 0) waveType = candidates[Math.floor(Math.random() * candidates.length)];
+  }
+
+  // Pause between waves for breathing room
+  const pauseMs = waveNum === 0 ? 1500 : 2000;
+  setTimeout(() => {
+    if (!state.siegeActive) return;
+    // Spawn as a tight clump — short delays, close together
+    for (let i = 0; i < count; i++) {
+      const delay = i * 120; // tight cluster
+      const useAlt = waveType && i >= Math.ceil(count / 2);
+      const walkTex = useAlt ? waveType.walkTextures : (secondType ? secondType.walkTextures : impWalkTex);
+      const atkTex = useAlt ? waveType.attackTextures : (secondType ? secondType.attackTextures : impAtkTex);
+      const typeName = useAlt ? waveType.name : (secondType ? secondType.name : 'imp');
+      setTimeout(() => {
+        if (!state.siegeActive) return;
+        spawnBabyEnemy(critter, app, walkTex, atkTex, i, typeName);
+      }, delay);
+    }
+  }, pauseMs);
+}
+
+function lastDefenseMobKilled() {
+  if (state.siegePhase !== 'lastDefense') return false;
+  state.siegeMobsRemaining--;
+  if (state.siegeMobsRemaining > 0) return true;
+  state.siegeMobsRemaining = 0;
+
+  state.siegeLastDefenseWave++;
+  if (state.siegeLastDefenseWave < state.siegeLastDefenseTotal) {
+    // More waves coming
+    spawnLastDefenseWave(state.siegeCritter, state.app);
+    return true;
+  }
+
+  // All last defense waves cleared — show reward
+  setTimeout(() => {
+    showSiegeRewardPanel();
+  }, 800);
+  return true;
 }
 
 function removeSiegeCastleSprites(app) {
@@ -780,6 +855,8 @@ export function cleanupSiege() {
   state.siegeImpWalkTex = null;
   state.siegeImpAtkTex = null;
   state.siegeSecondType = null;
+  state.siegeLastDefenseWave = 0;
+  state.siegeLastDefenseTotal = 0;
 
   // Hide reward panel if visible
   const backdrop = document.getElementById('siege-reward-backdrop');

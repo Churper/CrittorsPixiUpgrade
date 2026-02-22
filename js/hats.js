@@ -9,7 +9,7 @@ const _hatBasePos = {
   frog:  [0, -10],      // head roughly centered; lowered to sit on head
   snail: [-26, 100],    // head right of shell center; sits between eye stalks
   bird:  [-82, -150],   // crest left of center, near frame top
-  bee:   [-6, -51],     // nearly centered
+  bee:   [8, -38],      // shifted right and lower to sit on head
 };
 
 // Per-frame hat offsets [dx, dy] in texture-space pixels (added to base position)
@@ -86,20 +86,20 @@ const _hatFrameDeltas = {
       [0, 3],       // 11
       [0, 1],       // 12
     ],
-    // 13-frame peck: bird leans forward (X+33, Y+27 at peak) then returns
+    // 13-frame peck: smooth forward lean + hold + return
     attack: [
       [0, 4],       // 0: starting pose
-      [11, 11],     // 1: leaning forward
-      [21, 19],     // 2
-      [33, 27],     // 3: peak forward lean
-      [33, 27],     // 4: holding
+      [8, 10],      // 1: leaning forward
+      [18, 18],     // 2
+      [28, 24],     // 3: near peak
+      [33, 27],     // 4: peak
       [33, 27],     // 5: holding
       [33, 27],     // 6: holding
-      [49, 27],     // 7: furthest reach
-      [39, 27],     // 8: pulling back
-      [33, 28],     // 9
-      [21, 19],     // 10: returning
-      [11, 11],     // 11
+      [38, 27],     // 7: slight push
+      [33, 27],     // 8: easing back
+      [26, 22],     // 9
+      [18, 16],     // 10: returning
+      [9, 9],       // 11
       [0, 3],       // 12: back to neutral
     ],
   },
@@ -116,27 +116,26 @@ const _hatFrameDeltas = {
       [4, 4],       // 7
       [2, 3],       // 8
     ],
-    // 18-frame sting: dramatic lunge left then right (200px X range, 80px Y range)
-    // Deltas account for wider attack frame (390px vs 306px walk)
+    // 18-frame sting: smoothed lunge left then right
     attack: [
-      [-16, -12],   // 0: winding up
-      [-52, -20],   // 1: lunging left
-      [-79, -50],   // 2
-      [-89, -62],   // 3: deep lunge
-      [-111, -74],  // 4: peak left lunge
-      [-64, -56],   // 5: pulling back
-      [-3, -39],    // 6: crossing center
-      [44, -22],    // 7: swinging right
-      [71, -39],    // 8
-      [95, -54],    // 9
-      [110, -66],   // 10: peak right lunge
-      [87, -54],    // 11: returning
-      [71, -39],    // 12
-      [51, -22],    // 13
-      [46, -22],    // 14
-      [1, -10],     // 15: settling
-      [17, -2],     // 16
-      [19, 5],      // 17: back near rest
+      [-10, -8],    // 0: winding up
+      [-30, -16],   // 1: lunging left
+      [-55, -32],   // 2
+      [-75, -48],   // 3: deep lunge
+      [-90, -56],   // 4: peak left lunge
+      [-70, -44],   // 5: pulling back
+      [-35, -28],   // 6: crossing center
+      [5, -14],     // 7: swinging right
+      [35, -28],    // 8
+      [60, -42],    // 9
+      [80, -52],    // 10: peak right lunge
+      [65, -42],    // 11: returning
+      [45, -32],    // 12
+      [30, -22],    // 13
+      [18, -14],    // 14
+      [8, -8],      // 15: settling
+      [4, -3],      // 16
+      [0, 0],       // 17: back near rest
     ],
   },
 };
@@ -160,33 +159,45 @@ export function applyHat(critterSprite, charType) {
 
   if (hatId === 'tophat') {
     const hat = new PIXI.Graphics();
-    // Bigger tophat: wide brim + tall crown + red band
-    hat.roundRect(-30, -5, 60, 10, 4).fill({ color: 0x1a1a2e });
-    hat.roundRect(-20, -48, 40, 45, 5).fill({ color: 0x1a1a2e });
-    hat.rect(-20, -13, 40, 7).fill({ color: 0x8b0000 });
+    // Wide brim with slight curve
+    hat.roundRect(-32, -5, 64, 12, 5).fill({ color: 0x1a1a2e });
+    hat.roundRect(-32, -3, 64, 4, 2).fill({ color: 0x222240 }); // brim highlight
+    // Tall crown
+    hat.roundRect(-22, -52, 44, 50, 4).fill({ color: 0x1a1a2e });
+    // Silk sheen — vertical highlight strip
+    hat.roundRect(-6, -50, 12, 46, 3).fill({ color: 0x2a2a4e, alpha: 0.5 });
+    // Satin band with buckle
+    hat.rect(-22, -14, 44, 8).fill({ color: 0x8b0000 });
+    hat.rect(-22, -14, 44, 2).fill({ color: 0xaa2020, alpha: 0.4 }); // band highlight
+    // Gold buckle
+    hat.roundRect(-5, -16, 10, 12, 2).fill({ color: 0xFFD700 });
+    hat.roundRect(-3, -14, 6, 8, 1).fill({ color: 0x1a1a2e });
     hat.position.set(baseXOff, baseYOff);
     hat.zIndex = 100;
     critterSprite.addChild(hat);
     currentHatGraphic = hat;
   } else if (hatId === 'partyhat') {
     const hat = new PIXI.Graphics();
-    const blue = 0x0070DD;
-    // Bigger OSRS-style: thick blocky base band + taller crown points
-    hat.roundRect(-42, -3, 84, 16, 3).fill({ color: blue });
-    // Crown points rising from top of band
-    hat.moveTo(-42, -3);
-    hat.lineTo(-32, -22);
-    hat.lineTo(-21, -3);
-    hat.lineTo(-11, -22);
-    hat.lineTo(0, -3);
-    hat.lineTo(11, -22);
-    hat.lineTo(21, -3);
-    hat.lineTo(32, -22);
-    hat.lineTo(42, -3);
+    // Festive cone party hat with colorful stripes
+    // Main cone shape
+    hat.moveTo(-28, 6);
+    hat.lineTo(0, -42);
+    hat.lineTo(28, 6);
     hat.closePath();
-    hat.fill({ color: blue });
-    hat.stroke({ width: 1.5, color: 0x005bb5, alpha: 0.5 });
-    hat.scale.set(1.3);
+    hat.fill({ color: 0xDD2255 });
+    // Stripe 1 — yellow band
+    hat.moveTo(-22, -4); hat.lineTo(-10, -24); hat.lineTo(10, -24); hat.lineTo(22, -4);
+    hat.closePath(); hat.fill({ color: 0xFFDD33 });
+    // Stripe 2 — blue band
+    hat.moveTo(-14, -18); hat.lineTo(-5, -32); hat.lineTo(5, -32); hat.lineTo(14, -18);
+    hat.closePath(); hat.fill({ color: 0x3388FF });
+    // Base rim — curled edge
+    hat.ellipse(0, 6, 30, 6).fill({ color: 0xDD2255 });
+    hat.ellipse(0, 6, 30, 4).fill({ color: 0xFF4477, alpha: 0.4 });
+    // Pom-pom on top
+    hat.circle(0, -42, 7).fill({ color: 0xFFFFFF });
+    hat.circle(-2, -44, 4).fill({ color: 0xFFFFFF, alpha: 0.5 });
+    hat.circle(2, -41, 3).fill({ color: 0xEEEEEE, alpha: 0.6 });
     hat.position.set(baseXOff, baseYOff);
     hat.zIndex = 100;
     critterSprite.addChild(hat);
@@ -363,17 +374,21 @@ export function applyPreviewHat(sprite, charName, hatId) {
 
   if (hatId === 'tophat') {
     hat = new PIXI.Graphics();
-    hat.roundRect(-30, -5, 60, 10, 4).fill({ color: 0x1a1a2e });
-    hat.roundRect(-20, -48, 40, 45, 5).fill({ color: 0x1a1a2e });
-    hat.rect(-20, -13, 40, 7).fill({ color: 0x8b0000 });
+    hat.roundRect(-32, -5, 64, 12, 5).fill({ color: 0x1a1a2e });
+    hat.roundRect(-32, -3, 64, 4, 2).fill({ color: 0x222240 });
+    hat.roundRect(-22, -52, 44, 50, 4).fill({ color: 0x1a1a2e });
+    hat.roundRect(-6, -50, 12, 46, 3).fill({ color: 0x2a2a4e, alpha: 0.5 });
+    hat.rect(-22, -14, 44, 8).fill({ color: 0x8b0000 });
+    hat.roundRect(-5, -16, 10, 12, 2).fill({ color: 0xFFD700 });
+    hat.roundRect(-3, -14, 6, 8, 1).fill({ color: 0x1a1a2e });
   } else if (hatId === 'partyhat') {
     hat = new PIXI.Graphics();
-    hat.roundRect(-42, -3, 84, 16, 3).fill({ color: 0x0070DD });
-    hat.moveTo(-42, -3); hat.lineTo(-32, -22); hat.lineTo(-21, -3);
-    hat.lineTo(-11, -22); hat.lineTo(0, -3); hat.lineTo(11, -22);
-    hat.lineTo(21, -3); hat.lineTo(32, -22); hat.lineTo(42, -3);
-    hat.closePath(); hat.fill({ color: 0x0070DD });
-    hat.scale.set(1.3);
+    hat.moveTo(-28, 6); hat.lineTo(0, -42); hat.lineTo(28, 6); hat.closePath(); hat.fill({ color: 0xDD2255 });
+    hat.moveTo(-22, -4); hat.lineTo(-10, -24); hat.lineTo(10, -24); hat.lineTo(22, -4); hat.closePath(); hat.fill({ color: 0xFFDD33 });
+    hat.moveTo(-14, -18); hat.lineTo(-5, -32); hat.lineTo(5, -32); hat.lineTo(14, -18); hat.closePath(); hat.fill({ color: 0x3388FF });
+    hat.ellipse(0, 6, 30, 6).fill({ color: 0xDD2255 });
+    hat.circle(0, -42, 7).fill({ color: 0xFFFFFF });
+    hat.circle(-2, -44, 4).fill({ color: 0xFFFFFF, alpha: 0.5 });
   } else if (hatId === 'crown') {
     hat = new PIXI.Graphics();
     hat.roundRect(-32, -2, 64, 14, 3).fill({ color: 0xFFD700 });

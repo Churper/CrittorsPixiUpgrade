@@ -129,9 +129,9 @@ const skinHueConfigs = {
     { from: 258, to: 328, targetFrom: 202, targetTo: 214, sat: 0.55, lit: 1.35 },
   ],
   'bird-moss': [
-    // Earthy forest green body, warm brown crest
-    { from: 80, to: 168, targetFrom: 82, targetTo: 102, sat: 0.9, lit: 0.78 },
-    { from: 258, to: 328, targetFrom: 30, targetTo: 42, sat: 0.75, lit: 0.62 },
+    // Lush forest green body, deep emerald crest
+    { from: 80, to: 168, targetFrom: 100, targetTo: 125, sat: 1.1, lit: 0.82 },
+    { from: 258, to: 328, targetFrom: 145, targetTo: 165, sat: 0.85, lit: 0.65 },
   ],
   'bird-parrot': [
     // Tropical scarlet body, golden yellow crest

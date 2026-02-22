@@ -2110,17 +2110,11 @@ touch-action: manipulation;
 }
 
 /* ── Always-visible equipped hat/skin row ─────────────── */
-.card-equip-row {
-  display: flex;
-  gap: clamp(4px, 1vmin, 8px);
-  width: 100%;
-  flex-shrink: 0;
-  margin-bottom: clamp(1px, 0.3vmin, 3px);
-}
-.card-equip-row .equip-box {
-  flex: 1;
-  min-height: 0;
-  padding: clamp(2px, 0.5vmin, 4px) clamp(3px, 0.8vmin, 5px);
+/* Equip indicator as first item in picker grid */
+.picker-equip-box.equipped-indicator {
+  background: rgba(8, 14, 28, 0.85);
+  border: 1px solid rgba(80, 140, 200, 0.3);
+  justify-content: center;
 }
 
 .layout-card-stats {
@@ -2807,15 +2801,6 @@ touch-action: manipulation;
   }
   .cosmetic-label {
     font-size: clamp(9px, 2vh, 12px);
-  }
-  .card-equip-row {
-    min-height: clamp(32px, 8vh, 44px);
-    gap: clamp(4px, 1vh, 6px);
-    margin-bottom: 2px;
-  }
-  .card-equip-row .equip-box {
-    min-height: clamp(30px, 7vh, 42px);
-    height: clamp(30px, 7vh, 42px);
   }
   .layout-inline-picker .inline-picker-item {
     width: clamp(56px, 14vh, 76px);

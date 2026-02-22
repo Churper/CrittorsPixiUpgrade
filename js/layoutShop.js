@@ -62,13 +62,20 @@ export function initLayoutShop() {
     }
   }
 
-  /** Refresh the always-visible equip row on each card */
+  /** Refresh equip indicator in any open picker grids */
   function refreshAllCardEquipRows() {
     layoutCards.forEach(card => {
-      const charName = card.dataset.char;
-      const row = card.querySelector('.card-equip-row');
-      if (!row) return;
-      refreshPreview(row, charName);
+      const picker = card.querySelector('.layout-inline-picker');
+      if (!picker || picker.style.display === 'none') return;
+      const grid = picker.querySelector('.inline-picker-grid');
+      if (!grid) return;
+      // Refresh the first-item equip box if present
+      const existing = grid.querySelector('.picker-equip-box');
+      if (existing) {
+        const charName = card.dataset.char;
+        const slot = existing.dataset.slot;
+        refreshEquipBoxContent(existing, charName, slot);
+      }
     });
   }
 
@@ -457,17 +464,25 @@ export function initLayoutShop() {
   function _drawHatShape(ctx, hatId) {
     if (hatId === 'tophat') {
       ctx.fillStyle = _hexCSS(0x1a1a2e);
-      _rr(ctx, -30, -5, 60, 10, 4); ctx.fill();
-      _rr(ctx, -20, -48, 40, 45, 5); ctx.fill();
-      ctx.fillStyle = _hexCSS(0x8b0000); ctx.fillRect(-20, -13, 40, 7);
+      _rr(ctx, -32, -5, 64, 12, 5); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x222240);
+      _rr(ctx, -32, -3, 64, 4, 2); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x1a1a2e);
+      _rr(ctx, -22, -52, 44, 50, 4); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x8b0000); ctx.fillRect(-22, -14, 44, 8);
+      ctx.fillStyle = _hexCSS(0xFFD700);
+      _rr(ctx, -5, -16, 10, 12, 2); ctx.fill();
     } else if (hatId === 'partyhat') {
-      ctx.scale(1.3, 1.3);
-      ctx.fillStyle = _hexCSS(0x0070DD);
-      _rr(ctx, -42, -3, 84, 16, 3); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(-42,-3); ctx.lineTo(-32,-22); ctx.lineTo(-21,-3);
-      ctx.lineTo(-11,-22); ctx.lineTo(0,-3); ctx.lineTo(11,-22);
-      ctx.lineTo(21,-3); ctx.lineTo(32,-22); ctx.lineTo(42,-3);
-      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = _hexCSS(0xDD2255);
+      ctx.beginPath(); ctx.moveTo(-28,6); ctx.lineTo(0,-42); ctx.lineTo(28,6); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = _hexCSS(0xFFDD33);
+      ctx.beginPath(); ctx.moveTo(-22,-4); ctx.lineTo(-10,-24); ctx.lineTo(10,-24); ctx.lineTo(22,-4); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x3388FF);
+      ctx.beginPath(); ctx.moveTo(-14,-18); ctx.lineTo(-5,-32); ctx.lineTo(5,-32); ctx.lineTo(14,-18); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = _hexCSS(0xDD2255);
+      ctx.beginPath(); ctx.ellipse(0,6,30,6,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(0,-42,7,0,Math.PI*2); ctx.fill();
     } else if (hatId === 'crown') {
       ctx.fillStyle = _hexCSS(0xFFD700);
       _rr(ctx, -32, -2, 64, 14, 3); ctx.fill();
@@ -537,92 +552,80 @@ export function initLayoutShop() {
     return cvs;
   }
 
-  /** Build the hat + skin equipped indicator inside the preview div */
-  function refreshPreview(previewDiv, charName) {
-    previewDiv.innerHTML = '';
+  /** Fill a single equip box element with current hat or skin info */
+  function refreshEquipBoxContent(box, charName, slot) {
+    box.innerHTML = '';
+    const label = document.createElement('div');
+    label.className = 'equip-box-label';
+    label.textContent = slot === 'hat' ? 'Equipped' : 'Equipped';
+    box.appendChild(label);
 
-    // -- Hat box --
-    const hatBox = document.createElement('div');
-    hatBox.className = 'equip-box';
-    const hatHead = document.createElement('div');
-    hatHead.className = 'equip-box-label';
-    hatHead.textContent = 'Hat';
-    hatBox.appendChild(hatHead);
-    const hatId = state.equippedHats[charName];
-    if (hatId) {
-      const cvs = renderHatCanvas(hatId);
-      if (cvs) hatBox.appendChild(cvs);
-      const hat = hatCatalog.find(h => h.id === hatId);
-      if (hat) {
-        const nm = document.createElement('div');
-        nm.className = 'equip-box-name';
-        nm.textContent = hat.name;
-        hatBox.appendChild(nm);
+    if (slot === 'hat') {
+      const hatId = state.equippedHats[charName];
+      if (hatId) {
+        const cvs = renderHatCanvas(hatId);
+        if (cvs) box.appendChild(cvs);
+        const hat = hatCatalog.find(h => h.id === hatId);
+        if (hat) {
+          const nm = document.createElement('div');
+          nm.className = 'equip-box-name';
+          nm.textContent = hat.name;
+          box.appendChild(nm);
+        }
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'equip-box-empty';
+        empty.textContent = 'None';
+        box.appendChild(empty);
       }
     } else {
-      const empty = document.createElement('div');
-      empty.className = 'equip-box-empty';
-      empty.textContent = '\u2014';
-      hatBox.appendChild(empty);
-    }
-    previewDiv.appendChild(hatBox);
-
-    // -- Skin box --
-    const skinBox = document.createElement('div');
-    skinBox.className = 'equip-box';
-    const skinHead = document.createElement('div');
-    skinHead.className = 'equip-box-label';
-    skinHead.textContent = 'Skin';
-    skinBox.appendChild(skinHead);
-    const skinId = state.equippedSkins[charName];
-    if (skinId) {
-      const skin = skinCatalog.find(s => s.id === skinId);
-      if (skin) {
-        const ico = document.createElement('div');
-        ico.className = 'equip-box-icon';
-        ico.textContent = skin.icon;
-        skinBox.appendChild(ico);
-        const nm = document.createElement('div');
-        nm.className = 'equip-box-name';
-        nm.textContent = skin.name;
-        skinBox.appendChild(nm);
+      const skinId = state.equippedSkins[charName];
+      if (skinId) {
+        const skin = skinCatalog.find(s => s.id === skinId);
+        if (skin) {
+          const ico = document.createElement('div');
+          ico.className = 'equip-box-icon';
+          ico.textContent = skin.icon;
+          box.appendChild(ico);
+          const nm = document.createElement('div');
+          nm.className = 'equip-box-name';
+          nm.textContent = skin.name;
+          box.appendChild(nm);
+        }
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'equip-box-empty';
+        empty.textContent = 'Default';
+        box.appendChild(empty);
       }
-    } else {
-      const def = document.createElement('div');
-      def.className = 'equip-box-empty';
-      def.textContent = 'Default';
-      skinBox.appendChild(def);
     }
-    previewDiv.appendChild(skinBox);
   }
 
-  function ensurePickerLayout(container, charName) {
+  function ensurePickerLayout(container) {
     let layout = container.querySelector('.inline-picker-layout');
     if (!layout) {
       container.innerHTML = '';
       layout = document.createElement('div');
       layout.className = 'inline-picker-layout';
-      const preview = document.createElement('div');
-      preview.className = 'inline-picker-preview';
-      layout.appendChild(preview);
       const grid = document.createElement('div');
       grid.className = 'inline-picker-grid';
       layout.appendChild(grid);
       container.appendChild(layout);
     }
-    const preview = layout.querySelector('.inline-picker-preview');
-    refreshPreview(preview, charName);
     return layout;
   }
 
   function renderInlineHats(container, charName) {
-    const layout = ensurePickerLayout(container, charName);
+    const layout = ensurePickerLayout(container);
     const grid = layout.querySelector('.inline-picker-grid');
     grid.innerHTML = '';
 
-    // Refresh preview with current hat
-    const hatPreview = layout.querySelector('.inline-picker-preview');
-    if (hatPreview) refreshPreview(hatPreview, charName);
+    // Equipped hat box as first grid item
+    const equipBox = document.createElement('div');
+    equipBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
+    equipBox.dataset.slot = 'hat';
+    refreshEquipBoxContent(equipBox, charName, 'hat');
+    grid.appendChild(equipBox);
 
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
@@ -662,9 +665,16 @@ export function initLayoutShop() {
   }
 
   function renderInlineSkins(container, charName) {
-    const layout = ensurePickerLayout(container, charName);
+    const layout = ensurePickerLayout(container);
     const grid = layout.querySelector('.inline-picker-grid');
     grid.innerHTML = '';
+
+    // Equipped skin box as first grid item
+    const equipBox = document.createElement('div');
+    equipBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
+    equipBox.dataset.slot = 'skin';
+    refreshEquipBoxContent(equipBox, charName, 'skin');
+    grid.appendChild(equipBox);
 
     const isDefault = !state.equippedSkins[charName];
     const defEl = document.createElement('div');

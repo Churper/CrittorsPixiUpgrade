@@ -5,7 +5,6 @@ import state from './state.js';
 import { saveBones } from './save.js';
 import { skinCatalog, getSkinTextures } from './skins.js';
 import { showLeaderboardPanel } from './leaderboard.js';
-import { applyPreviewHat } from './hats.js';
 
 // --- Helper: show/hide panel via its backdrop ---
 export function showPanel(panelId) {
@@ -370,19 +369,20 @@ export function initLayoutShop() {
   function renderInventoryGrid() {
     const grid = document.getElementById('inventory-grid');
     grid.innerHTML = '';
-    const potionSVG = '<svg width="22" height="32" viewBox="0 0 28 40"><rect x="10" y="0" width="8" height="5" rx="1" fill="#8B5E3C"/><rect x="11" y="5" width="6" height="8" rx="2" fill="#cc2222" opacity="0.8"/><rect x="6" y="13" width="16" height="22" rx="4" fill="#dd2222"/><rect x="8" y="15" width="4" height="12" rx="2" fill="#ff6666" opacity="0.45"/></svg>';
+    const potionSVG = '<svg width="26" height="36" viewBox="0 0 28 40"><rect x="10" y="0" width="8" height="5" rx="1" fill="#8B5E3C"/><rect x="11" y="5" width="6" height="8" rx="2" fill="#cc2222" opacity="0.8"/><rect x="6" y="13" width="16" height="22" rx="4" fill="#dd2222"/><rect x="8" y="15" width="4" height="12" rx="2" fill="#ff6666" opacity="0.45"/></svg>';
     inventoryItemCatalog.forEach(item => {
       const count = state.startingItems[item.id] || 0;
       const canAfford = state.bones >= item.costPer;
       const iconHtml = item.icon === 'potion-svg' ? potionSVG : item.icon;
-      const row = document.createElement('div');
-      row.className = 'shop-row';
-      const desc = item.suffix ? `<span class="shop-row-desc">${item.suffix}</span>` : '';
-      row.innerHTML =
-        `<div class="shop-row-icon">${iconHtml}${count > 0 ? '<span class="shop-icon-badge">' + count + '</span>' : ''}</div>` +
-        `<div class="shop-row-info"><span class="shop-row-name">${item.name}</span>${desc}</div>` +
-        `<button class="shop-row-buy${canAfford ? '' : ' cant-afford'}">\uD83C\uDF53${item.costPer}</button>`;
-      row.querySelector('.shop-row-buy').addEventListener('click', () => {
+      const card = document.createElement('div');
+      card.className = 'shop-card';
+      const desc = item.suffix ? `<div class="shop-card-desc">${item.suffix}</div>` : '';
+      card.innerHTML =
+        `<div class="shop-card-icon">${iconHtml}${count > 0 ? '<span class="shop-card-qty">x${count}</span>' : ''}</div>` +
+        `<div class="shop-card-name">${item.name}</div>` +
+        desc +
+        `<button class="shop-card-buy${canAfford ? '' : ' cant-afford'}"><span class="shop-card-price">\uD83C\uDF53 ${item.costPer}</span></button>`;
+      card.querySelector('.shop-card-buy').addEventListener('click', () => {
         if (state.bones < item.costPer) return;
         state.bones -= item.costPer;
         state.startingItems[item.id] = (state.startingItems[item.id] || 0) + 1;
@@ -390,7 +390,7 @@ export function initLayoutShop() {
         updateLayoutUI();
         renderInventoryGrid();
       });
-      grid.appendChild(row);
+      grid.appendChild(card);
     });
   }
 
@@ -422,28 +422,7 @@ export function initLayoutShop() {
     });
   });
 
-  // --- PIXI preview for inline cosmetic picker ---
-  let previewApp = null;
-  let previewSprite = null;
-  let previewCharName = null;
-  let previewInitFailed = false;
-
-  async function ensurePreviewApp() {
-    if (previewApp) return true;
-    if (previewInitFailed) return false;
-    try {
-      if (typeof PIXI === 'undefined') { previewInitFailed = true; return false; }
-      previewApp = new PIXI.Application();
-      await previewApp.init({ width: 100, height: 100, backgroundAlpha: 0 });
-      previewApp.canvas.className = 'inline-picker-canvas';
-      return true;
-    } catch (e) {
-      console.warn('Preview PIXI init failed:', e);
-      previewApp = null;
-      previewInitFailed = true;
-      return false;
-    }
-  }
+  // --- Static frame preview for inline cosmetic picker (2D canvas) ---
 
   function getCharWalkTextures(charName) {
     const skinned = getSkinTextures(charName, 'walk');
@@ -451,45 +430,53 @@ export function initLayoutShop() {
     return state.baseWalkTextures && state.baseWalkTextures[charName];
   }
 
-  /** Returns true if sprite was created, false if no textures available */
-  function refreshPreviewSprite(charName) {
-    if (!previewApp) return false;
-    if (previewSprite) {
-      previewApp.stage.removeChild(previewSprite);
-      previewSprite.destroy({ children: true });
-      previewSprite = null;
-    }
+  /** Draw idle frame 0 of the character onto a 2D canvas */
+  function renderStaticPreview(charName) {
     const textures = getCharWalkTextures(charName);
-    if (!textures || textures.length === 0) return false;
-    previewSprite = new PIXI.AnimatedSprite(textures);
-    previewSprite.animationSpeed = 0.15;
-    previewSprite.loop = true;
-    previewSprite.anchor.set(0.5, 0.5);
-    const frameH = textures[0].frame.height;
-    const frameW = textures[0].frame.width;
-    const s = Math.min(90 / frameW, 90 / frameH);
-    previewSprite.scale.set(s);
-    previewSprite.position.set(50, 55);
-    previewApp.stage.addChild(previewSprite);
-    previewSprite.play();
-    applyHatToPreview(charName);
-    previewCharName = charName;
-    return true;
+    if (!textures || textures.length === 0) return null;
+
+    const tex = textures[0];
+    const frame = tex.frame;
+    const source = tex.source && (tex.source.resource || tex.source._resource);
+    if (!source) return null;
+
+    const cvs = document.createElement('canvas');
+    cvs.width = 120; cvs.height = 120;
+    cvs.className = 'inline-picker-canvas';
+    const ctx = cvs.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+
+    // Scale frame to fit canvas with padding
+    const pad = 10;
+    const maxW = cvs.width - pad * 2;
+    const maxH = cvs.height - pad * 2;
+    const s = Math.min(maxW / frame.width, maxH / frame.height);
+    const dw = frame.width * s;
+    const dh = frame.height * s;
+    const dx = (cvs.width - dw) / 2;
+    const dy = (cvs.height - dh) / 2 + 4;
+
+    ctx.drawImage(source, frame.x, frame.y, frame.width, frame.height, dx, dy, dw, dh);
+    return cvs;
   }
 
-  function applyHatToPreview(charName) {
-    if (!previewSprite) return;
-    const hatId = state.equippedHats[charName] || null;
-    applyPreviewHat(previewSprite, charName, hatId);
-  }
-
-  /** Show a fallback portrait when PIXI preview isn't available */
+  /** Show portrait fallback when no textures are available */
   function showFallbackPreview(previewDiv, charName) {
     previewDiv.innerHTML = '';
     const img = document.createElement('img');
     img.src = './assets/' + charName + 'portrait.png';
     img.className = 'inline-preview-fallback';
     previewDiv.appendChild(img);
+  }
+
+  function refreshPreview(previewDiv, charName) {
+    previewDiv.innerHTML = '';
+    const cvs = renderStaticPreview(charName);
+    if (cvs) {
+      previewDiv.appendChild(cvs);
+    } else {
+      showFallbackPreview(previewDiv, charName);
+    }
   }
 
   function ensurePickerLayout(container, charName) {
@@ -507,24 +494,7 @@ export function initLayoutShop() {
       container.appendChild(layout);
     }
     const preview = layout.querySelector('.inline-picker-preview');
-    ensurePreviewApp().then((ok) => {
-      if (ok && previewApp) {
-        if (preview && previewApp.canvas.parentElement !== preview) {
-          preview.innerHTML = '';
-          preview.appendChild(previewApp.canvas);
-        }
-        const spriteOk = refreshPreviewSprite(charName);
-        if (!spriteOk && preview) {
-          // PIXI works but no textures loaded yet — show portrait fallback
-          preview.innerHTML = '';
-          showFallbackPreview(preview, charName);
-        }
-      } else if (preview) {
-        showFallbackPreview(preview, charName);
-      }
-    }).catch(() => {
-      if (preview) showFallbackPreview(preview, charName);
-    });
+    refreshPreview(preview, charName);
     return layout;
   }
 
@@ -533,10 +503,9 @@ export function initLayoutShop() {
     const grid = layout.querySelector('.inline-picker-grid');
     grid.innerHTML = '';
 
-    // Refresh preview with current hat (async safe since layout already exists)
-    if (previewApp && previewCharName === charName) {
-      applyHatToPreview(charName);
-    }
+    // Refresh preview with current hat
+    const hatPreview = layout.querySelector('.inline-picker-preview');
+    if (hatPreview) refreshPreview(hatPreview, charName);
 
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
@@ -587,7 +556,6 @@ export function initLayoutShop() {
     defEl.addEventListener('click', () => {
       state.equippedSkins[charName] = null;
       saveBones();
-      refreshPreviewSprite(charName);
       renderInlineSkins(container, charName);
       updateLayoutUI();
     });
@@ -613,12 +581,7 @@ export function initLayoutShop() {
           state.equippedSkins[charName] = equipped ? null : skin.id;
           saveBones();
         }
-        // Skin changed — rebuild preview sprite with new textures
-        const spriteOk = refreshPreviewSprite(charName);
-        if (!spriteOk) {
-          const preview = container.querySelector('.inline-picker-preview');
-          if (preview) showFallbackPreview(preview, charName);
-        }
+        // Skin changed — rebuild preview
         renderInlineSkins(container, charName);
       });
       grid.appendChild(el);

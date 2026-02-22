@@ -41,10 +41,10 @@ const biomeSkyGradients = {
     snow:  { top: 0x778ca0, bottom: 0xc2d3e2, starsAlpha: 0.10, mountain: 0xa9bcc9, cloud: 0xd0deea, starTint: 0xD9ECFF },
   },
   desert: {
-    sun:   { top: 0xd08a3a, bottom: 0xf4d08b, starsAlpha: 0.01, mountain: 0xbf8c4a, cloud: 0xf2dec0, starTint: 0xFFEFC8 },
+    sun:   { top: 0x6fa8cf, bottom: 0xf4deb2, starsAlpha: 0.01, mountain: 0xc79756, cloud: 0xf5e7cf, starTint: 0xFFF1D0 },
     night: { top: 0x1a1130, bottom: 0x3d1f56, starsAlpha: 1.0,  mountain: 0x5d4a76, cloud: 0x77608f, starTint: 0xFFD7A6 },
-    rain:  { top: 0x59646f, bottom: 0x89929c, starsAlpha: 0.0,  mountain: 0x8d887b, cloud: 0xa5a095, starTint: 0xF2E3C9 },
-    wind:  { top: 0xcfa864, bottom: 0xf2d7a8, starsAlpha: 0.08, mountain: 0xd2b07a, cloud: 0xf0e2c9, starTint: 0xFFF0CF },
+    rain:  { top: 0x587388, bottom: 0x95afc2, starsAlpha: 0.0,  mountain: 0x9a9386, cloud: 0xb9b2a7, starTint: 0xF2E3C9 },
+    wind:  { top: 0x8fb7d1, bottom: 0xf3e2bf, starsAlpha: 0.08, mountain: 0xd4b682, cloud: 0xf3e8d2, starTint: 0xFFF2D6 },
     snow:  { top: 0x8f93a0, bottom: 0xd3d5dd, starsAlpha: 0.12, mountain: 0xb7aba1, cloud: 0xe1ddd6, starTint: 0xFFE8D2 },
   },
   tundra: {

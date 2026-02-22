@@ -242,38 +242,16 @@
           </div>
           <button id="layout-next" class="layout-nav-btn">›</button>
         </div>
-        <!-- Hat selection sub-view -->
+        <!-- Hat selection sub-view (fallback, inline picker is primary) -->
         <div id="layout-hats-view" class="layout-subview">
           <div class="layout-subview-title">Hats</div>
-          <div class="cosmetic-preview-layout">
-            <div class="cosmetic-preview-left">
-              <img id="hats-preview-portrait" class="cosmetic-preview-img" src="./assets/frogportrait.png">
-              <div class="cosmetic-preview-name" id="hats-char-name"></div>
-              <div class="cosmetic-preview-equipped" id="hats-equipped-label">None</div>
-            </div>
-            <div class="cosmetic-preview-right">
-              <div class="layout-subview-grid" id="hats-grid">
-                <div class="layout-subview-empty">No hats available yet</div>
-              </div>
-            </div>
-          </div>
+          <div class="layout-subview-grid" id="hats-grid"></div>
           <button class="layout-back-btn" data-back="deck">Back</button>
         </div>
-        <!-- Skin selection sub-view -->
+        <!-- Skin selection sub-view (fallback, inline picker is primary) -->
         <div id="layout-skins-view" class="layout-subview">
           <div class="layout-subview-title">Skins</div>
-          <div class="cosmetic-preview-layout">
-            <div class="cosmetic-preview-left">
-              <img id="skins-preview-portrait" class="cosmetic-preview-img" src="./assets/frogportrait.png">
-              <div class="cosmetic-preview-name" id="skins-char-name"></div>
-              <div class="cosmetic-preview-equipped" id="skins-equipped-label">Default</div>
-            </div>
-            <div class="cosmetic-preview-right">
-              <div class="layout-subview-grid" id="skins-grid">
-                <div class="layout-subview-empty">No skins available yet</div>
-              </div>
-            </div>
-          </div>
+          <div class="layout-subview-grid" id="skins-grid"></div>
           <button class="layout-back-btn" data-back="deck">Back</button>
         </div>
         <!-- Inventory sub-view -->

@@ -3,8 +3,9 @@
 
 import state from './state.js';
 import { saveBones } from './save.js';
-import { skinCatalog } from './skins.js';
+import { skinCatalog, getSkinTextures } from './skins.js';
 import { showLeaderboardPanel } from './leaderboard.js';
+import { applyPreviewHat } from './hats.js';
 
 // --- Helper: show/hide panel via its backdrop ---
 export function showPanel(panelId) {
@@ -421,6 +422,58 @@ export function initLayoutShop() {
     });
   });
 
+  // --- PIXI preview for inline cosmetic picker ---
+  let previewApp = null;
+  let previewSprite = null;
+  let previewCharName = null;
+
+  async function ensurePreviewApp() {
+    if (previewApp) return;
+    previewApp = new PIXI.Application();
+    await previewApp.init({ width: 100, height: 100, backgroundAlpha: 0 });
+    previewApp.canvas.className = 'inline-picker-canvas';
+  }
+
+  function getCharWalkTextures(charName) {
+    // Skinned textures take priority, fall back to base
+    const skinned = getSkinTextures(charName, 'walk');
+    if (skinned) return skinned;
+    return state.baseWalkTextures && state.baseWalkTextures[charName];
+  }
+
+  function refreshPreviewSprite(charName) {
+    if (!previewApp) return;
+    // Remove old sprite
+    if (previewSprite) {
+      previewApp.stage.removeChild(previewSprite);
+      previewSprite.destroy({ children: true });
+      previewSprite = null;
+    }
+    const textures = getCharWalkTextures(charName);
+    if (!textures || textures.length === 0) return;
+    previewSprite = new PIXI.AnimatedSprite(textures);
+    previewSprite.animationSpeed = 0.15;
+    previewSprite.loop = true;
+    previewSprite.anchor.set(0.5, 0.5);
+    // Scale to fit the 100x100 canvas
+    const frameH = textures[0].frame.height;
+    const frameW = textures[0].frame.width;
+    const s = Math.min(90 / frameW, 90 / frameH);
+    previewSprite.scale.set(s);
+    previewSprite.position.set(50, 55);
+    previewApp.stage.addChild(previewSprite);
+    previewSprite.play();
+    // Apply hat
+    applyHatToPreview(charName);
+    previewCharName = charName;
+  }
+
+  function applyHatToPreview(charName) {
+    if (!previewSprite) return;
+    const hatId = state.equippedHats[charName] || null;
+    applyPreviewHat(previewSprite, charName, hatId);
+  }
+
   // Build the persistent preview + grid layout inside the inline picker
   function ensurePickerLayout(container, charName) {
     let layout = container.querySelector('.inline-picker-layout');
@@ -428,13 +481,9 @@ export function initLayoutShop() {
       container.innerHTML = '';
       layout = document.createElement('div');
       layout.className = 'inline-picker-layout';
-      // Portrait preview (left)
+      // Preview (left) — canvas goes here
       const preview = document.createElement('div');
       preview.className = 'inline-picker-preview';
-      preview.innerHTML =
-        '<img class="inline-picker-portrait" src="./assets/' + charName + 'portrait.png">' +
-        '<div class="inline-picker-charname">' + charName.charAt(0).toUpperCase() + charName.slice(1) + '</div>' +
-        '<div class="inline-picker-equipped-label"></div>';
       layout.appendChild(preview);
       // Grid (right)
       const grid = document.createElement('div');
@@ -442,35 +491,27 @@ export function initLayoutShop() {
       layout.appendChild(grid);
       container.appendChild(layout);
     }
-    // Always update portrait src in case char changed
-    const img = layout.querySelector('.inline-picker-portrait');
-    if (img) img.src = './assets/' + charName + 'portrait.png';
-    const nameEl = layout.querySelector('.inline-picker-charname');
-    if (nameEl) nameEl.textContent = charName.charAt(0).toUpperCase() + charName.slice(1);
+    // Insert PIXI canvas into preview area
+    ensurePreviewApp().then(() => {
+      const preview = layout.querySelector('.inline-picker-preview');
+      if (preview && previewApp.canvas.parentElement !== preview) {
+        preview.innerHTML = '';
+        preview.appendChild(previewApp.canvas);
+      }
+      refreshPreviewSprite(charName);
+    });
     return layout;
-  }
-
-  function updateInlineEquippedLabel(container, charName) {
-    const label = container.querySelector('.inline-picker-equipped-label');
-    if (!label) return;
-    const slot = container.dataset.activeSlot;
-    if (slot === 'hat') {
-      const hatId = state.equippedHats[charName];
-      if (!hatId) { label.textContent = 'No hat'; return; }
-      const hat = hatCatalog.find(h => h.id === hatId);
-      label.textContent = hat ? hat.icon + ' ' + hat.name : 'No hat';
-    } else {
-      const skinId = state.equippedSkins[charName];
-      if (!skinId) { label.textContent = 'Default skin'; return; }
-      const skin = skinCatalog.find(s => s.id === skinId);
-      label.textContent = skin ? skin.icon + ' ' + skin.name : 'Default skin';
-    }
   }
 
   function renderInlineHats(container, charName) {
     const layout = ensurePickerLayout(container, charName);
     const grid = layout.querySelector('.inline-picker-grid');
     grid.innerHTML = '';
+
+    // Refresh preview with current hat (async safe since layout already exists)
+    if (previewApp && previewCharName === charName) {
+      applyHatToPreview(charName);
+    }
 
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
@@ -499,16 +540,14 @@ export function initLayoutShop() {
           state.ownedHats.push(hat.id);
           saveBones();
           updateLayoutUI();
-          renderInlineHats(container, charName);
         } else {
           state.equippedHats[charName] = equipped ? null : hat.id;
           saveBones();
-          renderInlineHats(container, charName);
         }
+        renderInlineHats(container, charName);
       });
       grid.appendChild(el);
     });
-    updateInlineEquippedLabel(container, charName);
   }
 
   function renderInlineSkins(container, charName) {
@@ -523,6 +562,7 @@ export function initLayoutShop() {
     defEl.addEventListener('click', () => {
       state.equippedSkins[charName] = null;
       saveBones();
+      refreshPreviewSprite(charName);
       renderInlineSkins(container, charName);
       updateLayoutUI();
     });
@@ -544,16 +584,16 @@ export function initLayoutShop() {
           state.ownedSkins.push(skin.id);
           saveBones();
           updateLayoutUI();
-          renderInlineSkins(container, charName);
         } else {
           state.equippedSkins[charName] = equipped ? null : skin.id;
           saveBones();
-          renderInlineSkins(container, charName);
         }
+        // Skin changed — rebuild preview sprite with new textures
+        refreshPreviewSprite(charName);
+        renderInlineSkins(container, charName);
       });
       grid.appendChild(el);
     });
-    updateInlineEquippedLabel(container, charName);
   }
 
   // Inventory button — toggles between inventory and deck view

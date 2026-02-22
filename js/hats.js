@@ -345,3 +345,83 @@ export function applyHat(critterSprite, charType) {
     critterSprite.onFrameChange = applyFrame;
   }
 }
+
+// Standalone preview hat — creates hat on a sprite without touching the shared game hat
+export function applyPreviewHat(sprite, charName, hatId) {
+  // Remove any existing preview hat children
+  for (let i = sprite.children.length - 1; i >= 0; i--) {
+    if (sprite.children[i]._isPreviewHat) {
+      sprite.removeChild(sprite.children[i]);
+      sprite.children[i]?.destroy?.();
+    }
+  }
+  if (!hatId || !sprite) return;
+  const pos = _hatBasePos[charName] || _hatBasePos.frog;
+  const baseXOff = pos[0];
+  const baseYOff = pos[1];
+  let hat = null;
+
+  if (hatId === 'tophat') {
+    hat = new PIXI.Graphics();
+    hat.roundRect(-30, -5, 60, 10, 4).fill({ color: 0x1a1a2e });
+    hat.roundRect(-20, -48, 40, 45, 5).fill({ color: 0x1a1a2e });
+    hat.rect(-20, -13, 40, 7).fill({ color: 0x8b0000 });
+  } else if (hatId === 'partyhat') {
+    hat = new PIXI.Graphics();
+    hat.roundRect(-42, -3, 84, 16, 3).fill({ color: 0x0070DD });
+    hat.moveTo(-42, -3); hat.lineTo(-32, -22); hat.lineTo(-21, -3);
+    hat.lineTo(-11, -22); hat.lineTo(0, -3); hat.lineTo(11, -22);
+    hat.lineTo(21, -3); hat.lineTo(32, -22); hat.lineTo(42, -3);
+    hat.closePath(); hat.fill({ color: 0x0070DD });
+    hat.scale.set(1.3);
+  } else if (hatId === 'crown') {
+    hat = new PIXI.Graphics();
+    hat.roundRect(-32, -2, 64, 14, 3).fill({ color: 0xFFD700 });
+    hat.moveTo(-32, -2); hat.lineTo(-24, -28); hat.lineTo(-16, -6);
+    hat.lineTo(-8, -32); hat.lineTo(0, -6); hat.lineTo(8, -34);
+    hat.lineTo(16, -6); hat.lineTo(24, -28); hat.lineTo(32, -2);
+    hat.closePath(); hat.fill({ color: 0xFFD700 });
+    hat.circle(-24, -26, 4).fill({ color: 0xff2244 });
+    hat.circle(-8, -30, 4).fill({ color: 0x2266ff });
+    hat.circle(8, -32, 5).fill({ color: 0xff2244 });
+    hat.circle(24, -26, 4).fill({ color: 0x2266ff });
+    hat.circle(0, 5, 5).fill({ color: 0x22dd66 });
+  } else if (hatId === 'wizardhat') {
+    hat = new PIXI.Graphics();
+    hat.ellipse(0, 0, 42, 10).fill({ color: 0x6A0DAD });
+    hat.moveTo(-28, 0); hat.lineTo(-4, -70); hat.lineTo(8, -72);
+    hat.lineTo(28, 0); hat.closePath(); hat.fill({ color: 0x6A0DAD });
+    hat.rect(-26, -8, 52, 8).fill({ color: 0xFFD700, alpha: 0.8 });
+  } else if (hatId === 'viking') {
+    hat = new PIXI.Graphics();
+    hat.ellipse(0, -14, 30, 22).fill({ color: 0x8899AA });
+    hat.roundRect(-4, -12, 8, 24, 2).fill({ color: 0x556677 });
+    hat.roundRect(-32, -4, 64, 10, 3).fill({ color: 0x556677 });
+    hat.moveTo(-26, -8); hat.lineTo(-50, -52); hat.lineTo(-44, -54);
+    hat.lineTo(-22, -14); hat.closePath(); hat.fill({ color: 0xE8D5A0 });
+    hat.moveTo(26, -8); hat.lineTo(50, -52); hat.lineTo(44, -54);
+    hat.lineTo(22, -14); hat.closePath(); hat.fill({ color: 0xE8D5A0 });
+  } else if (hatId === 'halo') {
+    hat = new PIXI.Graphics();
+    hat.ellipse(0, -38, 34, 9).stroke({ width: 6, color: 0xFFD700, alpha: 0.2 });
+    hat.ellipse(0, -38, 28, 7).stroke({ width: 4, color: 0xFFD700, alpha: 0.9 });
+    hat.ellipse(0, -38, 22, 5).stroke({ width: 2, color: 0xFFF4B0, alpha: 0.7 });
+  }
+
+  if (hat) {
+    hat._isPreviewHat = true;
+    hat.position.set(baseXOff, baseYOff);
+    hat.zIndex = 100;
+    sprite.addChild(hat);
+    // Wire frame tracking for walk animation
+    const deltas = _hatFrameDeltas[charName];
+    if (deltas) {
+      const walkDeltas = deltas.walk;
+      sprite.onFrameChange = (frame) => {
+        const entry = walkDeltas[frame % walkDeltas.length];
+        if (entry === null) { hat.visible = false; }
+        else { hat.visible = true; hat.position.set(baseXOff + entry[0], baseYOff + entry[1]); }
+      };
+    }
+  }
+}

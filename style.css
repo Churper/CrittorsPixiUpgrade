@@ -1852,49 +1852,58 @@ touch-action: manipulation;
   width: 100%;
   text-align: left;
   flex-shrink: 0;
+  display: flex;
+  gap: clamp(3px, 0.8vmin, 6px);
+  padding: clamp(2px, 0.5vmin, 4px) 0;
 }
 
 .layout-row {
+  flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: clamp(1px, 0.4vmin, 3px) clamp(3px, 0.8vmin, 6px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  gap: 1px;
+  padding: clamp(3px, 0.7vmin, 5px) clamp(2px, 0.5vmin, 4px);
+  background: rgba(12, 22, 40, 0.6);
+  border: 1px solid rgba(100, 160, 200, 0.12);
+  border-radius: clamp(4px, 1vmin, 6px);
 }
 
 .layout-stat-icon {
-  font-size: clamp(13px, 3.2vmin, 17px);
+  font-size: clamp(14px, 3.5vmin, 18px);
   flex-shrink: 0;
-  width: clamp(20px, 5vmin, 26px);
-  text-align: center;
+  line-height: 1;
 }
 
 .layout-stat-bonus {
-  flex: 1;
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.7em, 2.2vmin, 0.9em);
+  font-size: clamp(0.6em, 1.8vmin, 0.78em);
   color: #8cc8e8;
   text-shadow: 0 0 4px rgba(80, 160, 220, 0.3);
+  white-space: nowrap;
 }
 
 .layout-buy-btn {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.65em, 1.9vmin, 0.8em);
-  padding: clamp(2px, 0.6vmin, 4px) clamp(6px, 1.5vmin, 10px);
-  border-radius: 6px;
-  border: 2px solid rgba(200, 180, 100, 0.5);
-  background: rgba(200, 180, 100, 0.12);
-  color: #f0e8d0;
+  font-size: clamp(0.58em, 1.6vmin, 0.72em);
+  padding: clamp(2px, 0.4vmin, 3px) clamp(6px, 1.4vmin, 10px);
+  border-radius: 5px;
+  border: 1px solid rgba(200, 180, 100, 0.45);
+  background: linear-gradient(145deg, rgba(50, 42, 16, 0.7), rgba(35, 30, 10, 0.8));
+  color: #e8d888;
   cursor: pointer;
   transition: transform 0.15s, background 0.15s, border-color 0.15s;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+  width: 100%;
 }
 
 .layout-buy-btn:hover {
-  transform: scale(1.08);
-  background: rgba(200, 180, 100, 0.25);
-  border-color: rgba(200, 180, 100, 0.8);
+  transform: scale(1.06);
+  background: linear-gradient(145deg, rgba(65, 55, 20, 0.85), rgba(45, 38, 14, 0.9));
+  border-color: rgba(220, 200, 100, 0.7);
 }
 
 .layout-buy-btn:active {
@@ -1959,39 +1968,18 @@ touch-action: manipulation;
 
 .inline-picker-preview {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: clamp(2px, 0.6vmin, 4px);
-  min-width: clamp(60px, 14vmin, 80px);
-  padding: clamp(4px, 1vmin, 8px);
-  background: rgba(10, 18, 34, 0.7);
+  justify-content: center;
+  min-width: clamp(70px, 16vmin, 100px);
+  background: rgba(8, 14, 28, 0.7);
   border: 1px solid rgba(80, 140, 200, 0.2);
   border-radius: clamp(6px, 1.2vmin, 8px);
 }
 
-.inline-picker-portrait {
-  width: clamp(48px, 12vmin, 68px);
-  height: clamp(48px, 12vmin, 68px);
+.inline-picker-canvas {
   image-rendering: pixelated;
-  border-radius: clamp(4px, 1vmin, 6px);
-  border: 2px solid rgba(100, 160, 200, 0.25);
-  background: rgba(6, 12, 24, 0.6);
-}
-
-.inline-picker-charname {
-  font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.65em, 1.8vmin, 0.8em);
-  color: #8cc8e8;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-}
-
-.inline-picker-equipped-label {
-  font-family: 'Patrick Hand', cursive;
-  font-size: clamp(0.55em, 1.5vmin, 0.7em);
-  color: rgba(120, 220, 160, 0.7);
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-  text-align: center;
-  line-height: 1.2;
+  width: clamp(70px, 16vmin, 100px) !important;
+  height: clamp(70px, 16vmin, 100px) !important;
 }
 
 .layout-inline-picker .inline-picker-grid {
@@ -2451,10 +2439,10 @@ touch-action: manipulation;
     gap: clamp(4px, 1vh, 8px);
   }
   .layout-row {
-    padding: 1px 4px;
+    padding: clamp(2px, 0.5vh, 4px) clamp(1px, 0.3vh, 3px);
   }
-  .layout-stat-bonus { font-size: clamp(0.6em, 1.8vh, 0.8em); }
-  .layout-buy-btn { font-size: clamp(0.55em, 1.4vh, 0.7em); padding: 1px 5px; }
+  .layout-stat-bonus { font-size: clamp(0.5em, 1.4vh, 0.7em); }
+  .layout-buy-btn { font-size: clamp(0.5em, 1.2vh, 0.65em); padding: 1px 4px; }
   .layout-cosmetic-slot {
     width: clamp(36px, 8vh, 48px);
     height: clamp(22px, 5vh, 30px);
@@ -2490,13 +2478,12 @@ touch-action: manipulation;
     height: clamp(48px, 11vh, 64px);
     font-size: clamp(16px, 4vh, 24px);
   }
-  .inline-picker-portrait {
-    width: clamp(36px, 10vh, 56px);
-    height: clamp(36px, 10vh, 56px);
+  .inline-picker-canvas {
+    width: clamp(56px, 14vh, 80px) !important;
+    height: clamp(56px, 14vh, 80px) !important;
   }
   .inline-picker-preview {
-    min-width: clamp(48px, 12vh, 68px);
-    padding: clamp(3px, 0.8vh, 6px);
+    min-width: clamp(56px, 14vh, 80px);
   }
 }
 

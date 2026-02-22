@@ -1168,6 +1168,14 @@ state.frogGhostPlayer.scale.set(0.28);
       const birdWalkTextures = createAnimationTextures2('bird_walk', 13, 403, 2541, 806);
       const birdAttackTextures = createAnimationTextures2('bird_attack', 13, 403, 2541, 806);
 
+      // Store base walk textures for all characters (used by cosmetic preview)
+      state.baseWalkTextures = {
+        frog: frogWalkTextures1,
+        snail: snailWalkTextures,
+        bird: birdWalkTextures,
+        bee: beeWalkTextures,
+      };
+
       // Generate recolored skin textures for equipped skins (engine in skins.js)
       generateSkinTextures(textures, textureScaleFactors);
 

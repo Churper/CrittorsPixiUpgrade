@@ -1839,7 +1839,7 @@ let cantGainEXP = false;
 
           const wipeSubtitle = document.createElement('div');
           wipeSubtitle.className = 'wipe-subtitle';
-          wipeSubtitle.textContent = isEndless
+          wipeSubtitle.textContent = state.gameMode === 'endless'
             ? 'Castle #' + Math.floor(state.endlessKillCount / 10)
             : 'Round ' + state.currentRound;
           wipeEl.appendChild(wipeSubtitle);
@@ -1920,7 +1920,7 @@ let cantGainEXP = false;
 
                 const subtitle = document.createElement('div');
                 subtitle.className = 'wipe-subtitle';
-                subtitle.textContent = isEndless
+                subtitle.textContent = state.gameMode === 'endless'
                   ? 'Castle #' + Math.floor(state.endlessKillCount / 10)
                   : 'Round ' + state.currentRound;
                 wipeEl.appendChild(subtitle);

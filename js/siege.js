@@ -46,6 +46,7 @@ export function startSiege(critter, app, impWalkTextures, impAttackTextures) {
   state.siegeActive = true;
   state.siegePhase = 'alert';
   state.siegeCastleLevel = level;
+  state.siegeBabyFocusType = null;
 
   // Stop normal spawner
   if (state.enemySpawnTimeout) {
@@ -621,6 +622,7 @@ function endSiege() {
   state.siegePhase = 'idle';
   state.siegeMobsRemaining = 0;
   state.siegeMobsTotal = 0;
+  state.siegeBabyFocusType = null;
   state.siegeCastleHP = 0;
   state.siegeCastleMaxHP = 0;
   state.siegeRewardItems = [];
@@ -664,6 +666,7 @@ export function cleanupSiege() {
   state.siegeCastleLevel = 0;
   state.siegeMobsRemaining = 0;
   state.siegeMobsTotal = 0;
+  state.siegeBabyFocusType = null;
   state.siegeCastleHP = 0;
   state.siegeCastleMaxHP = 0;
   state.siegeRewardItems = [];

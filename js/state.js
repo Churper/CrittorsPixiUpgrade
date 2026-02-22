@@ -134,6 +134,7 @@ const state = {
   siegeCastleLevel: 0,
   siegeMobsRemaining: 0,
   siegeMobsTotal: 0,
+  siegeBabyFocusType: null,
   siegeCastleHP: 0,
   siegeCastleMaxHP: 0,
   siegeCastleSprite: null,

@@ -410,6 +410,25 @@ export function handleCritterAttack(critter, enemy, critterAttackTextures) {
 }
 
 export function addEnemyInRange(enemy) {
+  // Siege baby focus lock: clear one baby type group before the next type engages.
+  if (enemy.isBaby && enemy.isSiegeMob && state.siegeActive) {
+    const focusType = state.siegeBabyFocusType;
+    if (focusType) {
+      const focusAlive = getEnemies().some(e =>
+        e.isAlive && e.isBaby && e.isSiegeMob && e.type === focusType
+      );
+      if (!focusAlive) {
+        state.siegeBabyFocusType = null;
+      }
+    }
+    if (state.siegeBabyFocusType && enemy.type !== state.siegeBabyFocusType) {
+      return;
+    }
+    if (!state.siegeBabyFocusType) {
+      state.siegeBabyFocusType = enemy.type;
+    }
+  }
+
   // Prevent multiple non-baby enemies from stacking in combat range
   if (!enemy.isBaby && getEnemiesInRange() >= 1) {
     // Another enemy is already engaged — don't add, let queue gate handle it

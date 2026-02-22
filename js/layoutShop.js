@@ -48,6 +48,7 @@ const hatCatalog = [
   { id: 'wizardhat',  icon: '🧙', name: 'Wizard Hat',  cost: 8 },
   { id: 'viking',     icon: '⚔️', name: 'Viking Helm', cost: 12 },
   { id: 'halo',       icon: '😇', name: 'Halo',        cost: 15 },
+  { id: 'cowboy',     icon: '🤠', name: 'Cowboy Hat',  cost: 10 },
 ];
 
 // Items that can have starting counts purchased

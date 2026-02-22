@@ -24,6 +24,7 @@ export const skinCatalog = [
   // Bee skins
   { id: 'bee-neon',  icon: '☣️', name: 'Toxic Bee',  cost: 3, charOnly: 'bee' },
   { id: 'bee-royal', icon: '🪻', name: 'Orchid Bee', cost: 5, charOnly: 'bee' },
+  { id: 'bee-rasta', icon: '🟢', name: 'Rasta Bee',  cost: 4, charOnly: 'bee' },
 ];
 
 // ── HSL conversion ────────────────────────────────────────────────────────────
@@ -145,6 +146,10 @@ const skinHueConfigs = {
   ],
   'bee-royal': [
     { from: 18, to: 72, targetFrom: 270, targetTo: 286, sat: 1.25, lit: 0.82 },
+  ],
+  'bee-rasta': [
+    // Rasta: yellow→olive-gold-green (warm earthy tone)
+    { from: 18, to: 72, targetFrom: 85, targetTo: 110, sat: 1.1, lit: 0.85 },
   ],
 };
 

@@ -321,6 +321,42 @@ export function applyHat(critterSprite, charType) {
     hat.zIndex = 100;
     critterSprite.addChild(hat);
     currentHatGraphic = hat;
+  } else if (hatId === 'cowboy') {
+    const hat = new PIXI.Graphics();
+    const leather = 0x8B5E3C;
+    const darkLeather = 0x5C3A1E;
+    // Wide brim — curved up at sides
+    hat.moveTo(-44, 2);
+    hat.quadraticCurveTo(-36, -8, -24, -4);
+    hat.lineTo(24, -4);
+    hat.quadraticCurveTo(36, -8, 44, 2);
+    hat.quadraticCurveTo(30, 10, 0, 10);
+    hat.quadraticCurveTo(-30, 10, -44, 2);
+    hat.closePath();
+    hat.fill({ color: leather });
+    hat.stroke({ width: 1.5, color: darkLeather });
+    // Crown — tall pinched top
+    hat.moveTo(-20, -4);
+    hat.lineTo(-18, -32);
+    hat.quadraticCurveTo(-10, -42, 0, -42);
+    hat.quadraticCurveTo(10, -42, 18, -32);
+    hat.lineTo(20, -4);
+    hat.closePath();
+    hat.fill({ color: leather });
+    hat.stroke({ width: 1.5, color: darkLeather });
+    // Crown crease — pinch at top
+    hat.moveTo(-6, -40);
+    hat.quadraticCurveTo(0, -36, 6, -40);
+    hat.stroke({ width: 2, color: darkLeather, alpha: 0.5 });
+    // Hat band
+    hat.rect(-20, -10, 40, 6).fill({ color: darkLeather });
+    // Band buckle
+    hat.roundRect(-4, -11, 8, 8, 1.5).fill({ color: 0xC0C0C0 });
+    hat.roundRect(-2.5, -9.5, 5, 5, 1).fill({ color: leather });
+    hat.position.set(baseXOff, baseYOff);
+    hat.zIndex = 100;
+    critterSprite.addChild(hat);
+    currentHatGraphic = hat;
   }
 
   // Wire up per-frame hat tracking so it follows the head through all animations
@@ -417,6 +453,21 @@ export function applyPreviewHat(sprite, charName, hatId) {
     hat.ellipse(0, -38, 34, 9).stroke({ width: 6, color: 0xFFD700, alpha: 0.2 });
     hat.ellipse(0, -38, 28, 7).stroke({ width: 4, color: 0xFFD700, alpha: 0.9 });
     hat.ellipse(0, -38, 22, 5).stroke({ width: 2, color: 0xFFF4B0, alpha: 0.7 });
+  } else if (hatId === 'cowboy') {
+    hat = new PIXI.Graphics();
+    const lth = 0x8B5E3C, dlth = 0x5C3A1E;
+    hat.moveTo(-44, 2); hat.quadraticCurveTo(-36, -8, -24, -4);
+    hat.lineTo(24, -4); hat.quadraticCurveTo(36, -8, 44, 2);
+    hat.quadraticCurveTo(30, 10, 0, 10); hat.quadraticCurveTo(-30, 10, -44, 2);
+    hat.closePath(); hat.fill({ color: lth }); hat.stroke({ width: 1.5, color: dlth });
+    hat.moveTo(-20, -4); hat.lineTo(-18, -32);
+    hat.quadraticCurveTo(-10, -42, 0, -42); hat.quadraticCurveTo(10, -42, 18, -32);
+    hat.lineTo(20, -4); hat.closePath(); hat.fill({ color: lth }); hat.stroke({ width: 1.5, color: dlth });
+    hat.moveTo(-6, -40); hat.quadraticCurveTo(0, -36, 6, -40);
+    hat.stroke({ width: 2, color: dlth, alpha: 0.5 });
+    hat.rect(-20, -10, 40, 6).fill({ color: dlth });
+    hat.roundRect(-4, -11, 8, 8, 1.5).fill({ color: 0xC0C0C0 });
+    hat.roundRect(-2.5, -9.5, 5, 5, 1).fill({ color: lth });
   }
 
   if (hat) {

@@ -178,26 +178,22 @@ export function applyHat(critterSprite, charType) {
     currentHatGraphic = hat;
   } else if (hatId === 'partyhat') {
     const hat = new PIXI.Graphics();
-    // Festive cone party hat with colorful stripes
-    // Main cone shape
-    hat.moveTo(-28, 6);
-    hat.lineTo(0, -42);
-    hat.lineTo(28, 6);
+    const blue = 0x0070DD;
+    // OSRS-style partyhat with a thick band and sharp crown points
+    hat.roundRect(-42, -3, 84, 16, 3).fill({ color: blue });
+    hat.moveTo(-42, -3);
+    hat.lineTo(-32, -22);
+    hat.lineTo(-21, -3);
+    hat.lineTo(-11, -22);
+    hat.lineTo(0, -3);
+    hat.lineTo(11, -22);
+    hat.lineTo(21, -3);
+    hat.lineTo(32, -22);
+    hat.lineTo(42, -3);
     hat.closePath();
-    hat.fill({ color: 0xDD2255 });
-    // Stripe 1 — yellow band
-    hat.moveTo(-22, -4); hat.lineTo(-10, -24); hat.lineTo(10, -24); hat.lineTo(22, -4);
-    hat.closePath(); hat.fill({ color: 0xFFDD33 });
-    // Stripe 2 — blue band
-    hat.moveTo(-14, -18); hat.lineTo(-5, -32); hat.lineTo(5, -32); hat.lineTo(14, -18);
-    hat.closePath(); hat.fill({ color: 0x3388FF });
-    // Base rim — curled edge
-    hat.ellipse(0, 6, 30, 6).fill({ color: 0xDD2255 });
-    hat.ellipse(0, 6, 30, 4).fill({ color: 0xFF4477, alpha: 0.4 });
-    // Pom-pom on top
-    hat.circle(0, -42, 7).fill({ color: 0xFFFFFF });
-    hat.circle(-2, -44, 4).fill({ color: 0xFFFFFF, alpha: 0.5 });
-    hat.circle(2, -41, 3).fill({ color: 0xEEEEEE, alpha: 0.6 });
+    hat.fill({ color: blue });
+    hat.stroke({ width: 1.5, color: 0x005bb5, alpha: 0.5 });
+    hat.scale.set(1.3);
     hat.position.set(baseXOff, baseYOff);
     hat.zIndex = 100;
     critterSprite.addChild(hat);
@@ -383,12 +379,12 @@ export function applyPreviewHat(sprite, charName, hatId) {
     hat.roundRect(-3, -14, 6, 8, 1).fill({ color: 0x1a1a2e });
   } else if (hatId === 'partyhat') {
     hat = new PIXI.Graphics();
-    hat.moveTo(-28, 6); hat.lineTo(0, -42); hat.lineTo(28, 6); hat.closePath(); hat.fill({ color: 0xDD2255 });
-    hat.moveTo(-22, -4); hat.lineTo(-10, -24); hat.lineTo(10, -24); hat.lineTo(22, -4); hat.closePath(); hat.fill({ color: 0xFFDD33 });
-    hat.moveTo(-14, -18); hat.lineTo(-5, -32); hat.lineTo(5, -32); hat.lineTo(14, -18); hat.closePath(); hat.fill({ color: 0x3388FF });
-    hat.ellipse(0, 6, 30, 6).fill({ color: 0xDD2255 });
-    hat.circle(0, -42, 7).fill({ color: 0xFFFFFF });
-    hat.circle(-2, -44, 4).fill({ color: 0xFFFFFF, alpha: 0.5 });
+    hat.roundRect(-42, -3, 84, 16, 3).fill({ color: 0x0070DD });
+    hat.moveTo(-42, -3); hat.lineTo(-32, -22); hat.lineTo(-21, -3);
+    hat.lineTo(-11, -22); hat.lineTo(0, -3); hat.lineTo(11, -22);
+    hat.lineTo(21, -3); hat.lineTo(32, -22); hat.lineTo(42, -3);
+    hat.closePath(); hat.fill({ color: 0x0070DD });
+    hat.scale.set(1.3);
   } else if (hatId === 'crown') {
     hat = new PIXI.Graphics();
     hat.roundRect(-32, -2, 64, 14, 3).fill({ color: 0xFFD700 });

@@ -7,6 +7,8 @@ import {
   getCurrentCharacter, getEnemiesInRange, setEnemiesInRange,
   setIsCharAttacking, getisDead, getisPaused,
   getPlayerCurrentHealth, getPlayerHealth,
+  getFrogHealth, getSnailHealth, getBirdHealth, getBeeHealth,
+  getCoffee, setCoffee, setIsDead,
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
@@ -17,7 +19,11 @@ import {
   createCoffeeDrop, playExplosionSound,
   createSpawnEnemy, createItemDrop,
 } from './combat.js';
-import { getCharacterDamage, setPlayerCurrentHealth } from './characters.js';
+import {
+  getCharacterDamage, setPlayerCurrentHealth,
+  setCurrentFrogHealth, setCurrentSnailHealth, setCurrentBirdHealth, setCurrentBeeHealth,
+  stopFlashing,
+} from './characters.js';
 import { updatePlayerHealthBar } from './ui.js';
 import { checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
@@ -210,7 +216,8 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, 
   // Stats scale with level — 1-shot with strong type, 2-shot with neutral/weak
   enemy.maxHP = 8 + level * 3;
   enemy.currentHP = enemy.maxHP;
-  enemy.attackDamage = Math.max(1, Math.round(sc / 5 + level * 0.4));
+  // Softer siege-baby damage scaling.
+  enemy.attackDamage = Math.max(1, Math.round(sc / 10 + level * 0.25));
   enemy.exp = 8 + level * 2;
 
   // Position off-screen right, with vertical variance
@@ -466,9 +473,60 @@ function showSiegeRewardPanel() {
   const titleEl = document.getElementById('siege-reward-title');
   if (titleEl) titleEl.textContent = 'Castle #' + level + ' Cleared!';
 
+  // Spend-all-coffee team heal button state
+  const healBtn = document.getElementById('siege-reward-heal-btn');
+  if (healBtn) {
+    const coffee = getCoffee();
+    healBtn.textContent = coffee > 0 ? `Spend All Coffee (${coffee})` : 'Spend All Coffee (0)';
+    healBtn.disabled = coffee <= 0;
+  }
+
   // Show panel
   const backdrop = document.getElementById('siege-reward-backdrop');
   if (backdrop) backdrop.classList.add('visible');
+}
+
+export function spendAllCoffeeTeamHeal() {
+  const coffee = getCoffee();
+  if (coffee <= 0) return false;
+
+  setCoffee(0);
+  const coffeeAmountElement = document.getElementById('coffee-amount');
+  if (coffeeAmountElement) coffeeAmountElement.textContent = '0';
+  document.dispatchEvent(new Event('coffeeChanged'));
+
+  // Full-team restore (heals and revives all critters).
+  setCurrentFrogHealth(getFrogHealth());
+  setCurrentSnailHealth(getSnailHealth());
+  setCurrentBirdHealth(getBirdHealth());
+  setCurrentBeeHealth(getBeeHealth());
+  setIsDead(false);
+  stopFlashing();
+
+  // Clean up any ghost visuals if a death state was active.
+  if (state.ghostFlyInterval) {
+    clearInterval(state.ghostFlyInterval);
+    state.ghostFlyInterval = null;
+  }
+  if (state.frogGhostPlayer && state.app && state.app.stage.children.includes(state.frogGhostPlayer)) {
+    state.app.stage.removeChild(state.frogGhostPlayer);
+  }
+
+  updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
+
+  // Short celebratory "pokecenter" style jingle.
+  const jingle = state.levelSound.cloneNode();
+  jingle.volume = Math.min(1, state.effectsVolume * 0.9);
+  jingle.playbackRate = 1.1;
+  jingle.play();
+
+  const healBtn = document.getElementById('siege-reward-heal-btn');
+  if (healBtn) {
+    healBtn.textContent = 'Spend All Coffee (0)';
+    healBtn.disabled = true;
+  }
+
+  return true;
 }
 
 export function collectSiegeRewards() {

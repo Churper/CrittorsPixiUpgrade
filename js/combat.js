@@ -197,7 +197,8 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(2 + sc / 3) + 2;
+    // Softer late-game attack ramp: linear + mild curve, less punishing than /3.
+    enemy.attackDamage = Math.max(3, Math.round(4 + sc / 7 + Math.sqrt(sc) / 2.5));
     enemy.maxHP = 100 + Math.round(sc * 2.5);
     enemy.exp = 32 + sc * 4;
   } else {
@@ -259,7 +260,8 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    enemy.attackDamage = Math.round(2 + sc / 3);
+    // Softer late-game attack ramp so damage doesn't spike too fast.
+    enemy.attackDamage = Math.max(2, Math.round(2 + sc / 8 + Math.sqrt(sc) / 3));
     enemy.maxHP = 40 + Math.round(sc * 2.5);
     enemy.exp = 32 + sc * 2;
   } else {
@@ -1060,7 +1062,8 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
   // Reduce enemy's HP
   drawHitSplat(enemy);
 
-  if (enemy.currentHP - getCharacterDamage(getCurrentCharacter()) <= 0) {
+  // Use post-hit HP so baby 2-hit rules are respected.
+  if (enemy.currentHP <= 0) {
 
     // Callback function to remove enemy after death animation
     if (state.app.stage.children.includes(enemy)) {

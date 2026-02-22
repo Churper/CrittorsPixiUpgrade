@@ -47,7 +47,7 @@ import { applySkinFilter, getSkinTextures, generateSkinTextures, updateSkinEffec
 import { showScoreSubmitOverlay } from './leaderboard.js';
 import {
   siegeMobKilled,
-  siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards,
+  siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards, spendAllCoffeeTeamHeal,
   renderOverworldMap, getMapBiomeIndex, getMapBiomeCount, navigateMapDeck,
 } from './siege.js';
 import {
@@ -124,6 +124,9 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('siege-reward-shop-btn').addEventListener('click', function() {
     collectSiegeRewards();
     showPanel('layout');
+  });
+  document.getElementById('siege-reward-heal-btn').addEventListener('click', function() {
+    spendAllCoffeeTeamHeal();
   });
 
   // Siege mob killed event (from combat.js)

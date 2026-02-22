@@ -2924,13 +2924,22 @@ touch-action: manipulation;
 }
 .siege-reward-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   justify-content: center;
   margin-top: 2px;
 }
 .siege-reward-buttons .menu-btn {
-  flex: 1;
-  max-width: 140px;
+  flex: 1 1 110px;
+  max-width: 170px;
+}
+#siege-reward-heal-btn {
+  border-color: rgba(120, 180, 80, 0.45);
+  box-shadow: 0 0 12px rgba(120, 180, 80, 0.15);
+}
+#siege-reward-heal-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 #siege-reward-continue-btn {
   border-color: rgba(80, 180, 220, 0.4);

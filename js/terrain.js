@@ -53,7 +53,7 @@ export function terrainTopY(x) {
        + Math.sin(x * terrainWaveFreq2) * terrainWaveAmp * 0.5;
 }
 
-export function drawEndlessGround(weather) {
+export function drawEndlessGround(weather, skyWeather = weather) {
   const palette = endlessGroundPalettes[weather] || endlessGroundPalettes.sun;
   const g = _ground;
   const w = state.gameMode === 'endless' ? 50000 : Math.ceil(_foregroundWidth);
@@ -187,13 +187,14 @@ export function drawEndlessGround(weather) {
   if (_decorFG) {
     _decorFG.removeChildren();
   }
-  drawEndlessGroundDecor(weather, palette, h);
+  drawEndlessGroundDecor(weather, palette, h, skyWeather);
 }
 
-function drawEndlessGroundDecor(weather, palette, groundH) {
+function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather) {
   if (!_decor) return;
   const d = new PIXI.Graphics();
   const w = 50000;
+  const isNightSky = skyWeather === 'night';
 
   // Trees — behind the walking area (positioned on the curving terrain)
   _endlessGroundSeed = 33333;
@@ -345,7 +346,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
       // Drip detail below canopy
       d.circle(cx + lean - canopyR * 0.2, cy + canopyR * 1.1, 1.5).fill({ color: 0x6688bb, alpha: 0.4 });
       d.circle(cx + lean + canopyR * 0.15, cy + canopyR * 1.0, 1.2).fill({ color: 0x6688bb, alpha: 0.35 });
-    } else if (weather === 'night') {
+    } else if (isNightSky) {
       // Silhouette tree — dark canopy, no glow at base
       const cx = tx, cy = treeY - trunkH - canopyR * 0.5;
       d.circle(cx, cy, canopyR).fill({ color: canopyColor });
@@ -499,7 +500,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
   }
 
   // Campfires with warm glow (night only)
-  if (weather === 'night') {
+  if (isNightSky) {
     _endlessGroundSeed = 99222;
     let cfx = 200;
     while (cfx < w) {
@@ -535,7 +536,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
   }
 
   // Lanterns on posts (night only)
-  if (weather === 'night') {
+  if (isNightSky) {
     _endlessGroundSeed = 99333;
     let lnx = 900;
     while (lnx < w) {
@@ -580,8 +581,8 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
         const trW = (6 + endlessGroundRandom() * 3) * sc;
         const cr = (18 + endlessGroundRandom() * 10) * sc;
         const fy = terrainTopY(ftx) + 55 + endlessGroundRandom() * 35;
-        const col = weather === 'night' ? 0x0a150a : (weather === 'snow' ? 0x1a3a2a : palette.trunk);
-        const canCol = weather === 'night' ? 0x0c1a0c : (weather === 'snow' ? 0x1a4a2a : palette.canopy[0]);
+        const col = isNightSky ? 0x0a150a : (weather === 'snow' ? 0x1a3a2a : palette.trunk);
+        const canCol = isNightSky ? 0x0c1a0c : (weather === 'snow' ? 0x1a4a2a : palette.canopy[0]);
         // Trunk
         fg.moveTo(ftx - trW / 2, fy);
         fg.lineTo(ftx - trW * 0.35, fy - trH);
@@ -603,7 +604,7 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
         const bw = (20 + endlessGroundRandom() * 20) * 1.5;
         const bh = (12 + endlessGroundRandom() * 10) * 1.5;
         const by = terrainTopY(fbx) + 45 + endlessGroundRandom() * 30;
-        const canCol = weather === 'night' ? 0x0c1a0c : palette.canopy[0];
+        const canCol = isNightSky ? 0x0c1a0c : palette.canopy[0];
         fg.circle(fbx, by - bh * 0.4, bw * 0.4).fill({ color: canCol });
         fg.circle(fbx - bw * 0.2, by - bh * 0.25, bw * 0.3).fill({ color: canCol });
         fg.circle(fbx + bw * 0.2, by - bh * 0.25, bw * 0.28).fill({ color: canCol });

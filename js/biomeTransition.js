@@ -141,7 +141,7 @@ export function transitionWeather(newWeather, skipGround) {
     _setEndlessGroundDecorFG(newGroundDecorFG);
     initTerrain(_getEndlessGround(), _getEndlessGroundDecor(), _getEndlessGroundDecorFG(), _endlessGroundHeight, _foreground.width);
     const groundWeather = getGroundWeather(newWeather);
-    drawEndlessGround(groundWeather);
+    drawEndlessGround(groundWeather, newWeather);
     _setEndlessGroundCurrentWeather(groundWeather);
   }
 

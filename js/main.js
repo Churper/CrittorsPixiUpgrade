@@ -1102,7 +1102,7 @@ initTerrain(endlessGround, endlessGroundDecor, endlessGroundDecorFG, endlessGrou
 initWeather(endlessGroundHeight);
 const initialWeather = getWeatherType();
 const initialGroundWeather = getGroundWeather(initialWeather);
-drawEndlessGround(initialGroundWeather);
+drawEndlessGround(initialGroundWeather, initialWeather);
 endlessGroundCurrentWeather = initialGroundWeather;
 endlessCurrentSkyWeather = initialWeather;
 foreground.visible = false;

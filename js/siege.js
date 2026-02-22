@@ -107,8 +107,10 @@ function createSiegeCastle(critter, app) {
   state.siegeCastleSprite = castle;
 
   // HP
-  state.siegeCastleMaxHP = 100 + level * 50;
+  state.siegeCastleMaxHP = 110 + level * 40;
   state.siegeCastleHP = state.siegeCastleMaxHP;
+  state.siegeRewardItems = [];
+  state.siegePendingRewardItems = buildSiegeCastleRewards(level);
 
   // HP bar background
   const barWidth = 120;
@@ -129,6 +131,19 @@ function createSiegeCastle(critter, app) {
   barFill.visible = false;
   app.stage.addChild(barFill);
   state.siegeCastleHPBar = barFill;
+}
+
+function buildSiegeCastleRewards(level) {
+  const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean', 'medkit'];
+  const count = level >= 25 ? 3 : level >= 10 ? 2 : 1;
+  const rewards = [];
+  const available = [...itemPool];
+  for (let i = 0; i < count && available.length > 0; i++) {
+    const idx = Math.floor(Math.random() * available.length);
+    rewards.push(available[idx]);
+    available.splice(idx, 1);
+  }
+  return rewards;
 }
 
 // --- Swarm Spawning ---
@@ -218,7 +233,8 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, 
   enemy.currentHP = enemy.maxHP;
   // Mid-ground siege-baby damage scaling (undo part of the recent nerf).
   enemy.attackDamage = Math.max(1, Math.round(sc / 8 + level * 0.3));
-  enemy.exp = 8 + level * 2;
+  // Give slightly more EXP from siege baby waves.
+  enemy.exp = 10 + level * 3;
 
   // Position off-screen right in a tighter cluster.
   const spawnX = critter.position.x + app.screen.width + 80 + spawnIndex * 22;
@@ -316,6 +332,7 @@ function transitionToCastlePhase() {
 // --- Castle Combat ---
 
 export function siegeCastleTakeDamage(damage, critter, app) {
+  const hpBefore = state.siegeCastleHP;
   state.siegeCastleHP -= damage;
 
   // Update HP bar
@@ -328,11 +345,40 @@ export function siegeCastleTakeDamage(damage, critter, app) {
     setTimeout(() => {
       if (state.siegeCastleSprite) state.siegeCastleSprite.tint = 0xffffff;
     }, 100);
+    tryDropSiegeCastleItemOnHit(castle, hpBefore, damage);
   }
 
   if (state.siegeCastleHP <= 0) {
     siegeCastleDestroyed(critter, app);
   }
+}
+
+function tryDropSiegeCastleItemOnHit(castle, hpBefore, damage) {
+  const pending = state.siegePendingRewardItems;
+  if (!castle || !pending || pending.length === 0) return;
+
+  const hitDamage = Math.max(1, Math.round(damage || 1));
+  const estHitsRemaining = Math.max(1, Math.ceil(Math.max(1, hpBefore) / hitDamage));
+  const dropChance = Math.min(0.2, pending.length / estHitsRemaining);
+  if (Math.random() > dropChance) return;
+
+  dropRandomPendingSiegeItem(castle.position.x, castle.position.y - castle.height / 2, 0);
+}
+
+function dropRandomPendingSiegeItem(dropX, dropY, delayMs) {
+  const pending = state.siegePendingRewardItems;
+  if (!pending || pending.length === 0) return;
+
+  const idx = Math.floor(Math.random() * pending.length);
+  const [item] = pending.splice(idx, 1);
+  if (!item) return;
+  state.siegeRewardItems.push(item);
+
+  const offsetX = (Math.random() - 0.5) * 36;
+  const offsetY = (Math.random() - 0.5) * 16;
+  setTimeout(() => {
+    createItemDrop(dropX + offsetX, dropY + offsetY, item);
+  }, Math.max(0, delayMs || 0));
 }
 
 function updateSiegeCastleHPBar() {
@@ -407,23 +453,11 @@ function siegeCastleDestroyed(critter, app) {
     createCoffeeDrop(dropX, dropY);
   }
 
-  // Generate reward items and drop them on the ground (no duplicates)
-  const level = state.siegeCastleLevel;
-  const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean', 'medkit'];
-  const count = level >= 25 ? 3 : level >= 10 ? 2 : 1;
-  const rewards = [];
-  const available = [...itemPool];
-  for (let i = 0; i < count && available.length > 0; i++) {
-    const idx = Math.floor(Math.random() * available.length);
-    rewards.push(available[idx]);
-    available.splice(idx, 1);
+  // Drop any remaining pre-rolled rewards that did not pop out during hits.
+  const pendingCount = (state.siegePendingRewardItems || []).length;
+  for (let i = 0; i < pendingCount; i++) {
+    dropRandomPendingSiegeItem(dropX, dropY - 20, 200 + i * 150);
   }
-  state.siegeRewardItems = rewards;
-  rewards.forEach((item, i) => {
-    setTimeout(() => {
-      createItemDrop(dropX + (i - count / 2) * 40, dropY - 20, item);
-    }, 200 + i * 150);
-  });
 
   // Castle awards half a level of kill progress (single chunk)
   const halfProgress = Math.max(1, Math.floor(state.killsToNextLevel / 2));
@@ -618,6 +652,7 @@ function endSiege() {
   state.siegeCastleHP = 0;
   state.siegeCastleMaxHP = 0;
   state.siegeRewardItems = [];
+  state.siegePendingRewardItems = [];
 
   // Post-siege cooldown — reuse demi cooldown so spawner waits 8s
   state.lastDemiKillTime = Date.now();
@@ -661,6 +696,7 @@ export function cleanupSiege() {
   state.siegeCastleHP = 0;
   state.siegeCastleMaxHP = 0;
   state.siegeRewardItems = [];
+  state.siegePendingRewardItems = [];
 
   // Hide reward panel if visible
   const backdrop = document.getElementById('siege-reward-backdrop');

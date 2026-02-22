@@ -202,11 +202,12 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
     // Mid-ground ramp: stronger than the last nerf, still smoother than the old /3 spike.
     enemy.attackDamage = Math.max(3, Math.round(4 + sc / 6 + Math.sqrt(sc) / 2.8));
     enemy.maxHP = 100 + Math.round(sc * 2.5);
-    enemy.exp = 32 + sc * 4;
+    // Slightly faster progression from demi kills.
+    enemy.exp = 40 + sc * 5;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 2);
     enemy.maxHP = 100 + state.currentRound * 5;
-    enemy.exp = 32 + Math.floor(state.currentRound * 4);
+    enemy.exp = 40 + Math.floor(state.currentRound * 5);
   }
 
   enemy.currentHP = enemy.maxHP;
@@ -265,11 +266,12 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
     // Mid-ground ramp: slightly tougher than the nerfed version without over-spiking.
     enemy.attackDamage = Math.max(2, Math.round(2 + sc / 7 + Math.sqrt(sc) / 3.2));
     enemy.maxHP = 40 + Math.round(sc * 2.5);
-    enemy.exp = 32 + sc * 2;
+    // Slightly faster progression from regular kills.
+    enemy.exp = 36 + sc * 3;
   } else {
     enemy.attackDamage = Math.round(2 + state.currentRound / 3);
     enemy.maxHP = 40 + state.currentRound * 5;
-    enemy.exp = 32 + Math.floor(state.currentRound * 2);
+    enemy.exp = 36 + Math.floor(state.currentRound * 3);
   }
 
   enemy.currentHP = enemy.maxHP;

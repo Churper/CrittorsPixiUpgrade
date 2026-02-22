@@ -242,7 +242,7 @@ export function initLayoutShop() {
     }
     if (view === layoutInventoryView) renderInventoryGrid();
     const btn = document.getElementById('layout-inventory-btn');
-    btn.textContent = view === layoutInventoryView ? '\u2190 Characters' : '\uD83C\uDF92 Inventory';
+    btn.textContent = view === layoutInventoryView ? '\u2190 Back' : '\uD83D\uDEE1\uFE0F Shop';
   }
 
   function updateHatsEquippedLabel() {
@@ -270,7 +270,7 @@ export function initLayoutShop() {
     layoutDeckArea.style.display = 'flex';
     activeSubviewChar = null;
     updateDeckPositions();
-    document.getElementById('layout-inventory-btn').textContent = '🎒 Inventory';
+    document.getElementById('layout-inventory-btn').textContent = '🛡️ Shop';
   }
 
   // --- Render hats grid ---
@@ -451,15 +451,16 @@ export function initLayoutShop() {
     return state.baseWalkTextures && state.baseWalkTextures[charName];
   }
 
+  /** Returns true if sprite was created, false if no textures available */
   function refreshPreviewSprite(charName) {
-    if (!previewApp) return;
+    if (!previewApp) return false;
     if (previewSprite) {
       previewApp.stage.removeChild(previewSprite);
       previewSprite.destroy({ children: true });
       previewSprite = null;
     }
     const textures = getCharWalkTextures(charName);
-    if (!textures || textures.length === 0) return;
+    if (!textures || textures.length === 0) return false;
     previewSprite = new PIXI.AnimatedSprite(textures);
     previewSprite.animationSpeed = 0.15;
     previewSprite.loop = true;
@@ -473,6 +474,7 @@ export function initLayoutShop() {
     previewSprite.play();
     applyHatToPreview(charName);
     previewCharName = charName;
+    return true;
   }
 
   function applyHatToPreview(charName) {
@@ -511,7 +513,12 @@ export function initLayoutShop() {
           preview.innerHTML = '';
           preview.appendChild(previewApp.canvas);
         }
-        refreshPreviewSprite(charName);
+        const spriteOk = refreshPreviewSprite(charName);
+        if (!spriteOk && preview) {
+          // PIXI works but no textures loaded yet — show portrait fallback
+          preview.innerHTML = '';
+          showFallbackPreview(preview, charName);
+        }
       } else if (preview) {
         showFallbackPreview(preview, charName);
       }
@@ -607,7 +614,11 @@ export function initLayoutShop() {
           saveBones();
         }
         // Skin changed — rebuild preview sprite with new textures
-        refreshPreviewSprite(charName);
+        const spriteOk = refreshPreviewSprite(charName);
+        if (!spriteOk) {
+          const preview = container.querySelector('.inline-picker-preview');
+          if (preview) showFallbackPreview(preview, charName);
+        }
         renderInlineSkins(container, charName);
       });
       grid.appendChild(el);

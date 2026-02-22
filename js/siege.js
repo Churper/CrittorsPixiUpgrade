@@ -219,8 +219,8 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, 
   enemy.currentHP = enemy.maxHP;
   // Mid-ground siege-baby damage scaling (undo part of the recent nerf).
   enemy.attackDamage = Math.max(1, Math.round((sc / 8 + level * 0.3) * 0.5));
-  // Give slightly more EXP from siege baby waves.
-  enemy.exp = 10 + level * 3;
+  // Keep siege baby EXP aligned with main endless cap.
+  enemy.exp = Math.min(20, 10 + Math.floor(level / 2));
 
   // Position off-screen right in a tighter cluster.
   const spawnX = critter.position.x + app.screen.width + 80 + spawnIndex * 22;

@@ -112,6 +112,8 @@ export function initLayoutShop() {
     const bones = state.bones;
     const upgrades = state.layoutUpgrades;
     layoutBonesEl.textContent = `🍓 ${bones}`;
+    const hudBonesEl = document.getElementById('bones-amount');
+    if (hudBonesEl) hudBonesEl.textContent = String(bones);
     const heartsEl = document.getElementById('layout-hearts');
     if (heartsEl) heartsEl.textContent = `💗 ${state.supporterHearts}`;
 

@@ -3,7 +3,7 @@
 
 import state from './state.js';
 import { saveBones } from './save.js';
-import { skinCatalog, getSkinTextures } from './skins.js';
+import { skinCatalog } from './skins.js';
 import { showLeaderboardPanel } from './leaderboard.js';
 
 // --- Helper: show/hide panel via its backdrop ---
@@ -378,7 +378,7 @@ export function initLayoutShop() {
       card.className = 'shop-card';
       const desc = item.suffix ? `<div class="shop-card-desc">${item.suffix}</div>` : '';
       card.innerHTML =
-        `<div class="shop-card-icon">${iconHtml}${count > 0 ? '<span class="shop-card-qty">x${count}</span>' : ''}</div>` +
+        `<div class="shop-card-icon">${iconHtml}${count > 0 ? `<span class="shop-card-qty">x${count}</span>` : ''}</div>` +
         `<div class="shop-card-name">${item.name}</div>` +
         desc +
         `<button class="shop-card-buy${canAfford ? '' : ' cant-afford'}"><span class="shop-card-price">\uD83C\uDF53 ${item.costPer}</span></button>`;
@@ -422,27 +422,7 @@ export function initLayoutShop() {
     });
   });
 
-  // --- Static frame preview for inline cosmetic picker (2D canvas) ---
-  // Preload walk spritesheet images so preview works even before game starts.
-  // Frame 0 dimensions per character (from spritesheet params).
-  const _previewSheets = {};
-  const _charFrameInfo = {
-    frog:  { src: './assets/frog_walk.png',  fw: 0, fh: 351, frames: 10, type: 1 },
-    snail: { src: './assets/snail_walk.png', fw: 0, fh: 562, frames: 20, type: 2, sw: 3560, sh: 2248 },
-    bird:  { src: './assets/bird_walk.png',  fw: 0, fh: 403, frames: 13, type: 2, sw: 2541, sh: 806 },
-    bee:   { src: './assets/bee_walk.png',   fw: 0, fh: 256, frames: 9,  type: 2, sw: 2753, sh: 256 },
-  };
-  // Start loading all walk spritesheets immediately
-  for (const [ch, info] of Object.entries(_charFrameInfo)) {
-    const img = new Image();
-    img.src = info.src;
-    _previewSheets[ch] = img;
-  }
-
-  // Hat base positions for 2D canvas preview (mirrors hats.js _hatBasePos)
-  const _prevHatPos = {
-    frog: [0, -10], snail: [-26, 100], bird: [-82, -150], bee: [-6, -51],
-  };
+  // --- Cosmetic equipped preview: hat canvas + skin label ---
 
   function _hexCSS(hex, a) {
     return a !== undefined
@@ -461,12 +441,8 @@ export function initLayoutShop() {
     }
   }
 
-  function drawPreviewHat(ctx, hatId, charName, cx, cy, s) {
-    if (!hatId) return;
-    const pos = _prevHatPos[charName] || _prevHatPos.frog;
-    ctx.save();
-    ctx.translate(cx + pos[0] * s, cy + pos[1] * s);
-    ctx.scale(s, s);
+  /** Draw a hat shape centered at the current canvas origin */
+  function _drawHatShape(ctx, hatId) {
     if (hatId === 'tophat') {
       ctx.fillStyle = _hexCSS(0x1a1a2e);
       _rr(ctx, -30, -5, 60, 10, 4); ctx.fill();
@@ -532,90 +508,80 @@ export function initLayoutShop() {
       ctx.strokeStyle = _hexCSS(0xFFF4B0, 0.7); ctx.lineWidth = 2;
       ctx.beginPath(); ctx.ellipse(0,-38,22,5,0,0,Math.PI*2); ctx.stroke();
     }
-    ctx.restore();
   }
 
-  /** Get a drawable source + frame rect for frame 0 of the character.
-   *  Tries skinned PIXI textures first, falls back to preloaded spritesheet. */
-  function getPreviewSource(charName) {
-    // Try skinned textures from PIXI (available during gameplay)
-    const skinned = getSkinTextures(charName, 'walk');
-    if (skinned && skinned.length > 0) {
-      const tex = skinned[0];
-      const src = tex.source && tex.source.resource;
-      if (src) return { img: src, x: tex.frame.x, y: tex.frame.y, w: tex.frame.width, h: tex.frame.height };
-    }
-    // Try base walk textures from PIXI (available during gameplay)
-    const base = state.baseWalkTextures && state.baseWalkTextures[charName];
-    if (base && base.length > 0) {
-      const tex = base[0];
-      const src = tex.source && tex.source.resource;
-      if (src) return { img: src, x: tex.frame.x, y: tex.frame.y, w: tex.frame.width, h: tex.frame.height };
-    }
-    // Fallback: preloaded spritesheet image (always available)
-    const sheet = _previewSheets[charName];
-    const info = _charFrameInfo[charName];
-    if (!sheet || !sheet.complete || !sheet.naturalWidth || !info) return null;
-    let fw, fh;
-    if (info.type === 1) {
-      fw = sheet.naturalWidth / info.frames;
-      fh = info.fh;
-    } else {
-      const rows = Math.round(sheet.naturalHeight / info.fh);
-      const cols = Math.ceil(info.frames / rows);
-      fw = Math.floor(sheet.naturalWidth / cols);
-      fh = info.fh;
-    }
-    return { img: sheet, x: 0, y: 0, w: fw, h: fh };
-  }
-
-  /** Draw idle frame 0 of the character onto a 2D canvas */
-  function renderStaticPreview(charName) {
-    const src = getPreviewSource(charName);
-    if (!src) return null;
-
+  /** Render a standalone hat shape on a small canvas */
+  function renderHatCanvas(hatId) {
+    if (!hatId) return null;
     const cvs = document.createElement('canvas');
-    cvs.width = 100; cvs.height = 150;
-    cvs.className = 'inline-picker-canvas';
+    cvs.width = 80; cvs.height = 56;
+    cvs.className = 'preview-hat-canvas';
     const ctx = cvs.getContext('2d');
-    ctx.imageSmoothingEnabled = false;
-
-    const pad = 6;
-    const maxW = cvs.width - pad * 2;
-    const maxH = cvs.height - pad * 2;
-    const s = Math.min(maxW / src.w, maxH / src.h);
-    const dw = src.w * s;
-    const dh = src.h * s;
-    const dx = (cvs.width - dw) / 2;
-    const dy = cvs.height - dh - pad;
-
-    try {
-      ctx.drawImage(src.img, src.x, src.y, src.w, src.h, dx, dy, dw, dh);
-    } catch (e) {
-      return null;
-    }
-
-    // Draw equipped hat on top of character
-    const hatId = state.equippedHats[charName];
-    if (hatId) {
-      drawPreviewHat(ctx, hatId, charName, dx + dw / 2, dy + dh / 2, s);
-    }
-
+    ctx.save();
+    ctx.translate(cvs.width / 2, cvs.height * 0.8);
+    ctx.scale(0.55, 0.55);
+    _drawHatShape(ctx, hatId);
+    ctx.restore();
     return cvs;
   }
 
+  /** Build the hat + skin equipped indicator inside the preview div */
   function refreshPreview(previewDiv, charName) {
     previewDiv.innerHTML = '';
-    const cvs = renderStaticPreview(charName);
-    if (cvs) {
-      previewDiv.appendChild(cvs);
+
+    // -- Hat box --
+    const hatBox = document.createElement('div');
+    hatBox.className = 'equip-box';
+    const hatHead = document.createElement('div');
+    hatHead.className = 'equip-box-label';
+    hatHead.textContent = 'Hat';
+    hatBox.appendChild(hatHead);
+    const hatId = state.equippedHats[charName];
+    if (hatId) {
+      const cvs = renderHatCanvas(hatId);
+      if (cvs) hatBox.appendChild(cvs);
+      const hat = hatCatalog.find(h => h.id === hatId);
+      if (hat) {
+        const nm = document.createElement('div');
+        nm.className = 'equip-box-name';
+        nm.textContent = hat.name;
+        hatBox.appendChild(nm);
+      }
     } else {
-      // Final fallback: portrait image
-      const img = document.createElement('img');
-      img.src = './assets/' + charName + 'portrait.png';
-      img.className = 'inline-preview-fallback';
-      previewDiv.appendChild(img);
+      const empty = document.createElement('div');
+      empty.className = 'equip-box-empty';
+      empty.textContent = '\u2014';
+      hatBox.appendChild(empty);
     }
+    previewDiv.appendChild(hatBox);
+
+    // -- Skin box --
+    const skinBox = document.createElement('div');
+    skinBox.className = 'equip-box';
+    const skinHead = document.createElement('div');
+    skinHead.className = 'equip-box-label';
+    skinHead.textContent = 'Skin';
+    skinBox.appendChild(skinHead);
+    const skinId = state.equippedSkins[charName];
+    if (skinId) {
+      const skin = skinCatalog.find(s => s.id === skinId);
+      if (skin) {
+        const ico = document.createElement('div');
+        ico.className = 'equip-box-icon';
+        ico.textContent = skin.icon;
+        skinBox.appendChild(ico);
+        const nm = document.createElement('div');
+        nm.className = 'equip-box-name';
+        nm.textContent = skin.name;
+        skinBox.appendChild(nm);
+      }
+    } else {
+      const def = document.createElement('div');
+      def.className = 'equip-box-empty';
+      def.textContent = 'Default';
+      skinBox.appendChild(def);
+    }
+    previewDiv.appendChild(skinBox);
   }
 
   function ensurePickerLayout(container, charName) {

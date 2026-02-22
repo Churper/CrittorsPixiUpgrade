@@ -2000,31 +2000,65 @@ touch-action: manipulation;
 
 .inline-picker-preview {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  gap: clamp(4px, 1vmin, 6px);
   width: clamp(70px, 16vmin, 100px);
   min-width: clamp(70px, 16vmin, 100px);
-  height: clamp(116px, 28vmin, 152px);
-  background: rgba(8, 14, 28, 0.7);
-  border: 1px solid rgba(80, 140, 200, 0.25);
-  border-radius: clamp(6px, 1.2vmin, 8px);
   flex-shrink: 0;
+}
+
+.equip-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: clamp(4px, 1vmin, 6px) clamp(3px, 0.8vmin, 5px);
+  background: rgba(8, 14, 28, 0.7);
+  border: 1px solid rgba(80, 140, 200, 0.2);
+  border-radius: clamp(5px, 1vmin, 7px);
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
-.inline-picker-canvas {
-  image-rendering: pixelated;
-  width: 100% !important;
-  height: 100% !important;
-  display: block;
+.equip-box-label {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(8px, 1.8vmin, 10px);
+  color: rgba(160, 190, 220, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  line-height: 1;
 }
 
-.inline-preview-fallback {
-  width: clamp(56px, 13vmin, 76px);
-  height: clamp(56px, 13vmin, 76px);
+.preview-hat-canvas {
+  display: block;
+  width: 100%;
+  max-height: clamp(36px, 8vmin, 48px);
   image-rendering: pixelated;
-  border-radius: clamp(4px, 1vmin, 6px);
-  opacity: 0.85;
+}
+
+.equip-box-icon {
+  font-size: clamp(18px, 4.5vmin, 26px);
+  line-height: 1;
+}
+
+.equip-box-name {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(8px, 1.8vmin, 10px);
+  color: rgba(200, 220, 240, 0.8);
+  text-align: center;
+  line-height: 1.1;
+  word-break: break-word;
+}
+
+.equip-box-empty {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(10px, 2.2vmin, 13px);
+  color: rgba(140, 160, 180, 0.35);
+  line-height: 1;
+  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 .layout-inline-picker .inline-picker-grid {
@@ -2559,14 +2593,9 @@ touch-action: manipulation;
     height: clamp(48px, 11vh, 64px);
     font-size: clamp(16px, 4vh, 24px);
   }
-  .inline-picker-canvas {
-    width: clamp(56px, 14vh, 80px) !important;
-    height: clamp(56px, 14vh, 80px) !important;
-  }
   .inline-picker-preview {
     width: clamp(56px, 14vh, 80px);
     min-width: clamp(56px, 14vh, 80px);
-    height: clamp(100px, 26vh, 140px);
   }
   .layout-inline-picker .inline-picker-grid {
     max-height: clamp(100px, 26vh, 140px);

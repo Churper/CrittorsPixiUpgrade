@@ -165,11 +165,11 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   let spawned = 0;
 
   for (let w = 0; w < waves; w++) {
-    const waveDelay = w * 2000;
+    const waveDelay = w * 1200;
     const mobsThisWave = Math.min(mobsPerWave, totalMobs - w * mobsPerWave);
 
     for (let m = 0; m < mobsThisWave; m++) {
-      const delay = waveDelay + m * 500;
+      const delay = waveDelay + m * 180;
       const spawnIdx = spawned;
       // First half = imp, second half = second type (grouped for cleave)
       const useSecondType = secondType && spawnIdx >= halfPoint;
@@ -216,15 +216,15 @@ function spawnBabyEnemy(critter, app, walkTextures, attackTextures, spawnIndex, 
   // Stats scale with level — 1-shot with strong type, 2-shot with neutral/weak
   enemy.maxHP = 8 + level * 3;
   enemy.currentHP = enemy.maxHP;
-  // Softer siege-baby damage scaling.
-  enemy.attackDamage = Math.max(1, Math.round(sc / 10 + level * 0.25));
+  // Mid-ground siege-baby damage scaling (undo part of the recent nerf).
+  enemy.attackDamage = Math.max(1, Math.round(sc / 8 + level * 0.3));
   enemy.exp = 8 + level * 2;
 
-  // Position off-screen right, with vertical variance
-  const spawnX = critter.position.x + app.screen.width + 100 + spawnIndex * 50;
+  // Position off-screen right in a tighter cluster.
+  const spawnX = critter.position.x + app.screen.width + 80 + spawnIndex * 22;
   enemy.position.set(
     spawnX,
-    app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 120 + (Math.random() * 40 - 20)
+    app.screen.height - 120 - enemy.height / 8 - enemy.scale.y * 120 + (Math.random() * 20 - 10)
   );
   enemy.zIndex = enemy.position.y + 10000;
   enemy.animationSpeed = 0.3;

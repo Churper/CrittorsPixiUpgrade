@@ -240,6 +240,39 @@ export function initLayoutShop() {
   }, { passive: true });
 
   // --- Buy buttons on all cards ---
+  function applyLiveStatUpgrade(charName, stat) {
+    if (!state.isGameStarted) return;
+    const charKey = 'character-' + charName;
+    const cap = charName.charAt(0).toUpperCase() + charName.slice(1);
+
+    if (stat === 'damage') {
+      state[charName + 'Damage'] = (state[charName + 'Damage'] || 0) + 1;
+      if (state.characterStats[charKey]) state.characterStats[charKey].attack += 1;
+      return;
+    }
+
+    if (stat === 'health') {
+      state[charName + 'Health'] = (state[charName + 'Health'] || 0) + 12;
+      const currentKey = 'current' + cap + 'Health';
+      state[currentKey] = (state[currentKey] || 0) + 12;
+      if (state.characterStats[charKey]) state.characterStats[charKey].health += 12;
+      return;
+    }
+
+    if (stat === 'defense') {
+      state.charDefenseShop = state.charDefenseShop || {};
+      state.charDefense = state.charDefense || {};
+      const shopBonus = (state.layoutUpgrades[charName] && state.layoutUpgrades[charName].defense) || 0;
+      state.charDefenseShop[charName] = shopBonus;
+      const level = state[charName + 'Level'] || 1;
+      state.charDefense[charName] = level + shopBonus;
+      const activeChar = (state.currentCharacter || 'character-frog').replace('character-', '');
+      if (activeChar === charName) {
+        state.defense = state.charDefense[charName];
+      }
+    }
+  }
+
   document.querySelectorAll('.layout-buy-btn').forEach(btn => {
     btn.addEventListener('click', function() {
       const card = this.closest('.layout-card');
@@ -250,8 +283,12 @@ export function initLayoutShop() {
       if (state.bones < cost) return;
       state.bones -= cost;
       state.layoutUpgrades[charName][stat]++;
+      applyLiveStatUpgrade(charName, stat);
       saveBones();
       updateLayoutUI();
+      document.dispatchEvent(new CustomEvent('layoutStatsChanged', {
+        detail: { charName, stat }
+      }));
     });
   });
 

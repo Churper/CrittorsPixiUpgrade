@@ -701,6 +701,17 @@ document.addEventListener('DOMContentLoaded', function () {
   // --- Dynamic item button layout ---
   // Re-layout whenever combat.js dispatches an item-count change (e.g. pickup)
   document.addEventListener('itemButtonsChanged', repositionItemButtons);
+  // Refresh live HUD text/stats after in-run layout stat purchases.
+  document.addEventListener('layoutStatsChanged', function(e) {
+    const detail = (e && e.detail) || {};
+    const activeChar = (getCurrentCharacter() || 'character-frog').replace('character-', '');
+    if (detail.stat === 'health' && detail.charName === activeChar) {
+      updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
+    }
+    if (!detail.charName || detail.charName === activeChar) {
+      updateCurrentLevels();
+    }
+  });
   // Update shop affordability whenever coffee changes
   document.addEventListener('coffeeChanged', updatePotionUI);
 

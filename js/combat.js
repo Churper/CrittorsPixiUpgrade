@@ -22,6 +22,8 @@ import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
 import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
 
+let _coffeePulseTimeout = null;
+
 // --- Baby Cleave (type advantage) ---
 
 function hasTypeAdvantage(charType, enemyType) {
@@ -197,8 +199,8 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    // Softer late-game attack ramp: linear + mild curve, less punishing than /3.
-    enemy.attackDamage = Math.max(3, Math.round(4 + sc / 7 + Math.sqrt(sc) / 2.5));
+    // Mid-ground ramp: stronger than the last nerf, still smoother than the old /3 spike.
+    enemy.attackDamage = Math.max(3, Math.round(4 + sc / 6 + Math.sqrt(sc) / 2.8));
     enemy.maxHP = 100 + Math.round(sc * 2.5);
     enemy.exp = 32 + sc * 4;
   } else {
@@ -260,8 +262,8 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    // Softer late-game attack ramp so damage doesn't spike too fast.
-    enemy.attackDamage = Math.max(2, Math.round(2 + sc / 8 + Math.sqrt(sc) / 3));
+    // Mid-ground ramp: slightly tougher than the nerfed version without over-spiking.
+    enemy.attackDamage = Math.max(2, Math.round(2 + sc / 7 + Math.sqrt(sc) / 3.2));
     enemy.maxHP = 40 + Math.round(sc * 2.5);
     enemy.exp = 32 + sc * 2;
   } else {
@@ -935,9 +937,18 @@ export function drawHitSplat(enemy) {
     default:
       console.log('Invalid character type');
   }
-  // Baby 2-hit rule: without type advantage, babies always survive at least 1 hit
-  if (isBaby && !isStrongType && damage >= enemy.currentHP) {
-    damage = Math.max(1, Math.floor(enemy.maxHP / 2));
+  // Baby hit rules:
+  // - Bird ranged off-advantage takes 3 shots to kill babies.
+  // - Other off-advantage cases keep the original survive-one-lethal-hit behavior.
+  if (isBaby && !isStrongType) {
+    if (characterType === 'character-bird') {
+      enemy._babyRangedHits = (enemy._babyRangedHits || 0) + 1;
+      if (enemy._babyRangedHits < 3) {
+        damage = Math.min(damage, Math.max(1, enemy.currentHP - 1));
+      }
+    } else if (damage >= enemy.currentHP) {
+      damage = Math.max(1, Math.floor(enemy.maxHP / 2));
+    }
   }
   enemy.currentHP -= damage;
 
@@ -1228,9 +1239,22 @@ export function createCoffeeDrop(x, y) {
 
 export function addCoffee(amount) {
   setCoffee(getCoffee() + amount);
+  const coffeeButtonElement = document.getElementById('coffee-button');
   const coffeeAmountElement = document.getElementById('coffee-amount');
   const coffeeAmount = getCoffee();
-  coffeeAmountElement.textContent = `${coffeeAmount}`;
+  if (coffeeAmountElement) coffeeAmountElement.textContent = `${coffeeAmount}`;
+  if (coffeeButtonElement) {
+    // Retrigger pulse on each increment.
+    coffeeButtonElement.classList.remove('coffee-pulse');
+    // Force reflow so re-adding class restarts animation.
+    void coffeeButtonElement.offsetWidth;
+    coffeeButtonElement.classList.add('coffee-pulse');
+    if (_coffeePulseTimeout) clearTimeout(_coffeePulseTimeout);
+    _coffeePulseTimeout = setTimeout(() => {
+      coffeeButtonElement.classList.remove('coffee-pulse');
+      _coffeePulseTimeout = null;
+    }, 280);
+  }
   playCoinSound();
   document.dispatchEvent(new Event('coffeeChanged'));
 }

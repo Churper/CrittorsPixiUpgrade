@@ -151,6 +151,7 @@ const state = {
   // Cross-round currency
   bones: 0,
   supporterHearts: 50, // gifted 50 to everyone; later earned via supporter activities
+  leaderboardLockedByDevTools: false,
   layoutUpgrades: {
     frog:  { damage: 0, health: 0, defense: 0 },
     snail: { damage: 0, health: 0, defense: 0 },

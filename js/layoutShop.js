@@ -14,6 +14,7 @@ import { saveBones } from './save.js';
 import { skinCatalog } from './skins.js';
 import { showLeaderboardPanel } from './leaderboard.js';
 import { initRewardedAds, showRewardedAd, getAdCooldownRemaining } from './rewardedAd.js';
+import { getMaxCheckpointLevel, buildSimulatedCheckpointLevels } from './siege.js';
 
 // --- Helper: show/hide panel via its backdrop ---
 export function showPanel(panelId) {
@@ -774,9 +775,39 @@ export function initLayoutShop() {
   });
 
   // --- Settings panel ---
+  const unlockAllCheckpointsBtn = document.getElementById('unlock-all-checkpoints-btn');
+  const unlockAllCheckpointsStatus = document.getElementById('unlock-all-checkpoints-status');
+  const maxCheckpointLevel = getMaxCheckpointLevel();
+
+  function areAllCheckpointsUnlocked() {
+    if (!Array.isArray(state.unlockedCastles)) return false;
+    if (state.unlockedCastles.length < maxCheckpointLevel) return false;
+    const unlocked = new Set(state.unlockedCastles);
+    for (let i = 1; i <= maxCheckpointLevel; i++) {
+      if (!unlocked.has(i)) return false;
+    }
+    return true;
+  }
+
+  function updateUnlockAllCheckpointsUI(message) {
+    if (!unlockAllCheckpointsBtn || !unlockAllCheckpointsStatus) return;
+    const allUnlocked = areAllCheckpointsUnlocked();
+    const scoreLocked = !!state.leaderboardLockedByDevTools;
+    unlockAllCheckpointsBtn.disabled = allUnlocked;
+    unlockAllCheckpointsBtn.textContent = allUnlocked
+      ? `All Checkpoints Unlocked (1-${maxCheckpointLevel})`
+      : `Unlock All Checkpoints (1-${maxCheckpointLevel})`;
+    unlockAllCheckpointsStatus.textContent = message || (allUnlocked
+      ? (scoreLocked
+          ? 'Dev unlock active: leaderboard submissions are locked for this save until you wipe save.'
+          : 'All map checkpoints are unlocked. Starting from one keeps normal scaling.')
+      : 'Unlock every checkpoint in the map with exact natural level simulation, but this locks leaderboard submits for this save.');
+  }
+
   document.getElementById('settings-btn').addEventListener('click', function() {
     document.getElementById('detail-high-btn').classList.toggle('active', state.detailMode === 'high');
     document.getElementById('detail-low-btn').classList.toggle('active', state.detailMode === 'low');
+    updateUnlockAllCheckpointsUI();
     showPanel('settings');
   });
   document.getElementById('settings-close-btn').addEventListener('click', function() {
@@ -794,6 +825,25 @@ export function initLayoutShop() {
     document.getElementById('detail-high-btn').classList.remove('active');
     saveBones();
   });
+  if (unlockAllCheckpointsBtn) {
+    unlockAllCheckpointsBtn.addEventListener('click', function() {
+      if (areAllCheckpointsUnlocked()) return;
+      const unlocked = new Set(Array.isArray(state.unlockedCastles) ? state.unlockedCastles : []);
+      for (let i = 1; i <= maxCheckpointLevel; i++) unlocked.add(i);
+      state.unlockedCastles = Array.from(unlocked).sort((a, b) => a - b);
+
+      const simulatedLevels = buildSimulatedCheckpointLevels(maxCheckpointLevel);
+      state.checkpointLevels = {};
+      for (let i = 1; i <= maxCheckpointLevel; i++) {
+        state.checkpointLevels[i] = simulatedLevels[i] || 1;
+      }
+      state.leaderboardLockedByDevTools = true;
+
+      saveBones();
+      updateUnlockAllCheckpointsUI('Unlocked all checkpoints with exact natural level simulation. Leaderboard submissions are now locked for this save until you wipe save.');
+    });
+    updateUnlockAllCheckpointsUI();
+  }
 
   document.getElementById('leaderboard-btn').addEventListener('click', function() {
     showLeaderboardPanel();

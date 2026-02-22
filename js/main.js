@@ -47,7 +47,7 @@ import { showScoreSubmitOverlay } from './leaderboard.js';
 import {
   siegeMobKilled,
   siegeCastleTakeDamage, cleanupSiege, collectSiegeRewards, spendAllCoffeeTeamHeal,
-  renderOverworldMap, navigateMapDeck,
+  renderOverworldMap, navigateMapDeck, estimateCheckpointSharedLevel,
 } from './siege.js';
 import {
   skyGradients,
@@ -803,7 +803,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Use saved level from when checkpoint was unlocked; fall back to formula for old saves
         const savedLevel = state.checkpointLevels && state.checkpointLevels[cpLevel];
-        const targetLevel = savedLevel || Math.round(cpLevel + Math.sqrt(cpLevel) * 1.5);
+        const targetLevel = savedLevel || estimateCheckpointSharedLevel(cpLevel);
         state.sharedLevel = targetLevel;
         const characters = ['frog', 'snail', 'bird', 'bee'];
         for (const ch of characters) {

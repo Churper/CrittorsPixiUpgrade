@@ -687,6 +687,88 @@ const MAP_BIOMES = [
   { name: 'void',    label: '\u{1F30C} Void',    range: [80, 99] },
 ];
 
+export function getMaxCheckpointLevel() {
+  return MAP_BIOMES[MAP_BIOMES.length - 1].range[1];
+}
+
+function applySimulatedSharedProgress(sim, amount) {
+  sim.killsToNextLevel -= amount;
+  if (sim.killsToNextLevel > 0) return;
+  sim.sharedLevel++;
+  sim.killsToNextLevel = (4 + sim.sharedLevel + sim.lastSiegeCastleLevel) * 10;
+}
+
+/**
+ * Build exact shared levels for each checkpoint using current endless progression rules.
+ * This mirrors natural checkpoint progression logic:
+ * - 10 non-siege kills per checkpoint
+ * - demi spawn cadence (every 5 kills except siege multiples)
+ * - siege normal mob XP
+ * - castle half-progress bonus
+ * - level threshold resets based on last cleared castle
+ */
+export function buildSimulatedCheckpointLevels(maxCastleLevel = getMaxCheckpointLevel()) {
+  const maxLevel = Math.max(0, Math.floor(Number(maxCastleLevel) || 0));
+  const levels = {};
+  const sim = {
+    sharedLevel: 1,
+    killsToNextLevel: 50,
+    endlessKillCount: 0,
+    endlessSpawnCount: 0,
+    demiSpawned: 0,
+    lastSiegeCastleLevel: 0,
+  };
+
+  for (let castle = 1; castle <= maxLevel; castle++) {
+    // Natural run: exactly 10 non-siege kills before each castle.
+    for (let k = 0; k < 10; k++) {
+      const killCountBeforeSpawn = sim.endlessKillCount;
+      const sc = sim.endlessSpawnCount;
+      const spawnsDemi =
+        killCountBeforeSpawn >= 5 &&
+        killCountBeforeSpawn % 10 !== 0 &&
+        sim.demiSpawned < Math.floor(killCountBeforeSpawn / 5);
+
+      const progress = spawnsDemi
+        ? Math.min(20, 12 + Math.floor(sc / 10))
+        : Math.min(20, 10 + Math.floor(sc / 12));
+
+      applySimulatedSharedProgress(sim, progress);
+
+      sim.endlessSpawnCount++;
+      if (spawnsDemi) sim.demiSpawned++;
+      sim.endlessKillCount++;
+    }
+
+    // Siege normal mobs also give shared-level progress.
+    const siegeNormalMobCount = Math.min(1 + Math.floor(castle / 3), 2);
+    const siegeSc = sim.endlessSpawnCount;
+    const siegeMobProgress = Math.min(20, 10 + Math.floor(siegeSc / 12));
+    for (let i = 0; i < siegeNormalMobCount; i++) {
+      applySimulatedSharedProgress(sim, siegeMobProgress);
+    }
+
+    // Castle completion grants half of current threshold progress.
+    const halfProgress = Math.max(1, Math.floor(sim.killsToNextLevel / 2));
+    applySimulatedSharedProgress(sim, halfProgress);
+
+    levels[castle] = sim.sharedLevel;
+
+    // Post-siege sync.
+    sim.lastSiegeCastleLevel = castle;
+    sim.demiSpawned = Math.floor(sim.endlessKillCount / 5);
+  }
+
+  return levels;
+}
+
+export function estimateCheckpointSharedLevel(castleLevel) {
+  const level = Math.max(0, Math.floor(Number(castleLevel) || 0));
+  if (level === 0) return 1;
+  const levels = buildSimulatedCheckpointLevels(level);
+  return levels[level] || 1;
+}
+
 let mapDeckIndex = 0;
 let mapCards = [];
 let mapSwipeWired = false;

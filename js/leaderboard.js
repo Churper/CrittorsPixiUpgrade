@@ -1,3 +1,5 @@
+import state from './state.js';
+
 // ── Supabase config ─────────────────────────────────────────
 // Replace these with your Supabase project values from Settings > API
 const SUPABASE_URL = 'https://xoyshmjirnlrrgkwlpjc.supabase.co';
@@ -32,6 +34,9 @@ export function formatScore(score, mode) {
 
 // ── Supabase API ────────────────────────────────────────────
 export async function submitScore(playerName, mode, score) {
+  if (state.leaderboardLockedByDevTools) {
+    return { ok: false, error: 'Leaderboard disabled for this save (dev unlock used). Wipe save to re-enable.' };
+  }
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/leaderboard`,
@@ -113,7 +118,14 @@ export function showScoreSubmitOverlay(mode, score, fromPause = false) {
   nameInput.value = getSavedPlayerName();
   statusEl.textContent = '';
   submitBtn.disabled = false;
+  nameInput.disabled = false;
   overlay.classList.add('visible');
+
+  if (state.leaderboardLockedByDevTools) {
+    statusEl.textContent = 'Leaderboard disabled for this save (dev unlock used). Wipe save to submit again.';
+    submitBtn.disabled = true;
+    nameInput.disabled = true;
+  }
 
   // Guard against synthetic click events from the touch that opened this overlay.
   // On mobile, pointerdown shows the overlay, then ~300ms later a synthetic click
@@ -125,6 +137,7 @@ export function showScoreSubmitOverlay(mode, score, fromPause = false) {
   overlay.onclick = (e) => { e.stopPropagation(); };
 
   submitBtn.onclick = async () => {
+    if (state.leaderboardLockedByDevTools) return;
     if (Date.now() - openTime < 400) return;
     const name = nameInput.value.trim();
     if (!name || name.length > 20) {
@@ -157,3 +170,4 @@ export function showScoreSubmitOverlay(mode, score, fromPause = false) {
     }
   };
 }
+

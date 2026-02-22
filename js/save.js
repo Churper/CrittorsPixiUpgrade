@@ -184,6 +184,7 @@ export function saveBones() {
     unlockedCastles: state.unlockedCastles,
     checkpointLevels: state.checkpointLevels,
     detailMode: state.detailMode,
+    leaderboardLockedByDevTools: !!state.leaderboardLockedByDevTools,
   };
   localStorage.setItem('crittorsBones', JSON.stringify(data));
 }
@@ -209,6 +210,7 @@ export function loadBones() {
       if (data.unlockedCastles) state.unlockedCastles = data.unlockedCastles;
       if (data.checkpointLevels) state.checkpointLevels = data.checkpointLevels;
       if (data.detailMode) state.detailMode = data.detailMode;
+      state.leaderboardLockedByDevTools = !!data.leaderboardLockedByDevTools;
     } catch (e) {
       console.warn('Failed to load bones data:', e);
     }

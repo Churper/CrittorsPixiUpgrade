@@ -1959,6 +1959,25 @@ touch-action: manipulation;
   box-shadow: 0 0 8px rgba(60, 140, 200, 0.2);
 }
 
+.settings-link-btn:disabled {
+  color: #9bb1c8;
+  background: rgba(35, 60, 40, 0.6);
+  border-color: rgba(90, 170, 110, 0.45);
+  cursor: default;
+  box-shadow: none;
+  opacity: 0.9;
+}
+
+.settings-note {
+  margin-top: 8px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 0.85em;
+  line-height: 1.3;
+  color: rgba(200, 216, 232, 0.85);
+  text-align: left;
+  min-height: 2.6em;
+}
+
 /* ── Card deck ────────────────────────────────────────── */
 .layout-deck-area {
   display: flex;

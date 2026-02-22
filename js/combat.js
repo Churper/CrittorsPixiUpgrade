@@ -1155,7 +1155,10 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
 
 
 export function createCoffeeDrop(x, y) {
-  const numBeans = Math.floor(Math.random() * 15 + state.currentRound * 2) + 1;
+  // Higher floor + tighter high-roll spread; averages about +10% vs old formula.
+  const baseBeans = Math.floor(state.currentRound * 2.25) + 3;
+  const randomBonus = Math.floor(Math.random() * 11); // 0..10 (was effectively 0..14)
+  const numBeans = baseBeans + randomBonus;
   if (state.detailMode === 'low') {
     addCoffee(numBeans);
     return;

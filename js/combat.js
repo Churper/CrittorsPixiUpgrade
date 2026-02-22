@@ -27,6 +27,14 @@ let _bonesPulseTimeout = null;
 
 // --- Baby Cleave (type advantage) ---
 
+function getIncomingDamageAfterDefense(rawDamage) {
+  const base = Math.max(1, Math.round(rawDamage || 1));
+  const defense = Math.max(0, state.defense || 0);
+  // Soften defense scaling: mitigate a percentage instead of flat-subtracting full defense.
+  const mitigation = Math.min(0.5, defense * 0.015);
+  return Math.max(1, Math.round(base * (1 - mitigation)));
+}
+
 function hasTypeAdvantage(charType, enemyType) {
   const adv = {
     'character-snail': ['imp', 'toofer'],
@@ -742,8 +750,7 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
             }
 
             critter.tint = state.flashColor;
-            const dmgReduction = state.defense || 0;
-            const finalDmg = Math.max(1, enemy.attackDamage - dmgReduction);
+            const finalDmg = getIncomingDamageAfterDefense(enemy.attackDamage);
             setPlayerCurrentHealth(getPlayerCurrentHealth() - finalDmg);
             drawCharHitSplat(critter, enemy, finalDmg);
             updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);

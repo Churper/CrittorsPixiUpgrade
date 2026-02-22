@@ -32,10 +32,10 @@ const hatCatalog = [
 
 // Items that can have starting counts purchased
 const inventoryItemCatalog = [
-  { id: 'shield',     icon: '🛡️', name: 'Shield',          costPer: 10 },
-  { id: 'bomb',       icon: '💣', name: 'Bomb',            costPer: 20 },
-  { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 10 },
-  { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 20 },
+  { id: 'shield',     icon: '🛡️', name: 'Shield',          costPer: 10, suffix: 'Blocks 100 dmg' },
+  { id: 'bomb',       icon: '💣', name: 'Bomb',            costPer: 20, suffix: 'AoE explosion' },
+  { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 10, suffix: '2x damage' },
+  { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 20, suffix: 'Auto-revive' },
   { id: 'potionHeal', icon: 'potion-svg', name: 'Potion Power', costPer: 100, suffix: '+15 hp/use' },
   { id: 'medkit',     icon: '➕', name: 'Medkit',           costPer: 15, suffix: 'Heal all crittors' },
 ];
@@ -423,50 +423,185 @@ export function initLayoutShop() {
   });
 
   // --- Static frame preview for inline cosmetic picker (2D canvas) ---
+  // Preload walk spritesheet images so preview works even before game starts.
+  // Frame 0 dimensions per character (from spritesheet params).
+  const _previewSheets = {};
+  const _charFrameInfo = {
+    frog:  { src: './assets/frog_walk.png',  fw: 0, fh: 351, frames: 10, type: 1 },
+    snail: { src: './assets/snail_walk.png', fw: 0, fh: 562, frames: 20, type: 2, sw: 3560, sh: 2248 },
+    bird:  { src: './assets/bird_walk.png',  fw: 0, fh: 403, frames: 13, type: 2, sw: 2541, sh: 806 },
+    bee:   { src: './assets/bee_walk.png',   fw: 0, fh: 256, frames: 9,  type: 2, sw: 2753, sh: 256 },
+  };
+  // Start loading all walk spritesheets immediately
+  for (const [ch, info] of Object.entries(_charFrameInfo)) {
+    const img = new Image();
+    img.src = info.src;
+    _previewSheets[ch] = img;
+  }
 
-  function getCharWalkTextures(charName) {
+  // Hat base positions for 2D canvas preview (mirrors hats.js _hatBasePos)
+  const _prevHatPos = {
+    frog: [0, -10], snail: [-26, 100], bird: [-82, -150], bee: [-6, -51],
+  };
+
+  function _hexCSS(hex, a) {
+    return a !== undefined
+      ? `rgba(${(hex>>16)&0xFF},${(hex>>8)&0xFF},${hex&0xFF},${a})`
+      : `rgb(${(hex>>16)&0xFF},${(hex>>8)&0xFF},${hex&0xFF})`;
+  }
+
+  function _rr(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); }
+    else {
+      ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+      ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+      ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+      ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y); ctx.closePath();
+    }
+  }
+
+  function drawPreviewHat(ctx, hatId, charName, cx, cy, s) {
+    if (!hatId) return;
+    const pos = _prevHatPos[charName] || _prevHatPos.frog;
+    ctx.save();
+    ctx.translate(cx + pos[0] * s, cy + pos[1] * s);
+    ctx.scale(s, s);
+    if (hatId === 'tophat') {
+      ctx.fillStyle = _hexCSS(0x1a1a2e);
+      _rr(ctx, -30, -5, 60, 10, 4); ctx.fill();
+      _rr(ctx, -20, -48, 40, 45, 5); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x8b0000); ctx.fillRect(-20, -13, 40, 7);
+    } else if (hatId === 'partyhat') {
+      ctx.scale(1.3, 1.3);
+      ctx.fillStyle = _hexCSS(0x0070DD);
+      _rr(ctx, -42, -3, 84, 16, 3); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-42,-3); ctx.lineTo(-32,-22); ctx.lineTo(-21,-3);
+      ctx.lineTo(-11,-22); ctx.lineTo(0,-3); ctx.lineTo(11,-22);
+      ctx.lineTo(21,-3); ctx.lineTo(32,-22); ctx.lineTo(42,-3);
+      ctx.closePath(); ctx.fill();
+    } else if (hatId === 'crown') {
+      ctx.fillStyle = _hexCSS(0xFFD700);
+      _rr(ctx, -32, -2, 64, 14, 3); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-32,-2); ctx.lineTo(-24,-28); ctx.lineTo(-16,-6);
+      ctx.lineTo(-8,-32); ctx.lineTo(0,-6); ctx.lineTo(8,-34);
+      ctx.lineTo(16,-6); ctx.lineTo(24,-28); ctx.lineTo(32,-2);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = _hexCSS(0xff2244);
+      ctx.beginPath(); ctx.arc(-24,-26,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x2266ff);
+      ctx.beginPath(); ctx.arc(-8,-30,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = _hexCSS(0xff2244);
+      ctx.beginPath(); ctx.arc(8,-32,5,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x2266ff);
+      ctx.beginPath(); ctx.arc(24,-26,4,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x22dd66);
+      ctx.beginPath(); ctx.arc(0,5,5,0,Math.PI*2); ctx.fill();
+    } else if (hatId === 'wizardhat') {
+      ctx.fillStyle = _hexCSS(0x6A0DAD);
+      ctx.beginPath(); ctx.ellipse(0,0,42,10,0,0,Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(-28,0); ctx.lineTo(-4,-70); ctx.lineTo(8,-72);
+      ctx.lineTo(28,0); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = _hexCSS(0xFFD700); ctx.globalAlpha = 0.8;
+      ctx.fillRect(-26, -8, 52, 8); ctx.globalAlpha = 1;
+      ctx.fillStyle = _hexCSS(0xFFD700);
+      ctx.beginPath();
+      const sx = 2, sy = -36;
+      ctx.moveTo(sx,sy-12); ctx.lineTo(sx+4,sy-4); ctx.lineTo(sx+12,sy-3);
+      ctx.lineTo(sx+6,sy+3); ctx.lineTo(sx+8,sy+11); ctx.lineTo(sx,sy+6);
+      ctx.lineTo(sx-8,sy+11); ctx.lineTo(sx-6,sy+3); ctx.lineTo(sx-12,sy-3);
+      ctx.lineTo(sx-4,sy-4); ctx.closePath(); ctx.fill();
+    } else if (hatId === 'viking') {
+      ctx.fillStyle = _hexCSS(0x8899AA);
+      ctx.beginPath(); ctx.ellipse(0,-14,30,22,0,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle = _hexCSS(0x556677);
+      _rr(ctx, -4,-12,8,24,2); ctx.fill();
+      _rr(ctx, -32,-4,64,10,3); ctx.fill();
+      ctx.fillStyle = _hexCSS(0xAABBCC);
+      for (const rx of [-22,-10,10,22]) { ctx.beginPath(); ctx.arc(rx,1,3,0,Math.PI*2); ctx.fill(); }
+      ctx.fillStyle = _hexCSS(0xE8D5A0);
+      ctx.beginPath(); ctx.moveTo(-26,-8); ctx.lineTo(-38,-30); ctx.lineTo(-50,-52);
+      ctx.lineTo(-44,-54); ctx.lineTo(-34,-34); ctx.lineTo(-22,-14); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(26,-8); ctx.lineTo(38,-30); ctx.lineTo(50,-52);
+      ctx.lineTo(44,-54); ctx.lineTo(34,-34); ctx.lineTo(22,-14); ctx.closePath(); ctx.fill();
+    } else if (hatId === 'halo') {
+      ctx.strokeStyle = _hexCSS(0xFFD700, 0.2); ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.ellipse(0,-38,34,9,0,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle = _hexCSS(0xFFD700, 0.9); ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.ellipse(0,-38,28,7,0,0,Math.PI*2); ctx.stroke();
+      ctx.strokeStyle = _hexCSS(0xFFF4B0, 0.7); ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.ellipse(0,-38,22,5,0,0,Math.PI*2); ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  /** Get a drawable source + frame rect for frame 0 of the character.
+   *  Tries skinned PIXI textures first, falls back to preloaded spritesheet. */
+  function getPreviewSource(charName) {
+    // Try skinned textures from PIXI (available during gameplay)
     const skinned = getSkinTextures(charName, 'walk');
-    if (skinned) return skinned;
-    return state.baseWalkTextures && state.baseWalkTextures[charName];
+    if (skinned && skinned.length > 0) {
+      const tex = skinned[0];
+      const src = tex.source && tex.source.resource;
+      if (src) return { img: src, x: tex.frame.x, y: tex.frame.y, w: tex.frame.width, h: tex.frame.height };
+    }
+    // Try base walk textures from PIXI (available during gameplay)
+    const base = state.baseWalkTextures && state.baseWalkTextures[charName];
+    if (base && base.length > 0) {
+      const tex = base[0];
+      const src = tex.source && tex.source.resource;
+      if (src) return { img: src, x: tex.frame.x, y: tex.frame.y, w: tex.frame.width, h: tex.frame.height };
+    }
+    // Fallback: preloaded spritesheet image (always available)
+    const sheet = _previewSheets[charName];
+    const info = _charFrameInfo[charName];
+    if (!sheet || !sheet.complete || !sheet.naturalWidth || !info) return null;
+    let fw, fh;
+    if (info.type === 1) {
+      fw = sheet.naturalWidth / info.frames;
+      fh = info.fh;
+    } else {
+      const rows = Math.round(sheet.naturalHeight / info.fh);
+      const cols = Math.ceil(info.frames / rows);
+      fw = Math.floor(sheet.naturalWidth / cols);
+      fh = info.fh;
+    }
+    return { img: sheet, x: 0, y: 0, w: fw, h: fh };
   }
 
   /** Draw idle frame 0 of the character onto a 2D canvas */
   function renderStaticPreview(charName) {
-    const textures = getCharWalkTextures(charName);
-    if (!textures || textures.length === 0) return null;
-
-    const tex = textures[0];
-    const frame = tex.frame;
-    const source = tex.source && (tex.source.resource || tex.source._resource);
-    if (!source) return null;
+    const src = getPreviewSource(charName);
+    if (!src) return null;
 
     const cvs = document.createElement('canvas');
-    cvs.width = 120; cvs.height = 120;
+    cvs.width = 100; cvs.height = 150;
     cvs.className = 'inline-picker-canvas';
     const ctx = cvs.getContext('2d');
     ctx.imageSmoothingEnabled = false;
 
-    // Scale frame to fit canvas with padding
-    const pad = 10;
+    const pad = 6;
     const maxW = cvs.width - pad * 2;
     const maxH = cvs.height - pad * 2;
-    const s = Math.min(maxW / frame.width, maxH / frame.height);
-    const dw = frame.width * s;
-    const dh = frame.height * s;
+    const s = Math.min(maxW / src.w, maxH / src.h);
+    const dw = src.w * s;
+    const dh = src.h * s;
     const dx = (cvs.width - dw) / 2;
-    const dy = (cvs.height - dh) / 2 + 4;
+    const dy = cvs.height - dh - pad;
 
-    ctx.drawImage(source, frame.x, frame.y, frame.width, frame.height, dx, dy, dw, dh);
+    try {
+      ctx.drawImage(src.img, src.x, src.y, src.w, src.h, dx, dy, dw, dh);
+    } catch (e) {
+      return null;
+    }
+
+    // Draw equipped hat on top of character
+    const hatId = state.equippedHats[charName];
+    if (hatId) {
+      drawPreviewHat(ctx, hatId, charName, dx + dw / 2, dy + dh / 2, s);
+    }
+
     return cvs;
-  }
-
-  /** Show portrait fallback when no textures are available */
-  function showFallbackPreview(previewDiv, charName) {
-    previewDiv.innerHTML = '';
-    const img = document.createElement('img');
-    img.src = './assets/' + charName + 'portrait.png';
-    img.className = 'inline-preview-fallback';
-    previewDiv.appendChild(img);
   }
 
   function refreshPreview(previewDiv, charName) {
@@ -475,7 +610,11 @@ export function initLayoutShop() {
     if (cvs) {
       previewDiv.appendChild(cvs);
     } else {
-      showFallbackPreview(previewDiv, charName);
+      // Final fallback: portrait image
+      const img = document.createElement('img');
+      img.src = './assets/' + charName + 'portrait.png';
+      img.className = 'inline-preview-fallback';
+      previewDiv.appendChild(img);
     }
   }
 

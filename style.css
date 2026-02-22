@@ -2362,8 +2362,8 @@ touch-action: manipulation;
 /* ── Shop grid (card-based item shop) ─────────────── */
 .shop-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: clamp(6px, 1.5vmin, 10px);
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(8px, 2vmin, 12px);
   width: 100%;
   padding: clamp(6px, 1.5vmin, 10px);
   overflow-y: auto;
@@ -2382,19 +2382,19 @@ touch-action: manipulation;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: clamp(3px, 0.7vmin, 5px);
-  padding: clamp(8px, 1.8vmin, 12px) clamp(4px, 1vmin, 8px) clamp(6px, 1.4vmin, 10px);
+  gap: clamp(4px, 1vmin, 6px);
+  padding: clamp(10px, 2.2vmin, 14px) clamp(6px, 1.4vmin, 10px) clamp(8px, 1.8vmin, 12px);
   border-radius: clamp(8px, 1.8vmin, 12px);
-  background: linear-gradient(160deg, rgba(18, 28, 48, 0.9), rgba(12, 20, 36, 0.95));
-  border: 1.5px solid rgba(100, 120, 160, 0.2);
+  background: linear-gradient(160deg, rgba(20, 30, 52, 0.92), rgba(14, 22, 40, 0.96));
+  border: 1.5px solid rgba(140, 120, 60, 0.18);
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 220, 100, 0.04);
   cursor: default;
 }
 .shop-card:hover {
-  border-color: rgba(180, 160, 80, 0.45);
-  background: linear-gradient(160deg, rgba(24, 36, 58, 0.94), rgba(16, 26, 44, 0.97));
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(180, 160, 80, 0.06);
+  border-color: rgba(200, 180, 80, 0.5);
+  background: linear-gradient(160deg, rgba(26, 38, 60, 0.95), rgba(18, 28, 48, 0.97));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 10px rgba(200, 180, 80, 0.08);
 }
 
 .shop-card-icon {
@@ -2443,12 +2443,12 @@ touch-action: manipulation;
 
 .shop-card-desc {
   font-family: 'Patrick Hand', cursive;
-  font-size: clamp(0.5em, 1.4vmin, 0.65em);
-  color: rgba(160, 190, 220, 0.55);
+  font-size: clamp(0.55em, 1.5vmin, 0.68em);
+  color: rgba(170, 200, 230, 0.6);
   font-style: italic;
   text-align: center;
-  line-height: 1.1;
-  margin-top: -2px;
+  line-height: 1.15;
+  margin-top: -1px;
 }
 
 .shop-card-buy {

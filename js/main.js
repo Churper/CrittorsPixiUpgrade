@@ -1293,6 +1293,44 @@ state.frogGhostPlayer.scale.set(0.28);
       critter = createAnimatedSprite(characterTextures);
       critter.eventMode = 'static';
 
+      function refreshCurrentCharacterSkin() {
+        const currentChar = getCurrentCharacter();
+        if (!currentChar) return;
+        const ch = currentChar.replace('character-', '');
+        if (ch === 'bird') {
+          state.frogWalkTextures = getSkinTextures('bird', 'walk') || birdWalkTextures;
+          state.frogAttackTextures = getSkinTextures('bird', 'attack') || birdAttackTextures;
+          frogIdleTextures = state.frogWalkTextures;
+        } else if (ch === 'frog') {
+          state.frogWalkTextures = getSkinTextures('frog', 'walk') || frogWalkTextures1;
+          state.frogAttackTextures = getSkinTextures('frog', 'attack') || frogAttackTextures1;
+          frogIdleTextures = state.equippedSkins.frog ? state.frogWalkTextures : frogIdleTextures1;
+        } else if (ch === 'snail') {
+          state.frogWalkTextures = getSkinTextures('snail', 'walk') || snailWalkTextures;
+          state.frogAttackTextures = getSkinTextures('snail', 'attack') || snailAttackTextures;
+          frogIdleTextures = state.frogWalkTextures;
+        } else if (ch === 'bee') {
+          state.frogWalkTextures = getSkinTextures('bee', 'walk') || beeWalkTextures;
+          state.frogAttackTextures = getSkinTextures('bee', 'attack') || beeAttackTextures;
+          frogIdleTextures = state.frogWalkTextures;
+        }
+        if (critter) {
+          critter.textures = state.frogWalkTextures;
+          critter.loop = true;
+          critter.play();
+          clearSkinEffects();
+          critter.tint = 0xffffff;
+          applySkinFilter(critter, currentChar);
+        }
+      }
+      document.addEventListener('layoutSkinChanged', function(e) {
+        const detail = (e && e.detail) || {};
+        const activeChar = (getCurrentCharacter() || '').replace('character-', '');
+        if (!detail.charName || detail.charName === activeChar) {
+          refreshCurrentCharacterSkin();
+        }
+      });
+
       critter.textures = state.frogWalkTextures;
       critter.loop = true;
       critter.play();
@@ -1414,8 +1452,32 @@ state.frogGhostPlayer.scale.set(0.28);
         if (state.roundOver === true) { isAttacking = false; attackAnimationPlayed = false; return; }
         if (!state.isAttackingChar) {
           if (!getisDead()) {
-            state.isAttackingChar = true;
             const attackingChar = getCurrentCharacter();
+            const hasMeleeTarget = getEnemiesInRange() > 0;
+            const hasBirdRangedTarget = attackingChar === 'character-bird' && getEnemies().some(e =>
+              e.isAlive && e.position.x > critter.position.x && (e.position.x - critter.position.x) < 500 && e.currentHP > 0
+            );
+            const atAnyCastle =
+              (state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&
+                critter.position.x > state.siegeCastleSprite.position.x - state.siegeCastleSprite.width / 1.1) ||
+              (state.gameMode !== 'endless' && castle && critter.position.x > castle.position.x - castle.width / 1.1);
+            if (!hasMeleeTarget && !hasBirdRangedTarget && !atAnyCastle) {
+              state.isPointerDown = false;
+              state.isAttackingChar = false;
+              setIsCharAttacking(false);
+              setCharAttackAnimating(false);
+              if (pointerHoldInterval) {
+                clearInterval(pointerHoldInterval);
+                pointerHoldInterval = null;
+              }
+              if (critter.textures !== state.frogWalkTextures) {
+                critter.textures = state.frogWalkTextures;
+                critter.loop = true;
+                critter.play();
+              }
+              return;
+            }
+            state.isAttackingChar = true;
             critter.textures = state.frogAttackTextures;
             setCharAttackAnimating(true);
             critter.loop = false;

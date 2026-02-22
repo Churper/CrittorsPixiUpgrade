@@ -232,47 +232,48 @@ const _skinFrameParams = {
 
 export function generateSkinTextures(textures, textureScaleFactors) {
   for (const ch of ['frog', 'snail', 'bee', 'bird']) {
-    const skinId = state.equippedSkins[ch];
-    if (!skinId || !skinHueConfigs[skinId]) continue;
-    const shifts = skinHueConfigs[skinId];
     const fp = _skinFrameParams[ch];
     const walkSheet = ch + '_walk';
     const atkSheet = ch + '_attack';
-    const recoloredWalk = recolorSheet(textures[walkSheet], shifts, skinId, fp.walk.n);
-    const recoloredAtk = recolorSheet(textures[atkSheet], shifts, skinId, fp.attack.n);
-    if (fp.type === 1) {
-      const wFrames = [], aFrames = [];
-      const wScale = textureScaleFactors[walkSheet] || 1;
-      const aScale = textureScaleFactors[atkSheet] || 1;
-      const wFw = recoloredWalk.width / fp.walk.n;
-      const wFh = Math.floor(fp.walk.fh * wScale);
-      for (let i = 0; i < fp.walk.n; i++) {
-        wFrames.push(new PIXI.Texture({ source: recoloredWalk.source, frame: new PIXI.Rectangle(i * wFw, 0, wFw, wFh) }));
-      }
-      const aFw = recoloredAtk.width / fp.attack.n;
-      const aFh = Math.floor(fp.attack.fh * aScale);
-      for (let i = 0; i < fp.attack.n; i++) {
-        aFrames.push(new PIXI.Texture({ source: recoloredAtk.source, frame: new PIXI.Rectangle(i * aFw, 0, aFw, aFh) }));
-      }
-      skinTextureCache[skinId + '_walk'] = wFrames;
-      skinTextureCache[skinId + '_attack'] = aFrames;
-    } else {
-      for (const mode of ['walk', 'attack']) {
-        const recolored = mode === 'walk' ? recoloredWalk : recoloredAtk;
-        const sheetName = mode === 'walk' ? walkSheet : atkSheet;
-        const p = fp[mode];
-        const scale = textureScaleFactors[sheetName] || 1;
-        const fh = Math.floor(p.fh * scale);
-        const sw = Math.floor(p.sw * scale);
-        const sh = Math.floor(p.sh * scale);
-        const fw = sw / Math.ceil(p.n / (sh / fh));
-        const frames = [];
-        for (let i = 0; i < p.n; i++) {
-          const row = Math.floor(i / (sw / fw));
-          const col = i % (sw / fw);
-          frames.push(new PIXI.Texture({ source: recolored.source, frame: new PIXI.Rectangle(col * fw, row * fh, fw, fh) }));
+    const skinIds = Object.keys(skinHueConfigs).filter(id => id.startsWith(ch + '-'));
+    for (const skinId of skinIds) {
+      const shifts = skinHueConfigs[skinId];
+      const recoloredWalk = recolorSheet(textures[walkSheet], shifts, skinId, fp.walk.n);
+      const recoloredAtk = recolorSheet(textures[atkSheet], shifts, skinId, fp.attack.n);
+      if (fp.type === 1) {
+        const wFrames = [], aFrames = [];
+        const wScale = textureScaleFactors[walkSheet] || 1;
+        const aScale = textureScaleFactors[atkSheet] || 1;
+        const wFw = recoloredWalk.width / fp.walk.n;
+        const wFh = Math.floor(fp.walk.fh * wScale);
+        for (let i = 0; i < fp.walk.n; i++) {
+          wFrames.push(new PIXI.Texture({ source: recoloredWalk.source, frame: new PIXI.Rectangle(i * wFw, 0, wFw, wFh) }));
         }
-        skinTextureCache[skinId + '_' + mode] = frames;
+        const aFw = recoloredAtk.width / fp.attack.n;
+        const aFh = Math.floor(fp.attack.fh * aScale);
+        for (let i = 0; i < fp.attack.n; i++) {
+          aFrames.push(new PIXI.Texture({ source: recoloredAtk.source, frame: new PIXI.Rectangle(i * aFw, 0, aFw, aFh) }));
+        }
+        skinTextureCache[skinId + '_walk'] = wFrames;
+        skinTextureCache[skinId + '_attack'] = aFrames;
+      } else {
+        for (const mode of ['walk', 'attack']) {
+          const recolored = mode === 'walk' ? recoloredWalk : recoloredAtk;
+          const sheetName = mode === 'walk' ? walkSheet : atkSheet;
+          const p = fp[mode];
+          const scale = textureScaleFactors[sheetName] || 1;
+          const fh = Math.floor(p.fh * scale);
+          const sw = Math.floor(p.sw * scale);
+          const sh = Math.floor(p.sh * scale);
+          const fw = sw / Math.ceil(p.n / (sh / fh));
+          const frames = [];
+          for (let i = 0; i < p.n; i++) {
+            const row = Math.floor(i / (sw / fw));
+            const col = i % (sw / fw);
+            frames.push(new PIXI.Texture({ source: recolored.source, frame: new PIXI.Rectangle(col * fw, row * fh, fw, fh) }));
+          }
+          skinTextureCache[skinId + '_' + mode] = frames;
+        }
       }
     }
   }

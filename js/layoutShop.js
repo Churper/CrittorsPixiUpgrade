@@ -453,6 +453,7 @@ export function initLayoutShop() {
           saveBones();
           renderSkinsGrid();
           updateSkinsEquippedLabel();
+          document.dispatchEvent(new CustomEvent('layoutSkinChanged', { detail: { charName: ch } }));
         }
       });
       grid.appendChild(el);
@@ -736,6 +737,7 @@ export function initLayoutShop() {
         }
         updateLayoutUI();
         renderInlineSkins(container, charName);
+        document.dispatchEvent(new CustomEvent('layoutSkinChanged', { detail: { charName } }));
       });
       frag.appendChild(el);
     });

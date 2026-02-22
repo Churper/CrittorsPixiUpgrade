@@ -1129,6 +1129,7 @@ state.frogGhostPlayer.scale.set(0.28);
       currentSkyBottom = _initGrad.bottom;
       drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);
       persistentStars.alpha = _initGrad.starsAlpha;
+      persistentStars.tint = _initGrad.starTint ?? 0xFFFFFF;
       mountain1.tint = _initGrad.mountain;
       mountain2.tint = _initGrad.mountain;
       mountain3.tint = _initGrad.mountain;

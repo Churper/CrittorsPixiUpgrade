@@ -23,17 +23,51 @@ const weatherTypes = [
 ];
 
 const skyGradients = {
-  sun:   { top: 0x3388CC, bottom: 0x99CCEE, starsAlpha: 0.0,  mountain: 0xFFFFFF, cloud: 0xFFFFFF },
-  night: { top: 0x0a0a2a, bottom: 0x1a1a3a, starsAlpha: 1.0,  mountain: 0x3a3a5a, cloud: 0x4a4a6a },
-  rain:  { top: 0x4a5a6a, bottom: 0x7a8a9a, starsAlpha: 0.0,  mountain: 0x7a8a9a, cloud: 0x8a8a9a },
-  wind:  { top: 0x6699BB, bottom: 0xAADDFF, starsAlpha: 0.05, mountain: 0xccddee, cloud: 0xeef4ff },
-  snow:  { top: 0x8899AA, bottom: 0xCCDDEE, starsAlpha: 0.08, mountain: 0xb8c8d8, cloud: 0xd8e4f0 },
+  sun:   { top: 0x3388CC, bottom: 0x99CCEE, starsAlpha: 0.0,  mountain: 0xFFFFFF, cloud: 0xFFFFFF, starTint: 0xFFFFFF },
+  night: { top: 0x0a0a2a, bottom: 0x1a1a3a, starsAlpha: 1.0,  mountain: 0x3a3a5a, cloud: 0x4a4a6a, starTint: 0xFFFFFF },
+  rain:  { top: 0x4a5a6a, bottom: 0x7a8a9a, starsAlpha: 0.0,  mountain: 0x7a8a9a, cloud: 0x8a8a9a, starTint: 0xFFFFFF },
+  wind:  { top: 0x6699BB, bottom: 0xAADDFF, starsAlpha: 0.05, mountain: 0xccddee, cloud: 0xeef4ff, starTint: 0xF3FBFF },
+  snow:  { top: 0x8899AA, bottom: 0xCCDDEE, starsAlpha: 0.08, mountain: 0xb8c8d8, cloud: 0xd8e4f0, starTint: 0xD9F4FF },
 };
 
 // Biome-specific sky variants layered on top of weather type.
-const tundraSkyGradients = {
-  sun:   { top: 0x5f94bf, bottom: 0xdaf4ff, starsAlpha: 0.04, mountain: 0xcde8fb, cloud: 0xf2fbff },
-  night: { top: 0x041a2e, bottom: 0x0f3f63, starsAlpha: 1.0,  mountain: 0x74a9c8, cloud: 0x93bfd8 },
+// Every biome gets a distinct look across the full weather cycle.
+const biomeSkyGradients = {
+  forest: {
+    sun:   { top: 0x2f85bd, bottom: 0x9dd8ee, starsAlpha: 0.0,  mountain: 0xf5fff2, cloud: 0xf4fff6, starTint: 0xF4FFF6 },
+    night: { top: 0x081521, bottom: 0x183042, starsAlpha: 1.0,  mountain: 0x36526c, cloud: 0x4a6176, starTint: 0xCFF7FF },
+    rain:  { top: 0x2f4f58, bottom: 0x63818b, starsAlpha: 0.0,  mountain: 0x6b8792, cloud: 0x889da5, starTint: 0xDFF5FF },
+    wind:  { top: 0x5d91a6, bottom: 0xa8d6e3, starsAlpha: 0.06, mountain: 0xb9d5da, cloud: 0xdfedf1, starTint: 0xE8FFFF },
+    snow:  { top: 0x778ca0, bottom: 0xc2d3e2, starsAlpha: 0.10, mountain: 0xa9bcc9, cloud: 0xd0deea, starTint: 0xD9ECFF },
+  },
+  desert: {
+    sun:   { top: 0xd08a3a, bottom: 0xf4d08b, starsAlpha: 0.01, mountain: 0xbf8c4a, cloud: 0xf2dec0, starTint: 0xFFEFC8 },
+    night: { top: 0x1a1130, bottom: 0x3d1f56, starsAlpha: 1.0,  mountain: 0x5d4a76, cloud: 0x77608f, starTint: 0xFFD7A6 },
+    rain:  { top: 0x59646f, bottom: 0x89929c, starsAlpha: 0.0,  mountain: 0x8d887b, cloud: 0xa5a095, starTint: 0xF2E3C9 },
+    wind:  { top: 0xcfa864, bottom: 0xf2d7a8, starsAlpha: 0.08, mountain: 0xd2b07a, cloud: 0xf0e2c9, starTint: 0xFFF0CF },
+    snow:  { top: 0x8f93a0, bottom: 0xd3d5dd, starsAlpha: 0.12, mountain: 0xb7aba1, cloud: 0xe1ddd6, starTint: 0xFFE8D2 },
+  },
+  tundra: {
+    sun:   { top: 0x5f94bf, bottom: 0xdaf4ff, starsAlpha: 0.04, mountain: 0xcde8fb, cloud: 0xf2fbff, starTint: 0xD8F6FF },
+    night: { top: 0x041a2e, bottom: 0x0f3f63, starsAlpha: 1.0,  mountain: 0x74a9c8, cloud: 0x93bfd8, starTint: 0x9EEBFF },
+    rain:  { top: 0x4c6b84, bottom: 0x88adc5, starsAlpha: 0.10, mountain: 0x9fc4d8, cloud: 0xbfd9e8, starTint: 0xB6ECFF },
+    wind:  { top: 0x78adc6, bottom: 0xe5f8ff, starsAlpha: 0.18, mountain: 0xc9e7f4, cloud: 0xf4fcff, starTint: 0xBEF5FF },
+    snow:  { top: 0x7fa2ba, bottom: 0xe7f7ff, starsAlpha: 0.24, mountain: 0xd2edf9, cloud: 0xf7fdff, starTint: 0xD9FBFF },
+  },
+  volcano: {
+    sun:   { top: 0x7a2a17, bottom: 0xd86b34, starsAlpha: 0.0,  mountain: 0x7f4f43, cloud: 0x8f6556, starTint: 0xFFD0B8 },
+    night: { top: 0x13070d, bottom: 0x3b0f1c, starsAlpha: 1.0,  mountain: 0x502839, cloud: 0x6a3947, starTint: 0xFFA9C2 },
+    rain:  { top: 0x47373a, bottom: 0x776060, starsAlpha: 0.02, mountain: 0x6e5859, cloud: 0x8d7777, starTint: 0xFFC6B3 },
+    wind:  { top: 0x6a5042, bottom: 0xb07a57, starsAlpha: 0.05, mountain: 0x8d6657, cloud: 0xc0997f, starTint: 0xFFE0C5 },
+    snow:  { top: 0x605a63, bottom: 0xa79ca9, starsAlpha: 0.22, mountain: 0x887e8a, cloud: 0xb7abb8, starTint: 0xFFD0EA },
+  },
+  void: {
+    sun:   { top: 0x26124a, bottom: 0x6d35a0, starsAlpha: 0.45, mountain: 0x6c4e91, cloud: 0x7f63a8, starTint: 0xE6C9FF },
+    night: { top: 0x070014, bottom: 0x210541, starsAlpha: 1.0,  mountain: 0x3d2a67, cloud: 0x503b7d, starTint: 0x9FEFFF },
+    rain:  { top: 0x19092f, bottom: 0x3d1760, starsAlpha: 0.75, mountain: 0x4e2c76, cloud: 0x634090, starTint: 0xAEF4FF },
+    wind:  { top: 0x13204a, bottom: 0x274f8f, starsAlpha: 0.65, mountain: 0x3a4f87, cloud: 0x5470aa, starTint: 0xA9D0FF },
+    snow:  { top: 0x2b2146, bottom: 0x5c4d82, starsAlpha: 0.85, mountain: 0x524579, cloud: 0x6d5f95, starTint: 0xDCC8FF },
+  },
 };
 
 /**
@@ -55,11 +89,11 @@ function getCurrentBiomeIndex() {
 }
 
 export function getSkyGradient(weather) {
-  const biomeIdx = getCurrentBiomeIndex();
-  if (biomeIdx === 2) {
-    if (weather === 'sun') return tundraSkyGradients.sun;
-    if (weather === 'night') return tundraSkyGradients.night;
-  }
+  const biomeKeys = ['forest', 'desert', 'tundra', 'volcano', 'void'];
+  const biomeIdx = Math.max(0, Math.floor(getCurrentBiomeIndex()));
+  const biomeKey = biomeKeys[Math.min(biomeIdx, biomeKeys.length - 1)] || 'forest';
+  const biomeSet = biomeSkyGradients[biomeKey];
+  if (biomeSet && biomeSet[weather]) return biomeSet[weather];
   return skyGradients[weather] || skyGradients.sun;
 }
 

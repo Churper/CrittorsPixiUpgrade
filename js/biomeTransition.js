@@ -92,6 +92,7 @@ export function transitionWeather(newWeather, skipGround) {
     _setCurrentSkyBottom(t.newSkyBottom);
     drawSkyGradient(_background, _getCurrentSkyTop(), _getCurrentSkyBottom(), app.screen.width, app.screen.height);
     _persistentStars.alpha = t.newStarsAlpha;
+    _persistentStars.tint = t.newStarsTint ?? 0xFFFFFF;
     mountain1.tint = t.newMtnTint; mountain2.tint = t.newMtnTint;
     mountain3.tint = t.newMtnTint; mountain4.tint = t.newMtnTint;
     if (t.newCloudTint !== undefined) { clouds.tint = t.newCloudTint; clouds2.tint = t.newCloudTint; }
@@ -105,6 +106,7 @@ export function transitionWeather(newWeather, skipGround) {
   const oldSkyTop = _getCurrentSkyTop();
   const oldSkyBottom = _getCurrentSkyBottom();
   const oldStarsAlpha = _persistentStars.alpha;
+  const oldStarsTint = _persistentStars.tint ?? 0xFFFFFF;
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
   const oldCloudTint = clouds.tint ?? 0xFFFFFF;
 
@@ -181,8 +183,8 @@ export function transitionWeather(newWeather, skipGround) {
     newGround, newGroundDecor, newGroundDecorFG,
     targetNightAlpha, targetSunLightAlpha,
     targetFireGlowsAlpha,
-    oldSkyTop, oldSkyBottom, oldStarsAlpha,
-    newSkyTop: newGrad.top, newSkyBottom: newGrad.bottom, newStarsAlpha: newGrad.starsAlpha,
+    oldSkyTop, oldSkyBottom, oldStarsAlpha, oldStarsTint,
+    newSkyTop: newGrad.top, newSkyBottom: newGrad.bottom, newStarsAlpha: newGrad.starsAlpha, newStarsTint: newGrad.starTint ?? 0xFFFFFF,
     oldMtnTint, newMtnTint: newGrad.mountain,
     oldCloudTint, newCloudTint: newGrad.cloud,
   };
@@ -210,6 +212,7 @@ export function updateBiomeTransition() {
   _setCurrentSkyBottom(lerpColor(t.oldSkyBottom, t.newSkyBottom, p));
   drawSkyGradient(_background, _getCurrentSkyTop(), _getCurrentSkyBottom(), app.screen.width, app.screen.height);
   _persistentStars.alpha = t.oldStarsAlpha + (t.newStarsAlpha - t.oldStarsAlpha) * p;
+  _persistentStars.tint = lerpColor(t.oldStarsTint ?? 0xFFFFFF, t.newStarsTint ?? 0xFFFFFF, p);
   const mtnTint = lerpColor(t.oldMtnTint, t.newMtnTint, p);
   mountain1.tint = mtnTint;
   mountain2.tint = mtnTint;

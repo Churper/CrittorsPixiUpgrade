@@ -308,10 +308,20 @@ export function createWeatherEffects() {
     weatherContainer.zIndex = 0.5;
 
     weatherMoon = new PIXI.Container();
+    const isVoidMoon = getCurrentBiomeKey() === 'void';
 
     // Outer glow — soft, layered halo (simplified in low detail)
     const outerGlow = new PIXI.Graphics();
-    if (lowDetail) {
+    if (isVoidMoon) {
+      // Mars-like reddish glow
+      if (lowDetail) {
+        outerGlow.circle(0, 0, 40).fill({ color: 0xCC4422, alpha: 0.1 });
+      } else {
+        outerGlow.circle(0, 0, 75).fill({ color: 0x881100, alpha: 0.06 });
+        outerGlow.circle(0, 0, 55).fill({ color: 0xAA2200, alpha: 0.08 });
+        outerGlow.circle(0, 0, 40).fill({ color: 0xCC4422, alpha: 0.1 });
+      }
+    } else if (lowDetail) {
       outerGlow.circle(0, 0, 38).fill({ color: 0xDDEEFF, alpha: 0.1 });
     } else {
       outerGlow.circle(0, 0, 70).fill({ color: 0xCCDDFF, alpha: 0.06 });
@@ -322,18 +332,34 @@ export function createWeatherEffects() {
 
     // Moon body — gradient-like concentric fills
     const moonBody = new PIXI.Graphics();
-    moonBody.circle(0, 0, 26).fill({ color: 0xE8E8F0 });
-    moonBody.circle(0, 0, 25).fill({ color: 0xEEEEF4 });
-    // Surface texture — subtle craters
-    moonBody.circle(-8, -6, 5).fill({ color: 0xD0D0DA, alpha: 0.4 });
-    moonBody.circle(6, -10, 3.5).fill({ color: 0xD4D4DE, alpha: 0.35 });
-    moonBody.circle(3, 8, 4).fill({ color: 0xCCCCD6, alpha: 0.3 });
-    moonBody.circle(-12, 5, 2.5).fill({ color: 0xD8D8E2, alpha: 0.25 });
-    moonBody.circle(10, 2, 2).fill({ color: 0xD0D0DA, alpha: 0.2 });
-    // Terminator shadow — dark edge for crescent effect
-    moonBody.circle(8, 0, 22).fill({ color: 0x667788, alpha: 0.15 });
-    // Bright highlight — upper left lit edge
-    moonBody.circle(-6, -8, 12).fill({ color: 0xFFFFFF, alpha: 0.12 });
+    if (isVoidMoon) {
+      // Mars: rusty red-orange body with darker craters
+      moonBody.circle(0, 0, 26).fill({ color: 0xC04020 });
+      moonBody.circle(0, 0, 25).fill({ color: 0xCC5533 });
+      // Dark volcanic craters
+      moonBody.circle(-8, -6, 5).fill({ color: 0x882211, alpha: 0.5 });
+      moonBody.circle(6, -10, 3.5).fill({ color: 0x993318, alpha: 0.45 });
+      moonBody.circle(3, 8, 4).fill({ color: 0x772200, alpha: 0.4 });
+      moonBody.circle(-12, 5, 2.5).fill({ color: 0x884422, alpha: 0.35 });
+      moonBody.circle(10, 2, 2).fill({ color: 0x882211, alpha: 0.3 });
+      // Terminator shadow — deep rust
+      moonBody.circle(8, 0, 22).fill({ color: 0x441100, alpha: 0.2 });
+      // Bright highlight — orange-lit edge
+      moonBody.circle(-6, -8, 12).fill({ color: 0xFF8855, alpha: 0.15 });
+    } else {
+      moonBody.circle(0, 0, 26).fill({ color: 0xE8E8F0 });
+      moonBody.circle(0, 0, 25).fill({ color: 0xEEEEF4 });
+      // Surface texture — subtle craters
+      moonBody.circle(-8, -6, 5).fill({ color: 0xD0D0DA, alpha: 0.4 });
+      moonBody.circle(6, -10, 3.5).fill({ color: 0xD4D4DE, alpha: 0.35 });
+      moonBody.circle(3, 8, 4).fill({ color: 0xCCCCD6, alpha: 0.3 });
+      moonBody.circle(-12, 5, 2.5).fill({ color: 0xD8D8E2, alpha: 0.25 });
+      moonBody.circle(10, 2, 2).fill({ color: 0xD0D0DA, alpha: 0.2 });
+      // Terminator shadow — dark edge for crescent effect
+      moonBody.circle(8, 0, 22).fill({ color: 0x667788, alpha: 0.15 });
+      // Bright highlight — upper left lit edge
+      moonBody.circle(-6, -8, 12).fill({ color: 0xFFFFFF, alpha: 0.12 });
+    }
     weatherMoon.addChild(moonBody);
 
     weatherMoon.startTime = Date.now();

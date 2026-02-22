@@ -17,7 +17,7 @@ import {
 import {
   handleEnemySorting, handleEnemyActions,
   createCoffeeDrop, playExplosionSound,
-  createSpawnEnemy, createItemDrop,
+  createSpawnEnemy, createSpawnDemi, createItemDrop,
 } from './combat.js';
 import {
   getCharacterDamage, setPlayerCurrentHealth,
@@ -134,6 +134,16 @@ function createSiegeCastle(critter, app) {
   state.siegeCastleHPBar = barFill;
 }
 
+// --- Biome Detection for Siege Modifiers ---
+
+function getSiegeBiome(level) {
+  if (level >= 80) return 'void';
+  if (level >= 60) return 'volcano';
+  if (level >= 40) return 'tundra';
+  if (level >= 20) return 'desert';
+  return 'forest';
+}
+
 // --- Swarm Spawning ---
 
 function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
@@ -143,6 +153,7 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
   createSiegeCastle(critter, app);
 
   const level = state.siegeCastleLevel;
+  const biome = getSiegeBiome(level);
   const totalMobs = Math.min(2 + level, 8);
   const waves = Math.min(1 + Math.floor(level / 3), 4);
   const mobsPerWave = Math.ceil(totalMobs / waves);
@@ -156,8 +167,23 @@ function startSiegeSpawning(critter, app, impWalkTextures, impAttackTextures) {
     }
   }
 
-  // Add 1-2 normal mobs to the siege
-  const normalMobCount = Math.min(1 + Math.floor(level / 3), 2);
+  // Biome modifier: desert+ gets extra normal mobs
+  let normalMobCount = Math.min(1 + Math.floor(level / 3), 2);
+  if (biome === 'desert' || biome === 'tundra') normalMobCount += 1;
+  if (biome === 'volcano') normalMobCount += 2;
+  if (biome === 'void') normalMobCount += 3;
+
+  // Track biome-specific siege phases
+  state.siegeSecondWave = (biome === 'tundra' || biome === 'void');
+  state.siegeSecondWaveSpawned = false;
+  state.siegeDemiGuard = (biome === 'volcano' || biome === 'void');
+  state.siegeDemiGuardSpawned = false;
+  // Store refs for later wave spawning
+  state.siegeCritter = critter;
+  state.siegeImpWalkTex = impWalkTextures;
+  state.siegeImpAtkTex = impAttackTextures;
+  state.siegeSecondType = secondType;
+
   const totalWithNormals = totalMobs + normalMobCount;
 
   state.siegeMobsTotal = totalWithNormals;
@@ -301,10 +327,83 @@ function spawnSiegeNormalEnemy(critter, app, enemyType) {
 
 export function siegeMobKilled() {
   state.siegeMobsRemaining--;
-  if (state.siegeMobsRemaining <= 0) {
-    state.siegeMobsRemaining = 0;
-    transitionToCastlePhase();
+  if (state.siegeMobsRemaining > 0) return;
+  state.siegeMobsRemaining = 0;
+
+  // Biome escalation: second baby wave (tundra, void)
+  if (state.siegeSecondWave && !state.siegeSecondWaveSpawned) {
+    state.siegeSecondWaveSpawned = true;
+    spawnSecondBabyWave();
+    return;
   }
+
+  // Biome escalation: demi-boss guardian (volcano, void)
+  if (state.siegeDemiGuard && !state.siegeDemiGuardSpawned) {
+    state.siegeDemiGuardSpawned = true;
+    spawnDemiGuardian();
+    return;
+  }
+
+  transitionToCastlePhase();
+}
+
+function spawnSecondBabyWave() {
+  const critter = state.siegeCritter;
+  const app = state.app;
+  const level = state.siegeCastleLevel;
+  const impWalkTex = state.siegeImpWalkTex;
+  const impAtkTex = state.siegeImpAtkTex;
+  const secondType = state.siegeSecondType;
+
+  // Slightly smaller wave than the first
+  const count = Math.min(2 + Math.floor(level / 4), 6);
+  state.siegeMobsRemaining = count;
+  state.siegeMobsTotal += count;
+
+  // Brief pause before second wave hits
+  setTimeout(() => {
+    if (!state.siegeActive) return;
+    for (let i = 0; i < count; i++) {
+      const delay = i * 200;
+      const useSecond = secondType && i >= Math.ceil(count / 2);
+      const walkTex = useSecond ? secondType.walkTextures : impWalkTex;
+      const atkTex = useSecond ? secondType.attackTextures : impAtkTex;
+      const typeName = useSecond ? secondType.name : 'imp';
+      setTimeout(() => {
+        if (!state.siegeActive) return;
+        spawnBabyEnemy(critter, app, walkTex, atkTex, i, typeName);
+      }, delay);
+    }
+  }, 1500);
+}
+
+function spawnDemiGuardian() {
+  const critter = state.siegeCritter;
+  const app = state.app;
+  const enemyTypes = state.enemyTypes || [];
+  if (enemyTypes.length === 0) { transitionToCastlePhase(); return; }
+
+  state.siegeMobsRemaining = 1;
+  state.siegeMobsTotal += 1;
+
+  // Short pause then the demi spawns
+  setTimeout(() => {
+    if (!state.siegeActive) return;
+    const picked = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    const enemy = createSpawnDemi(picked.walkTextures, picked.name, critter);
+    enemy.isSiegeMob = true;
+
+    addEnemies(enemy);
+    if (enemy.isAlive) app.stage.addChild(enemy);
+    handleEnemySorting(enemy);
+
+    app.ticker.add(() => {
+      if (getisPaused()) return;
+      if (app.stage.children.includes(enemy)) {
+        handleEnemyActions(critter, picked.attackTextures, picked.walkTextures, enemy, picked.name);
+      }
+    });
+  }, 1200);
 }
 
 // --- Castle Phase ---
@@ -673,6 +772,14 @@ export function cleanupSiege() {
   state.siegeCastleHP = 0;
   state.siegeCastleMaxHP = 0;
   state.siegeRewardItems = [];
+  state.siegeSecondWave = false;
+  state.siegeSecondWaveSpawned = false;
+  state.siegeDemiGuard = false;
+  state.siegeDemiGuardSpawned = false;
+  state.siegeCritter = null;
+  state.siegeImpWalkTex = null;
+  state.siegeImpAtkTex = null;
+  state.siegeSecondType = null;
 
   // Hide reward panel if visible
   const backdrop = document.getElementById('siege-reward-backdrop');

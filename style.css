@@ -1626,8 +1626,8 @@ touch-action: manipulation;
   max-width: 500px;
   max-height: 94vh;
   overflow-y: auto;
-  background: rgba(8, 12, 20, 0.96);
-  border: 2px solid rgba(100, 160, 200, 0.5);
+  background: linear-gradient(170deg, rgba(12, 16, 28, 0.97), rgba(8, 12, 22, 0.98));
+  border: 2px solid rgba(160, 140, 80, 0.45);
   border-radius: clamp(10px, 3vmin, 16px);
   padding: clamp(8px, 2vmin, 14px) clamp(6px, 1.5vmin, 12px);
   color: #dde4ec;
@@ -1635,14 +1635,17 @@ touch-action: manipulation;
   text-align: center;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.6), 0 0 1px rgba(180, 160, 80, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 #layout-panel::-webkit-scrollbar { display: none; }
 
 .layout-header {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  margin-bottom: clamp(6px, 1.5vmin, 12px);
+  margin-bottom: clamp(6px, 1.5vmin, 10px);
+  padding-bottom: clamp(5px, 1.2vmin, 8px);
+  border-bottom: 1px solid rgba(160, 140, 80, 0.2);
 }
 .layout-header > :last-child {
   justify-self: end;
@@ -1739,6 +1742,8 @@ touch-action: manipulation;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  outline: 1px solid rgba(255, 255, 255, 0.03);
+  outline-offset: -1px;
 }
 .layout-card::-webkit-scrollbar { display: none; }
 
@@ -1826,9 +1831,11 @@ touch-action: manipulation;
   width: clamp(48px, 14vmin, 72px);
   height: clamp(48px, 14vmin, 72px);
   border-radius: clamp(8px, 2vmin, 12px);
-  border: 2px solid rgba(100, 160, 200, 0.4);
+  border: 2px solid rgba(140, 160, 200, 0.4);
   image-rendering: pixelated;
   display: block;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: rgba(8, 14, 28, 0.6);
 }
 
 .layout-card-name {
@@ -1864,9 +1871,10 @@ touch-action: manipulation;
   align-items: center;
   gap: 1px;
   padding: clamp(3px, 0.7vmin, 5px) clamp(2px, 0.5vmin, 4px);
-  background: rgba(12, 22, 40, 0.6);
-  border: 1px solid rgba(100, 160, 200, 0.12);
+  background: linear-gradient(145deg, rgba(14, 24, 44, 0.7), rgba(10, 18, 34, 0.75));
+  border: 1px solid rgba(120, 160, 200, 0.15);
   border-radius: clamp(4px, 1vmin, 6px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .layout-stat-icon {
@@ -1919,8 +1927,8 @@ touch-action: manipulation;
   width: clamp(58px, 15vmin, 76px);
   height: clamp(38px, 10vmin, 48px);
   border-radius: clamp(6px, 1.5vmin, 10px);
-  border: 2px solid rgba(100, 160, 200, 0.4);
-  background: rgba(14, 22, 38, 0.7);
+  border: 2px solid rgba(120, 160, 200, 0.35);
+  background: linear-gradient(145deg, rgba(18, 28, 48, 0.8), rgba(12, 20, 38, 0.85));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1930,14 +1938,14 @@ touch-action: manipulation;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.3);
 }
 
 .layout-cosmetic-slot:hover {
   transform: scale(1.08);
-  border-color: rgba(100, 180, 220, 0.7);
-  background: rgba(22, 40, 65, 0.85);
-  box-shadow: 0 0 10px rgba(60, 140, 200, 0.2), 0 2px 6px rgba(0, 0, 0, 0.4);
+  border-color: rgba(140, 180, 220, 0.65);
+  background: linear-gradient(145deg, rgba(24, 38, 62, 0.9), rgba(18, 30, 52, 0.93));
+  box-shadow: 0 0 10px rgba(60, 140, 200, 0.15), 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .layout-cosmetic-slot:active {
@@ -1957,6 +1965,8 @@ touch-action: manipulation;
 .layout-inline-picker {
   width: 100%;
   margin-top: clamp(4px, 1vmin, 8px);
+  padding-top: clamp(4px, 1vmin, 8px);
+  border-top: 1px solid rgba(100, 140, 180, 0.12);
   flex-shrink: 0;
 }
 
@@ -1964,22 +1974,38 @@ touch-action: manipulation;
   display: flex;
   gap: clamp(6px, 1.5vmin, 10px);
   width: 100%;
+  padding: clamp(4px, 1vmin, 6px);
+  background: rgba(6, 10, 20, 0.4);
+  border: 1px solid rgba(100, 140, 180, 0.12);
+  border-radius: clamp(6px, 1.2vmin, 8px);
 }
 
 .inline-picker-preview {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: clamp(70px, 16vmin, 100px);
   min-width: clamp(70px, 16vmin, 100px);
+  height: clamp(116px, 28vmin, 152px);
   background: rgba(8, 14, 28, 0.7);
-  border: 1px solid rgba(80, 140, 200, 0.2);
+  border: 1px solid rgba(80, 140, 200, 0.25);
   border-radius: clamp(6px, 1.2vmin, 8px);
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .inline-picker-canvas {
   image-rendering: pixelated;
   width: clamp(70px, 16vmin, 100px) !important;
   height: clamp(70px, 16vmin, 100px) !important;
+}
+
+.inline-preview-fallback {
+  width: clamp(56px, 13vmin, 76px);
+  height: clamp(56px, 13vmin, 76px);
+  image-rendering: pixelated;
+  border-radius: clamp(4px, 1vmin, 6px);
+  opacity: 0.85;
 }
 
 .layout-inline-picker .inline-picker-grid {
@@ -1990,14 +2016,25 @@ touch-action: manipulation;
   align-content: flex-start;
   flex: 1;
   min-width: 0;
+  max-height: clamp(116px, 28vmin, 152px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 160, 200, 0.3) transparent;
+}
+.layout-inline-picker .inline-picker-grid::-webkit-scrollbar {
+  width: 3px;
+}
+.layout-inline-picker .inline-picker-grid::-webkit-scrollbar-thumb {
+  background: rgba(100, 160, 200, 0.3);
+  border-radius: 2px;
 }
 
 .layout-inline-picker .inline-picker-item {
   width: clamp(54px, 12.5vmin, 70px);
   height: clamp(54px, 12.5vmin, 70px);
   border-radius: clamp(6px, 1.5vmin, 9px);
-  border: 2px solid rgba(100, 160, 200, 0.35);
-  background: rgba(15, 25, 45, 0.8);
+  border: 2px solid rgba(80, 120, 160, 0.3);
+  background: linear-gradient(145deg, rgba(18, 28, 48, 0.85), rgba(12, 20, 38, 0.9));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2005,16 +2042,18 @@ touch-action: manipulation;
   font-size: clamp(16px, 4vmin, 22px);
   gap: 1px;
   cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+  transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s, background 0.15s;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .layout-inline-picker .inline-picker-item:hover {
-  transform: scale(1.1);
-  border-color: rgba(100, 180, 220, 0.7);
-  box-shadow: 0 0 8px rgba(60, 140, 200, 0.25);
+  transform: scale(1.08);
+  border-color: rgba(140, 180, 220, 0.65);
+  box-shadow: 0 0 10px rgba(60, 140, 200, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: linear-gradient(145deg, rgba(24, 38, 62, 0.92), rgba(18, 28, 50, 0.95));
 }
 
 .layout-inline-picker .inline-picker-item:active {
@@ -2022,15 +2061,15 @@ touch-action: manipulation;
 }
 
 .layout-inline-picker .inline-picker-item.equipped {
-  border-color: rgba(80, 220, 120, 0.8);
-  box-shadow: 0 0 10px rgba(50, 200, 100, 0.35);
-  background: rgba(20, 50, 30, 0.6);
+  border-color: rgba(80, 200, 120, 0.7);
+  box-shadow: 0 0 10px rgba(50, 180, 100, 0.25), inset 0 0 12px rgba(50, 180, 100, 0.06);
+  background: linear-gradient(145deg, rgba(16, 42, 28, 0.75), rgba(12, 34, 22, 0.8));
 }
 
 .layout-inline-picker .inline-picker-cost {
   font-family: 'Luckiest Guy', cursive;
   font-size: clamp(8px, 1.8vmin, 10px);
-  color: #f0e8d0;
+  color: #f0c8d0;
   text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
   line-height: 1;
 }
@@ -2048,17 +2087,17 @@ touch-action: manipulation;
 }
 
 .layout-cosmetic-slot.slot-active {
-  border-color: rgba(80, 220, 120, 0.8);
-  box-shadow: 0 0 10px rgba(50, 200, 100, 0.3);
-  background: rgba(20, 50, 30, 0.5);
+  border-color: rgba(80, 200, 120, 0.7);
+  box-shadow: 0 0 10px rgba(50, 180, 100, 0.25), inset 0 0 8px rgba(50, 180, 100, 0.08);
+  background: linear-gradient(145deg, rgba(16, 42, 28, 0.8), rgba(12, 34, 22, 0.85));
 }
 
 /* ── Inventory button in header ───────────────────────── */
 #layout-inventory-btn {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.75em, 2.4vmin, 0.95em);
-  padding: clamp(4px, 1vmin, 6px) clamp(10px, 2.5vmin, 16px);
-  border-radius: 8px;
+  font-size: clamp(0.68em, 2.2vmin, 0.85em);
+  padding: clamp(3px, 0.8vmin, 5px) clamp(6px, 1.5vmin, 10px);
+  border-radius: 6px;
   border: 2px solid rgba(100, 160, 200, 0.45);
   background: rgba(14, 22, 38, 0.85);
   color: #ccd8e4;
@@ -2067,6 +2106,10 @@ touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
+  white-space: nowrap;
+  max-width: clamp(90px, 24vmin, 120px);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #layout-inventory-btn:hover {
@@ -2483,7 +2526,12 @@ touch-action: manipulation;
     height: clamp(56px, 14vh, 80px) !important;
   }
   .inline-picker-preview {
+    width: clamp(56px, 14vh, 80px);
     min-width: clamp(56px, 14vh, 80px);
+    height: clamp(100px, 26vh, 140px);
+  }
+  .layout-inline-picker .inline-picker-grid {
+    max-height: clamp(100px, 26vh, 140px);
   }
 }
 

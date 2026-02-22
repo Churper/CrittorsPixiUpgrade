@@ -426,16 +426,26 @@ export function initLayoutShop() {
   let previewApp = null;
   let previewSprite = null;
   let previewCharName = null;
+  let previewInitFailed = false;
 
   async function ensurePreviewApp() {
-    if (previewApp) return;
-    previewApp = new PIXI.Application();
-    await previewApp.init({ width: 100, height: 100, backgroundAlpha: 0 });
-    previewApp.canvas.className = 'inline-picker-canvas';
+    if (previewApp) return true;
+    if (previewInitFailed) return false;
+    try {
+      if (typeof PIXI === 'undefined') { previewInitFailed = true; return false; }
+      previewApp = new PIXI.Application();
+      await previewApp.init({ width: 100, height: 100, backgroundAlpha: 0 });
+      previewApp.canvas.className = 'inline-picker-canvas';
+      return true;
+    } catch (e) {
+      console.warn('Preview PIXI init failed:', e);
+      previewApp = null;
+      previewInitFailed = true;
+      return false;
+    }
   }
 
   function getCharWalkTextures(charName) {
-    // Skinned textures take priority, fall back to base
     const skinned = getSkinTextures(charName, 'walk');
     if (skinned) return skinned;
     return state.baseWalkTextures && state.baseWalkTextures[charName];
@@ -443,7 +453,6 @@ export function initLayoutShop() {
 
   function refreshPreviewSprite(charName) {
     if (!previewApp) return;
-    // Remove old sprite
     if (previewSprite) {
       previewApp.stage.removeChild(previewSprite);
       previewSprite.destroy({ children: true });
@@ -455,7 +464,6 @@ export function initLayoutShop() {
     previewSprite.animationSpeed = 0.15;
     previewSprite.loop = true;
     previewSprite.anchor.set(0.5, 0.5);
-    // Scale to fit the 100x100 canvas
     const frameH = textures[0].frame.height;
     const frameW = textures[0].frame.width;
     const s = Math.min(90 / frameW, 90 / frameH);
@@ -463,7 +471,6 @@ export function initLayoutShop() {
     previewSprite.position.set(50, 55);
     previewApp.stage.addChild(previewSprite);
     previewSprite.play();
-    // Apply hat
     applyHatToPreview(charName);
     previewCharName = charName;
   }
@@ -474,31 +481,42 @@ export function initLayoutShop() {
     applyPreviewHat(previewSprite, charName, hatId);
   }
 
-  // Build the persistent preview + grid layout inside the inline picker
+  /** Show a fallback portrait when PIXI preview isn't available */
+  function showFallbackPreview(previewDiv, charName) {
+    previewDiv.innerHTML = '';
+    const img = document.createElement('img');
+    img.src = './assets/' + charName + 'portrait.png';
+    img.className = 'inline-preview-fallback';
+    previewDiv.appendChild(img);
+  }
+
   function ensurePickerLayout(container, charName) {
     let layout = container.querySelector('.inline-picker-layout');
     if (!layout) {
       container.innerHTML = '';
       layout = document.createElement('div');
       layout.className = 'inline-picker-layout';
-      // Preview (left) — canvas goes here
       const preview = document.createElement('div');
       preview.className = 'inline-picker-preview';
       layout.appendChild(preview);
-      // Grid (right)
       const grid = document.createElement('div');
       grid.className = 'inline-picker-grid';
       layout.appendChild(grid);
       container.appendChild(layout);
     }
-    // Insert PIXI canvas into preview area
-    ensurePreviewApp().then(() => {
-      const preview = layout.querySelector('.inline-picker-preview');
-      if (preview && previewApp.canvas.parentElement !== preview) {
-        preview.innerHTML = '';
-        preview.appendChild(previewApp.canvas);
+    const preview = layout.querySelector('.inline-picker-preview');
+    ensurePreviewApp().then((ok) => {
+      if (ok && previewApp) {
+        if (preview && previewApp.canvas.parentElement !== preview) {
+          preview.innerHTML = '';
+          preview.appendChild(previewApp.canvas);
+        }
+        refreshPreviewSprite(charName);
+      } else if (preview) {
+        showFallbackPreview(preview, charName);
       }
-      refreshPreviewSprite(charName);
+    }).catch(() => {
+      if (preview) showFallbackPreview(preview, charName);
     });
     return layout;
   }

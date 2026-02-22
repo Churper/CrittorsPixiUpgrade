@@ -201,7 +201,7 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
     // Stronger endless ramp so flat defense doesn't over-trivialize high checkpoints.
-    enemy.attackDamage = Math.max(4, Math.round(7 + sc / 4.5 + Math.sqrt(sc) / 2.2));
+    enemy.attackDamage = Math.max(3, Math.round((7 + sc / 4.5 + Math.sqrt(sc) / 2.2) * 0.8));
     enemy.maxHP = 100 + Math.round(sc * 2.5);
     // Keep endless EXP gains modest: cap near 2x old baseline.
     enemy.exp = Math.min(20, 12 + Math.floor(sc / 10));
@@ -265,7 +265,7 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
     // Stronger endless ramp so flat defense doesn't over-trivialize high checkpoints.
-    enemy.attackDamage = Math.max(2, Math.round(4 + sc / 5 + Math.sqrt(sc) / 2.4));
+    enemy.attackDamage = Math.max(2, Math.round((4 + sc / 5 + Math.sqrt(sc) / 2.4) * 0.8));
     enemy.maxHP = 40 + Math.round(sc * 2.5);
     // Keep endless EXP gains modest: cap near 2x old baseline.
     enemy.exp = Math.min(20, 10 + Math.floor(sc / 12));

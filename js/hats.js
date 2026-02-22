@@ -30,10 +30,11 @@ const _hatFrameDeltas = {
       [0, 9],       // 8: near ground
       [0, 75],      // 9: tumble
     ],
-    // 12-frame attack: head steady ~22px lower than walk baseline
+    // 12-frame attack: head drops + hat tilts up-right during tongue strike
     attack: [
-      [0,22],[0,22],[0,22],[0,22],[0,22],[0,22],
-      [0,22],[0,22],[0,22],[0,22],[0,22],[0,23],
+      [0, 18, -0.1], [2, 14, -0.15], [4, 10, -0.2], [5, 8, -0.22],
+      [5, 8, -0.22], [5, 8, -0.22], [4, 10, -0.2], [3, 12, -0.18],
+      [2, 14, -0.15], [1, 16, -0.12], [0, 18, -0.08], [0, 20, -0.04],
     ],
   },
   snail: {
@@ -378,7 +379,9 @@ export function applyHat(critterSprite, charType) {
         hat.visible = true;
         const dx = entry ? entry[0] : 0;
         const dy = entry ? entry[1] : 0;
+        const rot = entry && entry[2] ? entry[2] : 0;
         hat.position.set(baseXOff + dx, baseYOff + dy);
+        hat.rotation = rot;
       }
     }
 

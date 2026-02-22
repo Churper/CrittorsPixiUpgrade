@@ -488,8 +488,8 @@ export function collectSiegeRewards() {
 
   // Update UI counts
   const countMap = { shield: 'shield-count', bomb: 'bomb-count', rage: 'rage-count', feather: 'feather-count', goldenBean: 'golden-bean-count', medkit: 'medkit-count' };
-  const btnMap = { shield: 'shield-btn', bomb: 'bomb-btn', rage: 'rage-btn', feather: 'feather-btn', goldenBean: 'golden-bean-btn' };
-  const getMap = { shield: getShieldCount, bomb: getBombCount, rage: getRageCount, feather: getFeatherCount, goldenBean: getGoldenBeanCount };
+  const btnMap = { shield: 'shield-btn', bomb: 'bomb-btn', rage: 'rage-btn', feather: 'feather-btn', goldenBean: 'golden-bean-btn', medkit: 'medkit-btn' };
+  const getMap = { shield: getShieldCount, bomb: getBombCount, rage: getRageCount, feather: getFeatherCount, goldenBean: getGoldenBeanCount, medkit: getMedkitCount };
   for (const key of Object.keys(countMap)) {
     const el = document.getElementById(countMap[key]);
     if (el) el.textContent = getMap[key]();

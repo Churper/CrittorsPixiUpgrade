@@ -52,7 +52,7 @@ import {
 } from './siege.js';
 import {
   skyGradients,
-  getWeatherType,
+  getWeatherType, getGroundWeather,
   clearWeatherEffects, createWeatherEffects, updateWeatherEffects,
   initWeather,
 } from './weather.js';
@@ -1050,6 +1050,7 @@ let endlessGround = null;
 let endlessGroundDecor = null; // Separate container for trees/rocks above ground line
 let endlessGroundDecorFG = null; // Foreground decor layer (in front of character)
 let endlessGroundCurrentWeather = null;
+let endlessCurrentSkyWeather = null; // tracks raw weather type for sky/particle transitions
 const endlessGroundHeight = foreground.height * 0.75;
 
 
@@ -1065,8 +1066,10 @@ endlessGroundDecorFG.zIndex = 8; // behind character (10) but above ground decor
 initTerrain(endlessGround, endlessGroundDecor, endlessGroundDecorFG, endlessGroundHeight, foreground.width);
 initWeather(endlessGroundHeight);
 const initialWeather = getWeatherType();
-drawEndlessGround(initialWeather);
-endlessGroundCurrentWeather = initialWeather;
+const initialGroundWeather = getGroundWeather(initialWeather);
+drawEndlessGround(initialGroundWeather);
+endlessGroundCurrentWeather = initialGroundWeather;
+endlessCurrentSkyWeather = initialWeather;
 foreground.visible = false;
 
 
@@ -1645,11 +1648,14 @@ let cantGainEXP = false;
         state.currentRound++;
         // Transition ground biome for the new round
         const newWeather = getWeatherType();
-        if (endlessGround && newWeather !== endlessGroundCurrentWeather && !state.biomeTransition) {
-          transitionWeather(newWeather);
+        if (endlessGround && newWeather !== endlessCurrentSkyWeather && !state.biomeTransition) {
+          const newGroundWeather = getGroundWeather(newWeather);
+          const groundChanged = newGroundWeather !== endlessGroundCurrentWeather;
+          transitionWeather(newWeather, !groundChanged);
         } else {
           createWeatherEffects();
         }
+        endlessCurrentSkyWeather = newWeather;
 
         // Rebuild enemy types for the new round
         buildEnemyTypes();
@@ -1784,8 +1790,12 @@ let cantGainEXP = false;
 
           // Cycle weather every 60s — crossfade ground + weather effects
           const currentWeather = getWeatherType();
-          if (endlessGround && currentWeather !== endlessGroundCurrentWeather && !state.biomeTransition) {
-            transitionWeather(currentWeather);
+          if (endlessGround && currentWeather !== endlessCurrentSkyWeather && !state.biomeTransition) {
+            const newGroundWeather = getGroundWeather(currentWeather);
+            const groundChanged = newGroundWeather !== endlessGroundCurrentWeather;
+            // Full transition for sky + weather; skip ground swap if ground style unchanged
+            transitionWeather(currentWeather, !groundChanged);
+            endlessCurrentSkyWeather = currentWeather;
           }
 
           // --- Spawn chain safety net ---

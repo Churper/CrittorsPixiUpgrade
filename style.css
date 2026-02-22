@@ -2112,16 +2112,15 @@ touch-action: manipulation;
 /* ── Always-visible equipped hat/skin row ─────────────── */
 .card-equip-row {
   display: flex;
-  gap: clamp(6px, 1.5vmin, 10px);
+  gap: clamp(4px, 1vmin, 8px);
   width: 100%;
   flex-shrink: 0;
-  margin-bottom: clamp(2px, 0.5vmin, 4px);
-  min-height: clamp(42px, 10vmin, 56px);
+  margin-bottom: clamp(1px, 0.3vmin, 3px);
 }
 .card-equip-row .equip-box {
   flex: 1;
-  min-height: clamp(40px, 10vmin, 54px);
-  height: clamp(40px, 10vmin, 54px);
+  min-height: 0;
+  padding: clamp(2px, 0.5vmin, 4px) clamp(3px, 0.8vmin, 5px);
 }
 
 .layout-card-stats {
@@ -2278,8 +2277,8 @@ touch-action: manipulation;
 
 .preview-hat-canvas {
   display: block;
-  width: 100%;
-  max-height: clamp(36px, 8vmin, 48px);
+  max-width: 60px;
+  max-height: clamp(28px, 6vmin, 38px);
   image-rendering: pixelated;
 }
 

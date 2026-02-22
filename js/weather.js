@@ -105,27 +105,28 @@ export function createWeatherEffects() {
     glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
     glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
     weatherSun.addChild(glow);
-    // Big extruding beams
-    const beamCount = 8;
-    for (let i = 0; i < beamCount; i++) {
-      const beam = new PIXI.Graphics();
-      const angle = (i / beamCount) * Math.PI * 2;
-      const len = 120 + Math.random() * 80;
-      beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 4, color: 0xFFEE44, alpha: 0.25 });
-      beam.rayAngle = angle;
-      beam.rayLen = len;
-      beam.isBeam = true;
-      weatherSun.addChild(beam);
-    }
-    // Thinner accent rays between beams
-    for (let i = 0; i < 8; i++) {
-      const ray = new PIXI.Graphics();
-      const angle = ((i + 0.5) / 8) * Math.PI * 2;
-      const len = 60 + Math.random() * 40;
-      ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
-      ray.rayAngle = angle;
-      ray.rayLen = len;
-      weatherSun.addChild(ray);
+    // Beams and accent rays — skip in low detail (static beams look ugly)
+    if (!lowDetail) {
+      const beamCount = 8;
+      for (let i = 0; i < beamCount; i++) {
+        const beam = new PIXI.Graphics();
+        const angle = (i / beamCount) * Math.PI * 2;
+        const len = 120 + Math.random() * 80;
+        beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 4, color: 0xFFEE44, alpha: 0.25 });
+        beam.rayAngle = angle;
+        beam.rayLen = len;
+        beam.isBeam = true;
+        weatherSun.addChild(beam);
+      }
+      for (let i = 0; i < 8; i++) {
+        const ray = new PIXI.Graphics();
+        const angle = ((i + 0.5) / 8) * Math.PI * 2;
+        const len = 60 + Math.random() * 40;
+        ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
+        ray.rayAngle = angle;
+        ray.rayLen = len;
+        weatherSun.addChild(ray);
+      }
     }
     weatherSun.startTime = Date.now();
     weatherContainer.addChild(weatherSun);
@@ -483,6 +484,33 @@ export function resetWeatherRefs() {
   nightOverlay = null;
   nightFireGlows = null;
   weatherContainer = null;
+}
+
+/**
+ * Maps a weather type to the appropriate ground style based on the current biome.
+ * Forest biome always uses forest-style ground (no cacti/snow ground).
+ */
+export function getGroundWeather(weather) {
+  const castleLevel = state.lastSiegeCastleLevel || 0;
+  const biomeIdx = Math.floor(castleLevel / 20); // 0=forest, 1=desert, 2=tundra, 3=volcano, 4=void
+
+  if (biomeIdx === 0) {
+    // Forest: keep sun, night, rain ground; remap wind/snow to sun
+    if (weather === 'wind' || weather === 'snow') return 'sun';
+  } else if (biomeIdx === 1) {
+    // Desert: wind-style ground; remap others
+    if (weather === 'sun' || weather === 'rain' || weather === 'snow') return 'wind';
+  } else if (biomeIdx === 2) {
+    // Tundra: snow-style ground; remap others
+    if (weather === 'sun' || weather === 'rain' || weather === 'wind') return 'snow';
+  } else if (biomeIdx === 3) {
+    // Volcano: rain-style ground (mossy/dark); remap others
+    if (weather === 'sun' || weather === 'wind' || weather === 'snow') return 'rain';
+  } else {
+    // Void: always night ground
+    if (weather !== 'night') return 'night';
+  }
+  return weather;
 }
 
 export { weatherTypes, skyGradients };

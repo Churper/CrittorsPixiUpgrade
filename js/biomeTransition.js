@@ -2,6 +2,7 @@ import state from './state.js';
 import {
   skyGradients, getWeatherType, updateWeatherIcon,
   getWeatherRefs, resetWeatherRefs, createWeatherEffects,
+  getGroundWeather,
 } from './weather.js';
 import { initTerrain, drawEndlessGround } from './terrain.js';
 
@@ -68,7 +69,7 @@ export function drawSkyGradient(gfx, topColor, bottomColor, width, height) {
   }
 }
 
-export function transitionWeather(newWeather) {
+export function transitionWeather(newWeather, skipGround) {
   const app = state.app;
   if (!app) return;
 
@@ -100,9 +101,6 @@ export function transitionWeather(newWeather) {
   // Save old elements
   const _oldRefs = getWeatherRefs();
   const oldWeather = _oldRefs.weatherContainer;
-  const oldGround = _getEndlessGround();
-  const oldGroundDecor = _getEndlessGroundDecor();
-  const oldGroundDecorFG = _getEndlessGroundDecorFG();
   const oldOverlays = [_oldRefs.sunLightOverlay, _oldRefs.nightOverlay, _oldRefs.nightFireGlows];
   const oldSkyTop = _getCurrentSkyTop();
   const oldSkyBottom = _getCurrentSkyBottom();
@@ -110,32 +108,42 @@ export function transitionWeather(newWeather) {
   const oldMtnTint = mountain1.tint ?? 0xFFFFFF;
   const oldCloudTint = clouds.tint ?? 0xFFFFFF;
 
-  // Create new ground on top — no masks, just alpha crossfade
-  const newGround = new PIXI.Graphics();
-  newGround.position.set(0, app.screen.height - _endlessGroundHeight);
-  newGround.zIndex = 5;
-  newGround.alpha = 0;
-  app.stage.addChild(newGround);
+  let oldGround = null, oldGroundDecor = null, oldGroundDecorFG = null;
+  let newGround = null, newGroundDecor = null, newGroundDecorFG = null;
 
-  const newGroundDecor = new PIXI.Container();
-  newGroundDecor.position.set(0, app.screen.height - _endlessGroundHeight);
-  newGroundDecor.zIndex = 6;
-  newGroundDecor.alpha = 0;
-  app.stage.addChild(newGroundDecor);
+  if (!skipGround) {
+    oldGround = _getEndlessGround();
+    oldGroundDecor = _getEndlessGroundDecor();
+    oldGroundDecorFG = _getEndlessGroundDecorFG();
 
-  const newGroundDecorFG = new PIXI.Container();
-  newGroundDecorFG.position.set(0, app.screen.height - _endlessGroundHeight);
-  newGroundDecorFG.zIndex = 8;
-  newGroundDecorFG.alpha = 0;
-  app.stage.addChild(newGroundDecorFG);
+    // Create new ground on top — no masks, just alpha crossfade
+    newGround = new PIXI.Graphics();
+    newGround.position.set(0, app.screen.height - _endlessGroundHeight);
+    newGround.zIndex = 5;
+    newGround.alpha = 0;
+    app.stage.addChild(newGround);
 
-  // Draw new biome ground
-  _setEndlessGround(newGround);
-  _setEndlessGroundDecor(newGroundDecor);
-  _setEndlessGroundDecorFG(newGroundDecorFG);
-  initTerrain(_getEndlessGround(), _getEndlessGroundDecor(), _getEndlessGroundDecorFG(), _endlessGroundHeight, _foreground.width);
-  drawEndlessGround(newWeather);
-  _setEndlessGroundCurrentWeather(newWeather);
+    newGroundDecor = new PIXI.Container();
+    newGroundDecor.position.set(0, app.screen.height - _endlessGroundHeight);
+    newGroundDecor.zIndex = 6;
+    newGroundDecor.alpha = 0;
+    app.stage.addChild(newGroundDecor);
+
+    newGroundDecorFG = new PIXI.Container();
+    newGroundDecorFG.position.set(0, app.screen.height - _endlessGroundHeight);
+    newGroundDecorFG.zIndex = 8;
+    newGroundDecorFG.alpha = 0;
+    app.stage.addChild(newGroundDecorFG);
+
+    // Draw new biome ground
+    _setEndlessGround(newGround);
+    _setEndlessGroundDecor(newGroundDecor);
+    _setEndlessGroundDecorFG(newGroundDecorFG);
+    initTerrain(_getEndlessGround(), _getEndlessGroundDecor(), _getEndlessGroundDecorFG(), _endlessGroundHeight, _foreground.width);
+    const groundWeather = getGroundWeather(newWeather);
+    drawEndlessGround(groundWeather);
+    _setEndlessGroundCurrentWeather(groundWeather);
+  }
 
   // Capture old sun/moon BEFORE creating new effects (createWeatherEffects resets them)
   const _preRefs = getWeatherRefs();
@@ -188,9 +196,9 @@ export function updateBiomeTransition() {
   const [mountain1, mountain2, mountain3, mountain4] = _mountains;
   const [clouds, clouds2] = _clouds;
 
-  // In low detail: skip crossfade, jump to final state immediately
+  // In low detail: fast crossfade (~1s) instead of full 3s
   if (state.detailMode === 'low') {
-    t.progress = 1;
+    t.progress += 0.015;
   } else {
     // Simple time-based crossfade (~3s at 60fps)
     t.progress += 0.002;
@@ -214,18 +222,11 @@ export function updateBiomeTransition() {
   // Ground fill crossfades smoothly
   if (t.newGround) t.newGround.alpha = Math.min(1, p / 0.6);
   if (t.oldGround) t.oldGround.alpha = p < 0.5 ? 1 : Math.max(0, 1 - (p - 0.5) / 0.3);
-  // Trees swap style instantly at midpoint — same positions, different look
-  if (p < 0.5) {
-    if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1;
-    if (t.newGroundDecor) t.newGroundDecor.alpha = 0;
-    if (t.oldGroundDecorFG) t.oldGroundDecorFG.alpha = 1;
-    if (t.newGroundDecorFG) t.newGroundDecorFG.alpha = 0;
-  } else {
-    if (t.oldGroundDecor) t.oldGroundDecor.alpha = 0;
-    if (t.newGroundDecor) t.newGroundDecor.alpha = 1;
-    if (t.oldGroundDecorFG) t.oldGroundDecorFG.alpha = 0;
-    if (t.newGroundDecorFG) t.newGroundDecorFG.alpha = 1;
-  }
+  // Trees crossfade smoothly alongside the ground
+  if (t.oldGroundDecor) t.oldGroundDecor.alpha = 1 - p;
+  if (t.newGroundDecor) t.newGroundDecor.alpha = p;
+  if (t.oldGroundDecorFG) t.oldGroundDecorFG.alpha = (1 - p) * 0.5; // FG decor has 0.5 base alpha
+  if (t.newGroundDecorFG) t.newGroundDecorFG.alpha = p * 0.5;
 
   // Transition old weather out
   if (t.oldWeather) {

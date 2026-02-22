@@ -2115,6 +2115,7 @@ touch-action: manipulation;
   background: rgba(8, 14, 28, 0.85);
   border: 1px solid rgba(80, 140, 200, 0.3);
   justify-content: center;
+  overflow: hidden;
 }
 
 .layout-card-stats {
@@ -2914,10 +2915,23 @@ touch-action: manipulation;
   font-size: 0.95em;
   color: #e8eef4;
 }
-#siege-reward-continue-btn {
+.siege-reward-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
   margin-top: 2px;
+}
+.siege-reward-buttons .menu-btn {
+  flex: 1;
+  max-width: 140px;
+}
+#siege-reward-continue-btn {
   border-color: rgba(80, 180, 220, 0.4);
   box-shadow: 0 0 12px rgba(60, 160, 220, 0.15);
+}
+#siege-reward-shop-btn {
+  border-color: rgba(220, 160, 60, 0.4);
+  box-shadow: 0 0 12px rgba(220, 160, 60, 0.15);
 }
 
 /* ── Overworld Map Panel ──────────────────────────────── */

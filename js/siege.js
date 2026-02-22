@@ -403,7 +403,7 @@ function siegeCastleDestroyed(critter, app) {
   // Generate reward items and drop them on the ground (no duplicates)
   const level = state.siegeCastleLevel;
   const itemPool = ['shield', 'bomb', 'rage', 'feather', 'goldenBean', 'medkit'];
-  const count = Math.min(1 + Math.floor(level / 3), 3);
+  const count = level >= 25 ? 3 : level >= 10 ? 2 : 1;
   const rewards = [];
   const available = [...itemPool];
   for (let i = 0; i < count && available.length > 0; i++) {
@@ -511,6 +511,11 @@ export function collectSiegeRewards() {
   // Record actual level at this checkpoint so resume uses exact values
   if (!state.checkpointLevels) state.checkpointLevels = {};
   state.checkpointLevels[level] = state.sharedLevel || 1;
+
+  // Auto-reward Potion Power every 10 castles (10, 20, 30, ...)
+  if (level > 0 && level % 10 === 0) {
+    state.startingItems.potionHeal = (state.startingItems.potionHeal || 0) + 1;
+  }
 
   saveBones();
 

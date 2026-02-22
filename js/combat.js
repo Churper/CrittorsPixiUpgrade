@@ -888,50 +888,56 @@ export function drawHitSplat(enemy) {
 
   // Baby mobs: no weakness penalty — strong type 1-shots, neutral 2-shots
   const isBaby = enemy.isBaby;
+  let isStrongType = false;
   switch (characterType) {
     case 'character-snail':
       if (enemyType === 'imp' || enemyType === 'toofer') {
         damage = Math.round(getSnailDamage() * 1.75);
+        isStrongType = true;
       } else if (!isBaby && enemyType === 'scorp') {
         damage = Math.round(getSnailDamage() * .75);
       } else {
         damage = Math.round(getSnailDamage());
       }
-      enemy.currentHP -= damage;
       break;
     case 'character-bird':
       if (!isBaby && (enemyType === 'imp' || enemyType === 'toofer')) {
         damage = Math.round(getBirdDamage() * 0.5);
       } else if (enemyType === 'shark' || enemyType === 'puffer') {
         damage = Math.round(getBirdDamage() * 1.75);
+        isStrongType = true;
       } else {
         damage = Math.round(getBirdDamage());
       }
-      enemy.currentHP -= damage;
       break;
     case 'character-frog':
       if (enemyType === 'pig' || enemyType === 'scorp') {
         damage = Math.round(getFrogDamage() * 1.75);
+        isStrongType = true;
       } else if (!isBaby && enemyType === 'puffer') {
         damage = Math.round(getFrogDamage() * 0.75);
       } else {
         damage = Math.round(getFrogDamage());
       }
-      enemy.currentHP -= damage;
       break;
     case 'character-bee':
       if (enemyType === 'ele' || enemyType === 'octo') {
         damage = Math.round(getBeeDamage() * 1.75);
+        isStrongType = true;
       } else if (!isBaby && enemyType === 'shark') {
         damage = Math.round(getBeeDamage() * 0.75);
       } else {
         damage = Math.round(getBeeDamage());
       }
-      enemy.currentHP -= damage;
       break;
     default:
       console.log('Invalid character type');
   }
+  // Baby 2-hit rule: without type advantage, babies always survive at least 1 hit
+  if (isBaby && !isStrongType && damage >= enemy.currentHP) {
+    damage = Math.max(1, Math.floor(enemy.maxHP / 2));
+  }
+  enemy.currentHP -= damage;
 
   // Enemy shield absorption — damage hits shield HP first
   if (damage && enemy.enemyShieldHP && enemy.enemyShieldHP > 0) {

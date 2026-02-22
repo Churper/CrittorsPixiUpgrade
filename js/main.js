@@ -121,6 +121,9 @@ document.addEventListener('DOMContentLoaded', function () {
   document.getElementById('siege-reward-continue-btn').addEventListener('click', function() {
     collectSiegeRewards();
   });
+  document.getElementById('siege-reward-shop-btn').addEventListener('click', function() {
+    showPanel('layout');
+  });
 
   // Siege mob killed event (from combat.js)
   document.addEventListener('siegeMobKilled', function() {
@@ -2114,6 +2117,9 @@ let cantGainEXP = false;
         const atStoryCastle = state.gameMode !== 'endless' && castle &&
           critter.position.x > castle.position.x - castle.width / 1.1;
         const atAnyCastle = atSiegeCastle || atStoryCastle;
+        // Bird ranged check — bird can fire eggs at enemies within 500px ahead
+        const birdHasRangedTarget = getCurrentCharacter() === 'character-bird' &&
+          getEnemies().some(e => e.isAlive && e.position.x > critter.position.x && e.position.x - critter.position.x < 500);
 
         // Reconcile enemiesInRange with reality — prevent stale counter after baby clears
         // Skip reset when at a castle — the castle is the target
@@ -2127,16 +2133,16 @@ let cantGainEXP = false;
           }
         }
         // Safety: if stuck in attack textures with nothing to fight, restore walk
-        // Skip when at a castle — attack animation should complete
-        if (getEnemiesInRange() === 0 && critter.textures !== state.frogWalkTextures && !state.isAttackingChar && !atAnyCastle) {
+        // Skip when at a castle or bird has ranged targets — attack animation should complete
+        if (getEnemiesInRange() === 0 && critter.textures !== state.frogWalkTextures && !state.isAttackingChar && !atAnyCastle && !birdHasRangedTarget) {
           critter.textures = state.frogWalkTextures;
           critter.loop = true;
           setCharAttackAnimating(false);
           critter.play();
         }
         // Failsafe: force-restore walk if stuck attacking with no enemies for over 2 seconds
-        // Skip when at a castle
-        if (getEnemiesInRange() === 0 && getEnemies().filter(e => e.isAlive && e.enemyAdded).length === 0 && !atAnyCastle) {
+        // Skip when at a castle or bird has ranged targets
+        if (getEnemiesInRange() === 0 && getEnemies().filter(e => e.isAlive && e.enemyAdded).length === 0 && !atAnyCastle && !birdHasRangedTarget) {
           if (!state._noEnemySince) state._noEnemySince = Date.now();
           if (Date.now() - state._noEnemySince > 2000 && critter.textures !== state.frogWalkTextures) {
             state.isAttackingChar = false;
@@ -2150,8 +2156,8 @@ let cantGainEXP = false;
         } else {
           state._noEnemySince = null;
         }
-        // Auto-attack: trigger attack when enemies are in range, or at any castle
-        if ((state.autoAttack || atAnyCastle) && (getEnemiesInRange() > 0 || atAnyCastle) && !state.isAttackingChar && !state.isPointerDown) {
+        // Auto-attack: trigger attack when enemies are in range, bird has ranged target, or at any castle
+        if ((state.autoAttack || atAnyCastle) && (getEnemiesInRange() > 0 || atAnyCastle || birdHasRangedTarget) && !state.isAttackingChar && !state.isPointerDown) {
           handleTouchHold();
         }
 

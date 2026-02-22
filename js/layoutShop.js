@@ -37,7 +37,6 @@ const inventoryItemCatalog = [
   { id: 'bomb',       icon: '💣', name: 'Bomb',            costPer: 20, suffix: 'AoE explosion' },
   { id: 'rage',       icon: '🧃', name: 'Rage Potion',     costPer: 10, suffix: '2x damage' },
   { id: 'feather',    icon: '🪶', name: 'Phoenix Feather', costPer: 20, suffix: 'Auto-revive' },
-  { id: 'potionHeal', icon: 'potion-svg', name: 'Potion Power', costPer: 100, suffix: '+15 hp/use' },
   { id: 'medkit',     icon: '➕', name: 'Medkit',           costPer: 15, suffix: 'Heal all crittors' },
 ];
 
@@ -618,14 +617,14 @@ export function initLayoutShop() {
   function renderInlineHats(container, charName) {
     const layout = ensurePickerLayout(container);
     const grid = layout.querySelector('.inline-picker-grid');
-    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
 
     // Equipped hat box as first grid item
     const equipBox = document.createElement('div');
     equipBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
     equipBox.dataset.slot = 'hat';
     refreshEquipBoxContent(equipBox, charName, 'hat');
-    grid.appendChild(equipBox);
+    frag.appendChild(equipBox);
 
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
@@ -637,7 +636,7 @@ export function initLayoutShop() {
       renderInlineHats(container, charName);
       updateLayoutUI();
     });
-    grid.appendChild(noneEl);
+    frag.appendChild(noneEl);
 
     hatCatalog.forEach(hat => {
       const owned = state.ownedHats.includes(hat.id);
@@ -660,21 +659,23 @@ export function initLayoutShop() {
         updateLayoutUI();
         renderInlineHats(container, charName);
       });
-      grid.appendChild(el);
+      frag.appendChild(el);
     });
+    grid.innerHTML = '';
+    grid.appendChild(frag);
   }
 
   function renderInlineSkins(container, charName) {
     const layout = ensurePickerLayout(container);
     const grid = layout.querySelector('.inline-picker-grid');
-    grid.innerHTML = '';
+    const frag = document.createDocumentFragment();
 
     // Equipped skin box as first grid item
     const equipBox = document.createElement('div');
     equipBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
     equipBox.dataset.slot = 'skin';
     refreshEquipBoxContent(equipBox, charName, 'skin');
-    grid.appendChild(equipBox);
+    frag.appendChild(equipBox);
 
     const isDefault = !state.equippedSkins[charName];
     const defEl = document.createElement('div');
@@ -686,7 +687,7 @@ export function initLayoutShop() {
       renderInlineSkins(container, charName);
       updateLayoutUI();
     });
-    grid.appendChild(defEl);
+    frag.appendChild(defEl);
 
     const available = skinCatalog.filter(s => !s.charOnly || s.charOnly === charName);
     available.forEach(skin => {
@@ -710,8 +711,10 @@ export function initLayoutShop() {
         updateLayoutUI();
         renderInlineSkins(container, charName);
       });
-      grid.appendChild(el);
+      frag.appendChild(el);
     });
+    grid.innerHTML = '';
+    grid.appendChild(frag);
   }
 
   // Inventory button — toggles between inventory and deck view

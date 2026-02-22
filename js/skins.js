@@ -148,14 +148,14 @@ const skinHueConfigs = {
     { from: 18, to: 72, targetFrom: 270, targetTo: 286, sat: 1.25, lit: 0.82 },
   ],
   'bee-rasta': [
-    // Rasta: yellow→olive-gold-green (warm earthy tone)
-    { from: 18, to: 72, targetFrom: 85, targetTo: 110, sat: 1.1, lit: 0.85 },
+    // Handled specially in recolorSheet — horizontal rasta flag bands
+    { from: 18, to: 72, targetFrom: 48, targetTo: 48, sat: 1.0, lit: 1.0 },
   ],
 };
 
 // ── Spritesheet recoloring ────────────────────────────────────────────────────
 
-function recolorSheet(baseTex, shifts, skinId, numFrames) {
+function recolorSheet(baseTex, shifts, skinId, numFrames, fh) {
   const src = baseTex.source;
   const resource = src.resource;
   const w = src.pixelWidth || src.width;
@@ -167,7 +167,9 @@ function recolorSheet(baseTex, shifts, skinId, numFrames) {
   const imgData = ctx.getImageData(0, 0, w, h);
   const d = imgData.data;
   const isPride = skinId === 'frog-pride';
-  const frameW = isPride && numFrames > 1 ? w / numFrames : w;
+  const isRasta = skinId === 'bee-rasta';
+  const frameW = (isPride || isRasta) && numFrames > 1 ? w / numFrames : w;
+  const frameH = fh || h; // per-frame height for Y-band skins
   for (let i = 0; i < d.length; i += 4) {
     if (d[i + 3] < 10) continue;
     let [hue, sat, lit] = _rgbToHsl(d[i], d[i + 1], d[i + 2]);
@@ -187,6 +189,24 @@ function recolorSheet(baseTex, shifts, skinId, numFrames) {
           hue = 340; sat = 0.7; lit = Math.min(1, lit * 1.1 + 0.15);
         } else {
           hue = 0; sat = 0.08; lit = Math.min(0.95, lit * 1.3 + 0.2);
+        }
+      }
+    } else if (isRasta) {
+      // Rasta flag: horizontal bands — red / gold / green
+      const hN = ((hue % 360) + 360) % 360;
+      if (hN >= 18 && hN <= 72) {
+        const pixIdx = i / 4;
+        const pixY = Math.floor(pixIdx / w);
+        const yPct = (pixY % frameH) / frameH;
+        if (yPct < 0.33) {
+          // Red band
+          hue = 5; sat = 0.9; lit = Math.min(1, lit * 0.85 + 0.08);
+        } else if (yPct < 0.66) {
+          // Gold band (keep close to original yellow but richer)
+          hue = 48; sat = 1.0; lit = Math.min(1, lit * 1.05);
+        } else {
+          // Green band
+          hue = 135; sat = 0.85; lit = Math.min(1, lit * 0.8 + 0.05);
         }
       }
     } else {
@@ -244,8 +264,8 @@ export function generateSkinTextures(textures, textureScaleFactors) {
     const skinIds = Object.keys(skinHueConfigs).filter(id => id.startsWith(ch + '-'));
     for (const skinId of skinIds) {
       const shifts = skinHueConfigs[skinId];
-      const recoloredWalk = recolorSheet(textures[walkSheet], shifts, skinId, fp.walk.n);
-      const recoloredAtk = recolorSheet(textures[atkSheet], shifts, skinId, fp.attack.n);
+      const recoloredWalk = recolorSheet(textures[walkSheet], shifts, skinId, fp.walk.n, fp.walk.fh);
+      const recoloredAtk = recolorSheet(textures[atkSheet], shifts, skinId, fp.attack.n, fp.attack.fh);
       if (fp.type === 1) {
         const wFrames = [], aFrames = [];
         const wScale = textureScaleFactors[walkSheet] || 1;

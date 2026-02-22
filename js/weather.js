@@ -30,6 +30,12 @@ const skyGradients = {
   snow:  { top: 0x8899AA, bottom: 0xCCDDEE, starsAlpha: 0.08, mountain: 0xb8c8d8, cloud: 0xd8e4f0 },
 };
 
+// Biome-specific sky variants layered on top of weather type.
+const tundraSkyGradients = {
+  sun:   { top: 0x5f94bf, bottom: 0xdaf4ff, starsAlpha: 0.04, mountain: 0xcde8fb, cloud: 0xf2fbff },
+  night: { top: 0x041a2e, bottom: 0x0f3f63, starsAlpha: 1.0,  mountain: 0x74a9c8, cloud: 0x93bfd8 },
+};
+
 /**
  * Call once after foreground is loaded to provide the ground height
  * (foreground.height * 0.65) needed by weather effects.
@@ -41,6 +47,20 @@ export function initWeather(groundHeight) {
 export function getWeatherType() {
   const cycle = Math.floor((state.endlessElapsed || 0) / 60) % weatherTypes.length;
   return weatherTypes[cycle].name;
+}
+
+function getCurrentBiomeIndex() {
+  const castleLevel = state.lastSiegeCastleLevel || 0;
+  return Math.floor(castleLevel / 20); // 0=forest, 1=desert, 2=tundra, 3=volcano, 4=void
+}
+
+export function getSkyGradient(weather) {
+  const biomeIdx = getCurrentBiomeIndex();
+  if (biomeIdx === 2) {
+    if (weather === 'sun') return tundraSkyGradients.sun;
+    if (weather === 'night') return tundraSkyGradients.night;
+  }
+  return skyGradients[weather] || skyGradients.sun;
 }
 
 export function updateWeatherIcon() {
@@ -206,6 +226,7 @@ export function createWeatherEffects() {
     }
 
   } else if (type === 'night') {
+    const nightGrad = getSkyGradient('night');
     // Moon — renders behind mountains like the sun
     weatherContainer.zIndex = 0.5;
 
@@ -244,7 +265,7 @@ export function createWeatherEffects() {
 
     // Night overlay — dark blue-black tint over entire scene
     nightOverlay = new PIXI.Graphics();
-    nightOverlay.rect(0, 0, 8000, 8000).fill({ color: 0x0a0a2a });
+    nightOverlay.rect(0, 0, 8000, 8000).fill({ color: nightGrad.top });
     nightOverlay.zIndex = 49999;
     nightOverlay.alpha = 0.35;
     nightOverlay.eventMode = 'none';
@@ -491,8 +512,7 @@ export function resetWeatherRefs() {
  * Ground visuals are biome-locked for consistency.
  */
 export function getGroundWeather(weather) {
-  const castleLevel = state.lastSiegeCastleLevel || 0;
-  const biomeIdx = Math.floor(castleLevel / 20); // 0=forest, 1=desert, 2=tundra, 3=volcano, 4=void
+  const biomeIdx = getCurrentBiomeIndex();
 
   if (biomeIdx === 0) {
     return 'sun';   // forest

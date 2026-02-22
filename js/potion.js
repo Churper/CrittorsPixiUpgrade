@@ -6,6 +6,16 @@ import { addCoffee, playPotionChugSound, playPotionBottleAnimation } from './com
 
 let _critter = null;
 let _app = null;
+const POTION_BASE_HEAL = 70;
+const POTION_HEAL_PER_TIER = 15;
+
+export function recalculatePotionHealAmount() {
+  const checkpointTier = Math.floor((state.lastSiegeCastleLevel || 0) / 10);
+  const persistentTier = Math.max(0, state.startingItems?.potionHeal || 0);
+  const effectiveTier = Math.max(checkpointTier, persistentTier);
+  state.potionHealAmount = POTION_BASE_HEAL + effectiveTier * POTION_HEAL_PER_TIER;
+  return state.potionHealAmount;
+}
 
 export function initPotion(critter, app) {
   _critter = critter;
@@ -15,6 +25,8 @@ export function initPotion(critter, app) {
 export function updatePotionUI() {
   const btn = document.getElementById('potion-button');
   if (!btn) return;
+  const healAmt = recalculatePotionHealAmount();
+  btn.title = `Heal ${healAmt} HP for 20 coffee`;
   if (getCoffee() < 20) {
     btn.classList.add('cant-afford');
   } else {
@@ -31,7 +43,7 @@ export function wirePotionListeners() {
     if (getCoffee() < 20) return;
 
     addCoffee(-20);
-    const healAmt = state.potionHealAmount || 70;
+    const healAmt = recalculatePotionHealAmount();
     setPlayerCurrentHealth(Math.min(getPlayerCurrentHealth() + healAmt, getPlayerHealth()));
     updatePlayerHealthBar(getPlayerCurrentHealth() / getPlayerHealth() * 100);
     updatePotionUI();

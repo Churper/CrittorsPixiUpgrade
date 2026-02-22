@@ -1,6 +1,6 @@
 import state from './state.js';
 import {
-  skyGradients, getWeatherType, updateWeatherIcon,
+  getSkyGradient, getWeatherType, updateWeatherIcon,
   getWeatherRefs, resetWeatherRefs, createWeatherEffects,
   getGroundWeather,
 } from './weather.js';
@@ -166,7 +166,7 @@ export function transitionWeather(newWeather, skipGround) {
   const targetNightAlpha = _newRefs.nightOverlay ? 0.35 : 0;
   const targetSunLightAlpha = _newRefs.sunLightOverlay ? 0.12 : 0;
   const targetFireGlowsAlpha = _newRefs.nightFireGlows ? 1 : 0;
-  const newGrad = skyGradients[newWeather] || skyGradients.sun;
+  const newGrad = getSkyGradient(newWeather);
 
   updateWeatherIcon();
 

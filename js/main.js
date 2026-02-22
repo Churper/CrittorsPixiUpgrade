@@ -50,14 +50,14 @@ import {
   renderOverworldMap, navigateMapDeck, estimateCheckpointSharedLevel,
 } from './siege.js';
 import {
-  skyGradients,
+  getSkyGradient,
   getWeatherType, getGroundWeather,
   createWeatherEffects, updateWeatherEffects,
   initWeather,
 } from './weather.js';
 import { initTerrain, drawEndlessGround } from './terrain.js';
 import { applyHat } from './hats.js';
-import { initPotion, wirePotionListeners, updatePotionUI } from './potion.js';
+import { initPotion, wirePotionListeners, updatePotionUI, recalculatePotionHealAmount } from './potion.js';
 import { initReviveDialog, createReviveDialog } from './reviveDialog.js';
 import {
   initBiomeTransition, transitionWeather, updateBiomeTransition,
@@ -773,8 +773,8 @@ document.addEventListener('DOMContentLoaded', function () {
       state.charDefenseShop[ch] = shopBonus;
     });
     state.defense = state.charDefense.frog || 1; // start as frog
-    // Apply potion heal bonus
-    state.potionHealAmount = 70 + (state.startingItems.potionHeal || 0) * 15;
+    // Apply potion heal scaling (persistent potion power + checkpoint tier scaling).
+    recalculatePotionHealAmount();
 
     // --- Endless mode setup ---
     if (state.gameMode === 'endless') {
@@ -835,6 +835,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Set kills-to-next-level with checkpoint scaling
         state.killsToNextLevel = (4 + targetLevel + cpLevel) * 10;
 
+        // Recompute potion heal after checkpoint jump.
+        recalculatePotionHealAmount();
         state.endlessCheckpointStart = 0;
       }
 
@@ -1122,7 +1124,7 @@ state.frogGhostPlayer.scale.set(0.28);
       const mountain4 = createMountainSprite('mountain1', app.screen.width * 1.2, mountainVelocity4, foreground);
 
       // Apply initial sky gradient so the first round starts with correct colors
-      const _initGrad = skyGradients[initialWeather] || skyGradients.sun;
+      const _initGrad = getSkyGradient(initialWeather);
       currentSkyTop = _initGrad.top;
       currentSkyBottom = _initGrad.bottom;
       drawSkyGradient(background, currentSkyTop, currentSkyBottom, app.screen.width, app.screen.height);

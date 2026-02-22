@@ -27,8 +27,8 @@ const endlessGroundPalettes = {
           rock: 0x606060, rockShade: 0x484848, trunk: 0x4a3520, canopy: [0x1e4a1e, 0x2a5a2a, 0x1a3e1a], flower: 0x5a7a5a },
   wind: { base: 0xc9a46b, dirt: 0x8a673f, path: 0xe0bf86, grass: 0xb28a52, variation: 0xb7905b,
           rock: 0x9f8b73, rockShade: 0x7f6f5c, trunk: 0x7a5530, canopy: [0x8a7a42, 0xa38f52, 0x6f6436, 0xc59a45], flower: 0xd6b06a },
-  snow: { base: 0xd4dce6, dirt: 0x8a8a90, path: 0xb0b5bc, grass: 0xe8eef5, variation: 0xc0c8d4,
-          rock: 0xa8aab0, rockShade: 0x8a8c92, trunk: 0x5a4a3a, canopy: [0x2a5a3a, 0x1a4a2a, 0xc8d8e0], flower: 0xd0dae0 },
+  snow: { base: 0x88b7d8, dirt: 0x5f7388, path: 0xb7dcf2, grass: 0xd8f3ff, variation: 0x6ea0c2,
+          rock: 0x8ea5ba, rockShade: 0x6f8599, trunk: 0x4f4f62, canopy: [0x6aa7bf, 0x588fa7, 0x3f758f, 0xbfeaff], flower: 0xc5f0ff },
   night: { base: 0x1a2e1a, dirt: 0x2a2218, path: 0x3a3528, grass: 0x1e3a1e, variation: 0x162a16,
            rock: 0x4a4a50, rockShade: 0x3a3a40, trunk: 0x3a2a18, canopy: [0x142a14, 0x1a3a1a, 0x0e200e], flower: 0x3a3a50 },
 };
@@ -134,8 +134,8 @@ export function drawEndlessGround(weather, skyWeather = weather) {
     px += 60 + endlessGroundRandom() * 120;
   }
 
-  // 7-9. Vegetation passes (skip in desert/wind biome).
-  if (weather !== 'wind') {
+  // 7-9. Vegetation passes (skip in desert/wind and tundra/snow biomes).
+  if (weather !== 'wind' && weather !== 'snow') {
     // 7. Grass tufts along the curving top edge
     _endlessGroundSeed = 12345;
     let gx = 5;
@@ -309,7 +309,7 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
         d.circle(lx, ly, 1.5 + endlessGroundRandom()).fill({ color: canopyColor, alpha: 0.5 });
       }
     } else if (weather === 'snow' && treeType < 0.6) {
-      // Pine tree — 4 tiers with curved snow caps
+      // Frost pine — icy tiers with crystalline edge highlights
       const cx = tx, cy = treeY - trunkH;
       const pineH = canopyR * 2.2, pineW = canopyR * 1.4;
       for (let tier = 0; tier < 4; tier++) {
@@ -319,10 +319,10 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
         d.poly([cx - tw / 2, ty, cx, ty - th, cx + tw / 2, ty]).fill({ color: canopyColor });
         // Curved bottom edge
         d.ellipse(cx, ty + 2, tw * 0.5, 4).fill({ color: canopyColor, alpha: 0.6 });
-        // Snow draping over tier edges
-        d.ellipse(cx, ty - th * 0.15, tw * 0.42, th * 0.18).fill({ color: 0xe8eef5, alpha: 0.75 });
-        d.ellipse(cx - tw * 0.2, ty - th * 0.05, tw * 0.2, 4).fill({ color: 0xdde8f0, alpha: 0.5 });
-        d.ellipse(cx + tw * 0.2, ty - th * 0.05, tw * 0.2, 4).fill({ color: 0xdde8f0, alpha: 0.5 });
+        // Icy sheen across each tier
+        d.ellipse(cx, ty - th * 0.12, tw * 0.38, th * 0.14).fill({ color: 0xe0f7ff, alpha: 0.55 });
+        d.ellipse(cx - tw * 0.2, ty - th * 0.05, tw * 0.16, 3).fill({ color: 0xcff0ff, alpha: 0.45 });
+        d.ellipse(cx + tw * 0.2, ty - th * 0.05, tw * 0.16, 3).fill({ color: 0xcff0ff, alpha: 0.45 });
         // Tiny trunk visible between tiers
         if (tier < 3) {
           d.rect(cx - trunkTopW * 0.3, ty, trunkTopW * 0.6, pineH * 0.04).fill({ color: palette.trunk, alpha: 0.5 });
@@ -446,56 +446,53 @@ function drawEndlessGroundDecor(weather, palette, groundH, skyWeather = weather)
     }
   }
 
-  // Snow patches (snow only)
+  // Ice sheets and frost cracks (snow/tundra biome only)
   if (weather === 'snow') {
     _endlessGroundSeed = 88888;
     let sx = 40;
     while (sx < w) {
-      const sw = 20 + endlessGroundRandom() * 40;
-      const sh = 4 + endlessGroundRandom() * 6;
-      d.ellipse(sx, terrainTopY(sx) - 1, sw, sh).fill({ color: 0xf0f4fa, alpha: 0.5 });
-      sx += 100 + endlessGroundRandom() * 200;
+      const iw = 24 + endlessGroundRandom() * 46;
+      const ih = 5 + endlessGroundRandom() * 9;
+      const iy = terrainTopY(sx) - 1;
+      d.ellipse(sx, iy, iw, ih).fill({ color: 0xd6f2ff, alpha: 0.45 });
+      d.ellipse(sx - iw * 0.08, iy - 1, iw * 0.65, ih * 0.45).fill({ color: 0xffffff, alpha: 0.18 });
+      d.moveTo(sx - iw * 0.28, iy - ih * 0.1).lineTo(sx + iw * 0.05, iy + ih * 0.2)
+        .stroke({ width: 1, color: 0x9ecde6, alpha: 0.5 });
+      d.moveTo(sx + iw * 0.02, iy - ih * 0.12).lineTo(sx + iw * 0.22, iy + ih * 0.08)
+        .stroke({ width: 1, color: 0xb4ddf2, alpha: 0.45 });
+      sx += 110 + endlessGroundRandom() * 220;
     }
   }
 
-  // Snowmen (snow only)
+  // Ice crystal clusters (snow/tundra biome only)
   if (weather === 'snow') {
     _endlessGroundSeed = 99111;
-    let smx = 300;
-    while (smx < w) {
-      const smY = terrainTopY(smx);
-      const sc = 0.7 + endlessGroundRandom() * 0.5;
-      // Bottom ball
-      d.circle(smx, smY - 10 * sc, 10 * sc).fill({ color: 0xf0f4fa });
-      d.circle(smx - 3 * sc, smY - 13 * sc, 3 * sc).fill({ color: 0xffffff, alpha: 0.3 });
-      // Middle ball
-      d.circle(smx, smY - 24 * sc, 7.5 * sc).fill({ color: 0xeaeff5 });
-      d.circle(smx - 2 * sc, smY - 26 * sc, 2 * sc).fill({ color: 0xffffff, alpha: 0.25 });
-      // Head
-      d.circle(smx, smY - 36 * sc, 5.5 * sc).fill({ color: 0xf0f4fa });
-      // Eyes — coal
-      d.circle(smx - 2 * sc, smY - 38 * sc, 1 * sc).fill({ color: 0x111111 });
-      d.circle(smx + 2 * sc, smY - 38 * sc, 1 * sc).fill({ color: 0x111111 });
-      // Carrot nose
-      d.poly([smx, smY - 36 * sc, smx + 6 * sc, smY - 35.5 * sc, smx, smY - 35 * sc])
-        .fill({ color: 0xe87830 });
-      // Stick arms
-      d.moveTo(smx - 7.5 * sc, smY - 24 * sc)
-        .lineTo(smx - 18 * sc, smY - 30 * sc)
-        .stroke({ width: 1.5, color: 0x5a3a18 });
-      d.moveTo(smx - 15 * sc, smY - 28 * sc)
-        .lineTo(smx - 18 * sc, smY - 33 * sc)
-        .stroke({ width: 1, color: 0x5a3a18 });
-      d.moveTo(smx + 7.5 * sc, smY - 24 * sc)
-        .lineTo(smx + 18 * sc, smY - 30 * sc)
-        .stroke({ width: 1.5, color: 0x5a3a18 });
-      d.moveTo(smx + 15 * sc, smY - 28 * sc)
-        .lineTo(smx + 20 * sc, smY - 33 * sc)
-        .stroke({ width: 1, color: 0x5a3a18 });
-      // Buttons
-      d.circle(smx, smY - 21 * sc, 1 * sc).fill({ color: 0x111111 });
-      d.circle(smx, smY - 25 * sc, 1 * sc).fill({ color: 0x111111 });
-      smx += 800 + endlessGroundRandom() * 1200;
+    let icx = 300;
+    while (icx < w) {
+      const icY = terrainTopY(icx);
+      const sc = 0.75 + endlessGroundRandom() * 0.55;
+      // Central shard
+      d.poly([
+        icx, icY - 42 * sc,
+        icx - 5 * sc, icY - 10 * sc,
+        icx + 5 * sc, icY - 10 * sc,
+      ]).fill({ color: 0xb6ecff, alpha: 0.82 });
+      // Side shards
+      d.poly([
+        icx - 10 * sc, icY - 28 * sc,
+        icx - 16 * sc, icY - 8 * sc,
+        icx - 6 * sc, icY - 9 * sc,
+      ]).fill({ color: 0xa6dff8, alpha: 0.75 });
+      d.poly([
+        icx + 10 * sc, icY - 30 * sc,
+        icx + 16 * sc, icY - 9 * sc,
+        icx + 7 * sc, icY - 10 * sc,
+      ]).fill({ color: 0xa6dff8, alpha: 0.75 });
+      // Crystal glow/core
+      d.circle(icx, icY - 14 * sc, 4 * sc).fill({ color: 0xe7fbff, alpha: 0.32 });
+      // Reflection glint
+      d.rect(icx - 1, icY - 32 * sc, 2, 15 * sc).fill({ color: 0xffffff, alpha: 0.25 });
+      icx += 780 + endlessGroundRandom() * 1150;
     }
   }
 

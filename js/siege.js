@@ -27,6 +27,7 @@ import {
 import { updatePlayerHealthBar } from './ui.js';
 import { checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
+import { recalculatePotionHealAmount } from './potion.js';
 
 // --- Detection ---
 
@@ -606,6 +607,7 @@ export function collectSiegeRewards() {
   if (level > 0 && level % 10 === 0) {
     state.startingItems.potionHeal = (state.startingItems.potionHeal || 0) + 1;
   }
+  recalculatePotionHealAmount();
 
   saveBones();
 

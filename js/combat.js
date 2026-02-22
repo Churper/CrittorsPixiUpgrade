@@ -317,13 +317,24 @@ export function handleEnemyActions(critter, critterAttackTextures, critterWalkTe
     // Queue gate: hold position when an enemy is already engaged and this one is close
     // Babies always bypass queue; non-babies also queue when any baby is alive nearby
     const babiesAlive = getEnemies().some(e => e.isBaby && e.isAlive);
-    if (getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250 && !enemy.isBaby) {
+    if (!enemy.isBaby && getEnemiesInRange() >= 1 && enemy.position.x - critter.position.x < 250) {
       enemy.isQueued = true;
       return;
     }
     if (!enemy.isBaby && babiesAlive && enemy.position.x - critter.position.x < 400) {
       enemy.isQueued = true;
       return;
+    }
+    // Prevent non-baby enemies from stacking: only one can advance at a time
+    if (!enemy.isBaby && getEnemiesInRange() === 0) {
+      const closerEnemy = getEnemies().some(e =>
+        e !== enemy && e.isAlive && !e.isBaby && !e.enemyAdded &&
+        e.position.x < enemy.position.x && e.position.x - critter.position.x > 100
+      );
+      if (closerEnemy) {
+        enemy.isQueued = true;
+        return;
+      }
     }
     handleEnemyMoving(critterWalkTextures, enemy);
   } else {
@@ -392,6 +403,11 @@ export function handleCritterAttack(critter, enemy, critterAttackTextures) {
 }
 
 export function addEnemyInRange(enemy) {
+  // Prevent multiple non-baby enemies from stacking in combat range
+  if (!enemy.isBaby && getEnemiesInRange() >= 1) {
+    // Another enemy is already engaged — don't add, let queue gate handle it
+    return;
+  }
   enemy.enemyAdded = true;
   setEnemiesInRange(getEnemiesInRange() + 1);
 }
@@ -1114,6 +1130,9 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
 
       playDeathAnimation(enemy, critter);
       cleaveNearbyBaby(critter, enemy);
+
+      // Ensure critter restarts animation after kill (prevents stuck attack frames)
+      critter.play();
     }
   }
 }

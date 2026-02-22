@@ -1639,13 +1639,15 @@ touch-action: manipulation;
 #layout-panel::-webkit-scrollbar { display: none; }
 
 .layout-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: clamp(6px, 1.5vmin, 10px);
   margin-bottom: clamp(6px, 1.5vmin, 12px);
 }
+.layout-header > :last-child {
+  justify-self: end;
+}
 .layout-currency-center {
-  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2068,7 +2070,86 @@ touch-action: manipulation;
   font-family: 'Luckiest Guy', cursive;
   font-size: clamp(0.85em, 2.6vmin, 1.1em);
   color: #8cc8e8;
-  margin-bottom: clamp(8px, 2vmin, 14px);
+  margin-bottom: 0;
+}
+
+/* ── Cosmetic preview layout (hats/skins) ──────────── */
+.cosmetic-preview-layout {
+  display: flex;
+  gap: clamp(10px, 2.5vmin, 18px);
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+.cosmetic-preview-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(4px, 1vmin, 8px);
+  min-width: clamp(80px, 20vmin, 110px);
+  padding: clamp(8px, 2vmin, 14px) clamp(6px, 1.5vmin, 10px);
+  background: linear-gradient(145deg, rgba(14, 24, 42, 0.9), rgba(10, 18, 34, 0.95));
+  border: 1px solid rgba(80, 140, 200, 0.25);
+  border-radius: clamp(8px, 1.6vmin, 12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.cosmetic-preview-img {
+  width: clamp(64px, 16vmin, 90px);
+  height: clamp(64px, 16vmin, 90px);
+  image-rendering: pixelated;
+  border-radius: clamp(6px, 1.2vmin, 10px);
+  border: 2px solid rgba(100, 160, 200, 0.3);
+  background: rgba(8, 16, 30, 0.7);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.cosmetic-preview-name {
+  font-family: 'Luckiest Guy', cursive;
+  font-size: clamp(0.85em, 2.4vmin, 1.05em);
+  color: #8cc8e8;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.cosmetic-preview-equipped {
+  font-family: 'Patrick Hand', cursive;
+  font-size: clamp(0.7em, 1.8vmin, 0.85em);
+  color: rgba(120, 220, 160, 0.7);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.cosmetic-preview-right {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.cosmetic-preview-right::-webkit-scrollbar { display: none; }
+
+/* ── Shop title bar (inventory) ────────────────────── */
+.shop-title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 2vmin, 14px);
+  width: 100%;
+  padding: clamp(6px, 1.5vmin, 10px) 0;
+  margin-bottom: clamp(4px, 1vmin, 8px);
+  border-bottom: 1px solid rgba(180, 160, 80, 0.25);
+}
+
+.shop-title-icon {
+  font-size: clamp(1em, 2.8vmin, 1.3em);
+}
+
+.shop-title-bar .layout-subview-title {
+  margin-bottom: 0;
+  color: #e8d888;
+  text-shadow: 0 0 8px rgba(200, 180, 80, 0.25), 1px 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .layout-back-btn {
@@ -2100,22 +2181,23 @@ touch-action: manipulation;
 .layout-subview-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: clamp(8px, 2vmin, 12px);
-  justify-content: center;
+  gap: clamp(6px, 1.5vmin, 10px);
+  justify-content: flex-start;
+  align-content: flex-start;
   width: 100%;
   min-height: clamp(100px, 30vh, 200px);
 }
 
 .layout-subview-item {
-  width: clamp(60px, 15vmin, 80px);
-  height: clamp(60px, 15vmin, 80px);
+  width: clamp(56px, 13vmin, 72px);
+  height: clamp(56px, 13vmin, 72px);
   border-radius: clamp(8px, 1.8vmin, 12px);
   border: 2px solid rgba(100, 160, 200, 0.35);
   background: rgba(15, 25, 45, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: clamp(24px, 6vmin, 32px);
+  font-size: clamp(20px, 5vmin, 28px);
   cursor: pointer;
   transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
   user-select: none;
@@ -2183,7 +2265,10 @@ touch-action: manipulation;
   min-height: 0;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding: clamp(4px, 1vmin, 8px) 0;
+  padding: clamp(4px, 1vmin, 8px) clamp(6px, 1.5vmin, 10px);
+  background: linear-gradient(180deg, rgba(10, 18, 32, 0.5), rgba(8, 14, 28, 0.3));
+  border-radius: clamp(6px, 1.2vmin, 10px);
+  border: 1px solid rgba(180, 160, 80, 0.12);
 }
 .shop-list::-webkit-scrollbar { display: none; }
 
@@ -2191,30 +2276,30 @@ touch-action: manipulation;
   display: flex;
   align-items: center;
   gap: clamp(8px, 1.8vmin, 12px);
-  padding: clamp(7px, 1.4vmin, 11px) clamp(10px, 2.2vmin, 14px);
+  padding: clamp(8px, 1.6vmin, 12px) clamp(10px, 2.2vmin, 14px);
   border-radius: clamp(8px, 1.6vmin, 12px);
   background: linear-gradient(135deg, rgba(18, 28, 50, 0.85), rgba(12, 20, 38, 0.9));
-  border: 1px solid rgba(100, 160, 200, 0.18);
+  border: 1px solid rgba(140, 120, 70, 0.2);
   transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 .shop-row:hover {
-  border-color: rgba(180, 160, 100, 0.4);
-  background: linear-gradient(135deg, rgba(24, 36, 60, 0.9), rgba(16, 26, 46, 0.95));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 6px rgba(180, 160, 100, 0.08);
+  border-color: rgba(200, 180, 100, 0.45);
+  background: linear-gradient(135deg, rgba(26, 38, 62, 0.92), rgba(18, 28, 48, 0.96));
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), 0 0 8px rgba(200, 180, 80, 0.1);
 }
 .shop-row-icon {
-  font-size: clamp(18px, 4.5vmin, 24px);
+  font-size: clamp(20px, 5vmin, 26px);
   flex-shrink: 0;
-  width: clamp(36px, 8vmin, 44px);
-  height: clamp(36px, 8vmin, 44px);
+  width: clamp(40px, 9vmin, 50px);
+  height: clamp(40px, 9vmin, 50px);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, rgba(30, 45, 70, 0.8), rgba(20, 32, 55, 0.9));
-  border: 1px solid rgba(140, 120, 80, 0.3);
+  background: linear-gradient(145deg, rgba(35, 50, 75, 0.85), rgba(22, 35, 58, 0.92));
+  border: 1px solid rgba(160, 140, 80, 0.35);
   border-radius: clamp(6px, 1.2vmin, 8px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 1px 3px rgba(0, 0, 0, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 .shop-row-info {
   flex: 1;
@@ -2246,12 +2331,12 @@ touch-action: manipulation;
 }
 .shop-row-buy {
   font-family: 'Luckiest Guy', cursive;
-  font-size: clamp(0.7em, 2vmin, 0.85em);
-  padding: clamp(5px, 1vmin, 7px) clamp(10px, 2.2vmin, 14px);
-  border-radius: 6px;
-  border: 1px solid rgba(180, 160, 80, 0.5);
-  background: linear-gradient(145deg, rgba(50, 42, 16, 0.8), rgba(35, 30, 10, 0.9));
-  color: #e8d888;
+  font-size: clamp(0.72em, 2.1vmin, 0.88em);
+  padding: clamp(6px, 1.2vmin, 9px) clamp(12px, 2.5vmin, 16px);
+  border-radius: 8px;
+  border: 1px solid rgba(200, 180, 80, 0.5);
+  background: linear-gradient(145deg, rgba(60, 50, 18, 0.85), rgba(40, 34, 12, 0.92));
+  color: #eed888;
   cursor: pointer;
   transition: transform 0.12s, background 0.12s, border-color 0.12s, box-shadow 0.12s;
   user-select: none;
@@ -2259,14 +2344,14 @@ touch-action: manipulation;
   touch-action: manipulation;
   flex-shrink: 0;
   white-space: nowrap;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 0 4px rgba(200, 180, 80, 0.2), 1px 1px 2px rgba(0,0,0,0.7);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 220, 100, 0.1);
 }
 .shop-row-buy:hover {
   transform: scale(1.06);
-  background: linear-gradient(145deg, rgba(65, 55, 20, 0.9), rgba(45, 38, 14, 0.95));
-  border-color: rgba(220, 200, 100, 0.7);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 6px rgba(200, 180, 80, 0.15);
+  background: linear-gradient(145deg, rgba(75, 62, 22, 0.92), rgba(50, 42, 16, 0.96));
+  border-color: rgba(240, 220, 100, 0.75);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45), 0 0 10px rgba(220, 200, 80, 0.18);
 }
 .shop-row-buy:active {
   transform: scale(0.94);
@@ -2334,6 +2419,19 @@ touch-action: manipulation;
   .layout-cosmetic-slot {
     width: clamp(44px, 10vh, 60px);
     height: clamp(28px, 7vh, 40px);
+  }
+  .cosmetic-preview-img {
+    width: clamp(48px, 12vh, 72px);
+    height: clamp(48px, 12vh, 72px);
+  }
+  .cosmetic-preview-left {
+    min-width: clamp(64px, 16vh, 90px);
+    padding: clamp(4px, 1vh, 8px);
+  }
+  .layout-subview-item {
+    width: clamp(48px, 11vh, 64px);
+    height: clamp(48px, 11vh, 64px);
+    font-size: clamp(16px, 4vh, 24px);
   }
 }
 

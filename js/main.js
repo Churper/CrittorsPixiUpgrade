@@ -2089,11 +2089,26 @@ let cantGainEXP = false;
           }
         }
         // Safety: if stuck in attack textures with nothing to fight, restore walk
-        if (!state.isAttackingChar && getEnemiesInRange() === 0 && critter.textures === state.frogAttackTextures) {
+        if (getEnemiesInRange() === 0 && critter.textures !== state.frogWalkTextures && !state.isAttackingChar) {
           critter.textures = state.frogWalkTextures;
           critter.loop = true;
           setCharAttackAnimating(false);
           critter.play();
+        }
+        // Failsafe: force-restore walk if stuck attacking with no enemies for over 2 seconds
+        if (getEnemiesInRange() === 0 && getEnemies().filter(e => e.isAlive && e.enemyAdded).length === 0) {
+          if (!state._noEnemySince) state._noEnemySince = Date.now();
+          if (Date.now() - state._noEnemySince > 2000 && critter.textures !== state.frogWalkTextures) {
+            state.isAttackingChar = false;
+            setIsCharAttacking(false);
+            setCharAttackAnimating(false);
+            state.isCombat = false;
+            critter.textures = state.frogWalkTextures;
+            critter.loop = true;
+            critter.play();
+          }
+        } else {
+          state._noEnemySince = null;
         }
         // Auto-attack: trigger attack when enemies are in range, or at siege castle
         const atSiegeCastle = state.siegeActive && state.siegePhase === 'castle' && state.siegeCastleSprite &&

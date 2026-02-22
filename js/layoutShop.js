@@ -224,12 +224,42 @@ export function initLayoutShop() {
     view.classList.add('active');
     if (charName) activeSubviewChar = charName;
     if (charLabel) {
-      if (view === layoutHatsView) { hatsCharName.textContent = charLabel; renderHatsGrid(); }
-      if (view === layoutSkinsView) { skinsCharName.textContent = charLabel; renderSkinsGrid(); }
+      if (view === layoutHatsView) {
+        hatsCharName.textContent = charLabel;
+        const portrait = document.getElementById('hats-preview-portrait');
+        if (portrait) portrait.src = './assets/' + charName + 'portrait.png';
+        renderHatsGrid();
+        updateHatsEquippedLabel();
+      }
+      if (view === layoutSkinsView) {
+        skinsCharName.textContent = charLabel;
+        const portrait = document.getElementById('skins-preview-portrait');
+        if (portrait) portrait.src = './assets/' + charName + 'portrait.png';
+        renderSkinsGrid();
+        updateSkinsEquippedLabel();
+      }
     }
     if (view === layoutInventoryView) renderInventoryGrid();
     const btn = document.getElementById('layout-inventory-btn');
-    btn.textContent = view === layoutInventoryView ? '← Characters' : '🎒 Inventory';
+    btn.textContent = view === layoutInventoryView ? '\u2190 Characters' : '\uD83C\uDF92 Inventory';
+  }
+
+  function updateHatsEquippedLabel() {
+    const el = document.getElementById('hats-equipped-label');
+    if (!el || !activeSubviewChar) return;
+    const hatId = state.equippedHats[activeSubviewChar];
+    if (!hatId) { el.textContent = 'None'; return; }
+    const hat = hatCatalog.find(h => h.id === hatId);
+    el.textContent = hat ? hat.icon + ' ' + hat.name : 'None';
+  }
+
+  function updateSkinsEquippedLabel() {
+    const el = document.getElementById('skins-equipped-label');
+    if (!el || !activeSubviewChar) return;
+    const skinId = state.equippedSkins[activeSubviewChar];
+    if (!skinId) { el.textContent = 'Default'; return; }
+    const skin = skinCatalog.find(s => s.id === skinId);
+    el.textContent = skin ? skin.icon + ' ' + skin.name : 'Default';
   }
 
   function showLayoutDeck() {
@@ -251,11 +281,12 @@ export function initLayoutShop() {
     const isNone = !state.equippedHats[ch];
     const noneEl = document.createElement('div');
     noneEl.className = 'layout-subview-item' + (isNone ? ' equipped' : '');
-    noneEl.innerHTML = '<span>✨</span><span class="subview-label">None</span>';
+    noneEl.innerHTML = '<span>\u2728</span><span class="subview-label">None</span>';
     noneEl.addEventListener('click', () => {
       state.equippedHats[ch] = null;
       saveBones();
       renderHatsGrid();
+      updateHatsEquippedLabel();
     });
     grid.appendChild(noneEl);
 
@@ -265,8 +296,8 @@ export function initLayoutShop() {
       const el = document.createElement('div');
       el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
-        ? `<span>${hat.icon}</span>`
-        : `<span>${hat.icon}</span><span class="subview-cost">💗${hat.cost}</span>`;
+        ? `<span>${hat.icon}</span><span class="subview-label">${hat.name}</span>`
+        : `<span>${hat.icon}</span><span class="subview-cost">\uD83D\uDC97${hat.cost}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.supporterHearts < hat.cost) return;
@@ -275,10 +306,12 @@ export function initLayoutShop() {
           saveBones();
           updateLayoutUI();
           renderHatsGrid();
+          updateHatsEquippedLabel();
         } else {
           state.equippedHats[ch] = equipped ? null : hat.id;
           saveBones();
           renderHatsGrid();
+          updateHatsEquippedLabel();
         }
       });
       grid.appendChild(el);
@@ -294,11 +327,12 @@ export function initLayoutShop() {
     const isDefault = !state.equippedSkins[ch];
     const defEl = document.createElement('div');
     defEl.className = 'layout-subview-item' + (isDefault ? ' equipped' : '');
-    defEl.innerHTML = '<span>✨</span><span class="subview-label">Default</span>';
+    defEl.innerHTML = '<span>\u2728</span><span class="subview-label">Default</span>';
     defEl.addEventListener('click', () => {
       state.equippedSkins[ch] = null;
       saveBones();
       renderSkinsGrid();
+      updateSkinsEquippedLabel();
     });
     grid.appendChild(defEl);
 
@@ -310,7 +344,7 @@ export function initLayoutShop() {
       el.className = 'layout-subview-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span>`
-        : `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span><span class="subview-cost">💗${skin.cost}</span>`;
+        : `<span>${skin.icon}</span><span class="subview-label">${skin.name}</span><span class="subview-cost">\uD83D\uDC97${skin.cost}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.supporterHearts < skin.cost) return;
@@ -319,10 +353,12 @@ export function initLayoutShop() {
           saveBones();
           updateLayoutUI();
           renderSkinsGrid();
+          updateSkinsEquippedLabel();
         } else {
           state.equippedSkins[ch] = equipped ? null : skin.id;
           saveBones();
           renderSkinsGrid();
+          updateSkinsEquippedLabel();
         }
       });
       grid.appendChild(el);
@@ -358,30 +394,18 @@ export function initLayoutShop() {
     });
   }
 
-  // --- Cosmetic slot click handlers ---
+  // --- Cosmetic slot click handlers — navigate to full sub-view with preview ---
   document.querySelectorAll('.layout-cosmetic-slot').forEach(slot => {
     slot.addEventListener('click', function() {
       const card = this.closest('.layout-card');
       const charName = card.dataset.char;
+      const charLabel = charName.charAt(0).toUpperCase() + charName.slice(1);
       const slotType = this.dataset.slot;
-      const picker = card.querySelector('.layout-inline-picker');
 
-      if (picker.style.display !== 'none' && picker.dataset.activeSlot === slotType) {
-        picker.style.display = 'none';
-        picker.dataset.activeSlot = '';
-        this.classList.remove('slot-active');
-        return;
-      }
-
-      card.querySelectorAll('.layout-cosmetic-slot').forEach(s => s.classList.remove('slot-active'));
-      this.classList.add('slot-active');
-
-      picker.dataset.activeSlot = slotType;
-      picker.style.display = 'block';
       if (slotType === 'hat') {
-        renderInlineHats(picker, charName);
+        showLayoutView(layoutHatsView, charLabel, charName);
       } else if (slotType === 'skin') {
-        renderInlineSkins(picker, charName);
+        showLayoutView(layoutSkinsView, charLabel, charName);
       }
     });
   });

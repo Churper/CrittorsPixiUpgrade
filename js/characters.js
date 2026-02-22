@@ -169,10 +169,9 @@ export function updateEXPIndicator(character, currentEXP, maxEXP) {
   if (!expIndicator) return;
 
   if (state.gameMode === 'endless') {
-    // In endless mode, show kill progress (same for all characters)
-    const killsPerLevel = (5 + (state.lastSiegeCastleLevel || 0)) * 10;
-    const killsDone = killsPerLevel - state.killsToNextLevel;
-    const heightPercentage = (1 - killsDone / killsPerLevel) * 100;
+    // In endless mode, show kill progress toward next siege (0-10 kills)
+    const killsSinceSiege = state.endlessKillCount % 10;
+    const heightPercentage = (1 - killsSinceSiege / 10) * 100;
     expIndicator.style.setProperty('--exp-indicator-height', `${heightPercentage}%`);
   } else {
     const heightPercentage = (1 - currentEXP / maxEXP) * 100;

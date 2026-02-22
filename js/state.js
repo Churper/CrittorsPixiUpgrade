@@ -6,8 +6,7 @@ const state = {
   endlessStartTime: null,     // Date.now() when endless begins
   endlessElapsed: 0,          // seconds survived (cosmetic only — weather)
   endlessSpawnCount: 0,       // number of enemies spawned (used for gameplay scaling)
-  sharedLevel: 1,             // shared kill-milestone level for endless mode (all characters)
-  killsToNextLevel: 50,       // progress remaining until next shared level (10 per kill, scales with sieges)
+  sharedLevel: 1,             // shared level for endless mode — equals castles cleared + 1
 
   // Core game state
   leveling: false,

@@ -62,11 +62,11 @@ const biomeSkyGradients = {
     snow:  { top: 0x726b73, bottom: 0xbbafb9, starsAlpha: 0.22, mountain: 0x99909b, cloud: 0xcabfcb, starTint: 0xFFD8EE },
   },
   void: {
-    sun:   { top: 0x26124a, bottom: 0x6d35a0, starsAlpha: 0.45, mountain: 0x6c4e91, cloud: 0x7f63a8, starTint: 0xE6C9FF },
-    night: { top: 0x070014, bottom: 0x210541, starsAlpha: 1.0,  mountain: 0x3d2a67, cloud: 0x503b7d, starTint: 0x9FEFFF },
-    rain:  { top: 0x19092f, bottom: 0x3d1760, starsAlpha: 0.75, mountain: 0x4e2c76, cloud: 0x634090, starTint: 0xAEF4FF },
-    wind:  { top: 0x13204a, bottom: 0x274f8f, starsAlpha: 0.65, mountain: 0x3a4f87, cloud: 0x5470aa, starTint: 0xA9D0FF },
-    snow:  { top: 0x2b2146, bottom: 0x5c4d82, starsAlpha: 0.85, mountain: 0x524579, cloud: 0x6d5f95, starTint: 0xDCC8FF },
+    sun:   { top: 0x3d1f6e, bottom: 0x9050cc, starsAlpha: 0.45, mountain: 0x8a68b8, cloud: 0x9e80c8, starTint: 0xE6C9FF },
+    night: { top: 0x110028, bottom: 0x350a60, starsAlpha: 1.0,  mountain: 0x553d85, cloud: 0x6b50a0, starTint: 0x9FEFFF },
+    rain:  { top: 0x2a1250, bottom: 0x5a2888, starsAlpha: 0.75, mountain: 0x6840a0, cloud: 0x7d58b2, starTint: 0xAEF4FF },
+    wind:  { top: 0x223468, bottom: 0x4068b8, starsAlpha: 0.65, mountain: 0x5268a8, cloud: 0x6e88c0, starTint: 0xA9D0FF },
+    snow:  { top: 0x403068, bottom: 0x7868a8, starsAlpha: 0.85, mountain: 0x6e5ea0, cloud: 0x8878b8, starTint: 0xDCC8FF },
   },
 };
 
@@ -232,7 +232,7 @@ export function createWeatherEffects() {
     sunLightOverlay = new PIXI.Graphics();
     sunLightOverlay.rect(0, 0, 8000, 8000).fill({ color: isVoid ? 0x1a0033 : 0x000000 });
     sunLightOverlay.zIndex = 49999;
-    sunLightOverlay.alpha = isVoid ? 0.18 : 0.12;
+    sunLightOverlay.alpha = isVoid ? 0.14 : 0.12;
     sunLightOverlay.eventMode = 'none';
     app.stage.addChild(sunLightOverlay);
 
@@ -458,7 +458,7 @@ export function updateWeatherEffects() {
       if (state.detailMode !== 'low') {
         if (weatherSun.isVoid) {
           // Void: purple tint at dawn/dusk, deep indigo otherwise
-          sunLightOverlay.tint = (progress < 0.15 || progress > 0.85) ? 0x220044 : 0x0a0022;
+          sunLightOverlay.tint = (progress < 0.15 || progress > 0.85) ? 0x2a0055 : 0x120030;
         } else {
           sunLightOverlay.tint = (progress < 0.15 || progress > 0.85) ? 0x331100 : 0x000000;
         }

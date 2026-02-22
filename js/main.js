@@ -790,10 +790,9 @@ document.addEventListener('DOMContentLoaded', function () {
       state.endlessSpawnCount = 0;
       state.endlessKillCount = 0;
       state.sharedLevel = 1;
-      state.killsToNextLevel = 50;
 
       // Checkpoint start — if starting from a castle checkpoint, fast-forward state
-      // spawnCount uses cpLevel*7 (not *10) so enemies are softer when resuming
+      // Level = checkpoint + 1 (one level per castle cleared)
       if (state.endlessCheckpointStart > 0) {
         const cpLevel = state.endlessCheckpointStart;
         state.endlessKillCount = cpLevel * 10;
@@ -801,9 +800,7 @@ document.addEventListener('DOMContentLoaded', function () {
         state.demiSpawned = Math.floor(cpLevel * 10 / 5);
         state.lastSiegeCastleLevel = cpLevel;
 
-        // Use saved level from when checkpoint was unlocked; fall back to formula for old saves
-        const savedLevel = state.checkpointLevels && state.checkpointLevels[cpLevel];
-        const targetLevel = savedLevel || estimateCheckpointSharedLevel(cpLevel);
+        const targetLevel = cpLevel + 1;
         state.sharedLevel = targetLevel;
         const characters = ['frog', 'snail', 'bird', 'bee'];
         for (const ch of characters) {
@@ -815,27 +812,19 @@ document.addEventListener('DOMContentLoaded', function () {
             stats.attack += 1.5 * levelsToGain;
             stats.health += 10 * levelsToGain;
             state[ch + 'Level'] = targetLevel;
-            // Sync state properties with characterStats
             if (ch === 'frog') { state.speed = stats.speed; }
             else { state[ch + 'Speed'] = stats.speed; }
             state[ch + 'Damage'] = stats.attack;
             state[ch + 'Health'] = stats.health;
-            // Set current health to new max
             const hpKey = 'current' + ch.charAt(0).toUpperCase() + ch.slice(1) + 'Health';
             state[hpKey] = stats.health;
-            // Update defense
             const shopBonus = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
             if (state.charDefense) state.charDefense[ch] = state[ch + 'Level'] + shopBonus;
           }
         }
-        // Set active character's defense
         const activeCh = getCurrentCharacter().replace('character-', '');
         state.defense = (state.charDefense && state.charDefense[activeCh]) || 0;
 
-        // Set kills-to-next-level with checkpoint scaling
-        state.killsToNextLevel = (4 + targetLevel + cpLevel) * 10;
-
-        // Recompute potion heal after checkpoint jump.
         recalculatePotionHealAmount();
         state.endlessCheckpointStart = 0;
       }

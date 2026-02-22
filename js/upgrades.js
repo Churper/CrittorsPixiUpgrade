@@ -171,15 +171,11 @@ export function levelUp() {
   state.levelSound.play();
 }
 
-// --- Shared Kill-Milestone Level System (Endless Mode) ---
+// --- Shared Level System (Endless Mode) — +1 level per castle cleared ---
 
-export function checkSharedLevelUp(amount = 10) {
-  state.killsToNextLevel -= amount;
-  if (state.killsToNextLevel > 0) return;
-
-  // Level up! Reset with scaling based on shared level + sieges passed
+export function checkSharedLevelUp() {
+  // +1 level on castle clear
   state.sharedLevel++;
-  state.killsToNextLevel = (4 + state.sharedLevel + (state.lastSiegeCastleLevel || 0)) * 10;
 
   const characters = ['frog', 'snail', 'bird', 'bee'];
   // Apply stat gains to ALL 4 characters
@@ -219,9 +215,6 @@ export function checkSharedLevelUp(amount = 10) {
     const shopBonus = (state.charDefenseShop && state.charDefenseShop[ch]) || 0;
     if (state.charDefense) state.charDefense[ch] = newLevel + shopBonus;
 
-    // Update EXP indicator on portrait to show shared level
-    const killsPerLevel = (4 + state.sharedLevel + (state.lastSiegeCastleLevel || 0)) * 10;
-    updateEXPIndicator(charKey, 0, killsPerLevel);
     updateEXPIndicatorText(charKey, newLevel);
   }
 
@@ -252,20 +245,23 @@ export function checkSharedLevelUp(amount = 10) {
   state.levelSound.play();
 
   setSpeedChanged(true);
+
+  // Update progress bar to reflect new level
+  updateKillProgressBar();
 }
 
+/** Progress bar shows kills toward next siege (10 kills = next castle) */
 export function updateKillProgressBar() {
-  const killsPerLevel = (4 + state.sharedLevel + (state.lastSiegeCastleLevel || 0)) * 10;
-  const killsDone = killsPerLevel - state.killsToNextLevel;
+  const killsSinceSiege = state.endlessKillCount % 10;
   const playerEXPBarFill = document.getElementById('exp-bar-fill');
-  playerEXPBarFill.style.width = (killsDone / killsPerLevel) * 100 + '%';
-  updateExpText('exp-text', 'exp', killsDone, killsPerLevel);
+  playerEXPBarFill.style.width = (killsSinceSiege / 10) * 100 + '%';
+  updateExpText('exp-text', 'exp', killsSinceSiege, 10);
 
   // Update all character portrait EXP indicators
   const characters = ['frog', 'snail', 'bird', 'bee'];
   for (const ch of characters) {
     const charKey = 'character-' + ch;
-    updateEXPIndicator(charKey, killsDone, killsPerLevel);
+    updateEXPIndicator(charKey, killsSinceSiege, 10);
     updateEXPIndicatorText(charKey, state[ch + 'Level'] || 1);
   }
 }

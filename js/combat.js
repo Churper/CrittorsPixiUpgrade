@@ -18,7 +18,7 @@ import {
 } from './state.js';
 import { startFlashing, stopFlashing, setPlayerCurrentHealth, setCharEXP } from './characters.js';
 import { updatePlayerHealthBar, updateEnemyGrayscale } from './ui.js';
-import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades.js';
+import { updateEXP, updateKillProgressBar } from './upgrades.js';
 import { saveBones } from './save.js';
 
 let _coffeePulseTimeout = null;
@@ -549,7 +549,6 @@ export function rangedAttack(critter, enemy) {
               state.endlessKillCount++;
             }
             if (!enemy.isBaby) {
-              checkSharedLevelUp(enemy.exp || 10);
               updateKillProgressBar();
             }
           }
@@ -1136,7 +1135,6 @@ export function critterAttack(critter, enemy, critterAttackTextures) {
           state.endlessKillCount++;
         }
         if (!enemy.isBaby) {
-          checkSharedLevelUp(enemy.exp || 10);
           updateKillProgressBar();
         }
       }
@@ -2258,7 +2256,6 @@ export function triggerAirstrike(app, critter) {
               state.endlessKillCount++;
             }
             if (!enemy.isBaby) {
-              checkSharedLevelUp(enemy.exp || 10);
               updateKillProgressBar();
             }
           }

@@ -1310,6 +1310,22 @@ touch-action: manipulation;
   z-index: 9999;
 }
 
+/* In-game loadout overlay: reuse the same panel without showing full main menu. */
+#rotateDevice.in-game-shop {
+  background: transparent;
+}
+#rotateDevice.in-game-shop #menu-scene,
+#rotateDevice.in-game-shop #menu-title,
+#rotateDevice.in-game-shop #endless-mode-btn,
+#rotateDevice.in-game-shop #layout-btn,
+#rotateDevice.in-game-shop .menu-bottom-row,
+#rotateDevice.in-game-shop #menu-spacer {
+  display: none !important;
+}
+#rotateDevice.in-game-shop #main-menu {
+  justify-content: flex-start;
+}
+
 #menu-scene {
   position: absolute;
   top: 0;

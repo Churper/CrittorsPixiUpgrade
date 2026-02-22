@@ -122,11 +122,33 @@ document.addEventListener('DOMContentLoaded', function () {
     collectSiegeRewards();
   });
   document.getElementById('siege-reward-shop-btn').addEventListener('click', function() {
-    collectSiegeRewards();
-    showPanel('layout');
+    const siegeBackdrop = document.getElementById('siege-reward-backdrop');
+    if (siegeBackdrop) siegeBackdrop.classList.remove('visible');
+    rotateMessage.classList.add('in-game-shop');
+    rotateMessage.style.display = 'block';
+    // Reuse existing loadout button flow so deck/UI state refreshes identically.
+    document.getElementById('layout-btn').click();
   });
   document.getElementById('siege-reward-heal-btn').addEventListener('click', function() {
     spendAllCoffeeTeamHeal();
+  });
+
+  function closeInGameShopOverlay() {
+    if (!rotateMessage.classList.contains('in-game-shop')) return;
+    const layoutBackdrop = document.getElementById('layout-backdrop');
+    if (layoutBackdrop && layoutBackdrop.classList.contains('visible')) return;
+    rotateMessage.classList.remove('in-game-shop');
+    rotateMessage.style.display = 'none';
+    if (state.siegeActive && state.siegePhase === 'reward') {
+      const siegeBackdrop = document.getElementById('siege-reward-backdrop');
+      if (siegeBackdrop) siegeBackdrop.classList.add('visible');
+    }
+  }
+  document.getElementById('layout-close-btn').addEventListener('click', function() {
+    setTimeout(closeInGameShopOverlay, 0);
+  });
+  document.getElementById('layout-backdrop').addEventListener('click', function(e) {
+    if (e.target === this) setTimeout(closeInGameShopOverlay, 0);
   });
 
   // Siege mob killed event (from combat.js)

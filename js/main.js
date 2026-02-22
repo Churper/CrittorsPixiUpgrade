@@ -683,10 +683,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
-
-
-  document.getElementById('game-container').appendChild(app.canvas);
-
   const hoverScale = 1.2;
   const hoverAlpha = 0.8;
  
@@ -1761,17 +1757,24 @@ let cantGainEXP = false;
         if (state.detailMode === 'high') {
           updateSkinEffects(critter, Date.now());
         }
-        updateWeatherEffects();
-        updateBiomeTransition();
+        // Throttle weather + biome transition to every 3rd frame in low detail
+        if (state.detailMode !== 'low' || !state._weatherFrame || ++state._weatherFrame >= 3) {
+          state._weatherFrame = 0;
+          updateWeatherEffects();
+          updateBiomeTransition();
+        }
 
         background.position.set(-app.stage.x, -app.stage.y);
         persistentStars.position.set(-app.stage.x, -app.stage.y);
-        for (const star of persistentStars.children) {
-          star.twinklePhase += star.twinkleSpeed;
-          star.alpha = star.baseAlpha * (0.5 + Math.sin(star.twinklePhase) * 0.5);
-          if (star.isBrightTwinkler) {
-            const s = 1 + Math.sin(star.twinklePhase * 2) * 0.15;
-            star.scale.set(s);
+        // Skip per-frame twinkle math in low detail — stars stay static
+        if (state.detailMode !== 'low') {
+          for (const star of persistentStars.children) {
+            star.twinklePhase += star.twinkleSpeed;
+            star.alpha = star.baseAlpha * (0.5 + Math.sin(star.twinklePhase) * 0.5);
+            if (star.isBrightTwinkler) {
+              const s = 1 + Math.sin(star.twinklePhase * 2) * 0.15;
+              star.scale.set(s);
+            }
           }
         }
 
@@ -2274,16 +2277,18 @@ let cantGainEXP = false;
 
         }
 
-        // Update cloud position
+        // Update cloud position (skip clouds2 entirely in low detail)
         clouds.position.x -= cloudSpeed * state.dt;
         clouds2.visible = state.detailMode !== 'low';
-        clouds2.position.x -= cloud2Speed * state.dt;
+        if (clouds2.visible) {
+          clouds2.position.x -= cloud2Speed * state.dt;
+          if (clouds2.x + clouds2.width / 2 < -3000) {
+            clouds2.x = state.initialClouds;
+          }
+        }
         // Check if cloud has gone offscreen and move it to the right side
         if (clouds.x + clouds.width / 2 < -3000) {
           clouds.x = state.initialClouds;
-        }
-        if (clouds2.x + clouds2.width / 2 < -3000) {
-          clouds2.x = state.initialClouds;
         }
         if (!getAreResetting()) {
           // Adjust app stage position

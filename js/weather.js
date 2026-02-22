@@ -336,12 +336,14 @@ export function updateWeatherEffects() {
 
     // Sun sinks behind foreground naturally (foreground zIndex 5 > sun zIndex 0.5)
 
-    // Rotate rays slowly
-    weatherSun.rotation = elapsed * 0.0003;
-    // Pulse the glow
-    const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
-    weatherSun.scale.set(pulse);
-
+    // In low detail: skip rotation, pulse, and lighting overlay updates
+    if (state.detailMode !== 'low') {
+      // Rotate rays slowly
+      weatherSun.rotation = elapsed * 0.0003;
+      // Pulse the glow
+      const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
+      weatherSun.scale.set(pulse);
+    }
 
     // sinusoidal brightness: 0 at edges, 1 at middle, clamp so it doesn't go negative after sunset
     const brightness = Math.max(0, Math.sin(progress * Math.PI));
@@ -351,11 +353,13 @@ export function updateWeatherEffects() {
       sunLightOverlay.position.set(-app.stage.x - 2000, -app.stage.y - 2000);
       // Overlay alpha: 0.35 at dawn/dusk, 0.0 at peak noon
       sunLightOverlay.alpha = 0.15 * (1 - brightness);
-      // Warm tint at dawn/dusk via slight orange
-      if (progress < 0.15 || progress > 0.85) {
-        sunLightOverlay.tint = 0x331100;
-      } else {
-        sunLightOverlay.tint = 0x000000;
+      // Skip tint changes in low detail
+      if (state.detailMode !== 'low') {
+        if (progress < 0.15 || progress > 0.85) {
+          sunLightOverlay.tint = 0x331100;
+        } else {
+          sunLightOverlay.tint = 0x000000;
+        }
       }
     }
 

@@ -188,8 +188,13 @@ export function updateBiomeTransition() {
   const [mountain1, mountain2, mountain3, mountain4] = _mountains;
   const [clouds, clouds2] = _clouds;
 
-  // Simple time-based crossfade (~3s at 60fps)
-  t.progress += 0.002;
+  // In low detail: skip crossfade, jump to final state immediately
+  if (state.detailMode === 'low') {
+    t.progress = 1;
+  } else {
+    // Simple time-based crossfade (~3s at 60fps)
+    t.progress += 0.002;
+  }
   const p = Math.min(1, t.progress);
 
   // Lerp sky gradient + mountain tints

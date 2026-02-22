@@ -10,6 +10,7 @@ import {
   getShieldCount, setShieldCount, getBombCount, setBombCount,
   getRageCount, setRageCount, getFeatherCount, setFeatherCount,
   getGoldenBeanCount, setGoldenBeanCount,
+  getMedkitCount, setMedkitCount,
 } from './state.js';
 import {
   handleEnemySorting, handleEnemyActions,
@@ -478,6 +479,7 @@ export function collectSiegeRewards() {
     rage: () => { setRageCount(getRageCount() + 1); state.startingItems.rage = (state.startingItems.rage || 0) + 1; },
     feather: () => { setFeatherCount(getFeatherCount() + 1); state.startingItems.feather = (state.startingItems.feather || 0) + 1; },
     goldenBean: () => { setGoldenBeanCount(getGoldenBeanCount() + 1); state.startingItems.goldenBean = (state.startingItems.goldenBean || 0) + 1; },
+    medkit: () => { setMedkitCount(getMedkitCount() + 1); state.startingItems.medkit = (state.startingItems.medkit || 0) + 1; },
   };
 
   rewards.forEach(item => {
@@ -485,7 +487,7 @@ export function collectSiegeRewards() {
   });
 
   // Update UI counts
-  const countMap = { shield: 'shield-count', bomb: 'bomb-count', rage: 'rage-count', feather: 'feather-count', goldenBean: 'golden-bean-count' };
+  const countMap = { shield: 'shield-count', bomb: 'bomb-count', rage: 'rage-count', feather: 'feather-count', goldenBean: 'golden-bean-count', medkit: 'medkit-count' };
   const btnMap = { shield: 'shield-btn', bomb: 'bomb-btn', rage: 'rage-btn', feather: 'feather-btn', goldenBean: 'golden-bean-btn' };
   const getMap = { shield: getShieldCount, bomb: getBombCount, rage: getRageCount, feather: getFeatherCount, goldenBean: getGoldenBeanCount };
   for (const key of Object.keys(countMap)) {

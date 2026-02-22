@@ -350,6 +350,17 @@ export function siegeMobKilled() {
     return;
   }
 
+  // Biome escalation: last defense baby waves before castle (volcano, void)
+  const biome = getSiegeBiome(state.siegeCastleLevel);
+  if ((biome === 'volcano' || biome === 'void') && !state.siegeLastDefenseStarted) {
+    state.siegeLastDefenseStarted = true;
+    state.siegePhase = 'lastDefense';
+    state.siegeLastDefenseWave = 0;
+    state.siegeLastDefenseTotal = biome === 'void' ? 3 : 2;
+    spawnLastDefenseWave(state.siegeCritter, state.app);
+    return;
+  }
+
   transitionToCastlePhase();
 }
 
@@ -547,16 +558,6 @@ function siegeCastleDestroyed(critter, app) {
   // Remove castle + HP bars
   removeSiegeCastleSprites(app);
 
-  // Last defense: desperate baby swarm after castle falls (volcano + void)
-  const biome = getSiegeBiome(state.siegeCastleLevel);
-  if (biome === 'volcano' || biome === 'void') {
-    state.siegePhase = 'lastDefense';
-    state.siegeLastDefenseWave = 0;
-    state.siegeLastDefenseTotal = biome === 'void' ? 3 : 2;
-    spawnLastDefenseWave(critter, app);
-    return;
-  }
-
   // Show reward panel after delay
   setTimeout(() => {
     showSiegeRewardPanel();
@@ -615,10 +616,8 @@ function lastDefenseMobKilled() {
     return true;
   }
 
-  // All last defense waves cleared — show reward
-  setTimeout(() => {
-    showSiegeRewardPanel();
-  }, 800);
+  // All last defense waves cleared — now face the castle
+  transitionToCastlePhase();
   return true;
 }
 
@@ -857,6 +856,7 @@ export function cleanupSiege() {
   state.siegeSecondType = null;
   state.siegeLastDefenseWave = 0;
   state.siegeLastDefenseTotal = 0;
+  state.siegeLastDefenseStarted = false;
 
   // Hide reward panel if visible
   const backdrop = document.getElementById('siege-reward-backdrop');

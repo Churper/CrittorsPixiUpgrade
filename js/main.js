@@ -2302,8 +2302,8 @@ let cantGainEXP = false;
 
         if (getSpeedChanged()) { updateVelocity(); setSpeedChanged(false); }
 
-        // --- Siege: freeze character during reward or last-defense ---
-        const siegeFrozen = state.siegeActive && (state.siegePhase === 'reward' || state.siegePhase === 'lastDefense');
+        // --- Siege: freeze character during reward phase ---
+        const siegeFrozen = state.siegeActive && (state.siegePhase === 'reward');
         // --- Siege: stop character at castle during any active siege phase ---
         const siegeAtCastle = state.siegeActive && state.siegeCastleSprite &&
           critter.position.x >= state.siegeCastleSprite.position.x - state.siegeCastleSprite.width / 1.1;

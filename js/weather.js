@@ -177,18 +177,19 @@ export function createWeatherEffects() {
     // Beams and accent rays — skip in low detail (static beams look ugly)
     if (!lowDetail) {
       if (isVoid) {
-        // Void rays: curved arcs radiating outward, neon colors
+        // Void rays: curved arcs radiating outward from edge of inner glow
         const voidColors = [0xDD44FF, 0x8866FF, 0x44DDFF, 0xFF44AA, 0x66AAFF, 0xCC22EE];
+        const rayStartR = 36; // start outside the inner 2 circles (r=20 cyan, r=10 white)
         for (let i = 0; i < 12; i++) {
           const ray = new PIXI.Graphics();
           const angle = (i / 12) * Math.PI * 2;
           const len = 80 + Math.random() * 100;
           const color = voidColors[i % voidColors.length];
-          // Draw a wavy arc instead of straight line
+          // Draw a wavy arc from edge of glow outward
           const cx = Math.cos(angle);
           const cy = Math.sin(angle);
-          const perp = 12 + Math.random() * 8; // perpendicular offset for curve
-          ray.moveTo(0, 0);
+          const perp = 12 + Math.random() * 8;
+          ray.moveTo(cx * rayStartR, cy * rayStartR);
           ray.quadraticCurveTo(
             cx * len * 0.5 + cy * perp, cy * len * 0.5 - cx * perp,
             cx * len, cy * len

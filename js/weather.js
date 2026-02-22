@@ -88,10 +88,14 @@ function getCurrentBiomeIndex() {
   return Math.floor(castleLevel / 20); // 0=forest, 1=desert, 2=tundra, 3=volcano, 4=void
 }
 
-export function getSkyGradient(weather) {
+function getCurrentBiomeKey() {
   const biomeKeys = ['forest', 'desert', 'tundra', 'volcano', 'void'];
   const biomeIdx = Math.max(0, Math.floor(getCurrentBiomeIndex()));
-  const biomeKey = biomeKeys[Math.min(biomeIdx, biomeKeys.length - 1)] || 'forest';
+  return biomeKeys[Math.min(biomeIdx, biomeKeys.length - 1)] || 'forest';
+}
+
+export function getSkyGradient(weather) {
+  const biomeKey = getCurrentBiomeKey();
   const biomeSet = biomeSkyGradients[biomeKey];
   if (biomeSet && biomeSet[weather]) return biomeSet[weather];
   return skyGradients[weather] || skyGradients.sun;
@@ -151,46 +155,84 @@ export function createWeatherEffects() {
   weatherContainer.zIndex = (type === 'sun') ? 0.5 : 50000;
 
   if (type === 'sun') {
-    // Sun glow orb — larger with layered glow
+    const isVoid = getCurrentBiomeKey() === 'void';
+    // Sun glow orb — alien neon in void, warm yellow elsewhere
     weatherSun = new PIXI.Container();
     const glow = new PIXI.Graphics();
-    glow.circle(0, 0, 80).fill({ color: 0xFFDD44, alpha: 0.15 });
-    glow.circle(0, 0, 55).fill({ color: 0xFFDD44, alpha: 0.25 });
-    glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
-    glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
+    if (isVoid) {
+      // Void sun: eerie magenta/cyan core with pulsing corona
+      glow.circle(0, 0, 90).fill({ color: 0x8800FF, alpha: 0.08 });
+      glow.circle(0, 0, 70).fill({ color: 0xAA22FF, alpha: 0.12 });
+      glow.circle(0, 0, 50).fill({ color: 0xDD44FF, alpha: 0.22 });
+      glow.circle(0, 0, 34).fill({ color: 0xFF66FF, alpha: 0.45 });
+      glow.circle(0, 0, 20).fill({ color: 0x66FFFF, alpha: 0.85 });
+      glow.circle(0, 0, 10).fill({ color: 0xFFFFFF, alpha: 0.95 });
+    } else {
+      glow.circle(0, 0, 80).fill({ color: 0xFFDD44, alpha: 0.15 });
+      glow.circle(0, 0, 55).fill({ color: 0xFFDD44, alpha: 0.25 });
+      glow.circle(0, 0, 38).fill({ color: 0xFFEE66, alpha: 0.5 });
+      glow.circle(0, 0, 22).fill({ color: 0xFFFF99, alpha: 0.9 });
+    }
     weatherSun.addChild(glow);
     // Beams and accent rays — skip in low detail (static beams look ugly)
     if (!lowDetail) {
-      const beamCount = 8;
-      for (let i = 0; i < beamCount; i++) {
-        const beam = new PIXI.Graphics();
-        const angle = (i / beamCount) * Math.PI * 2;
-        const len = 120 + Math.random() * 80;
-        beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 4, color: 0xFFEE44, alpha: 0.25 });
-        beam.rayAngle = angle;
-        beam.rayLen = len;
-        beam.isBeam = true;
-        weatherSun.addChild(beam);
-      }
-      for (let i = 0; i < 8; i++) {
-        const ray = new PIXI.Graphics();
-        const angle = ((i + 0.5) / 8) * Math.PI * 2;
-        const len = 60 + Math.random() * 40;
-        ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
-        ray.rayAngle = angle;
-        ray.rayLen = len;
-        weatherSun.addChild(ray);
+      if (isVoid) {
+        // Void rays: curved arcs radiating outward, neon colors
+        const voidColors = [0xDD44FF, 0x8866FF, 0x44DDFF, 0xFF44AA, 0x66AAFF, 0xCC22EE];
+        for (let i = 0; i < 12; i++) {
+          const ray = new PIXI.Graphics();
+          const angle = (i / 12) * Math.PI * 2;
+          const len = 80 + Math.random() * 100;
+          const color = voidColors[i % voidColors.length];
+          // Draw a wavy arc instead of straight line
+          const cx = Math.cos(angle);
+          const cy = Math.sin(angle);
+          const perp = 12 + Math.random() * 8; // perpendicular offset for curve
+          ray.moveTo(0, 0);
+          ray.quadraticCurveTo(
+            cx * len * 0.5 + cy * perp, cy * len * 0.5 - cx * perp,
+            cx * len, cy * len
+          );
+          ray.stroke({ width: 2.5, color: color, alpha: 0.3 });
+          ray.rayAngle = angle;
+          ray.rayLen = len;
+          ray.isBeam = true;
+          ray.isVoidRay = true;
+          weatherSun.addChild(ray);
+        }
+      } else {
+        const beamCount = 8;
+        for (let i = 0; i < beamCount; i++) {
+          const beam = new PIXI.Graphics();
+          const angle = (i / beamCount) * Math.PI * 2;
+          const len = 120 + Math.random() * 80;
+          beam.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 4, color: 0xFFEE44, alpha: 0.25 });
+          beam.rayAngle = angle;
+          beam.rayLen = len;
+          beam.isBeam = true;
+          weatherSun.addChild(beam);
+        }
+        for (let i = 0; i < 8; i++) {
+          const ray = new PIXI.Graphics();
+          const angle = ((i + 0.5) / 8) * Math.PI * 2;
+          const len = 60 + Math.random() * 40;
+          ray.moveTo(0, 0).lineTo(Math.cos(angle) * len, Math.sin(angle) * len).stroke({ width: 1.5, color: 0xFFEE44, alpha: 0.15 });
+          ray.rayAngle = angle;
+          ray.rayLen = len;
+          weatherSun.addChild(ray);
+        }
       }
     }
     weatherSun.startTime = Date.now();
+    weatherSun.isVoid = isVoid;
     weatherContainer.addChild(weatherSun);
 
     // Lighting overlay — dims at dawn/dusk, bright at noon
     // Use huge fixed size to cover any screen orientation/camera position
     sunLightOverlay = new PIXI.Graphics();
-    sunLightOverlay.rect(0, 0, 8000, 8000).fill({ color: 0x000000 });
+    sunLightOverlay.rect(0, 0, 8000, 8000).fill({ color: isVoid ? 0x1a0033 : 0x000000 });
     sunLightOverlay.zIndex = 49999;
-    sunLightOverlay.alpha = 0.12;
+    sunLightOverlay.alpha = isVoid ? 0.18 : 0.12;
     sunLightOverlay.eventMode = 'none';
     app.stage.addChild(sunLightOverlay);
 
@@ -394,10 +436,14 @@ export function updateWeatherEffects() {
 
     // In low detail: skip rotation, pulse, and lighting overlay updates
     if (state.detailMode !== 'low') {
-      // Rotate rays slowly
-      weatherSun.rotation = elapsed * 0.0003;
-      // Pulse the glow
-      const pulse = 1 + Math.sin(elapsed * 0.003) * 0.08;
+      // Void sun rotates faster in the opposite direction for alien feel
+      weatherSun.rotation = weatherSun.isVoid
+        ? -elapsed * 0.0006
+        : elapsed * 0.0003;
+      // Pulse the glow — void has a stronger, erratic pulse
+      const pulse = weatherSun.isVoid
+        ? 1 + Math.sin(elapsed * 0.005) * 0.12 + Math.sin(elapsed * 0.013) * 0.05
+        : 1 + Math.sin(elapsed * 0.003) * 0.08;
       weatherSun.scale.set(pulse);
     }
 
@@ -407,14 +453,14 @@ export function updateWeatherEffects() {
     // Lighting: dim at dawn/dusk (progress near 0 or 1), bright at noon (progress ~0.5)
     if (sunLightOverlay) {
       sunLightOverlay.position.set(-app.stage.x - 2000, -app.stage.y - 2000);
-      // Overlay alpha: 0.35 at dawn/dusk, 0.0 at peak noon
-      sunLightOverlay.alpha = 0.15 * (1 - brightness);
+      sunLightOverlay.alpha = (weatherSun.isVoid ? 0.2 : 0.15) * (1 - brightness);
       // Skip tint changes in low detail
       if (state.detailMode !== 'low') {
-        if (progress < 0.15 || progress > 0.85) {
-          sunLightOverlay.tint = 0x331100;
+        if (weatherSun.isVoid) {
+          // Void: purple tint at dawn/dusk, deep indigo otherwise
+          sunLightOverlay.tint = (progress < 0.15 || progress > 0.85) ? 0x220044 : 0x0a0022;
         } else {
-          sunLightOverlay.tint = 0x000000;
+          sunLightOverlay.tint = (progress < 0.15 || progress > 0.85) ? 0x331100 : 0x000000;
         }
       }
     }

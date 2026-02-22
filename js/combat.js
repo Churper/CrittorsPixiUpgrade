@@ -751,14 +751,13 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
             const armorPen = Math.floor((state.sharedLevel || 1) / 10) * 2;
             const dmgReduction = Math.max(0, (state.defense || 0) - armorPen);
             const finalDmg = Math.max(1, enemy.attackDamage - dmgReduction);
-            setPlayerCurrentHealth(getPlayerCurrentHealth() - finalDmg);
+            setPlayerCurrentHealth(Math.max(0, getPlayerCurrentHealth() - finalDmg));
             drawCharHitSplat(critter, enemy, finalDmg);
             updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
 
           }
           updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth() * 100));
           if (getPlayerCurrentHealth() <= 0) {
-            setPlayerCurrentHealth(0);
 
 
             if (!hasDied) {

@@ -1902,11 +1902,11 @@ let cantGainEXP = false;
         if (state.pauseMenuContainer) {
           updateDialogPositions();
         }
-        // Wipe detection — all characters dead and can't afford revive
+        // Wipe detection — all characters dead (no one left to swap to)
         // Runs before pause check so it triggers even while revive dialog is open
-        if (getisDead() && !state.isWiped
-            && state.currentSnailHealth + state.currentBeeHealth + state.currentBirdHealth + state.currentFrogHealth <= 0
-            && getCoffee() < 50) {
+        const anyAlive = state.currentFrogHealth > 0 || state.currentSnailHealth > 0
+            || state.currentBirdHealth > 0 || state.currentBeeHealth > 0;
+        if (getisDead() && !state.isWiped && !anyAlive && getCoffee() < 50) {
           // Clean up ghost fly
           if (state.ghostFlyInterval) {
             clearInterval(state.ghostFlyInterval);
@@ -1997,7 +1997,7 @@ let cantGainEXP = false;
 
           {
 
-            if (state.currentSnailHealth + state.currentBeeHealth + state.currentBirdHealth + state.currentFrogHealth <= 0) {
+            if (state.currentFrogHealth <= 0 && state.currentSnailHealth <= 0 && state.currentBirdHealth <= 0 && state.currentBeeHealth <= 0) {
               if (!state.isWiped) {
                 setisWiped(true);
 

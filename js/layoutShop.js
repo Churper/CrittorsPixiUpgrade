@@ -68,13 +68,11 @@ export function initLayoutShop() {
       if (!picker || picker.style.display === 'none') return;
       const grid = picker.querySelector('.inline-picker-grid');
       if (!grid) return;
-      // Refresh the first-item equip box if present
-      const existing = grid.querySelector('.picker-equip-box');
-      if (existing) {
-        const charName = card.dataset.char;
-        const slot = existing.dataset.slot;
-        refreshEquipBoxContent(existing, charName, slot);
-      }
+      const charName = card.dataset.char;
+      // Refresh all equip boxes (hat + skin)
+      grid.querySelectorAll('.picker-equip-box').forEach(box => {
+        refreshEquipBoxContent(box, charName, box.dataset.slot);
+      });
     });
   }
 
@@ -614,17 +612,28 @@ export function initLayoutShop() {
     return layout;
   }
 
+  /** Build the two equip boxes (hat + skin) that always appear first in the grid */
+  function buildEquipBoxes(frag, charName) {
+    const hatBox = document.createElement('div');
+    hatBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
+    hatBox.dataset.slot = 'hat';
+    refreshEquipBoxContent(hatBox, charName, 'hat');
+    frag.appendChild(hatBox);
+
+    const skinBox = document.createElement('div');
+    skinBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
+    skinBox.dataset.slot = 'skin';
+    refreshEquipBoxContent(skinBox, charName, 'skin');
+    frag.appendChild(skinBox);
+  }
+
   function renderInlineHats(container, charName) {
     const layout = ensurePickerLayout(container);
     const grid = layout.querySelector('.inline-picker-grid');
     const frag = document.createDocumentFragment();
 
-    // Equipped hat box as first grid item
-    const equipBox = document.createElement('div');
-    equipBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
-    equipBox.dataset.slot = 'hat';
-    refreshEquipBoxContent(equipBox, charName, 'hat');
-    frag.appendChild(equipBox);
+    // Always show both equip boxes first (hat top-left, skin below it)
+    buildEquipBoxes(frag, charName);
 
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
@@ -670,12 +679,8 @@ export function initLayoutShop() {
     const grid = layout.querySelector('.inline-picker-grid');
     const frag = document.createDocumentFragment();
 
-    // Equipped skin box as first grid item
-    const equipBox = document.createElement('div');
-    equipBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
-    equipBox.dataset.slot = 'skin';
-    refreshEquipBoxContent(equipBox, charName, 'skin');
-    frag.appendChild(equipBox);
+    // Always show both equip boxes first (hat top-left, skin below it)
+    buildEquipBoxes(frag, charName);
 
     const isDefault = !state.equippedSkins[charName];
     const defEl = document.createElement('div');

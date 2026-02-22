@@ -25,8 +25,8 @@ const endlessGroundPalettes = {
           rock: 0x8a8078, rockShade: 0x6b6058, trunk: 0x6b4226, canopy: [0xd4442a, 0xe06830, 0xcc3322, 0x44a040, 0x389030], flower: 0xe8c840 },
   rain: { base: 0x3b6b35, dirt: 0x4a3d2a, path: 0x7a6b50, grass: 0x2d5a28, variation: 0x335e2e,
           rock: 0x606060, rockShade: 0x484848, trunk: 0x4a3520, canopy: [0x1e4a1e, 0x2a5a2a, 0x1a3e1a], flower: 0x5a7a5a },
-  wind: { base: 0x5a9a4f, dirt: 0x6b5234, path: 0xc4a66a, grass: 0x6db85f, variation: 0x4e8a43,
-          rock: 0x9a9088, rockShade: 0x7a7068, trunk: 0x7a5530, canopy: [0x50a848, 0x60b858, 0x3a8a30, 0xe8a820], flower: 0xd0d840 },
+  wind: { base: 0xc9a46b, dirt: 0x8a673f, path: 0xe0bf86, grass: 0xb28a52, variation: 0xb7905b,
+          rock: 0x9f8b73, rockShade: 0x7f6f5c, trunk: 0x7a5530, canopy: [0x8a7a42, 0xa38f52, 0x6f6436, 0xc59a45], flower: 0xd6b06a },
   snow: { base: 0xd4dce6, dirt: 0x8a8a90, path: 0xb0b5bc, grass: 0xe8eef5, variation: 0xc0c8d4,
           rock: 0xa8aab0, rockShade: 0x8a8c92, trunk: 0x5a4a3a, canopy: [0x2a5a3a, 0x1a4a2a, 0xc8d8e0], flower: 0xd0dae0 },
   night: { base: 0x1a2e1a, dirt: 0x2a2218, path: 0x3a3528, grass: 0x1e3a1e, variation: 0x162a16,
@@ -134,47 +134,50 @@ export function drawEndlessGround(weather) {
     px += 60 + endlessGroundRandom() * 120;
   }
 
-  // 7. Grass tufts along the curving top edge
-  _endlessGroundSeed = 12345;
-  let gx = 5;
-  while (gx < w) {
-    const topY = terrainTopY(gx);
-    const cluster = 1 + Math.floor(endlessGroundRandom() * 3);
-    for (let i = 0; i < cluster; i++) {
-      const tuftH = 5 + endlessGroundRandom() * 12;
-      const tuftW = 3 + endlessGroundRandom() * 5;
-      const ox = i * (tuftW * 0.7);
-      g.poly([
-        gx + ox, topY,
-        gx + ox + tuftW / 2, topY - tuftH,
-        gx + ox + tuftW, topY,
-      ]).fill({ color: palette.grass });
+  // 7-9. Vegetation passes (skip in desert/wind biome).
+  if (weather !== 'wind') {
+    // 7. Grass tufts along the curving top edge
+    _endlessGroundSeed = 12345;
+    let gx = 5;
+    while (gx < w) {
+      const topY = terrainTopY(gx);
+      const cluster = 1 + Math.floor(endlessGroundRandom() * 3);
+      for (let i = 0; i < cluster; i++) {
+        const tuftH = 5 + endlessGroundRandom() * 12;
+        const tuftW = 3 + endlessGroundRandom() * 5;
+        const ox = i * (tuftW * 0.7);
+        g.poly([
+          gx + ox, topY,
+          gx + ox + tuftW / 2, topY - tuftH,
+          gx + ox + tuftW, topY,
+        ]).fill({ color: palette.grass });
+      }
+      gx += 20 + endlessGroundRandom() * 40;
     }
-    gx += 20 + endlessGroundRandom() * 40;
-  }
 
-  // 8. Grass tufts scattered across the ground surface
-  _endlessGroundSeed = 55555;
-  let sgx = 40;
-  while (sgx < w) {
-    const tuftH = 4 + endlessGroundRandom() * 6;
-    const tuftW = 3 + endlessGroundRandom() * 4;
-    const sy = h * 0.15 + endlessGroundRandom() * (h * 0.4);
-    g.poly([sgx, sy, sgx + tuftW / 2, sy - tuftH, sgx + tuftW, sy]).fill({ color: palette.grass, alpha: 0.6 });
-    sgx += 70 + endlessGroundRandom() * 140;
-  }
+    // 8. Grass tufts scattered across the ground surface
+    _endlessGroundSeed = 55555;
+    let sgx = 40;
+    while (sgx < w) {
+      const tuftH = 4 + endlessGroundRandom() * 6;
+      const tuftW = 3 + endlessGroundRandom() * 4;
+      const sy = h * 0.15 + endlessGroundRandom() * (h * 0.4);
+      g.poly([sgx, sy, sgx + tuftW / 2, sy - tuftH, sgx + tuftW, sy]).fill({ color: palette.grass, alpha: 0.6 });
+      sgx += 70 + endlessGroundRandom() * 140;
+    }
 
-  // 9. Individual grass blades
-  _endlessGroundSeed = 11111;
-  let bx2 = 15;
-  while (bx2 < w) {
-    const bladeH = 8 + endlessGroundRandom() * 14;
-    const bladeY = h * 0.05 + endlessGroundRandom() * (h * 0.55);
-    const lean = (endlessGroundRandom() - 0.5) * 6;
-    const bladeColor = endlessGroundRandom() > 0.5 ? palette.grass : palette.variation;
-    const bladeAlpha = 0.4 + endlessGroundRandom() * 0.4;
-    g.poly([bx2, bladeY, bx2 + lean, bladeY - bladeH, bx2 + 1.5, bladeY]).fill({ color: bladeColor, alpha: bladeAlpha });
-    bx2 += 15 + endlessGroundRandom() * 35;
+    // 9. Individual grass blades
+    _endlessGroundSeed = 11111;
+    let bx2 = 15;
+    while (bx2 < w) {
+      const bladeH = 8 + endlessGroundRandom() * 14;
+      const bladeY = h * 0.05 + endlessGroundRandom() * (h * 0.55);
+      const lean = (endlessGroundRandom() - 0.5) * 6;
+      const bladeColor = endlessGroundRandom() > 0.5 ? palette.grass : palette.variation;
+      const bladeAlpha = 0.4 + endlessGroundRandom() * 0.4;
+      g.poly([bx2, bladeY, bx2 + lean, bladeY - bladeH, bx2 + 1.5, bladeY]).fill({ color: bladeColor, alpha: bladeAlpha });
+      bx2 += 15 + endlessGroundRandom() * 35;
+    }
   }
 
   // -- Draw trees/rocks into the decor container (above ground line) --
@@ -208,7 +211,15 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     const darkCanopy = ((canopyColor >> 16 & 0xff) * 0.6 | 0) << 16 | ((canopyColor >> 8 & 0xff) * 0.6 | 0) << 8 | ((canopyColor & 0xff) * 0.6 | 0);
     const darkTrunk = 0x2a1a0a;
 
-    if (weather === 'wind' && treeType < 0.35) {
+    if (weather === 'wind') {
+      if (treeType >= 0.72) {
+        // Dry desert shrub.
+        d.circle(tx, treeY - 4, 5 * treeScale).fill({ color: 0x7c6a3c, alpha: 0.8 });
+        d.circle(tx - 4 * treeScale, treeY - 3, 3 * treeScale).fill({ color: 0x6d5f35, alpha: 0.75 });
+        d.circle(tx + 4 * treeScale, treeY - 3, 3 * treeScale).fill({ color: 0x8f7a45, alpha: 0.75 });
+        tx += 260 + endlessGroundRandom() * 420;
+        continue;
+      }
       // Cactus — smoother rounded shapes
       const cH = (20 + endlessGroundRandom() * 30) * treeScale;
       const cW = 8 * treeScale;
@@ -360,28 +371,30 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     tx += 300 + endlessGroundRandom() * 500;
   }
 
-  // Bushes with berries — all biomes
-  _endlessGroundSeed = 22222;
-  let bsx = 80;
-  const berryColors = { sun: 0xcc2244, rain: 0x5544aa, wind: 0xddaa22, snow: 0x8844bb };
-  const berryColor = berryColors[weather] || 0xcc2244;
-  while (bsx < w) {
-    const bushY = terrainTopY(bsx);
-    const bushW = 16 + endlessGroundRandom() * 20;
-    const bushH = 10 + endlessGroundRandom() * 12;
-    // Bush body — overlapping circles
-    d.circle(bsx, bushY - bushH * 0.5, bushW * 0.4).fill({ color: palette.canopy[0] });
-    d.circle(bsx - bushW * 0.25, bushY - bushH * 0.3, bushW * 0.35).fill({ color: palette.canopy[Math.min(1, palette.canopy.length - 1)] });
-    d.circle(bsx + bushW * 0.25, bushY - bushH * 0.3, bushW * 0.33).fill({ color: palette.canopy[0] });
-    // Berries — small bright dots
-    const numBerries = 2 + Math.floor(endlessGroundRandom() * 4);
-    for (let b = 0; b < numBerries; b++) {
-      const bxOff = (endlessGroundRandom() - 0.5) * bushW * 0.6;
-      const byOff = -bushH * 0.2 - endlessGroundRandom() * bushH * 0.5;
-      d.circle(bsx + bxOff, bushY + byOff, 2 + endlessGroundRandom() * 1.5).fill({ color: berryColor });
-      d.circle(bsx + bxOff - 0.5, bushY + byOff - 0.5, 1).fill({ color: 0xffffff, alpha: 0.4 });
+  // Bushes with berries (skip for desert/wind biome).
+  if (weather !== 'wind') {
+    _endlessGroundSeed = 22222;
+    let bsx = 80;
+    const berryColors = { sun: 0xcc2244, rain: 0x5544aa, wind: 0xddaa22, snow: 0x8844bb };
+    const berryColor = berryColors[weather] || 0xcc2244;
+    while (bsx < w) {
+      const bushY = terrainTopY(bsx);
+      const bushW = 16 + endlessGroundRandom() * 20;
+      const bushH = 10 + endlessGroundRandom() * 12;
+      // Bush body — overlapping circles
+      d.circle(bsx, bushY - bushH * 0.5, bushW * 0.4).fill({ color: palette.canopy[0] });
+      d.circle(bsx - bushW * 0.25, bushY - bushH * 0.3, bushW * 0.35).fill({ color: palette.canopy[Math.min(1, palette.canopy.length - 1)] });
+      d.circle(bsx + bushW * 0.25, bushY - bushH * 0.3, bushW * 0.33).fill({ color: palette.canopy[0] });
+      // Berries — small bright dots
+      const numBerries = 2 + Math.floor(endlessGroundRandom() * 4);
+      for (let b = 0; b < numBerries; b++) {
+        const bxOff = (endlessGroundRandom() - 0.5) * bushW * 0.6;
+        const byOff = -bushH * 0.2 - endlessGroundRandom() * bushH * 0.5;
+        d.circle(bsx + bxOff, bushY + byOff, 2 + endlessGroundRandom() * 1.5).fill({ color: berryColor });
+        d.circle(bsx + bxOff - 0.5, bushY + byOff - 0.5, 1).fill({ color: 0xffffff, alpha: 0.4 });
+      }
+      bsx += 200 + endlessGroundRandom() * 400;
     }
-    bsx += 200 + endlessGroundRandom() * 400;
   }
 
   // Wind biome: tumbleweed
@@ -418,11 +431,11 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     bx += 400 + endlessGroundRandom() * 600;
   }
 
-  // Small flowers (sun and wind only — but not as many in wind)
-  if (weather === 'sun' || weather === 'wind') {
+  // Small flowers (sun only).
+  if (weather === 'sun') {
     _endlessGroundSeed = 66666;
     let fx = 60;
-    const flowerSpacing = weather === 'wind' ? 200 : 80;
+    const flowerSpacing = 80;
     while (fx < w) {
       const fy = terrainTopY(fx) - 2 - endlessGroundRandom() * 6;
       const fSize = 2 + endlessGroundRandom() * 3;
@@ -557,43 +570,45 @@ function drawEndlessGroundDecor(weather, palette, groundH) {
     _decorFG.alpha = 0.5;
     const fg = new PIXI.Graphics();
 
-    // FG trees — sparse, larger, dark silhouettes, positioned well below terrain line
-    _endlessGroundSeed = 33334;
-    let ftx = 800;
-    while (ftx < w) {
-      const sc = 1.6 + endlessGroundRandom() * 0.4;
-      const trH = (30 + endlessGroundRandom() * 20) * sc;
-      const trW = (6 + endlessGroundRandom() * 3) * sc;
-      const cr = (18 + endlessGroundRandom() * 10) * sc;
-      const fy = terrainTopY(ftx) + 55 + endlessGroundRandom() * 35;
-      const col = weather === 'night' ? 0x0a150a : (weather === 'snow' ? 0x1a3a2a : palette.trunk);
-      const canCol = weather === 'night' ? 0x0c1a0c : (weather === 'snow' ? 0x1a4a2a : palette.canopy[0]);
-      // Trunk
-      fg.moveTo(ftx - trW / 2, fy);
-      fg.lineTo(ftx - trW * 0.35, fy - trH);
-      fg.lineTo(ftx + trW * 0.35, fy - trH);
-      fg.lineTo(ftx + trW / 2, fy);
-      fg.closePath().fill({ color: col });
-      // Canopy — opaque overlapping circles
-      const cx = ftx, cy = fy - trH - cr * 0.5;
-      fg.circle(cx, cy, cr).fill({ color: canCol });
-      fg.circle(cx - cr * 0.4, cy + cr * 0.2, cr * 0.6).fill({ color: canCol });
-      fg.circle(cx + cr * 0.4, cy + cr * 0.15, cr * 0.55).fill({ color: canCol });
-      ftx += 1500 + endlessGroundRandom() * 1500;
-    }
+    if (weather !== 'wind') {
+      // FG trees — sparse, larger, dark silhouettes, positioned well below terrain line
+      _endlessGroundSeed = 33334;
+      let ftx = 800;
+      while (ftx < w) {
+        const sc = 1.6 + endlessGroundRandom() * 0.4;
+        const trH = (30 + endlessGroundRandom() * 20) * sc;
+        const trW = (6 + endlessGroundRandom() * 3) * sc;
+        const cr = (18 + endlessGroundRandom() * 10) * sc;
+        const fy = terrainTopY(ftx) + 55 + endlessGroundRandom() * 35;
+        const col = weather === 'night' ? 0x0a150a : (weather === 'snow' ? 0x1a3a2a : palette.trunk);
+        const canCol = weather === 'night' ? 0x0c1a0c : (weather === 'snow' ? 0x1a4a2a : palette.canopy[0]);
+        // Trunk
+        fg.moveTo(ftx - trW / 2, fy);
+        fg.lineTo(ftx - trW * 0.35, fy - trH);
+        fg.lineTo(ftx + trW * 0.35, fy - trH);
+        fg.lineTo(ftx + trW / 2, fy);
+        fg.closePath().fill({ color: col });
+        // Canopy — opaque overlapping circles
+        const cx = ftx, cy = fy - trH - cr * 0.5;
+        fg.circle(cx, cy, cr).fill({ color: canCol });
+        fg.circle(cx - cr * 0.4, cy + cr * 0.2, cr * 0.6).fill({ color: canCol });
+        fg.circle(cx + cr * 0.4, cy + cr * 0.15, cr * 0.55).fill({ color: canCol });
+        ftx += 1500 + endlessGroundRandom() * 1500;
+      }
 
-    // FG bushes — sparse, bigger, positioned lower
-    _endlessGroundSeed = 22223;
-    let fbx = 500;
-    while (fbx < w) {
-      const bw = (20 + endlessGroundRandom() * 20) * 1.5;
-      const bh = (12 + endlessGroundRandom() * 10) * 1.5;
-      const by = terrainTopY(fbx) + 45 + endlessGroundRandom() * 30;
-      const canCol = weather === 'night' ? 0x0c1a0c : palette.canopy[0];
-      fg.circle(fbx, by - bh * 0.4, bw * 0.4).fill({ color: canCol });
-      fg.circle(fbx - bw * 0.2, by - bh * 0.25, bw * 0.3).fill({ color: canCol });
-      fg.circle(fbx + bw * 0.2, by - bh * 0.25, bw * 0.28).fill({ color: canCol });
-      fbx += 1000 + endlessGroundRandom() * 1000;
+      // FG bushes — sparse, bigger, positioned lower
+      _endlessGroundSeed = 22223;
+      let fbx = 500;
+      while (fbx < w) {
+        const bw = (20 + endlessGroundRandom() * 20) * 1.5;
+        const bh = (12 + endlessGroundRandom() * 10) * 1.5;
+        const by = terrainTopY(fbx) + 45 + endlessGroundRandom() * 30;
+        const canCol = weather === 'night' ? 0x0c1a0c : palette.canopy[0];
+        fg.circle(fbx, by - bh * 0.4, bw * 0.4).fill({ color: canCol });
+        fg.circle(fbx - bw * 0.2, by - bh * 0.25, bw * 0.3).fill({ color: canCol });
+        fg.circle(fbx + bw * 0.2, by - bh * 0.25, bw * 0.28).fill({ color: canCol });
+        fbx += 1000 + endlessGroundRandom() * 1000;
+      }
     }
 
     // FG rocks — sparse, bigger, positioned lower

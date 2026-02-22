@@ -27,14 +27,6 @@ let _bonesPulseTimeout = null;
 
 // --- Baby Cleave (type advantage) ---
 
-function getIncomingDamageAfterDefense(rawDamage) {
-  const base = Math.max(1, Math.round(rawDamage || 1));
-  const defense = Math.max(0, state.defense || 0);
-  // Soften defense scaling: mitigate a percentage instead of flat-subtracting full defense.
-  const mitigation = Math.min(0.5, defense * 0.015);
-  return Math.max(1, Math.round(base * (1 - mitigation)));
-}
-
 function hasTypeAdvantage(charType, enemyType) {
   const adv = {
     'character-snail': ['imp', 'toofer'],
@@ -208,8 +200,8 @@ export function createSpawnDemi(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    // Mid-ground ramp: stronger than the last nerf, still smoother than the old /3 spike.
-    enemy.attackDamage = Math.max(3, Math.round(4 + sc / 6 + Math.sqrt(sc) / 2.8));
+    // Stronger endless ramp so flat defense doesn't over-trivialize high checkpoints.
+    enemy.attackDamage = Math.max(4, Math.round(7 + sc / 4.5 + Math.sqrt(sc) / 2.2));
     enemy.maxHP = 100 + Math.round(sc * 2.5);
     // Keep endless EXP gains modest: cap near 2x old baseline.
     enemy.exp = Math.min(20, 12 + Math.floor(sc / 10));
@@ -272,8 +264,8 @@ export function createSpawnEnemy(critterWalkTextures, enemyName, critter) {
 
   if (state.gameMode === 'endless') {
     const sc = state.endlessSpawnCount || 0;
-    // Mid-ground ramp: slightly tougher than the nerfed version without over-spiking.
-    enemy.attackDamage = Math.max(2, Math.round(2 + sc / 7 + Math.sqrt(sc) / 3.2));
+    // Stronger endless ramp so flat defense doesn't over-trivialize high checkpoints.
+    enemy.attackDamage = Math.max(2, Math.round(4 + sc / 5 + Math.sqrt(sc) / 2.4));
     enemy.maxHP = 40 + Math.round(sc * 2.5);
     // Keep endless EXP gains modest: cap near 2x old baseline.
     enemy.exp = Math.min(20, 10 + Math.floor(sc / 12));
@@ -750,7 +742,8 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
             }
 
             critter.tint = state.flashColor;
-            const finalDmg = getIncomingDamageAfterDefense(enemy.attackDamage);
+            const dmgReduction = state.defense || 0;
+            const finalDmg = Math.max(1, enemy.attackDamage - dmgReduction);
             setPlayerCurrentHealth(getPlayerCurrentHealth() - finalDmg);
             drawCharHitSplat(critter, enemy, finalDmg);
             updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);

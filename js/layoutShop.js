@@ -62,16 +62,30 @@ export function initLayoutShop() {
   }
 
   /** Refresh equip indicator in any open picker grids */
+  /** Update the equipped preview labels inside the HATS/SKINS header buttons */
   function refreshAllCardEquipRows() {
     layoutCards.forEach(card => {
-      const picker = card.querySelector('.layout-inline-picker');
-      if (!picker || picker.style.display === 'none') return;
-      const grid = picker.querySelector('.inline-picker-grid');
-      if (!grid) return;
       const charName = card.dataset.char;
-      // Refresh all equip boxes (hat + skin)
-      grid.querySelectorAll('.picker-equip-box').forEach(box => {
-        refreshEquipBoxContent(box, charName, box.dataset.slot);
+      card.querySelectorAll('.layout-cosmetic-slot').forEach(slot => {
+        const preview = slot.querySelector('.cosmetic-equipped-preview');
+        if (!preview) return;
+        if (slot.dataset.slot === 'hat') {
+          const hatId = state.equippedHats[charName];
+          if (hatId) {
+            const hat = hatCatalog.find(h => h.id === hatId);
+            preview.textContent = hat ? hat.icon : '';
+          } else {
+            preview.textContent = '—';
+          }
+        } else {
+          const skinId = state.equippedSkins[charName];
+          if (skinId) {
+            const skin = skinCatalog.find(s => s.id === skinId);
+            preview.textContent = skin ? skin.icon : '';
+          } else {
+            preview.textContent = '—';
+          }
+        }
       });
     });
   }
@@ -549,55 +563,6 @@ export function initLayoutShop() {
     return cvs;
   }
 
-  /** Fill a single equip box element with current hat or skin info */
-  function refreshEquipBoxContent(box, charName, slot) {
-    box.innerHTML = '';
-    const label = document.createElement('div');
-    label.className = 'equip-box-label';
-    label.textContent = slot === 'hat' ? 'Equipped' : 'Equipped';
-    box.appendChild(label);
-
-    if (slot === 'hat') {
-      const hatId = state.equippedHats[charName];
-      if (hatId) {
-        const cvs = renderHatCanvas(hatId);
-        if (cvs) box.appendChild(cvs);
-        const hat = hatCatalog.find(h => h.id === hatId);
-        if (hat) {
-          const nm = document.createElement('div');
-          nm.className = 'equip-box-name';
-          nm.textContent = hat.name;
-          box.appendChild(nm);
-        }
-      } else {
-        const empty = document.createElement('div');
-        empty.className = 'equip-box-empty';
-        empty.textContent = 'None';
-        box.appendChild(empty);
-      }
-    } else {
-      const skinId = state.equippedSkins[charName];
-      if (skinId) {
-        const skin = skinCatalog.find(s => s.id === skinId);
-        if (skin) {
-          const ico = document.createElement('div');
-          ico.className = 'equip-box-icon';
-          ico.textContent = skin.icon;
-          box.appendChild(ico);
-          const nm = document.createElement('div');
-          nm.className = 'equip-box-name';
-          nm.textContent = skin.name;
-          box.appendChild(nm);
-        }
-      } else {
-        const empty = document.createElement('div');
-        empty.className = 'equip-box-empty';
-        empty.textContent = 'Default';
-        box.appendChild(empty);
-      }
-    }
-  }
-
   function ensurePickerLayout(container) {
     let layout = container.querySelector('.inline-picker-layout');
     if (!layout) {
@@ -612,28 +577,10 @@ export function initLayoutShop() {
     return layout;
   }
 
-  /** Build the two equip boxes (hat + skin) that always appear first in the grid */
-  function buildEquipBoxes(frag, charName) {
-    const hatBox = document.createElement('div');
-    hatBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
-    hatBox.dataset.slot = 'hat';
-    refreshEquipBoxContent(hatBox, charName, 'hat');
-    frag.appendChild(hatBox);
-
-    const skinBox = document.createElement('div');
-    skinBox.className = 'inline-picker-item picker-equip-box equipped-indicator';
-    skinBox.dataset.slot = 'skin';
-    refreshEquipBoxContent(skinBox, charName, 'skin');
-    frag.appendChild(skinBox);
-  }
-
   function renderInlineHats(container, charName) {
     const layout = ensurePickerLayout(container);
     const grid = layout.querySelector('.inline-picker-grid');
     const frag = document.createDocumentFragment();
-
-    // Always show both equip boxes first (hat top-left, skin below it)
-    buildEquipBoxes(frag, charName);
 
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
@@ -678,9 +625,6 @@ export function initLayoutShop() {
     const layout = ensurePickerLayout(container);
     const grid = layout.querySelector('.inline-picker-grid');
     const frag = document.createDocumentFragment();
-
-    // Always show both equip boxes first (hat top-left, skin below it)
-    buildEquipBoxes(frag, charName);
 
     const isDefault = !state.equippedSkins[charName];
     const defEl = document.createElement('div');

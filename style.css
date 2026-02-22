@@ -2223,6 +2223,13 @@ touch-action: manipulation;
   letter-spacing: 0.5px;
   user-select: none;
 }
+.cosmetic-equipped-preview {
+  font-size: clamp(11px, 2.8vmin, 15px);
+  line-height: 1;
+  margin-top: 1px;
+  opacity: 0.75;
+  user-select: none;
+}
 
 /* ── Inline picker (hat/skin grid inside card) ────────── */
 .layout-inline-picker {

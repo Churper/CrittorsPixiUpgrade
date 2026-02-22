@@ -23,6 +23,7 @@ import { updateEXP, checkSharedLevelUp, updateKillProgressBar } from './upgrades
 import { saveBones } from './save.js';
 
 let _coffeePulseTimeout = null;
+let _bonesPulseTimeout = null;
 
 // --- Baby Cleave (type advantage) ---
 
@@ -714,11 +715,10 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
                 if (overflow > 0) {
                   critter.tint = state.flashColor;
                   setPlayerCurrentHealth(getPlayerCurrentHealth() - overflow);
-                  drawCharHitSplat(critter, enemy);
+                  drawCharHitSplat(critter, enemy, overflow);
                   updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
                 }
               }
-              drawCharHitSplat(critter, enemy);
               return;
             }
 
@@ -726,7 +726,7 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
             const dmgReduction = state.defense || 0;
             const finalDmg = Math.max(1, enemy.attackDamage - dmgReduction);
             setPlayerCurrentHealth(getPlayerCurrentHealth() - finalDmg);
-            drawCharHitSplat(critter, enemy);
+            drawCharHitSplat(critter, enemy, finalDmg);
             updatePlayerHealthBar((getPlayerCurrentHealth() / getPlayerHealth()) * 100);
 
           }
@@ -830,10 +830,10 @@ export function handleEnemyAttacking(enemy, critterAttackTextures, critter, crit
 }
 
 
-export function drawCharHitSplat(critter, enemy) {
-
-
-  let damage = -enemy.attackDamage;
+export function drawCharHitSplat(critter, enemy, damageTaken) {
+  const appliedDamage = Math.max(0, Math.round(damageTaken ?? enemy.attackDamage));
+  if (appliedDamage <= 0) return;
+  const damage = -appliedDamage;
 
 
   const damageText = new PIXI.Text(`${damage}`, {
@@ -1270,6 +1270,17 @@ export function awardBones(enemy) {
   saveBones();
   const bonesEl = document.getElementById('bones-amount');
   if (bonesEl) bonesEl.textContent = getBones();
+  const endlessTimerEl = document.getElementById('endless-timer');
+  if (endlessTimerEl) {
+    endlessTimerEl.classList.remove('berry-pulse');
+    void endlessTimerEl.offsetWidth;
+    endlessTimerEl.classList.add('berry-pulse');
+    if (_bonesPulseTimeout) clearTimeout(_bonesPulseTimeout);
+    _bonesPulseTimeout = setTimeout(() => {
+      endlessTimerEl.classList.remove('berry-pulse');
+      _bonesPulseTimeout = null;
+    }, 300);
+  }
   // Visual popup near the kill (skip in low detail)
   if (state.app && state.detailMode !== 'low') {
     const txt = new PIXI.Text({ text: `+${amount} 🍓`, style: {

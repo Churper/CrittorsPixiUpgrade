@@ -1320,6 +1320,16 @@ touch-action: manipulation;
   100% { transform: scale(1); }
 }
 
+#endless-timer.berry-pulse {
+  animation: berryPulse 0.3s ease-out;
+}
+
+@keyframes berryPulse {
+  0% { transform: translateX(-50%) scale(1); }
+  35% { transform: translateX(-50%) scale(1.14); }
+  100% { transform: translateX(-50%) scale(1); }
+}
+
 /* In-game loadout overlay: reuse the same panel without showing full main menu. */
 #rotateDevice.in-game-shop {
   background: transparent;

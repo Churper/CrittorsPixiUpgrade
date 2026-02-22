@@ -378,10 +378,9 @@ export function initLayoutShop() {
       row.className = 'shop-row';
       const desc = item.suffix ? `<span class="shop-row-desc">${item.suffix}</span>` : '';
       row.innerHTML =
-        `<div class="shop-row-icon">${iconHtml}</div>` +
+        `<div class="shop-row-icon">${iconHtml}${count > 0 ? '<span class="shop-icon-badge">' + count + '</span>' : ''}</div>` +
         `<div class="shop-row-info"><span class="shop-row-name">${item.name}</span>${desc}</div>` +
-        `<span class="shop-row-owned">x${count}</span>` +
-        `<button class="shop-row-buy${canAfford ? '' : ' cant-afford'}">🍓${item.costPer}</button>`;
+        `<button class="shop-row-buy${canAfford ? '' : ' cant-afford'}">\uD83C\uDF53${item.costPer}</button>`;
       row.querySelector('.shop-row-buy').addEventListener('click', () => {
         if (state.bones < item.costPer) return;
         state.bones -= item.costPer;
@@ -394,30 +393,89 @@ export function initLayoutShop() {
     });
   }
 
-  // --- Cosmetic slot click handlers — navigate to full sub-view with preview ---
+  // --- Cosmetic slot click handlers — inline picker with portrait preview ---
   document.querySelectorAll('.layout-cosmetic-slot').forEach(slot => {
     slot.addEventListener('click', function() {
       const card = this.closest('.layout-card');
       const charName = card.dataset.char;
-      const charLabel = charName.charAt(0).toUpperCase() + charName.slice(1);
       const slotType = this.dataset.slot;
+      const picker = card.querySelector('.layout-inline-picker');
 
+      if (picker.style.display !== 'none' && picker.dataset.activeSlot === slotType) {
+        picker.style.display = 'none';
+        picker.dataset.activeSlot = '';
+        this.classList.remove('slot-active');
+        return;
+      }
+
+      card.querySelectorAll('.layout-cosmetic-slot').forEach(s => s.classList.remove('slot-active'));
+      this.classList.add('slot-active');
+
+      picker.dataset.activeSlot = slotType;
+      picker.style.display = 'block';
       if (slotType === 'hat') {
-        showLayoutView(layoutHatsView, charLabel, charName);
+        renderInlineHats(picker, charName);
       } else if (slotType === 'skin') {
-        showLayoutView(layoutSkinsView, charLabel, charName);
+        renderInlineSkins(picker, charName);
       }
     });
   });
 
+  // Build the persistent preview + grid layout inside the inline picker
+  function ensurePickerLayout(container, charName) {
+    let layout = container.querySelector('.inline-picker-layout');
+    if (!layout) {
+      container.innerHTML = '';
+      layout = document.createElement('div');
+      layout.className = 'inline-picker-layout';
+      // Portrait preview (left)
+      const preview = document.createElement('div');
+      preview.className = 'inline-picker-preview';
+      preview.innerHTML =
+        '<img class="inline-picker-portrait" src="./assets/' + charName + 'portrait.png">' +
+        '<div class="inline-picker-charname">' + charName.charAt(0).toUpperCase() + charName.slice(1) + '</div>' +
+        '<div class="inline-picker-equipped-label"></div>';
+      layout.appendChild(preview);
+      // Grid (right)
+      const grid = document.createElement('div');
+      grid.className = 'inline-picker-grid';
+      layout.appendChild(grid);
+      container.appendChild(layout);
+    }
+    // Always update portrait src in case char changed
+    const img = layout.querySelector('.inline-picker-portrait');
+    if (img) img.src = './assets/' + charName + 'portrait.png';
+    const nameEl = layout.querySelector('.inline-picker-charname');
+    if (nameEl) nameEl.textContent = charName.charAt(0).toUpperCase() + charName.slice(1);
+    return layout;
+  }
+
+  function updateInlineEquippedLabel(container, charName) {
+    const label = container.querySelector('.inline-picker-equipped-label');
+    if (!label) return;
+    const slot = container.dataset.activeSlot;
+    if (slot === 'hat') {
+      const hatId = state.equippedHats[charName];
+      if (!hatId) { label.textContent = 'No hat'; return; }
+      const hat = hatCatalog.find(h => h.id === hatId);
+      label.textContent = hat ? hat.icon + ' ' + hat.name : 'No hat';
+    } else {
+      const skinId = state.equippedSkins[charName];
+      if (!skinId) { label.textContent = 'Default skin'; return; }
+      const skin = skinCatalog.find(s => s.id === skinId);
+      label.textContent = skin ? skin.icon + ' ' + skin.name : 'Default skin';
+    }
+  }
+
   function renderInlineHats(container, charName) {
-    container.innerHTML = '<div class="inline-picker-grid"></div>';
-    const grid = container.querySelector('.inline-picker-grid');
+    const layout = ensurePickerLayout(container, charName);
+    const grid = layout.querySelector('.inline-picker-grid');
+    grid.innerHTML = '';
 
     const isNone = !state.equippedHats[charName];
     const noneEl = document.createElement('div');
     noneEl.className = 'inline-picker-item' + (isNone ? ' equipped' : '');
-    noneEl.innerHTML = '<span>✨</span><span class="inline-picker-label">None</span>';
+    noneEl.innerHTML = '<span>\u2728</span><span class="inline-picker-label">None</span>';
     noneEl.addEventListener('click', () => {
       state.equippedHats[charName] = null;
       saveBones();
@@ -433,7 +491,7 @@ export function initLayoutShop() {
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${hat.icon}</span><span class="inline-picker-label">${hat.name}</span>`
-        : `<span>${hat.icon}</span><span class="inline-picker-cost">💗${hat.cost}</span><span class="inline-picker-label">${hat.name}</span>`;
+        : `<span>${hat.icon}</span><span class="inline-picker-cost">\uD83D\uDC97${hat.cost}</span><span class="inline-picker-label">${hat.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.supporterHearts < hat.cost) return;
@@ -450,16 +508,18 @@ export function initLayoutShop() {
       });
       grid.appendChild(el);
     });
+    updateInlineEquippedLabel(container, charName);
   }
 
   function renderInlineSkins(container, charName) {
-    container.innerHTML = '<div class="inline-picker-grid"></div>';
-    const grid = container.querySelector('.inline-picker-grid');
+    const layout = ensurePickerLayout(container, charName);
+    const grid = layout.querySelector('.inline-picker-grid');
+    grid.innerHTML = '';
 
     const isDefault = !state.equippedSkins[charName];
     const defEl = document.createElement('div');
     defEl.className = 'inline-picker-item' + (isDefault ? ' equipped' : '');
-    defEl.innerHTML = '<span>✨</span><span class="inline-picker-label">Default</span>';
+    defEl.innerHTML = '<span>\u2728</span><span class="inline-picker-label">Default</span>';
     defEl.addEventListener('click', () => {
       state.equippedSkins[charName] = null;
       saveBones();
@@ -476,7 +536,7 @@ export function initLayoutShop() {
       el.className = 'inline-picker-item' + (equipped ? ' equipped' : '');
       el.innerHTML = owned
         ? `<span>${skin.icon}</span><span class="inline-picker-label">${skin.name}</span>`
-        : `<span>${skin.icon}</span><span class="inline-picker-cost">💗${skin.cost}</span><span class="inline-picker-label">${skin.name}</span>`;
+        : `<span>${skin.icon}</span><span class="inline-picker-cost">\uD83D\uDC97${skin.cost}</span><span class="inline-picker-label">${skin.name}</span>`;
       el.addEventListener('click', () => {
         if (!owned) {
           if (state.supporterHearts < skin.cost) return;
@@ -493,6 +553,7 @@ export function initLayoutShop() {
       });
       grid.appendChild(el);
     });
+    updateInlineEquippedLabel(container, charName);
   }
 
   // Inventory button — toggles between inventory and deck view

@@ -174,10 +174,11 @@ function recolorSheet(baseTex, shifts, skinId, numFrames) {
         const pixIdx = i / 4;
         const pixX = pixIdx % w;
         const xPct = (pixX % frameW) / frameW;
-        // 5 vertical bands centered on body: blue / pink / white / pink / blue
-        if (xPct < 0.30 || xPct >= 0.70) {
+        // 5 vertical bands centered on body: blue / pink / white / pink / blue.
+        // Slightly narrow the middle so outer blue reads stronger.
+        if (xPct < 0.35 || xPct >= 0.65) {
           hue = 200; sat = 0.8; lit = Math.min(1, lit * 1.05 + 0.2);
-        } else if (xPct < 0.42 || xPct >= 0.58) {
+        } else if (xPct < 0.45 || xPct >= 0.55) {
           hue = 340; sat = 0.7; lit = Math.min(1, lit * 1.1 + 0.15);
         } else {
           hue = 0; sat = 0.08; lit = Math.min(0.95, lit * 1.3 + 0.2);

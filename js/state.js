@@ -142,7 +142,6 @@ const state = {
   siegePhase: 'idle',
   siegeAlertSprite: null,
   siegeRewardItems: [],
-  siegePendingRewardItems: [],
   lastSiegeCastleLevel: 0,
   unlockedCastles: [],
   checkpointLevels: {},  // maps castle number → sharedLevel at time of unlock
